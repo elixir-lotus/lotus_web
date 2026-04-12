@@ -35,9 +35,18 @@ export function getCachedDialectConfig(dialectName) {
   return cache.get(dialectName) || null;
 }
 
+export function isJsonLanguage(dialectName) {
+  return dialectName && dialectName.startsWith("json:");
+}
+
 function mergeWithDefaults(config) {
-  if (!config || config.language !== "sql") {
+  if (!config || (config.language !== "sql" && !config.language?.startsWith("json:"))) {
     return config || emptyConfig();
+  }
+
+  // Non-SQL languages (JSON DSL, etc.) pass through without merging SQL defaults
+  if (config.language && config.language.startsWith("json:")) {
+    return config;
   }
 
   return {

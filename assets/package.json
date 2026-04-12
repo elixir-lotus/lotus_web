@@ -4,6 +4,7 @@
   "scripts": {},
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.6",
+    "@codemirror/lang-json": "^6.0.2",
     "@codemirror/lang-sql": "^6.9.1",
     "@tailwindplus/elements": "^1.0.9",
     "codemirror": "^6.0.2",

@@ -1470,6 +1470,7 @@ defmodule Lotus.Web.QueryEditorPage do
   defp dialect_for_repo(repo_name) do
     case Lotus.Source.query_language(repo_name) do
       "sql:" <> dialect -> dialect
+      "json:" <> _ = full -> full
       _ -> "sql"
     end
   end

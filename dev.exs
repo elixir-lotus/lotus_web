@@ -14,6 +14,10 @@ defmodule WebDev.ClickHouseRepo do
   use Ecto.Repo, otp_app: :lotus_web, adapter: Ecto.Adapters.ClickHouse
 end
 
+defmodule WebDev.SearchClient do
+  use Lotus.Elasticsearch, otp_app: :lotus_web
+end
+
 defmodule WebDev.Migration0 do
   use Ecto.Migration
 
@@ -255,6 +259,8 @@ Application.put_env(:lotus_web, WebDev.ClickHouseRepo,
   settings: []
 )
 
+Application.put_env(:lotus_web, WebDev.SearchClient, url: "http://localhost:9209")
+
 Application.put_env(:phoenix, :serve_endpoints, true)
 Application.put_env(:phoenix, :persistent, true)
 
@@ -265,10 +271,14 @@ Application.put_env(:lotus, :default_source, "postgres")
 Application.put_env(:lotus, :data_sources, %{
   "postgres" => WebDev.PostgresRepo,
   "mysql" => WebDev.MySQLRepo,
-  "clickhouse" => WebDev.ClickHouseRepo
+  "clickhouse" => WebDev.ClickHouseRepo,
+  "elasticsearch" => WebDev.SearchClient
 })
 
-Application.put_env(:lotus, :source_adapters, [Lotus.Source.Adapters.ClickHouse])
+Application.put_env(:lotus, :source_adapters, [
+  Lotus.Source.Adapters.ClickHouse,
+  Lotus.Source.Adapters.Elasticsearch
+])
 
 # Configure Lotus caching
 Application.put_env(:lotus, :cache, %{
@@ -373,6 +383,95 @@ Task.async(fn ->
 
   WebDev.ClickHouseRepo.query!("TRUNCATE TABLE IF EXISTS events")
   WebDev.ClickHouseRepo.query!("TRUNCATE TABLE IF EXISTS page_views")
+
+  # Create OpenSearch indices and seed data
+  es_url = "http://localhost:9209"
+
+  Lotus.Elasticsearch.Client.request(:delete, es_url, "/dev_logs")
+
+  Lotus.Elasticsearch.Client.request(:put, es_url, "/dev_logs",
+    json: %{
+      mappings: %{
+        properties: %{
+          level: %{type: "keyword"},
+          service: %{type: "keyword"},
+          message: %{type: "text"},
+          status_code: %{type: "integer"},
+          duration_ms: %{type: "float"},
+          timestamp: %{type: "date"}
+        }
+      }
+    }
+  )
+
+  for doc <- [
+        %{
+          level: "info",
+          service: "api",
+          message: "GET /users 200",
+          status_code: 200,
+          duration_ms: 12.5,
+          timestamp: "2024-01-15T10:00:00Z"
+        },
+        %{
+          level: "info",
+          service: "api",
+          message: "POST /orders 201",
+          status_code: 201,
+          duration_ms: 45.2,
+          timestamp: "2024-01-15T10:01:00Z"
+        },
+        %{
+          level: "warn",
+          service: "worker",
+          message: "Job retry attempt 2",
+          status_code: nil,
+          duration_ms: nil,
+          timestamp: "2024-01-15T10:02:00Z"
+        },
+        %{
+          level: "error",
+          service: "api",
+          message: "GET /reports 500",
+          status_code: 500,
+          duration_ms: 230.1,
+          timestamp: "2024-01-15T10:03:00Z"
+        },
+        %{
+          level: "info",
+          service: "web",
+          message: "GET /dashboard 200",
+          status_code: 200,
+          duration_ms: 8.3,
+          timestamp: "2024-01-15T10:04:00Z"
+        },
+        %{
+          level: "info",
+          service: "api",
+          message: "GET /products 200",
+          status_code: 200,
+          duration_ms: 15.7,
+          timestamp: "2024-01-15T10:05:00Z"
+        },
+        %{
+          level: "error",
+          service: "worker",
+          message: "Connection refused to redis",
+          status_code: nil,
+          duration_ms: nil,
+          timestamp: "2024-01-15T10:06:00Z"
+        },
+        %{
+          level: "info",
+          service: "web",
+          message: "GET /login 200",
+          status_code: 200,
+          duration_ms: 5.1,
+          timestamp: "2024-01-15T10:07:00Z"
+        }
+      ] do
+    Lotus.Elasticsearch.Client.request(:post, es_url, "/dev_logs/_doc?refresh=true", json: doc)
+  end
 
   WebDev.PostgresRepo.query!("TRUNCATE TABLE users, posts, orders RESTART IDENTITY CASCADE")
 
@@ -576,6 +675,15 @@ Task.async(fn ->
         "SELECT country, count() AS views, round(avg(duration_ms) / 1000, 1) AS avg_duration_sec, uniq(user_id) AS unique_visitors FROM page_views GROUP BY country ORDER BY views DESC"
     })
 
+  {:ok, _logs_query} =
+    Lotus.create_query(%{
+      name: "Error Logs",
+      description: "Elasticsearch error and warning logs",
+      data_source: "elasticsearch",
+      statement:
+        ~s|{"query": {"bool": {"filter": [{"terms": {"level": ["error", "warn"]}}]}}, "sort": [{"timestamp": {"order": "desc"}}]}|
+    })
+
   # Create sample dashboards
   {:ok, overview_dashboard} =
     Lotus.create_dashboard(%{
@@ -675,7 +783,8 @@ Task.async(fn ->
   IO.puts("✅ Database setup complete!")
   IO.puts("🐘 PostgreSQL (localhost:2346): public & reporting schemas")
   IO.puts("🐬 MySQL (localhost:3308): products & sales tables")
-  IO.puts("📊 Seeded 4 queries and 2 dashboards")
+  IO.puts("🔍 OpenSearch (localhost:9209): dev_logs index")
+  IO.puts("📊 Seeded 5 queries and 2 dashboards")
   IO.puts("🌐 Web server running on http://localhost:#{port}/lotus")
   IO.puts("🔧 Adminer available at http://localhost:8087")
 

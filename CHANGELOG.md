@@ -4,6 +4,8 @@
 
 ### Added
 
+- **Elasticsearch/OpenSearch dev server integration** — Added `lotus_elasticsearch` adapter to dev server with OpenSearch docker service (port 9209), `WebDev.SearchClient` module, `dev_logs` sample index with seed data, and an "Error Logs" sample query using JSON DSL
+- **JSON language mode in query editor** — Non-SQL data sources (e.g. Elasticsearch) now get CodeMirror JSON syntax highlighting and adapter-provided completions instead of SQL mode. Added `@codemirror/lang-json` dependency and `JsonDslCompletion` class under `languages/json_dsl/`. The `dialect_for_repo/1` function now preserves `"json:"` prefixed language identifiers
 - **Pro UI integration mechanism** — `Lotus.Web.Pro` helper module enables `lotus_pro` to contribute pages, nav items, and slot content into the dashboard at runtime via `Code.ensure_loaded?/1`, with zero compile-time coupling. `DashboardLive.resolve_page/1` now falls back to Pro pages, and the layout renders Pro nav items when available (#9)
 
 ### Breaking

@@ -2,14 +2,17 @@ import { EditorView, basicSetup } from "codemirror";
 import { placeholder, keymap } from "@codemirror/view";
 import { EditorState, Compartment, Prec } from "@codemirror/state";
 import { sql } from "@codemirror/lang-sql";
+import { json } from "@codemirror/lang-json";
 import { editorStyles, getCompletionStyles } from "./styles";
 import { lotusVariablesPlugin } from "./plugins/lotus_variables";
 import {
   getDialectConfig,
   getCachedDialectConfig,
   buildSqlExtension,
+  isJsonLanguage,
 } from "./dialect_config";
 import { SqlCompletion } from "./languages/sql/completion";
+import { JsonDslCompletion } from "./languages/json_dsl/completion";
 import { load } from "./settings";
 
 const editorTheme = EditorView.theme(editorStyles);
@@ -49,9 +52,13 @@ export function createEditor({
   let currentConfig = null;
   let contextCompletion = null;
 
+  const initialLang = isJsonLanguage(dialectName)
+    ? json()
+    : initialSqlExt(currentSchema);
+
   const extensions = [
     basicSetup,
-    languageCompartment.of(initialSqlExt(currentSchema)),
+    languageCompartment.of(initialLang),
     completionThemeCompartment.of(
       EditorView.theme(getCompletionStyles(isDarkMode())),
     ),
@@ -136,18 +143,32 @@ export function createEditor({
   function reconfigureLanguage() {
     if (!currentConfig) return;
 
-    contextCompletion = new SqlCompletion(currentSchema, currentConfig);
+    if (isJsonLanguage(currentDialect)) {
+      contextCompletion = new JsonDslCompletion(currentSchema, currentConfig);
+      const jsonLang = json();
 
-    view.dispatch({
-      effects: languageCompartment.reconfigure(
-        buildSqlExtension(
-          currentConfig,
-          currentSchema,
-          contextCompletion,
-          currentDialect,
+      view.dispatch({
+        effects: languageCompartment.reconfigure([
+          jsonLang,
+          jsonLang.language.data.of({
+            autocomplete: contextCompletion.createCompletionSource(),
+          }),
+        ]),
+      });
+    } else {
+      contextCompletion = new SqlCompletion(currentSchema, currentConfig);
+
+      view.dispatch({
+        effects: languageCompartment.reconfigure(
+          buildSqlExtension(
+            currentConfig,
+            currentSchema,
+            contextCompletion,
+            currentDialect,
+          ),
         ),
-      ),
-    });
+      });
+    }
   }
 
   return {

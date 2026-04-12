@@ -52,6 +52,8 @@ defmodule Lotus.Web.MixProject do
       {:lotus, path: "../lotus", override: true},
       {:lotus_clickhouse,
        git: "git@github.com:elixir-lotus/lotus_clickhouse.git", branch: "main", only: :dev},
+      {:lotus_elasticsearch,
+       git: "git@github.com:elixir-lotus/lotus_elasticsearch.git", branch: "main", only: :dev},
 
       # Databases
       {:postgrex, "~> 0.20", only: [:dev, :test]},

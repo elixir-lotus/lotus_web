@@ -48,7 +48,21 @@ services:
     volumes:
       - clickhouse_data:/var/lib/clickhouse
 
+  opensearch:
+    image: opensearchproject/opensearch:2.18.0
+    restart: always
+    container_name: lotus_web_opensearch
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=admin123!
+    ports:
+      - "9209:9200"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+
 volumes:
   db:
   mysql_data:
   clickhouse_data:
+  opensearch_data:
