@@ -31,6 +31,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:query_timeout, :integer, default: 5_000)
   attr(:timeout_options_enabled, :boolean, default: false)
   attr(:source_type, :atom, default: :postgres)
+  attr(:data_source, :string, default: nil)
 
   def editor(assigns) do
     search_path_field = assigns.form[:search_path]
@@ -44,8 +45,9 @@ defmodule Lotus.Web.Queries.EditorComponent do
       end
 
     show_search_path =
-      search_path_value != "" &&
-        Lotus.Sources.supports_feature?(assigns.source_type, :search_path)
+      (search_path_value != "" &&
+         assigns.data_source != nil) and
+        Lotus.Source.supports_feature?(assigns.data_source, :search_path)
 
     assigns =
       assigns

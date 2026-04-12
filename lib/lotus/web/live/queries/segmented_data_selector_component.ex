@@ -150,7 +150,7 @@ defmodule Lotus.Web.Queries.SegmentedDataSelectorComponent do
   end
 
   defp get_adapter_info(repo_name) do
-    source_type = Lotus.Sources.source_type(repo_name)
+    source_type = Lotus.Source.source_type(repo_name)
 
     {label, multiple, show} =
       case source_type do

@@ -109,6 +109,7 @@ defmodule Lotus.Web.QueryEditorPage do
                   query_timeout={@query_timeout}
                   timeout_options_enabled={:timeout_options in (@features || [])}
                   source_type={@source_type}
+                  data_source={@default_source}
                 />
 
                 <.results_pill
@@ -1327,7 +1328,7 @@ defmodule Lotus.Web.QueryEditorPage do
     {default_source, _module} = Lotus.default_data_source()
     sources_map = SourcesMap.build()
 
-    source_type = Lotus.Sources.source_type(default_source)
+    source_type = Lotus.Source.source_type(default_source)
 
     socket
     |> assign(data_source_names: data_source_names, default_source: default_source)
@@ -1432,7 +1433,7 @@ defmodule Lotus.Web.QueryEditorPage do
   defp maybe_update_editor_schema(socket, data_source) do
     if data_source && data_source != "" do
       dialect = dialect_for_repo(data_source)
-      source_type = Lotus.Sources.source_type(data_source)
+      source_type = Lotus.Source.source_type(data_source)
       search_path = socket.assigns.query && socket.assigns.query.search_path
 
       case SchemaBuilder.build(socket.assigns.sources_map, data_source, search_path) do
@@ -1456,7 +1457,7 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   defp dialect_for_repo(repo_name) do
-    case Lotus.Sources.query_language(repo_name) do
+    case Lotus.Source.query_language(repo_name) do
       "sql:" <> dialect -> dialect
       _ -> "sql"
     end
@@ -1640,7 +1641,7 @@ defmodule Lotus.Web.QueryEditorPage do
     try do
       limited_query =
         if limit do
-          Lotus.Sources.limit_query(repo, sql_query, limit)
+          Lotus.Source.limit_query(repo, sql_query, limit)
         else
           sql_query
         end
@@ -1734,10 +1735,8 @@ defmodule Lotus.Web.QueryEditorPage do
 
     filename = "#{timestamp}_#{base_name}.csv"
 
-    source_type = Lotus.Sources.source_type(repo)
-
     search_path =
-      if Lotus.Sources.supports_feature?(source_type, :search_path),
+      if Lotus.Source.supports_feature?(repo, :search_path),
         do: query.search_path,
         else: nil
 

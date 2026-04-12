@@ -49,7 +49,7 @@ defmodule Lotus.Web.MixProject do
       {:html_sanitize_ex, "~> 1.4"},
 
       # Lotus
-      {:lotus, github: "elixir-lotus/lotus", branch: "main"},
+      {:lotus, github: "elixir-lotus/lotus", branch: "refactor/pluggable-adapters"},
 
       # Databases
       {:postgrex, "~> 0.20", only: [:dev, :test]},

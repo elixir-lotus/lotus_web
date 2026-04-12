@@ -33,7 +33,7 @@ defmodule Lotus.Web.SchemaBuilder do
     if database.supports_schemas do
       case Lotus.Config.data_sources()[data_repo] do
         nil -> ["public"]
-        repo -> Lotus.Source.default_schemas(repo)
+        _repo -> Lotus.Source.Adapter.default_schemas(Lotus.Source.get_source!(data_repo))
       end
     else
       Enum.map(database.schemas, & &1.name)

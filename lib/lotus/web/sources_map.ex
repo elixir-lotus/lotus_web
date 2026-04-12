@@ -29,8 +29,8 @@ defmodule Lotus.Web.SourcesMap do
   end
 
   defp load_database(db_name) do
-    source_type = Lotus.Sources.source_type(db_name)
-    supports_schemas = Lotus.Sources.supports_feature?(source_type, :schema_hierarchy)
+    source_type = Lotus.Source.source_type(db_name)
+    supports_schemas = Lotus.Source.supports_feature?(db_name, :schema_hierarchy)
 
     repo = Lotus.Config.get_data_source!(db_name)
 
@@ -65,9 +65,10 @@ defmodule Lotus.Web.SourcesMap do
       nil
   end
 
-  defp load_postgres_schemas(db_name, repo) do
+  defp load_postgres_schemas(db_name, _repo) do
     with {:ok, schema_names} <- Lotus.list_schemas(db_name),
-         [default_schema | _] <- Lotus.Source.default_schemas(repo),
+         adapter <- Lotus.Source.get_source!(db_name),
+         [default_schema | _] <- Lotus.Source.Adapter.default_schemas(adapter),
          search_path <- Enum.join(schema_names, ","),
          {:ok, all_tables} <- Lotus.list_tables(db_name, search_path: search_path) do
       all_tables
@@ -97,7 +98,7 @@ defmodule Lotus.Web.SourcesMap do
           %Schema{
             name: "default",
             is_default: false,
-            display_name: Lotus.Sources.hierarchy_label(db_name),
+            display_name: Lotus.Source.hierarchy_label(db_name),
             tables: Enum.sort(table_names)
           }
         ]
