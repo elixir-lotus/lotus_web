@@ -1,9 +1,31 @@
-import { SQLContextAnalyzer } from "./sql_context_analyzer.js";
+import { SQL_DEFAULTS } from "./defaults.js";
+import { SqlContextAnalyzer } from "./context_analyzer.js";
 
-export class ContextAwareCompletion {
-  constructor(schema) {
+// Core SQL structural keywords where column/function suggestions mid-typing
+// would be unwanted noise. Kept intentionally small — adapter-specific keywords
+// (RELOAD, RENAME, RETENTION, etc.) are excluded to avoid suppressing completions
+// for columns that share a prefix (e.g., "re" matching "revenue").
+const STRUCTURAL_KEYWORDS = [
+  "select", "from", "where", "join", "inner", "left", "right", "full",
+  "outer", "cross", "on", "and", "or", "not", "in", "exists", "like",
+  "ilike", "between", "case", "when", "then", "else", "end", "as",
+  "distinct", "all", "union", "intersect", "except", "with", "insert",
+  "into", "values", "update", "set", "delete", "create", "drop", "alter",
+  "table", "group", "order", "having", "limit", "offset",
+];
+
+export class SqlCompletion {
+  constructor(schema, config = {}) {
     this.schema = schema || {};
-    this.analyzer = new SQLContextAnalyzer();
+    this.config = {
+      keywords: [...SQL_DEFAULTS.keywords, ...(config.keywords || [])],
+      functions: [...SQL_DEFAULTS.functions, ...(config.functions || [])],
+      contextBoundaries: [
+        ...SQL_DEFAULTS.contextBoundaries,
+        ...(config.contextBoundaries || []),
+      ],
+    };
+    this.analyzer = new SqlContextAnalyzer(this.config);
   }
 
   updateSchema(newSchema) {
@@ -76,17 +98,6 @@ export class ContextAwareCompletion {
       case "after_where":
       case "where_condition":
       case "after_having":
-        if (sqlContext.isAfterDot && sqlContext.currentTable) {
-          // User typed "table." in WHERE clause - suggest columns for that table
-          completions.push(
-            ...this.getColumnCompletions(sqlContext.currentTable, true),
-          );
-        } else {
-          // Suggest columns from referenced tables
-          completions.push(...this.getRelevantColumnCompletions(sqlContext));
-        }
-        break;
-
       case "after_order_by":
       case "after_group_by":
         if (sqlContext.isAfterDot && sqlContext.currentTable) {
@@ -95,6 +106,7 @@ export class ContextAwareCompletion {
           );
         } else {
           completions.push(...this.getRelevantColumnCompletions(sqlContext));
+          completions.push(...this.getFunctionCompletions());
         }
         break;
 
@@ -164,25 +176,17 @@ export class ContextAwareCompletion {
   }
 
   getFunctionCompletions() {
-    const functions = [
-      { name: "COUNT", detail: "Count rows", args: "(*)" },
-      { name: "SUM", detail: "Sum values", args: "(column)" },
-      { name: "AVG", detail: "Average values", args: "(column)" },
-      { name: "MAX", detail: "Maximum value", args: "(column)" },
-      { name: "MIN", detail: "Minimum value", args: "(column)" },
-      { name: "DISTINCT", detail: "Unique values", args: "(column)" },
-      { name: "UPPER", detail: "Uppercase", args: "(column)" },
-      { name: "LOWER", detail: "Lowercase", args: "(column)" },
-      { name: "LENGTH", detail: "String length", args: "(column)" },
-      { name: "NOW", detail: "Current timestamp", args: "()" },
-    ];
-
-    return functions.map((func) => ({
+    return this.config.functions.map((func) => ({
       label: func.name,
       type: "function",
       detail: func.detail,
       boost: 8,
-      insertText: func.args === "()" ? `${func.name}()` : `${func.name}(`,
+      insertText:
+        func.args === ""
+          ? func.name
+          : func.args === "()"
+            ? `${func.name}()`
+            : `${func.name}(`,
     }));
   }
 
@@ -236,56 +240,11 @@ export class ContextAwareCompletion {
       .substring(wordBounds.from, wordBounds.to)
       .toLowerCase();
 
-    const sqlKeywords = [
-      "select",
-      "from",
-      "where",
-      "order",
-      "group",
-      "having",
-      "limit",
-      "offset",
-      "insert",
-      "update",
-      "delete",
-      "create",
-      "drop",
-      "alter",
-      "table",
-      "join",
-      "inner",
-      "left",
-      "right",
-      "full",
-      "outer",
-      "cross",
-      "on",
-      "and",
-      "or",
-      "not",
-      "in",
-      "exists",
-      "like",
-      "ilike",
-      "between",
-      "case",
-      "when",
-      "then",
-      "else",
-      "end",
-      "as",
-      "distinct",
-      "all",
-      "union",
-      "intersect",
-      "except",
-      "with",
-      "values",
-      "set",
-    ];
-
-    // Check if the current word could be a partial keyword
-    for (const keyword of sqlKeywords) {
+    // Only suppress completions for core SQL structural keywords where
+    // column suggestions mid-typing would be noise. Don't check the full
+    // dialect keyword list — adapter-specific keywords (RELOAD, RENAME, etc.)
+    // share prefixes with common column names and would suppress too eagerly.
+    for (const keyword of STRUCTURAL_KEYWORDS) {
       if (
         keyword.startsWith(currentWord) &&
         currentWord.length > 0 &&

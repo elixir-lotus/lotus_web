@@ -49,11 +49,14 @@ defmodule Lotus.Web.MixProject do
       {:html_sanitize_ex, "~> 1.4"},
 
       # Lotus
-      {:lotus, github: "elixir-lotus/lotus", branch: "refactor/pluggable-adapters"},
+      {:lotus, path: "../lotus", override: true},
+      {:lotus_clickhouse,
+       git: "git@github.com:elixir-lotus/lotus_clickhouse.git", branch: "main", only: :dev},
 
       # Databases
       {:postgrex, "~> 0.20", only: [:dev, :test]},
       {:myxql, "~> 0.8", only: [:dev, :test]},
+      {:ecto_ch, "~> 0.3", only: :dev},
 
       # Tests
       {:floki, "~> 0.33", only: [:test, :dev]},

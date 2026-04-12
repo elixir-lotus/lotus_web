@@ -1,4 +1,5 @@
 import { createEditor } from "../lib/editor.js";
+import { getDialectConfig } from "../lib/dialect_config.js";
 import { tinykeys } from "tinykeys";
 
 export default {
@@ -14,7 +15,6 @@ export default {
       );
     };
 
-    // debounce vars -> server
     let t = null;
     const onVariableChange = (vars) => {
       if (t) clearTimeout(t);
@@ -36,17 +36,21 @@ export default {
     };
 
     const initialSchema = this.getSchemaFromDOM();
+    const initialDialect = this.getDialectFromDOM();
 
     this.editor = createEditor({
       textarea,
       parent: editorContainer,
       schema: initialSchema,
+      dialectName: initialDialect,
       onChange: onContentChange,
       onRun: onRunQuery,
       onVars: onVariableChange,
     });
 
     editorContainer.lotusEditor = this.editor;
+
+    this.fetchAndApplyDialect(initialDialect);
 
     this.unbindKeys = tinykeys(window, {
       "Meta+Enter": (event) => {
@@ -218,6 +222,11 @@ export default {
     const newSchema = this.getSchemaFromDOM();
     if (newSchema) this.editor?.updateSchema(newSchema);
 
+    const newDialect = this.getDialectFromDOM();
+    if (newDialect && newDialect !== this._lastDialect) {
+      this.fetchAndApplyDialect(newDialect);
+    }
+
     if (this.editor && this.el.value !== this.editor.getContent()) {
       this.editor.setContent(this.el.value);
     }
@@ -231,6 +240,31 @@ export default {
     } catch {
       return null;
     }
+  },
+
+  getDialectFromDOM() {
+    const el = document.querySelector("[data-editor-dialect]");
+    if (!el) return "postgres";
+    return el.dataset.editorDialect || "postgres";
+  },
+
+  fetchAndApplyDialect(dialectName) {
+    this._lastDialect = dialectName;
+
+    const fetchFn = (name) => {
+      return new Promise((resolve) => {
+        this.pushEventTo(
+          this.el.closest("[data-phx-component]"),
+          "fetch_dialect_config",
+          { dialect: name },
+          (reply) => {
+            resolve(reply.config);
+          },
+        );
+      });
+    };
+
+    this.editor.updateDialect(dialectName, fetchFn);
   },
 
   requestSchema() {

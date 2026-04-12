@@ -10,6 +10,10 @@ defmodule WebDev.MySQLRepo do
   use Ecto.Repo, otp_app: :lotus_web, adapter: Ecto.Adapters.MyXQL
 end
 
+defmodule WebDev.ClickHouseRepo do
+  use Ecto.Repo, otp_app: :lotus_web, adapter: Ecto.Adapters.ClickHouse
+end
+
 defmodule WebDev.Migration0 do
   use Ecto.Migration
 
@@ -240,6 +244,17 @@ Application.put_env(:lotus_web, WebDev.MySQLRepo,
   database: "lotus_web_dev"
 )
 
+Application.put_env(:lotus_web, WebDev.ClickHouseRepo,
+  hostname: "localhost",
+  port: 9123,
+  scheme: "http",
+  database: "lotus_web_dev",
+  username: "default",
+  password: "clickhouse",
+  pool_size: 5,
+  settings: []
+)
+
 Application.put_env(:phoenix, :serve_endpoints, true)
 Application.put_env(:phoenix, :persistent, true)
 
@@ -249,8 +264,11 @@ Application.put_env(:lotus, :default_source, "postgres")
 
 Application.put_env(:lotus, :data_sources, %{
   "postgres" => WebDev.PostgresRepo,
-  "mysql" => WebDev.MySQLRepo
+  "mysql" => WebDev.MySQLRepo,
+  "clickhouse" => WebDev.ClickHouseRepo
 })
+
+Application.put_env(:lotus, :source_adapters, [Lotus.Source.Adapters.ClickHouse])
 
 # Configure Lotus caching
 Application.put_env(:lotus, :cache, %{
@@ -275,11 +293,13 @@ Task.async(fn ->
   {:ok, _} = Application.ensure_all_started(:esbuild)
   {:ok, _} = Application.ensure_all_started(:tailwind)
 
+  IO.puts("🔄 Starting dev server...")
+
   children = [
     {Phoenix.PubSub, [name: WebDev.PubSub, adapter: Phoenix.PubSub.PG2]},
     {WebDev.PostgresRepo, []},
     {WebDev.MySQLRepo, []},
-    Lotus,
+    {WebDev.ClickHouseRepo, []},
     {WebDev.Endpoint, []}
   ]
 
@@ -290,6 +310,10 @@ Task.async(fn ->
   Ecto.Adapters.MyXQL.storage_up(WebDev.MySQLRepo.config())
 
   {:ok, _} = Supervisor.start_link(children, strategy: :one_for_one)
+
+  # Lotus auto-starts as an OTP app (mod: Lotus.Application in mix.exs).
+  # Reload config so it picks up the data_sources/source_adapters we set above.
+  Lotus.Config.reload!()
 
   # Run PostgreSQL migrations
   Ecto.Migrator.run(
@@ -321,7 +345,34 @@ Task.async(fn ->
     all: true
   )
 
+  # Create ClickHouse tables (no Ecto migrations for ClickHouse)
+  WebDev.ClickHouseRepo.query!("""
+  CREATE TABLE IF NOT EXISTS events (
+    id UInt64,
+    event_name String,
+    user_id UInt64,
+    properties String DEFAULT '{}',
+    revenue Nullable(Float64),
+    occurred_at DateTime DEFAULT now()
+  ) ENGINE = MergeTree() ORDER BY (event_name, occurred_at)
+  """)
+
+  WebDev.ClickHouseRepo.query!("""
+  CREATE TABLE IF NOT EXISTS page_views (
+    id UInt64,
+    url String,
+    user_id UInt64,
+    duration_ms UInt32 DEFAULT 0,
+    country LowCardinality(String) DEFAULT '',
+    browser LowCardinality(String) DEFAULT '',
+    viewed_at DateTime DEFAULT now()
+  ) ENGINE = MergeTree() ORDER BY (url, viewed_at)
+  """)
+
   # --- DESTROY ALL EXISTING DATA ---
+
+  WebDev.ClickHouseRepo.query!("TRUNCATE TABLE IF EXISTS events")
+  WebDev.ClickHouseRepo.query!("TRUNCATE TABLE IF EXISTS page_views")
 
   WebDev.PostgresRepo.query!("TRUNCATE TABLE users, posts, orders RESTART IDENTITY CASCADE")
 
@@ -416,6 +467,48 @@ Task.async(fn ->
   "
   )
 
+  # --- CLICKHOUSE DATA ---
+
+  # Events (analytics-style data)
+  WebDev.ClickHouseRepo.query!("""
+  INSERT INTO events (id, event_name, user_id, properties, revenue, occurred_at) VALUES
+    (1, 'page_view',    1, '{"page": "/home"}',        NULL, '2024-01-15 10:00:00'),
+    (2, 'sign_up',      2, '{"source": "google"}',     NULL, '2024-01-15 10:05:00'),
+    (3, 'purchase',     1, '{"product": "Pro Plan"}',   49.99, '2024-01-15 10:30:00'),
+    (4, 'page_view',    3, '{"page": "/pricing"}',      NULL, '2024-01-15 11:00:00'),
+    (5, 'purchase',     3, '{"product": "Team Plan"}',  199.00, '2024-01-15 11:15:00'),
+    (6, 'page_view',    1, '{"page": "/dashboard"}',    NULL, '2024-01-16 09:00:00'),
+    (7, 'feature_use',  1, '{"feature": "export"}',     NULL, '2024-01-16 09:30:00'),
+    (8, 'sign_up',      4, '{"source": "referral"}',    NULL, '2024-01-16 14:00:00'),
+    (9, 'purchase',     4, '{"product": "Pro Plan"}',   49.99, '2024-01-16 14:10:00'),
+    (10, 'page_view',   5, '{"page": "/home"}',         NULL, '2024-01-17 08:00:00'),
+    (11, 'sign_up',     5, '{"source": "organic"}',     NULL, '2024-01-17 08:05:00'),
+    (12, 'feature_use', 2, '{"feature": "query"}',      NULL, '2024-01-17 10:00:00'),
+    (13, 'purchase',    2, '{"product": "Enterprise"}',  499.00, '2024-01-17 10:30:00'),
+    (14, 'page_view',   3, '{"page": "/docs"}',         NULL, '2024-01-18 11:00:00'),
+    (15, 'feature_use', 3, '{"feature": "dashboard"}',  NULL, '2024-01-18 11:30:00')
+  """)
+
+  # Page views (web analytics-style data)
+  WebDev.ClickHouseRepo.query!("""
+  INSERT INTO page_views (id, url, user_id, duration_ms, country, browser, viewed_at) VALUES
+    (1,  '/home',       1, 3200, 'US', 'Chrome',  '2024-01-15 10:00:00'),
+    (2,  '/pricing',    1, 8500, 'US', 'Chrome',  '2024-01-15 10:02:00'),
+    (3,  '/signup',     2, 1200, 'UK', 'Firefox', '2024-01-15 10:04:00'),
+    (4,  '/pricing',    3, 12000,'DE', 'Safari',  '2024-01-15 11:00:00'),
+    (5,  '/docs',       3, 45000,'DE', 'Safari',  '2024-01-15 11:05:00'),
+    (6,  '/dashboard',  1, 60000,'US', 'Chrome',  '2024-01-16 09:00:00'),
+    (7,  '/settings',   1, 5000, 'US', 'Chrome',  '2024-01-16 09:15:00'),
+    (8,  '/home',       4, 2000, 'FR', 'Chrome',  '2024-01-16 14:00:00'),
+    (9,  '/pricing',    4, 7000, 'FR', 'Chrome',  '2024-01-16 14:02:00'),
+    (10, '/home',       5, 1500, 'JP', 'Edge',    '2024-01-17 08:00:00'),
+    (11, '/docs',       5, 30000,'JP', 'Edge',    '2024-01-17 08:10:00'),
+    (12, '/dashboard',  2, 90000,'UK', 'Firefox', '2024-01-17 10:00:00'),
+    (13, '/home',       3, 1800, 'DE', 'Safari',  '2024-01-18 11:00:00'),
+    (14, '/docs',       3, 25000,'DE', 'Safari',  '2024-01-18 11:05:00'),
+    (15, '/pricing',    5, 9000, 'JP', 'Edge',    '2024-01-18 12:00:00')
+  """)
+
   # --- LOTUS QUERIES & DASHBOARDS ---
 
   # Clear existing Lotus data (tables created by migrations above)
@@ -463,6 +556,24 @@ Task.async(fn ->
       description: "Invoice totals by status",
       statement:
         "SELECT status, COUNT(*) as count, SUM(total_amount) as total FROM reporting.invoices GROUP BY status"
+    })
+
+  {:ok, _events_query} =
+    Lotus.create_query(%{
+      name: "Events by Type",
+      description: "ClickHouse event counts by type",
+      data_source: "clickhouse",
+      statement:
+        "SELECT event_name, uniq(user_id) AS unique_users, count() AS total_events FROM events GROUP BY event_name ORDER BY total_events DESC"
+    })
+
+  {:ok, _pageviews_query} =
+    Lotus.create_query(%{
+      name: "Page Views by Country",
+      description: "ClickHouse page view analytics",
+      data_source: "clickhouse",
+      statement:
+        "SELECT country, count() AS views, round(avg(duration_ms) / 1000, 1) AS avg_duration_sec, uniq(user_id) AS unique_visitors FROM page_views GROUP BY country ORDER BY views DESC"
     })
 
   # Create sample dashboards

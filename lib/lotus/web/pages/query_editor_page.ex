@@ -819,6 +819,17 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   @impl Phoenix.LiveComponent
+  def handle_event("fetch_dialect_config", %{"dialect" => dialect_name}, socket) do
+    config =
+      case find_source_for_dialect(dialect_name, socket.assigns) do
+        nil -> %{language: "sql", keywords: [], types: [], functions: [], context_boundaries: []}
+        source_name -> Lotus.Source.editor_config(source_name)
+      end
+
+    {:reply, %{config: config}, socket}
+  end
+
+  @impl Phoenix.LiveComponent
   def handle_event("variables_detected", %{"variables" => names}, socket) do
     names = List.wrap(names)
     existing_variables = socket.assigns.query.variables
@@ -1461,6 +1472,18 @@ defmodule Lotus.Web.QueryEditorPage do
       "sql:" <> dialect -> dialect
       _ -> "sql"
     end
+  end
+
+  defp find_source_for_dialect(dialect_name, assigns) do
+    data_source_names = assigns[:data_source_names] || []
+
+    Enum.find(data_source_names, fn name ->
+      case Lotus.Source.query_language(name) do
+        "sql:" <> ^dialect_name -> true
+        ^dialect_name -> true
+        _ -> false
+      end
+    end)
   end
 
   defp build_query_changeset(query, params, action \\ :validate) do

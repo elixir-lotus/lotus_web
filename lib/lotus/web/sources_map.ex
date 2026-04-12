@@ -90,13 +90,16 @@ defmodule Lotus.Web.SourcesMap do
   end
 
   defp load_simple_tables(db_name) do
+    adapter = Lotus.Source.get_source!(db_name)
+    schema_name = List.first(Lotus.Source.Adapter.default_schemas(adapter)) || "default"
+
     case Lotus.list_tables(db_name) do
       {:ok, tables} ->
         table_names = extract_table_names(tables)
 
         [
           %Schema{
-            name: "default",
+            name: schema_name,
             is_default: false,
             display_name: Lotus.Source.hierarchy_label(db_name),
             tables: Enum.sort(table_names)
