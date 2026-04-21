@@ -287,6 +287,47 @@ mix lotus.gen.dev.secret
 
 Edit `config/dev.secret.exs` with your API key and model, then restart the dev server. See the [AI assistant guide](guides/ai-assistant.md) for configuration.
 
+## Releasing
+
+New major and minor versions ship from `main`. Patch releases for a given line live on a maintenance branch cut from the release tag.
+
+### Cutting a release branch
+
+When starting a new release line (e.g., v1.x), create the branch at the release tag — not at the tip of `main`:
+
+```bash
+git branch release/v1.x v1.x.0
+git push -u origin release/v1.x
+```
+
+`main` continues forward with ongoing development. `release/v1.x` is used only for patch releases (v1.x.1, v1.x.2, …).
+
+### Hotfixes
+
+Commit the fix on whichever branch owns it, then cherry-pick to the other if it still applies:
+
+```bash
+git checkout release/v1.x
+# ... make the fix ...
+git commit -m "fix: ..."
+git push
+
+git checkout main
+git cherry-pick <sha>
+git push
+```
+
+Tag patch releases on `release/v1.x`, not on `main`:
+
+```bash
+git tag -a v1.x.1 -m "Release 1.x.1"
+git push origin v1.x.1
+```
+
+### Retiring a release branch
+
+Once a release line is end-of-life, the branch can be deleted. Tags keep the commits reachable, so `git checkout v1.x.1` still works and the branch can be resurrected anytime with `git branch release/v1.x v1.x.1`.
+
 ## Contributing
 
 We welcome contributions! When reporting bugs, please include your Elixir/OTP versions, dependency versions, and steps to reproduce.
