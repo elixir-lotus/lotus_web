@@ -52,7 +52,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
           <.sort_chips :if={@sorts != []} sorts={@sorts} target={@target} />
 
           <%!-- Content area: Table or Chart --%>
-          <div class="flex-1 min-h-0 overflow-auto">
+          <div class="flex-1 overflow-hidden">
             <%= if @visualization_view_mode == :chart && has_valid_config?(@visualization_config) do %>
               <.render_chart result={@result} config={@visualization_config} />
             <% else %>
@@ -245,7 +245,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
           phx-hook="VegaChart"
           phx-update="ignore"
           data-spec={@spec_json}
-          class="w-full h-[calc(100vh-420px)] min-h-[250px] max-h-[500px] flex items-center justify-center"
+          class="w-full h-full min-h-[250px] max-h-[500px] flex items-center justify-center"
         >
           <div class="text-gray-400">
             <.spinner />

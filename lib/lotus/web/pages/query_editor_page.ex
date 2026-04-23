@@ -119,7 +119,7 @@ defmodule Lotus.Web.QueryEditorPage do
                 />
               </div>
 
-              <div class="flex-1 min-h-0">
+              <div class="flex-1">
                 <.render_result
                   query_id={Map.get(@page, :id, "new")}
                   result={@result}
