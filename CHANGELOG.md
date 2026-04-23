@@ -1,19 +1,28 @@
 # Changelog
 
-## Unreleased
+## [1.0.0-rc.1] - 2026-04-23
+
+Release candidate for v1.0. Aligns lotus_web with the Lotus core v1 adapter contract (elixir-lotus/lotus#218) and refreshes the sibling adapter deps to their v1 contract merges on `main`.
 
 ### Added
 
 - **Elasticsearch/OpenSearch dev server integration** — Added `lotus_elasticsearch` adapter to dev server with OpenSearch docker service (port 9209), `WebDev.SearchClient` module, `dev_logs` sample index with seed data, and an "Error Logs" sample query using JSON DSL
 - **JSON language mode in query editor** — Non-SQL data sources (e.g. Elasticsearch) now get CodeMirror JSON syntax highlighting and adapter-provided completions instead of SQL mode. Added `@codemirror/lang-json` dependency and `JsonDslCompletion` class under `languages/json_dsl/`. The `dialect_for_repo/1` function now preserves `"json:"` prefixed language identifiers
 - **Pro UI integration mechanism** — `Lotus.Web.Pro` helper module enables `lotus_pro` to contribute pages, nav items, and slot content into the dashboard at runtime via `Code.ensure_loaded?/1`, with zero compile-time coupling. `DashboardLive.resolve_page/1` now falls back to Pro pages, and the layout renders Pro nav items when available (#9)
+- **Pretty-print button in query editor toolbar** — For JSON-shaped query languages (currently Elasticsearch), a new `{}` toolbar button (and `Cmd/Ctrl+Shift+F` shortcut) reformats the query with structural indentation, same as Chrome's raw-JSON pretty-print. Button is hidden for SQL sources since SQL is already whitespace-agnostic and no lossless structural expansion exists. Dispatches on the adapter's `query_language`, so future JSON-shaped adapters (e.g. Mongo) get it for free
 
 ### Breaking
 
+- **Lotus v1 config key rename: `:ecto_repo` → `:storage_repo`** — `config :lotus, ecto_repo: ...` no longer works. Host apps must update their Lotus config to `config :lotus, storage_repo: ...`. Affects `config/config.exs`, `dev.exs`, and `test/test_helper.exs` in this repo; downstream apps must apply the same rename in their own configs.
+- **`Lotus.get_table_schema/3` renamed to `Lotus.describe_table/3`** — Follows the Lotus core v1 callback rename that killed the "schema = namespace vs schema = column structure" double meaning. `SchemaBuilder.fetch_table_columns/3` and `SchemaExplorerComponent.navigate_to_table/3` updated accordingly. Downstream apps calling `Lotus.get_table_schema/3` directly must rename.
+- **`Lotus.AI.Conversation.schema_context` field renamed to `source_context`** — Internal rename aligned with the Lotus core "schema → source" terminology sweep. Affects any host app that reaches into `Conversation.schema_context` directly (uncommon).
+- **AI optimization suggestion type `"schema"` → `"structure"`** — Lotus core's AI optimization prompt now instructs the LLM to return `{"type": "structure", ...}` for schema-reshaping suggestions instead of `{"type": "schema", ...}`. The suggestion-type pill in `AiAssistantComponent` was updated to match. Pre-v1 LLM responses that still emit `"schema"` render with the default fallback color.
 - **Replaced SQL-specific gettext strings with generic versions** — 14 gettext strings across 5 files no longer reference "SQL" explicitly (`"SQL Query"` → `"Query"`, `"Enter SQL to run query"` → `"Enter a query to run"`, etc.). French translations updated accordingly. Existing translation overrides for the old msgids will need updating (#123)
 
 ### Changed
 
+- **Refreshed `lotus_clickhouse` and `lotus_elasticsearch` to their v1 contract tips on `main`** — both adapter repos merged their v1 contract branches (`refactor/v1.0-contract`) to `main`. `mix.lock` SHAs updated to the new `main` tips so the dev server picks up Statement-based pipeline callbacks, `ai_context/0`, `describe_table/3`, `resolve_table_namespace/3`, and v1 visibility semantics
+- **Elasticsearch dev source opts into `allow_unrestricted_resources`** — The ES adapter can't statically determine which indices a query will touch (ES targets indices via HTTP URL, not the JSON body), so `extract_accessed_resources/2` returns `{:unrestricted, reason}` and preflight blocks by default. The dev-server `data_sources` entry for `"elasticsearch"` is now a config map (`%{adapter: :elasticsearch, url: ..., allow_unrestricted_resources: true}`) so queries can execute. Host apps using the ES adapter in production should rely on ES's own cluster-level security (index permissions, RBAC) to enforce visibility
 - **Dialect-aware editor** — adapters now provide their own keywords, types, and function completions through `editor_config/0`. The editor dynamically reconfigures syntax highlighting and completions when switching data sources, with client-side caching for instant re-switches. Built-in CodeMirror dialects used for Postgres/MySQL/SQLite; custom `SQLDialect.define()` for others like ClickHouse
 - **SchemaBuilder uses `default_schemas/1` from core** — `SchemaBuilder.default_schemas_for_database/2` and `SourcesMap.load_postgres_schemas/2` now call `Lotus.Source.Adapter.default_schemas/1` via `Lotus.Source.get_source!/1` instead of the removed `Lotus.Source.default_schemas/1` (#123)
 - **search_path badge gated behind `supports_feature?`** — `EditorComponent` only shows the search_path badge when the source supports `:search_path`, and export params skip `search_path` for unsupported sources (#123)

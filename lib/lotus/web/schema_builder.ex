@@ -65,7 +65,7 @@ defmodule Lotus.Web.SchemaBuilder do
   end
 
   defp fetch_table_columns(data_repo, table_name, schema) do
-    case Lotus.get_table_schema(data_repo, table_name, search_path: schema.name) do
+    case Lotus.describe_table(data_repo, table_name, search_path: schema.name) do
       {:ok, columns} -> Enum.map(columns, & &1.name)
       {:error, _} -> []
     end

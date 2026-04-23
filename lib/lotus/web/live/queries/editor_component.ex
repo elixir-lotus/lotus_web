@@ -49,10 +49,13 @@ defmodule Lotus.Web.Queries.EditorComponent do
          assigns.data_source != nil) and
         Lotus.Source.supports_feature?(assigns.data_source, :search_path)
 
+    supports_formatting = String.starts_with?(assigns.dialect || "", "json:")
+
     assigns =
       assigns
       |> assign(:search_path_value, search_path_value)
       |> assign(:show_search_path, show_search_path)
+      |> assign(:supports_formatting, supports_formatting)
 
     ~H"""
     <.form for={@form} phx-submit="run_query" phx-target={@target} phx-change="validate">
@@ -72,6 +75,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
           optional_variable_names={@optional_variable_names}
           query_timeout={@query_timeout}
           timeout_options_enabled={@timeout_options_enabled}
+          supports_formatting={@supports_formatting}
         />
 
         <div id="editor-context-menu-wrapper" phx-hook="EditorContextMenu" data-ai-enabled={to_string(ai_enabled?())} class={["relative pb-8", if(@minimized, do: "hidden", else: "")]}>
@@ -153,6 +157,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:optional_variable_names, :any, default: MapSet.new())
   attr(:query_timeout, :integer, default: 5_000)
   attr(:timeout_options_enabled, :boolean, default: false)
+  attr(:supports_formatting, :boolean, default: false)
 
   def render_toolbar(assigns) do
     ~H"""
@@ -196,6 +201,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
             minimized={@minimized}
             running={@running}
             statement_empty={@statement_empty}
+            supports_formatting={@supports_formatting}
           />
         </div>
       </div>
@@ -246,6 +252,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:minimized, :boolean, default: false)
   attr(:running, :boolean, default: false)
   attr(:statement_empty, :boolean, default: false)
+  attr(:supports_formatting, :boolean, default: false)
 
   def render_actions(assigns) do
     ~H"""
@@ -288,6 +295,20 @@ defmodule Lotus.Web.Queries.EditorComponent do
       >
         <Icons.clipboard_copy class="h-5 w-5" />
       </button>
+
+      <%= if @supports_formatting do %>
+        <button
+          id="format-query-btn"
+          type="button"
+          phx-click="format_query"
+          phx-target={@target}
+          class="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
+          data-title={gettext("Pretty-print query")}
+          phx-hook="Tippy"
+        >
+          <Icons.code_braces class="h-5 w-5" />
+        </button>
+      <% end %>
 
       <button
         id="visualization-btn"

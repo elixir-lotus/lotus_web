@@ -19,7 +19,7 @@ Application.put_env(:lotus_web, Lotus.Web.ReportingTestRepo,
   pool: Ecto.Adapters.SQL.Sandbox
 )
 
-Application.put_env(:lotus, :ecto_repo, Lotus.Web.TestRepo)
+Application.put_env(:lotus, :storage_repo, Lotus.Web.TestRepo)
 
 Application.put_env(:lotus, :data_sources, %{
   "public" => Lotus.Web.TestRepo,

@@ -311,7 +311,7 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
   defp navigate_to_table(socket, schema, table) do
     opts = if schema != "default", do: [search_path: schema], else: []
 
-    case Lotus.get_table_schema(socket.assigns.current_db, table, opts) do
+    case Lotus.describe_table(socket.assigns.current_db, table, opts) do
       {:ok, columns} ->
         socket
         |> assign(view_mode: :columns)

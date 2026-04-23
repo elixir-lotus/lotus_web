@@ -265,14 +265,18 @@ Application.put_env(:phoenix, :serve_endpoints, true)
 Application.put_env(:phoenix, :persistent, true)
 
 # Configure Lotus with the development repos
-Application.put_env(:lotus, :ecto_repo, WebDev.PostgresRepo)
+Application.put_env(:lotus, :storage_repo, WebDev.PostgresRepo)
 Application.put_env(:lotus, :default_source, "postgres")
 
 Application.put_env(:lotus, :data_sources, %{
   "postgres" => WebDev.PostgresRepo,
   "mysql" => WebDev.MySQLRepo,
   "clickhouse" => WebDev.ClickHouseRepo,
-  "elasticsearch" => WebDev.SearchClient
+  "elasticsearch" => %{
+    adapter: :elasticsearch,
+    url: "http://localhost:9209",
+    allow_unrestricted_resources: true
+  }
 })
 
 Application.put_env(:lotus, :source_adapters, [

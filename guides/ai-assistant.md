@@ -162,7 +162,7 @@ The AI uses four tools to understand your database:
 
 1. **`list_schemas()`** - Discovers available schemas (e.g., `public`, `reporting`)
 2. **`list_tables()`** - Gets schema-qualified table names
-3. **`get_table_schema(table)`** - Retrieves column details, types, constraints
+3. **`describe_table(table)`** - Retrieves column details, types, constraints
 4. **`get_column_values(table, column)`** - Checks actual enum/status values
 
 All tools respect your Lotus visibility rules.

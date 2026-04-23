@@ -1,5 +1,6 @@
 import { createEditor } from "../lib/editor.js";
 import { getDialectConfig } from "../lib/dialect_config.js";
+import { format as formatContent } from "../lib/formatter.js";
 import { tinykeys } from "tinykeys";
 
 export default {
@@ -74,6 +75,22 @@ export default {
         this.pushEventTo(
           this.el.closest("[data-phx-component]"),
           "copy_query",
+          {},
+        );
+      },
+      "Meta+Shift+f": (event) => {
+        event.preventDefault();
+        this.pushEventTo(
+          this.el.closest("[data-phx-component]"),
+          "format_query",
+          {},
+        );
+      },
+      "Control+Shift+f": (event) => {
+        event.preventDefault();
+        this.pushEventTo(
+          this.el.closest("[data-phx-component]"),
+          "format_query",
           {},
         );
       },
@@ -193,6 +210,28 @@ export default {
 
     this.el.form?.addEventListener("submit", () => {
       textarea.value = this.editor.getContent();
+    });
+
+    this.handleEvent("format-editor-content", (payload) => {
+      const dialect =
+        (payload && payload.dialect) ||
+        this._lastDialect ||
+        this.getDialectFromDOM();
+      const result = formatContent(this.editor.getContent(), dialect);
+      if (result.ok) {
+        this.editor.setContent(result.content);
+        this.pushEventTo(
+          this.el.closest("[data-phx-component]"),
+          "format-editor-content-success",
+          {},
+        );
+      } else {
+        this.pushEventTo(
+          this.el.closest("[data-phx-component]"),
+          "format-editor-content-error",
+          { error: result.error },
+        );
+      }
     });
 
     this.handleEvent("copy-editor-content", () => {

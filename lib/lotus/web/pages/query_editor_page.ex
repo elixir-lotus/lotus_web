@@ -861,6 +861,29 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   @impl Phoenix.LiveComponent
+  def handle_event("format_query", _params, socket) do
+    {:noreply,
+     push_event(socket, "format-editor-content", %{
+       dialect: socket.assigns.editor_dialect
+     })}
+  end
+
+  @impl Phoenix.LiveComponent
+  def handle_event("format-editor-content-success", _params, socket) do
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveComponent
+  def handle_event("format-editor-content-error", %{"error" => error}, socket) do
+    {:noreply,
+     show_toast(
+       socket,
+       :error,
+       gettext("Could not format query: %{error}", error: error)
+     )}
+  end
+
+  @impl Phoenix.LiveComponent
   def handle_event("export_csv", _params, socket) do
     case socket.assigns.result do
       nil ->
@@ -1899,7 +1922,7 @@ defmodule Lotus.Web.QueryEditorPage do
   defp new_conversation do
     %{
       messages: [],
-      schema_context: %{tables_analyzed: []},
+      source_context: %{tables_analyzed: []},
       generation_count: 0,
       started_at: DateTime.utc_now(),
       last_activity: DateTime.utc_now()

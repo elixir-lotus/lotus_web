@@ -36,8 +36,8 @@ We're running Lotus Web in production at [Accomplish](https://accomplish.dev).
 # mix.exs
 def deps do
   [
-    {:lotus, "~> 0.16.0"},
-    {:lotus_web, "~> 0.14.1"}
+    {:lotus, "~> 1.0.0-rc.1"},
+    {:lotus_web, "~> 1.0.0-rc.1"}
   ]
 end
 ```
@@ -47,9 +47,9 @@ end
 ```elixir
 # config/config.exs
 config :lotus,
-  ecto_repo: MyApp.Repo,
-  default_repo: "main",
-  data_repos: %{
+  storage_repo: MyApp.Repo,
+  default_source: "main",
+  data_sources: %{
     "main" => MyApp.Repo
   }
 ```
@@ -251,6 +251,7 @@ config :lotus,
 
 | Lotus Web | Lotus | Elixir | Phoenix |
 |-----------|-------|--------|---------|
+| 1.0.0-rc.1 | 1.0.0-rc.1 | 1.17+ | 1.7+ |
 | 0.14.x | 0.16.0+ | 1.17+ | 1.7+ |
 | 0.13.x | 0.14.0+ | 1.17+ | 1.7+ |
 | 0.12.x | 0.13.0+ | 1.17+ | 1.7+ |

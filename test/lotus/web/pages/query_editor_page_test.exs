@@ -119,7 +119,7 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
     defp build_ai_conversation(messages) do
       %{
         messages: messages,
-        schema_context: %{tables_analyzed: []},
+        source_context: %{tables_analyzed: []},
         generation_count: length(Enum.filter(messages, &(&1.role == :assistant))),
         started_at: DateTime.utc_now(),
         last_activity: DateTime.utc_now()

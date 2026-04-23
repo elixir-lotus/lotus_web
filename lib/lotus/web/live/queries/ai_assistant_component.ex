@@ -386,7 +386,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
       case @type do
         "index" -> "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
         "rewrite" -> "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
-        "schema" -> "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300"
+        "structure" -> "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300"
         "configuration" -> "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
         _ -> "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
       end
@@ -522,7 +522,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
   defp new_conversation do
     %{
       messages: [],
-      schema_context: %{tables_analyzed: []},
+      source_context: %{tables_analyzed: []},
       generation_count: 0,
       started_at: DateTime.utc_now(),
       last_activity: DateTime.utc_now()

@@ -6,23 +6,24 @@ This guide walks you through setting up LotusWeb in your Phoenix application.
 
 - **Elixir 1.17+** and **OTP 25+**
 - **Phoenix 1.7+** for LiveView compatibility
-- **[Lotus 0.16+](https://hex.pm/packages/lotus)** configured in your application
+- **[Lotus 1.0.0-rc.1](https://hex.pm/packages/lotus)** configured in your application
 
-> **Version Compatibility**: LotusWeb 0.14+ requires Lotus 0.16 or later.
+> **Version Compatibility**: LotusWeb 1.0.0-rc.1 requires Lotus 1.0.0-rc.1. The v1 contract renamed several config keys (`:ecto_repo` → `:storage_repo`, `:data_repos` → `:data_sources`, `:default_repo` → `:default_source`); see the Lotus [Upgrading to v1.0](https://hexdocs.pm/lotus/upgrading-to-v1.html) guide if you're coming from 0.x.
 
 ## Step 1: Add Dependency
 
-Add `lotus_web` to your dependencies in `mix.exs`:
+Add `lotus` and `lotus_web` to your dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:lotus_web, "~> 0.14.1"}
+    {:lotus, "~> 1.0.0-rc.1"},
+    {:lotus_web, "~> 1.0.0-rc.1"}
   ]
 end
 ```
 
-Run `mix deps.get` to fetch the dependency.
+Run `mix deps.get` to fetch the dependencies.
 
 ## Step 2: Configure Lotus (if not already done)
 
@@ -30,18 +31,18 @@ LotusWeb requires Lotus to be configured. Add to your `config/config.exs`:
 
 ```elixir
 config :lotus,
-  ecto_repo: MyApp.Repo,
-  default_repo: "main",         # Default repository for query execution
-  data_repos: %{
+  storage_repo: MyApp.Repo,
+  default_source: "main",       # Default source for query execution
+  data_sources: %{
     "main" => MyApp.Repo,
-    "analytics" => MyApp.AnalyticsRepo  # Optional: multiple databases
+    "analytics" => MyApp.AnalyticsRepo  # Optional: multiple data sources
   },
   # Recommended: Enable caching for better dashboard performance
   cache: %{
     adapter: Lotus.Cache.ETS,
     namespace: "myapp_lotus"
     # Lotus includes built-in profiles that work great with LotusWeb:
-    # - :results (60s TTL) - User query results  
+    # - :results (60s TTL) - User query results
     # - :schema (1h TTL) - Table introspection (used by dashboard)
     # - :options (5m TTL) - Dropdown options and reference data
   }
