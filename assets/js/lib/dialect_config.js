@@ -4,17 +4,34 @@ import {
   PostgreSQL,
   MySQL,
   SQLite,
+  MSSQL,
+  MariaSQL,
+  Cassandra,
+  PLSQL,
 } from "@codemirror/lang-sql";
 import { SQL_DEFAULTS } from "./languages/sql/defaults.js";
 
 // Use official CodeMirror dialects when available — they have richer
 // tokenizer rules and keyword sets than SQLDialect.define() can provide.
 // Fall back to SQLDialect.define() for dialects without a built-in.
+//
+// Keys are the bare dialect names arriving from the LV payload — the
+// `"sql:"` prefix is stripped server-side in dialect_for_repo/1
+// (lib/lotus/web/pages/query_editor_page.ex). Aliases cover the
+// `source_type` atoms we might plausibly receive.
 const BUILTIN_DIALECTS = {
   postgres: PostgreSQL,
   postgresql: PostgreSQL,
   mysql: MySQL,
+  mariadb: MariaSQL,
+  mariasql: MariaSQL,
   sqlite: SQLite,
+  mssql: MSSQL,
+  sqlserver: MSSQL,
+  cassandra: Cassandra,
+  cql: Cassandra,
+  plsql: PLSQL,
+  oracle: PLSQL,
 };
 
 // snake_case (Elixir) → camelCase (CodeMirror SQLDialectSpec). Unknown
@@ -131,9 +148,15 @@ export function resolveCodeMirrorDialect(dialectName, config) {
   // Don't put functions in `builtin` — CodeMirror's upperCaseKeywords
   // would uppercase them, breaking case-sensitive dialects like ClickHouse.
   // Our SqlCompletion handles function completions with correct casing.
+  //
+  // dialect_spec pass-through (when the adapter shipped one) lets
+  // external SQL adapters reach tokenization parity with the built-in
+  // Lezer grammars: identifier quoting, comment styles, dollar-quoted
+  // strings, PL/SQL quoting, etc.
   return SQLDialect.define({
     keywords: config.keywords.join(" "),
     types: config.types.join(" "),
+    ...toDialectSpec(config.dialect_spec),
   });
 }
 
