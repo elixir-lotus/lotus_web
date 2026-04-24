@@ -1,7 +1,10 @@
 {
   "repository": {},
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.6",
     "@codemirror/lang-json": "^6.0.2",
@@ -17,5 +20,9 @@
     "vega": "^6.2.0",
     "vega-embed": "^7.1.0",
     "vega-lite": "^6.4.1"
+  },
+  "devDependencies": {
+    "happy-dom": "^20.9.0",
+    "vitest": "^4.1.5"
   }
 }

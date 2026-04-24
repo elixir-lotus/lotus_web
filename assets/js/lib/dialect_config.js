@@ -17,6 +17,36 @@ const BUILTIN_DIALECTS = {
   sqlite: SQLite,
 };
 
+// snake_case (Elixir) → camelCase (CodeMirror SQLDialectSpec). Unknown
+// keys pass through so adapters can ship forward-compat fields without
+// a frontend bump.
+// See @codemirror/lang-sql/dist/index.d.ts (SQLDialectSpec) for the
+// authoritative surface.
+const DIALECT_SPEC_KEY_MAP = {
+  identifier_quotes: "identifierQuotes",
+  operator_chars: "operatorChars",
+  hash_comments: "hashComments",
+  slash_comments: "slashComments",
+  double_quoted_strings: "doubleQuotedStrings",
+  double_dollar_quoted_strings: "doubleDollarQuotedStrings",
+  backslash_escapes: "backslashEscapes",
+  space_after_dashes: "spaceAfterDashes",
+  case_insensitive_identifiers: "caseInsensitiveIdentifiers",
+  char_set_casts: "charSetCasts",
+  plsql_quoting_mechanism: "plsqlQuotingMechanism",
+  unquoted_bit_literals: "unquotedBitLiterals",
+  treat_bits_as_bytes: "treatBitsAsBytes",
+  special_var: "specialVar",
+  builtin: "builtin",
+};
+
+export function toDialectSpec(spec) {
+  if (!spec || typeof spec !== "object") return {};
+  return Object.fromEntries(
+    Object.entries(spec).map(([k, v]) => [DIALECT_SPEC_KEY_MAP[k] ?? k, v]),
+  );
+}
+
 const cache = new Map();
 
 export function getDialectConfig(dialectName, fetchFn) {
@@ -44,12 +74,18 @@ function mergeWithDefaults(config) {
     return config || emptyConfig();
   }
 
-  // Non-SQL languages (JSON DSL, etc.) pass through without merging SQL defaults
+  // Non-SQL languages (JSON DSL, etc.) pass through without merging SQL
+  // defaults. context_schema (if supplied) rides along unchanged for
+  // JsonDslCompletion to consume.
   if (config.language && config.language.startsWith("json:")) {
     return config;
   }
 
-  return {
+  // Preserve the optional widened fields alongside the merged SQL
+  // defaults. dialect_spec is snake_case at the server boundary; the
+  // camelCase conversion happens at resolveCodeMirrorDialect so this
+  // function stays a pure shape adapter.
+  const merged = {
     language: "sql",
     keywords: [
       ...SQL_DEFAULTS.keywords,
@@ -65,6 +101,11 @@ function mergeWithDefaults(config) {
       ...(config.context_boundaries || []),
     ],
   };
+
+  if (config.dialect_spec) merged.dialect_spec = config.dialect_spec;
+  if (config.context_schema) merged.context_schema = config.context_schema;
+
+  return merged;
 }
 
 function emptyConfig() {
