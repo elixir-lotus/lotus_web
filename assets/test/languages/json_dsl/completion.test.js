@@ -211,6 +211,56 @@ describe("JsonDslCompletion with context_schema", () => {
     });
   });
 
+  describe("apply: auto-quoting on insertion", () => {
+    function applies(result) {
+      return result.options.map((o) => o.apply);
+    }
+
+    it('wraps key completions in "…": at bare-cursor positions', () => {
+      const doc = "{}";
+      const ctx = makeContext(doc, 1);
+      const result = source(ctx);
+      expect(result).not.toBeNull();
+      // All suggestions at root should be `"<name>": `
+      for (const apply of applies(result)) {
+        expect(apply).toMatch(/^".+":\s$/);
+      }
+    });
+
+    it('wraps value completions in "…"', () => {
+      const doc = '{"order": }';
+      //                   ^ pos 10 (between the space and `}`)
+      const ctx = makeContext(doc, 10);
+      const result = source(ctx);
+      expect(result).not.toBeNull();
+      for (const apply of applies(result)) {
+        expect(apply).toMatch(/^".+"$/);
+      }
+    });
+
+    it("inserts bare label when cursor is already inside a partial string", () => {
+      const doc = '{"qu"}';
+      //              ^ pos 4 (inside "qu")
+      const ctx = makeContext(doc, 4);
+      const result = source(ctx);
+      const queryOpt = result.options.find((o) => o.label === "query");
+      expect(queryOpt).toBeDefined();
+      expect(queryOpt.apply).toBe("query");
+    });
+
+    it("skips trailing `: ` when a colon already follows the cursor", () => {
+      const doc = '{: "x"}';
+      //           ^ pos 1
+      const ctx = makeContext(doc, 1);
+      const result = source(ctx);
+      expect(result).not.toBeNull();
+      for (const apply of applies(result)) {
+        // Should be `"name"` — no trailing `: ` because a `:` already follows.
+        expect(apply).toMatch(/^"[^"]+"$/);
+      }
+    });
+  });
+
   describe("malformed / mid-typing JSON tolerance", () => {
     it("still suggests root keys when the JSON is not yet closed", () => {
       const doc = '{"';

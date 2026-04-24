@@ -62,6 +62,7 @@ export class JsonDslCompletion {
           type: c.type || "property",
           detail: c.detail,
           boost: c.boost || 0,
+          apply: applyFor(c.label, ctx),
         })),
       };
     };
@@ -95,13 +96,40 @@ export class JsonDslCompletion {
       cur = cur.parent;
     }
 
+    // Determining key vs. value position from the syntax tree alone is
+    // unreliable for mid-typing / malformed inputs (Lezer is
+    // error-tolerant but produces ambiguous trees when a value is
+    // missing). A simple char-based scan of the doc immediately to the
+    // left of the cursor is more robust: `:` means value, `{`/`,` mean
+    // key, a partial `"` can be either — fall through to the String/
+    // PropertyName node kind for disambiguation.
     const inKey = this.isInKeyPosition(state, leaf, pos);
     const { wordFrom, wordTo } = this.quotedWordBounds(state, pos);
+
+    // Whether the cursor is inside a partial `"…"` string literal —
+    // quotedWordBounds advances wordFrom past an opening quote when
+    // it finds one, so inspecting doc[wordFrom - 1] tells us the
+    // surrounding quote state without re-scanning.
+    const doc = state.doc.toString();
+    const inQuotes = wordFrom > 0 && doc[wordFrom - 1] === '"';
+
+    // For key position, check whether a `:` already follows the
+    // current word — if so, don't append another one on accept.
+    let hasColonAfter = false;
+    for (let i = wordTo; i < doc.length; i++) {
+      const ch = doc[i];
+      if (ch === '"') continue;
+      if (/\s/.test(ch)) continue;
+      hasColonAfter = ch === ":";
+      break;
+    }
 
     return {
       path,
       inKey,
       inValue: !inKey,
+      inQuotes,
+      hasColonAfter,
       wordFrom,
       wordTo,
     };
@@ -110,40 +138,26 @@ export class JsonDslCompletion {
   /**
    * A cursor is in key position when:
    *   - It sits inside a PropertyName token (the key string).
-   *   - It sits directly inside an Object, not a value child — i.e.,
-   *     past the `{` and not after a `:`.
-   *   - It sits in an Array whose siblings are Objects (array of
-   *     query clauses, where each element is a new key-value object).
-   *
-   * Otherwise it's in value position (inside the String/Number/etc.
-   * that follows a `:`).
+   *   - It sits inside a String that is the value of a Property.
+   *     Stripped out here; those are value positions.
+   *   - Otherwise we fall through to a char-based scan (the syntax
+   *     tree is unreliable on malformed / mid-typing inputs so the
+   *     last-non-whitespace char before the cursor is authoritative).
    */
   isInKeyPosition(state, leaf, pos) {
-    // Walk up to find either a PropertyName (key) or a non-Property
-    // String (value).
+    // Tree-first for the unambiguous cases: a PropertyName token is
+    // always a key, and any other String node (one that made it past
+    // the PropertyName check) is the value of its Property.
     let cur = leaf;
     while (cur) {
       if (cur.name === "PropertyName") return true;
-
-      if (cur.name === "String") {
-        // A String node inside a Property is either the key
-        // (PropertyName captures that) or the value. Since we already
-        // checked PropertyName above, this is a value.
-        return false;
-      }
-
-      if (cur.name === "Object" || cur.name === "Array" || cur.name === "{" || cur.name === "[") {
-        // Walked out to a container — cursor is between properties
-        // (key position if Object, ambiguous for Array but we treat
-        // Array-of-Object as key position on the inner object).
-        return cur.name === "Object" || cur.name === "{";
-      }
-
+      if (cur.name === "String") return false;
       cur = cur.parent;
     }
 
-    // Fallback: scan the char before cursor. If the last non-whitespace
-    // char is `{` or `,`, we're in key position; if `:`, we're in value.
+    // Cursor sits between tokens (whitespace, mid-typing before a
+    // value was written, etc.) — the syntax tree can't disambiguate,
+    // so fall back to the last-non-whitespace char.
     return isInKeyPositionByChar(state.doc.toString(), pos);
   }
 
@@ -315,6 +329,19 @@ function stripQuotes(s) {
     return s.slice(1, -1);
   }
   return s;
+}
+
+// Produces the string CodeMirror inserts when the user accepts a
+// completion. JSON requires keys/strings to be double-quoted, so we
+// wrap the label unless the cursor is already inside a partial `"…"`
+// literal (in which case we'd double-quote and produce `""aggs""`).
+// For key position outside quotes we also append `: ` so the user
+// lands directly at the value position. If a `:` is already present
+// after the cursor we skip adding another.
+function applyFor(label, ctx) {
+  if (ctx.inQuotes) return label;
+  if (ctx.inKey) return ctx.hasColonAfter ? `"${label}"` : `"${label}": `;
+  return `"${label}"`;
 }
 
 function isInKeyPositionByChar(doc, pos) {
