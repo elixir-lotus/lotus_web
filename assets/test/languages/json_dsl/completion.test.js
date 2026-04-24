@@ -162,12 +162,12 @@ describe("JsonDslCompletion with context_schema", () => {
   });
 
   describe("fallback when context_schema is absent", () => {
-    it("falls back to flat keywords + fields at every key position", () => {
-      const legacy = new JsonDslCompletion(schema, {
+    it("suggests flat keywords + fields at every key position", () => {
+      const flat = new JsonDslCompletion(schema, {
         keywords: ["query", "aggs", "match"],
         // no context_schema
       });
-      const src = legacy.createCompletionSource();
+      const src = flat.createCompletionSource();
       const doc = '{""}';
       const ctx = makeContext(doc, 2);
       const result = src(ctx);

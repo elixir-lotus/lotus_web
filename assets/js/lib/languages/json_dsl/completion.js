@@ -274,8 +274,8 @@ export class JsonDslCompletion {
     return completions;
   }
 
-  // Legacy flat behavior for adapters that haven't adopted
-  // context_schema yet — suggest every keyword + every field at every
+  // Flat fallback used when the adapter doesn't supply a
+  // context_schema — suggest every keyword + every field at every
   // key position.
   fallbackKeyCompletions() {
     const completions = this.keywords.map((kw) => ({
