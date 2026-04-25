@@ -1565,13 +1565,14 @@ defmodule Lotus.Web.DashboardEditorPage do
   end
 
   defp extract_filter_values(params, filters) do
-    filter_names = MapSet.new(filters, & &1.name)
-
-    params
-    |> Map.drop(["id"])
-    |> Enum.filter(fn {key, _val} -> MapSet.member?(filter_names, key) end)
-    |> Map.new()
+    for filter <- filters,
+        value = present(Map.get(params, filter.name)) || present(filter.default_value),
+        into: %{},
+        do: {filter.name, value}
   end
+
+  defp present(value) when is_binary(value) and value != "", do: value
+  defp present(_), do: nil
 
   defp upsert_filter(filters, filter) do
     if Enum.any?(filters, &(&1.id == filter.id)) do
