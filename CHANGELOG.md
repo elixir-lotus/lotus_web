@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## [0.14.5] - 2026-04-25
+
+### Fixed
+
+- **Dashboard filter default values on page load** - Filters with configured default values now apply those defaults when the corresponding query parameter is missing from the URL, on both the dashboard editor and public dashboard pages
+
+## [0.14.4] - 2026-03-11
+
 ### Fixed
 
 - **Graceful error handling for JSON encoding failures** - Wrapped `Lotus.JSON.encode!` calls in `ResultsComponent`, `CardComponent`, and `VegaSpecBuilder` with safe encoding that renders user-friendly error messages instead of crashing the LiveView process when results contain non-encodable values (e.g. raw UUID binaries)
