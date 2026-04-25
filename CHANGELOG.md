@@ -151,7 +151,7 @@
 ### Fixed
 
 - Bot icon in the Query Editor toolbar now turns pink when the AI Assistant drawer is open, matching the active-state behavior of other toolbar icons
-- Dashboard text cards now render Markdown content as HTML instead of displaying raw text ([#67](https://github.com/typhoonworks/lotus_web/issues/67))
+- Dashboard text cards now render Markdown content as HTML instead of displaying raw text ([#67](https://github.com/elixir-lotus/lotus_web/issues/67))
   - Added `earmark` dependency for Markdown parsing
   - Added `@tailwindcss/typography` plugin so `prose` styles are applied to rendered content
 - Navigating back from a dashboard now opens the Dashboards tab instead of defaulting to Queries

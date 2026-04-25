@@ -317,4 +317,4 @@ If generated queries are wrong:
 
 - [Lotus GitHub Issues](https://github.com/typhoonworks/lotus/issues)
 - [Lotus Documentation](https://hexdocs.pm/lotus)
-- [LotusWeb GitHub Issues](https://github.com/typhoonworks/lotus_web/issues)
+- [LotusWeb GitHub Issues](https://github.com/elixir-lotus/lotus_web/issues)
