@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## [0.14.6] - 2026-05-16
+
+### Changed
+
+- Bumped `lotus` dependency to `~> 0.16.6` to pick up Cache.ETS shutdown hang fix ([elixir-lotus/lotus#219](https://github.com/elixir-lotus/lotus/issues/219))
+- Refreshed `mix.lock` to pull in transitive dependency updates. Notable bumps include `decimal` 2.x → 3.x (new decimal128 default context), `myxql` 0.8 → 0.9, `req_llm` 1.6 → 1.11, `idna` 6 → 7, and `server_sent_events` 0.2 → 1.0, alongside smaller patch bumps to `ecto`, `postgrex`, `plug`, `jason`, `telemetry`, `mint`, `finch`, `db_connection`, `jsv`, `llm_db`, `splode`, `texture`, `uniq`, and `zoi`. `websockex` was newly added as a transitive dependency of `req_llm`.
+
 ## [0.14.5] - 2026-04-25
 
 ### Fixed
