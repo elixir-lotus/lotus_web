@@ -26,5 +26,11 @@ defmodule Lotus.Test.Repo.Migrations.CreateTestTables do
 
     create(index(:test_posts, [:user_id]))
     create(index(:test_posts, [:published]))
+
+    # A view, so the schema explorer's view-inclusion behavior can be exercised.
+    execute(
+      "CREATE VIEW active_test_users AS SELECT id, name, email FROM test_users WHERE active",
+      "DROP VIEW active_test_users"
+    )
   end
 end

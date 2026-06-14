@@ -4,6 +4,7 @@
 
 ### Added
 
+- **`:include_views` option for the schema explorer** — set `config :lotus_web, include_views: true` (or pass `include_views: true` to `SourcesMap.build/1`) to list database views — including materialized views and PostgreSQL/TimescaleDB continuous aggregates — in the schema explorer and SQL autocomplete alongside base tables. Defaults to `false`, preserving existing behavior
 - **Pro UI integration mechanism** — `Lotus.Web.Pro` helper module enables `lotus_pro` to contribute pages, nav items, and slot content into the dashboard at runtime via `Code.ensure_loaded?/1`, with zero compile-time coupling. `DashboardLive.resolve_page/1` now falls back to Pro pages, and the layout renders Pro nav items when available (#9)
 
 ### Breaking

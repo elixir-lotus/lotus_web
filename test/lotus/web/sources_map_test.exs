@@ -4,6 +4,30 @@ defmodule Lotus.Web.SourcesMapTest do
   alias Lotus.Web.SourcesMap
   alias Lotus.Web.SourcesMap.{Database, Schema}
 
+  defp public_tables(sources_map) do
+    sources_map
+    |> SourcesMap.get_database("public")
+    |> Map.fetch!(:schemas)
+    |> Enum.find(&(&1.name == "public"))
+    |> Map.fetch!(:tables)
+  end
+
+  describe "build/1 with :include_views" do
+    test "excludes views by default" do
+      tables = public_tables(SourcesMap.build())
+
+      assert "test_users" in tables
+      refute "active_test_users" in tables
+    end
+
+    test "includes views when include_views: true" do
+      tables = public_tables(SourcesMap.build(include_views: true))
+
+      assert "test_users" in tables
+      assert "active_test_users" in tables
+    end
+  end
+
   describe "build/0" do
     test "builds complete sources map with all configured databases" do
       sources_map = SourcesMap.build()

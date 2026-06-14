@@ -19,16 +19,34 @@ defmodule Lotus.Web.SourcesMap do
     defstruct [:name, :is_default, :display_name, tables: []]
   end
 
-  def build() do
+  @doc """
+  Builds the complete sources map for all configured data sources.
+
+  ## Options
+
+    * `:include_views` — when `true`, database views (including materialized
+      views and PostgreSQL/TimescaleDB continuous aggregates) are listed in the
+      schema explorer and SQL autocomplete alongside base tables. Defaults to
+      the `:lotus_web, :include_views` application config, which itself defaults
+      to `false`:
+
+          config :lotus_web, include_views: true
+
+  """
+  def build(opts \\ []) do
+    include_views? = Keyword.get(opts, :include_views, default_include_views?())
+
     databases =
       Lotus.list_data_source_names()
-      |> Enum.map(&load_database/1)
+      |> Enum.map(&load_database(&1, include_views?))
       |> Enum.reject(&is_nil/1)
 
     %__MODULE__{databases: databases}
   end
 
-  defp load_database(db_name) do
+  defp default_include_views?, do: Application.get_env(:lotus_web, :include_views, false)
+
+  defp load_database(db_name, include_views?) do
     source_type = Lotus.Sources.source_type(db_name)
     supports_schemas = Lotus.Sources.supports_feature?(source_type, :schema_hierarchy)
 
@@ -36,9 +54,9 @@ defmodule Lotus.Web.SourcesMap do
 
     schemas =
       if supports_schemas do
-        load_postgres_schemas(db_name, repo)
+        load_postgres_schemas(db_name, repo, include_views?)
       else
-        load_simple_tables(db_name)
+        load_simple_tables(db_name, include_views?)
       end
 
     %Database{
@@ -65,11 +83,12 @@ defmodule Lotus.Web.SourcesMap do
       nil
   end
 
-  defp load_postgres_schemas(db_name, repo) do
+  defp load_postgres_schemas(db_name, repo, include_views?) do
     with {:ok, schema_names} <- Lotus.list_schemas(db_name),
          [default_schema | _] <- Lotus.Source.default_schemas(repo),
          search_path <- Enum.join(schema_names, ","),
-         {:ok, all_tables} <- Lotus.list_tables(db_name, search_path: search_path) do
+         {:ok, all_tables} <-
+           Lotus.list_tables(db_name, search_path: search_path, include_views: include_views?) do
       all_tables
       |> Enum.group_by(fn {schema, _table} -> schema end, fn {_schema, table} -> table end)
       |> Enum.map(fn {schema_name, tables} ->
@@ -88,8 +107,8 @@ defmodule Lotus.Web.SourcesMap do
     end
   end
 
-  defp load_simple_tables(db_name) do
-    case Lotus.list_tables(db_name) do
+  defp load_simple_tables(db_name, include_views?) do
+    case Lotus.list_tables(db_name, include_views: include_views?) do
       {:ok, tables} ->
         table_names = extract_table_names(tables)
 

@@ -163,6 +163,17 @@ lotus_dashboard "/lotus",
 |---------|-------------|
 | `:timeout_options` | Adds a per-query timeout selector (5s to 5m) to the editor toolbar |
 
+### Including Views
+
+By default the schema explorer and SQL autocomplete list only base tables.
+Set `:include_views` to also surface database views — including materialized
+views and PostgreSQL/TimescaleDB continuous aggregates:
+
+```elixir
+# config/config.exs
+config :lotus_web, include_views: true
+```
+
 ### Caching (Optional, Recommended)
 
 Add Lotus to your supervision tree and configure cache settings:
