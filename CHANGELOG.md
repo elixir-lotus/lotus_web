@@ -12,6 +12,7 @@
 
 ### Changed
 
+- **Replaced `earmark` with `mdex` for Markdown rendering** — the retired, unmaintained `earmark` (which carries a security advisory) is swapped for the actively maintained `mdex`. `Lotus.Web.Markdown.to_safe_html/1` now renders via `MDEx.to_html/1` with safe defaults (`unsafe: false`), so embedded raw HTML is dropped rather than emitted; the `html_sanitize_ex` dependency is no longer needed and has been removed (#138)
 - **SchemaBuilder uses `default_schemas/1` from core** — `SchemaBuilder.default_schemas_for_database/2` now calls `Lotus.Source.default_schemas/1` instead of hardcoding `["public"]`, so non-Postgres sources get correct defaults (#123)
 - **search_path badge gated behind `supports_feature?`** — `EditorComponent` only shows the search_path badge when the source supports `:search_path`, and export params skip `search_path` for unsupported sources (#123)
 - **SourcesMap uses `hierarchy_label` from core** — `load_simple_tables/1` now calls `Lotus.Sources.hierarchy_label/1` instead of hardcoding `"Tables"` for the schema display_name (#123)
@@ -26,7 +27,7 @@
 
 ### Security
 
-- **XSS via unsanitized markdown rendering** - `AiAssistantComponent` and dashboard `CardComponent` piped Earmark output straight into `Phoenix.HTML.raw/1`, allowing `<script>` tags, inline event handlers, and `javascript:` URLs to execute in the browser. Rendered markdown is now scrubbed via `HtmlSanitizeEx.markdown_html/1` through the new `Lotus.Web.Markdown.to_safe_html/1` helper
+- **XSS via unsanitized markdown rendering** - `AiAssistantComponent` and dashboard `CardComponent` piped Earmark output straight into `Phoenix.HTML.raw/1`, allowing `<script>` tags, inline event handlers, and `javascript:` URLs to execute in the browser. Rendered markdown is now produced safely through the new `Lotus.Web.Markdown.to_safe_html/1` helper, which renders with MDEx safe defaults (`unsafe: false`) so embedded raw HTML is dropped rather than emitted
 - **Content-Disposition header injection via unsanitized filename** - `ExportController` interpolated the token-supplied `filename` directly into the `Content-Disposition` header. Filenames are now sanitized to strip double quotes, backslashes, and control characters (including `\r`/`\n`), preventing HTTP response header injection as a defense-in-depth measure
 - **LiveView process crash via crafted WebSocket events** - Replaced `String.to_existing_atom/1` on client-supplied values across LiveView event handlers with explicit allowlists. Affected handlers: `QueriesPage` (`switch_tab`), `QueryEditorPage` (`switch_variable_tab`, `set_view_mode`, `switch_visualization_tab`, `add_filter`, `set_sort`), `DashboardEditorPage` (`confirm_add_card`, `update_card_content`, `save_filter`), `AddCardModal` (`select_card_type`), and `DropdownOptionsModal` (`change_option_source`). A malicious client could previously send an unknown string to raise `ArgumentError` and crash the LiveView process, enabling targeted denial-of-service against individual user sessions. Also removed the unused `Lotus.Web.Helpers.decode_params/1` helper, which had a wildcard `String.to_existing_atom/1` over arbitrary URL parameter keys
 
