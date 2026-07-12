@@ -6,6 +6,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
   use Lotus.Web, :live_component
 
   alias Lotus.Web.Components.Icons
+  alias Lotus.Web.Markdown
 
   # Assigns:
   # - visible: boolean
@@ -496,14 +497,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
 
   defp variable_summary(_), do: ""
 
-  defp render_markdown(text) when is_binary(text) do
-    case Earmark.as_html(text) do
-      {:ok, html, _warnings} -> Phoenix.HTML.raw(html)
-      {:error, _html, _errors} -> text
-    end
-  end
-
-  defp render_markdown(_), do: ""
+  defp render_markdown(text), do: Markdown.to_safe_html(text)
 
   defp format_widget_type("select"), do: gettext("dropdown")
   defp format_widget_type("input"), do: gettext("text input")

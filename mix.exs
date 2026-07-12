@@ -45,7 +45,7 @@ defmodule Lotus.Web.MixProject do
       {:phoenix_html, "~> 4.0"},
       {:phoenix_ecto, "~> 4.5"},
       {:gettext, "~> 0.26 or ~> 1.0"},
-      {:earmark, "~> 1.4"},
+      {:mdex, "~> 0.13"},
 
       # Lotus
       {:lotus, "~> 0.16.6"},
