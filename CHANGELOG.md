@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Changed
+
+- Replaced the retired, unmaintained `earmark` Markdown dependency with the actively maintained `mdex`, which is not subject to the security advisory affecting `earmark`. Markdown rendering now routes through a single `Lotus.Web.Markdown.to_safe_html/1` chokepoint. Also bumped `ex_doc` `0.38` → `0.40` (dev/test only). ([#138](https://github.com/elixir-lotus/lotus_web/issues/138))
+
+### Security
+
+- Markdown rendered in dashboard cards and the AI assistant now has embedded raw HTML dropped by default (MDEx `unsafe: false`), closing a latent XSS vector where raw HTML was previously passed straight to the browser via `Phoenix.HTML.raw/1`. ([#138](https://github.com/elixir-lotus/lotus_web/issues/138))
+
 ## [0.14.6] - 2026-05-16
 
 ### Changed
