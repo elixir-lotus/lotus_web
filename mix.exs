@@ -2,7 +2,7 @@ defmodule Lotus.Web.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/elixir-lotus/lotus_web"
-  @version "0.14.6"
+  @version "0.14.7"
 
   def project do
     [
