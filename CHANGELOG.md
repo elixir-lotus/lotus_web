@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.14.7] - 2026-07-12
+
 ### Changed
 
 - Replaced the retired, unmaintained `earmark` Markdown dependency with the actively maintained `mdex`, which is not subject to the security advisory affecting `earmark`. Markdown rendering now routes through a single `Lotus.Web.Markdown.to_safe_html/1` chokepoint. Also bumped `ex_doc` `0.38` → `0.40` (dev/test only). ([#138](https://github.com/elixir-lotus/lotus_web/issues/138))
