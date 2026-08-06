@@ -3,29 +3,21 @@ defmodule Lotus.Web.Layouts do
 
   use Lotus.Web, :html
 
-  phoenix_js_paths =
-    for app <- ~w(phoenix phoenix_html phoenix_live_view)a do
-      path = Application.app_dir(app, ["priv", "static", "#{app}.js"])
-      Module.put_attribute(__MODULE__, :external_resource, path)
-      path
-    end
-
-  @static_path Application.app_dir(:lotus_web, ["priv", "static"])
-
-  @external_resource css_path = Path.join(@static_path, "css/app.css")
-  @external_resource js_path = Path.join(@static_path, "app.js")
-
-  @css File.read!(css_path)
-
-  @js """
-  #{for path <- phoenix_js_paths, do: path |> File.read!() |> String.replace("//# sourceMappingURL=", "// ")}
-  #{File.read!(js_path)}
-  """
-
-  def render("app.css"), do: @css
-  def render("app.js"), do: @js
-
   embed_templates("layouts/*")
+
+  defp asset_path(conn, asset) when asset in [:css, :js] do
+    hash = Lotus.Web.Assets.current_hash(asset)
+
+    {_dash, _routing, meta} = conn.private.phoenix_live_view
+
+    prefix = get_in(meta, [:extra, :session, Access.elem(2), Access.at(0)])
+
+    Phoenix.VerifiedRoutes.unverified_path(
+      conn,
+      conn.private.phoenix_router,
+      "#{prefix}/#{asset}-#{hash}"
+    )
+  end
 
   def logo(assigns) do
     ~H"""

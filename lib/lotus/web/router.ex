@@ -61,6 +61,9 @@ defmodule Lotus.Web.Router do
         {session_name, session_opts, public_session_opts, route_opts} =
           Lotus.Web.Router.__options__(prefix, opts)
 
+        get("/css-:md5", Lotus.Web.Assets, :css)
+        get("/js-:md5", Lotus.Web.Assets, :js)
+
         # Export endpoint - does not require LiveView session
         get("/export/csv", Lotus.Web.ExportController, :csv)
 
