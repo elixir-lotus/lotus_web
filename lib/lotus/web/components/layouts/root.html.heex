@@ -8,9 +8,9 @@
 
     <title>{assigns[:page_title] || "Lotus"}</title>
 
-    <style phx-track-static nonce={@csp_nonces[:style]}>
-      <%= raw(render("app.css")) %>
-    </style>
+    <link phx-track-static rel="stylesheet" nonce={@csp_nonces[:style]} href={asset_path(@conn, :css)} />
+    <script phx-track-static nonce={@csp_nonces[:script]} src={asset_path(@conn, :js)} defer>
+    </script>
     <script
       src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1"
       type="module"
@@ -22,8 +22,4 @@
   <body class="h-full antialiased bg-gray-200 dark:bg-black text-text-light dark:text-text-dark transition-colors duration-200 ease-out">
     {@inner_content}
   </body>
-
-  <script phx-track-static type="text/javascript" nonce={@csp_nonces[:script]}>
-    <%= raw(render("app.js")) %>
-  </script>
 </html>
