@@ -24,8 +24,6 @@
 
 You shouldn't need to deploy Metabase or Redash just to query your database. Lotus Web gives your team a full BI interface inside your existing Phoenix app — one dependency, one route, done. It shares your app's authentication, runs on your existing infrastructure, and is read-only by default.
 
-We're running Lotus Web in production at [Accomplish](https://accomplish.dev).
-
 > While Lotus Web already has a solid feature set and its API surface is stabilizing, it's still evolving. We'll make a best effort to announce breaking changes, but we can't guarantee full backwards compatibility yet.
 
 ## Quick Start
