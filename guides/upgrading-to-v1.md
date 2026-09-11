@@ -135,13 +135,13 @@ These need no code change, but they change what the dashboard does.
 
 **Variable dropdowns populated from a query are gated per source.** The "From
 query" mode appears only where the source declares core's `:dynamic_options`
-feature — true for every SQL source, false for document-shaped ones such as
-Elasticsearch, where a search returns shaped documents rather than a flat
-column of values. A variable carrying an options query from an earlier source
-opens on manual entry rather than on a mode it cannot use.
+feature, which every SQL source does. Nothing changes for a SQL-only
+dashboard; the gate exists so that a source whose query language returns
+shaped documents rather than a flat column of values offers manual entry
+instead of a mode it cannot serve.
 
 **Saved queries record their language.** The editor stores the source's
-`query_language` (`"sql:postgres"`, `"json:elasticsearch"`, …) on save. If a
+`query_language` (`"sql:postgres"`, `"sql:mysql"`, …) on save. If a
 source is later repointed at an engine that speaks a different language, core
 rejects the stored query instead of running it against the wrong engine.
 Queries saved before this upgrade record nothing and keep the old
@@ -159,31 +159,6 @@ source. Nothing to change; pages just render sooner.
 
 ---
 
-## 7. If you use the Elasticsearch adapter
-
-The adapter cannot tell in advance which indices a query will touch, because
-Elasticsearch targets indices through the HTTP URL rather than the JSON body.
-So `extract_accessed_resources/2` returns `{:unrestricted, reason}` and core's
-preflight blocks the query by default.
-
-To run queries against it, opt the source in:
-
-```elixir
-config :lotus,
-  data_sources: %{
-    "logs" => %{
-      adapter: :elasticsearch,
-      url: "http://localhost:9200",
-      allow_unrestricted_resources: true
-    }
-  }
-```
-
-Doing so means Lotus stops enforcing table-level visibility for that source.
-Rely on Elasticsearch's own index permissions and RBAC instead.
-
----
-
 ## Checklist
 
 - [ ] Elixir 1.18 or newer
@@ -194,7 +169,6 @@ Rely on Elasticsearch's own index permissions and RBAC instead.
 - [ ] Translation overrides re-merged if you have any
 - [ ] `current_sql` and `@message.sql` renamed if you render the AI component
 - [ ] `resolve_context/1` and `resolve_scope/1` added if you run access control
-- [ ] `allow_unrestricted_resources: true` set if you use Elasticsearch
 
 ---
 
