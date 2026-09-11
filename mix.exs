@@ -48,7 +48,7 @@ defmodule Lotus.Web.MixProject do
       {:mdex, "~> 0.13"},
 
       # Lotus
-      {:lotus, github: "elixir-lotus/lotus", branch: "main", override: true},
+      {:lotus, "~> 1.0.0-rc.1"},
       {:lotus_clickhouse,
        git: "git@github.com:elixir-lotus/lotus_clickhouse.git", branch: "main", only: :dev},
       {:lotus_elasticsearch,
@@ -61,6 +61,7 @@ defmodule Lotus.Web.MixProject do
 
       # Tests
       {:floki, "~> 0.33", only: [:test, :dev]},
+      {:lazy_html, ">= 0.1.0", only: :test},
 
       # Dev Server
       {:bandit, "~> 1.5", only: :dev},
