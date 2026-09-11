@@ -46,6 +46,7 @@ Release candidate for v1.0. Aligns lotus_web with the Lotus core v1 adapter cont
 - **Use a dedicated salt for export tokens** - `ExportController` now passes `"lotus_export"` as the salt to `Phoenix.Token.encrypt/decrypt` instead of prefixing the full `secret_key_base`. This follows the Phoenix convention and lets the framework handle key derivation internally (#108)
 - **Extracted duplicated data source resolution in `QueryEditorPage`** - The four AI-related event handlers (`send_ai_message`, `optimize_query`, `explain_query`, `explain_fragment`) each inlined the same fallback-to-default-repo logic; this is now a single `resolve_data_source/1` private helper (#106)
 - **Consolidated `PublicDashboardLive` into `DashboardLive`** - Removed ~95% duplicated callbacks by unifying the two LiveViews. The `/public/:token` route now mounts `DashboardLive`, which resolves a `:public_dashboard` page via `resolve_page/1` and branches mount defaults on the existing `public_view` assign (#104)
+- **Dashboard filter text inputs are debounced** — the filter bar form runs on `phx-change`, so every keystroke in a text or number filter re-ran every card query on the dashboard. Against a large table this hammered the database once per character. Both free-text filter inputs now carry `phx-debounce="500"`, so the queries run once the user stops typing. Select, date, and date-range widgets are untouched: they change one time per user action and gain nothing from a delay (#132)
 
 ### Security
 
