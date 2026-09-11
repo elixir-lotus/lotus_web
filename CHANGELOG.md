@@ -25,6 +25,7 @@ Release candidate for v1.0. Aligns lotus_web with the Lotus core v1 adapter cont
 
 ### Changed
 
+- **Bumped `credo` to 1.7.19** — 1.7.12 crashes tokenizing sigils on the Elixir version this release is built against, so `mix credo` could not run at all
 - **Dropdown options are gated on the source's `:dynamic_options` feature** — populating a variable's dropdown from a query only works where a query returns a flat list of values. The modal now offers the "From query" mode only when the selected source declares the new core `:dynamic_options` feature; document-shaped sources (Elasticsearch) get manual entry only, and a variable that carries an options query from an earlier source opens on manual entry rather than a mode it cannot use (#127)
 - **`SourcesMap.build/0` no longer runs on the disconnected mount** — listing schemas and tables for every configured source ran twice, once for the static render nobody interacts with. `QueryEditorPage` and `SchemaExplorerComponent` now build it on the connected mount only, so the first paint no longer waits on those queries (#128)
 - **Saved queries record their `query_language`** — the editor now stores the selected data source's language (e.g. `"sql:postgres"`, `"json:elasticsearch"`) on save, using the new core column. Core rejects a stored query whose source is later repointed at an engine that speaks a different language instead of running it against the wrong engine. Queries saved before this, and queries whose source no longer exists, record nothing and keep the old derive-from-adapter behavior

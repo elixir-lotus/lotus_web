@@ -7,6 +7,7 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   use Lotus.Web, :live_component
 
+  alias Lotus.Web.Actor
   alias Lotus.Web.Dashboards.AddCardModal
   alias Lotus.Web.Dashboards.CardGridComponent
   alias Lotus.Web.Dashboards.CardSettingsDrawer
@@ -1127,7 +1128,7 @@ defmodule Lotus.Web.DashboardEditorPage do
     query = card.query
     vars = build_card_variables(socket, card)
     running_cards = MapSet.put(socket.assigns.running_cards, card_id)
-    opts = Lotus.Web.Actor.merge([vars: vars], socket.assigns)
+    opts = Actor.merge([vars: vars], socket.assigns)
 
     socket
     |> assign(running_cards: running_cards)

@@ -13,6 +13,8 @@ defmodule Lotus.Web.Actor do
   payloads, same cache keys.
   """
 
+  alias Lotus.Web.Resolver
+
   @doc """
   Resolve the actor for a user through the given resolver.
 
@@ -20,13 +22,13 @@ defmodule Lotus.Web.Actor do
   `c:Lotus.Web.Resolver.resolve_context/1` or
   `c:Lotus.Web.Resolver.resolve_scope/1`.
   """
-  @spec resolve(module() | nil, Lotus.Web.Resolver.user()) :: {term(), term()}
+  @spec resolve(module() | nil, Resolver.user()) :: {term(), term()}
   def resolve(nil, _user), do: {nil, nil}
 
   def resolve(resolver, user) do
     {
-      Lotus.Web.Resolver.call_with_fallback(resolver, :resolve_context, [user]),
-      Lotus.Web.Resolver.call_with_fallback(resolver, :resolve_scope, [user])
+      Resolver.call_with_fallback(resolver, :resolve_context, [user]),
+      Resolver.call_with_fallback(resolver, :resolve_scope, [user])
     }
   end
 

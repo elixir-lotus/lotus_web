@@ -8,8 +8,8 @@ defmodule Lotus.Web.QueryEditorPage do
   @default_page_size 1000
 
   alias Lotus.Query.Statement
-  alias Lotus.Web.Actor
   alias Lotus.Storage.Query
+  alias Lotus.Web.Actor
   alias Lotus.Web.ExportController
   alias Lotus.Web.Formatters.VariableOptionsFormatter, as: OptionsFormatter
   alias Lotus.Web.Page
