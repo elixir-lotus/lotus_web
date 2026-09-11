@@ -8,8 +8,8 @@
 
     <title>{assigns[:page_title] || "Lotus"}</title>
 
-    <link phx-track-static rel="stylesheet" nonce={@csp_nonces[:style]} href={asset_path(@conn, :css)} />
-    <script phx-track-static nonce={@csp_nonces[:script]} src={asset_path(@conn, :js)} defer>
+    <link phx-track-static rel="stylesheet" nonce={@csp_nonces[:style]} href={asset_path(:css)} />
+    <script phx-track-static nonce={@csp_nonces[:script]} src={asset_path(:js)} defer>
     </script>
     <script
       src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1"

@@ -30,20 +30,35 @@ defmodule Lotus.Web.Assets do
 
   @impl Plug
   def call(conn, :css) do
-    serve_asset(conn, @css, "text/css")
+    serve_asset(conn, :css, @css, "text/css")
   end
 
   def call(conn, :js) do
-    serve_asset(conn, @js, "text/javascript")
+    # Plug.CSRFProtection rejects non-XHR GET responses with a JavaScript
+    # content type as a cross-origin script read. This bundle is public, so
+    # opt out; the CSS response needs no such exception.
+    conn
+    |> put_private(:plug_skip_csrf_protection, true)
+    |> serve_asset(:js, @js, "text/javascript")
   end
 
-  defp serve_asset(conn, contents, content_type) do
-    conn
-    |> put_resp_header("content-type", content_type)
-    |> put_resp_header("cache-control", "public, max-age=31536000, immutable")
-    |> put_private(:plug_skip_csrf_protection, true)
-    |> send_resp(200, contents)
-    |> halt()
+  # The URL carries the content hash and the response is cached as immutable,
+  # so only the hash this build produced may be served under it. A stale hash
+  # (an old node during a rolling deploy, or a bookmarked URL) gets a 404
+  # rather than poisoning caches with the wrong bundle for a year.
+  defp serve_asset(%{path_params: %{"md5" => md5}} = conn, asset, contents, content_type) do
+    if md5 == current_hash(asset) do
+      conn
+      |> put_resp_header("content-type", content_type)
+      |> put_resp_header("cache-control", "public, max-age=31536000, immutable")
+      |> send_resp(200, contents)
+      |> halt()
+    else
+      conn
+      |> put_resp_header("cache-control", "no-store")
+      |> send_resp(404, "")
+      |> halt()
+    end
   end
 
   for {key, val} <- [css: @css, js: @js] do

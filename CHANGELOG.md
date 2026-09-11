@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- **Assets are served from routes instead of being inlined in every page** — The dashboard's stylesheet and JavaScript bundle now load from `<prefix>/css-<hash>` and `<prefix>/js-<hash>` (route helper `lotus_asset_path/3`), served by `Lotus.Web.Assets` with `cache-control: public, max-age=31536000, immutable`. A request for a hash this build did not produce returns 404 with `no-store`. Pages shrink by roughly 2 MB, browsers cache the bundle across page loads, and tools that inject markup before `</head>` or `</body>` (Tidewave, Phoenix LiveReloader) no longer corrupt the inlined script (#142, #143). Hosts with a CSP: a nonce still covers both tags; `style-src 'unsafe-inline'` on its own no longer allows the stylesheet, use a nonce or `'self'`. See the installation guide
+
 ## [1.0.0-rc.1] - 2026-09-11
 
 Release candidate for v1.0. Aligns lotus_web with the Lotus core v1 adapter contract (elixir-lotus/lotus#218) and refreshes the sibling adapter deps to their v1 contract merges on `main`.

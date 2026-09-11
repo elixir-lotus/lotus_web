@@ -3,20 +3,15 @@ defmodule Lotus.Web.Layouts do
 
   use Lotus.Web, :html
 
+  alias Lotus.Web.Assets
+
   embed_templates("layouts/*")
 
-  defp asset_path(conn, asset) when asset in [:css, :js] do
-    hash = Lotus.Web.Assets.current_hash(asset)
-
-    {_dash, _routing, meta} = conn.private.phoenix_live_view
-
-    prefix = get_in(meta, [:extra, :session, Access.elem(2), Access.at(0)])
-
-    Phoenix.VerifiedRoutes.unverified_path(
-      conn,
-      conn.private.phoenix_router,
-      "#{prefix}/#{asset}-#{hash}"
-    )
+  # The mount prefix comes from the same process-dictionary entry every other
+  # dashboard link uses (set in `DashboardLive.mount/3`), so the asset URLs
+  # follow whatever path the host mounted Lotus under.
+  defp asset_path(asset) when asset in [:css, :js] do
+    lotus_path("#{asset}-#{Assets.current_hash(asset)}")
   end
 
   def logo(assigns) do
