@@ -2,27 +2,22 @@ defmodule Lotus.Web.Markdown do
   @moduledoc """
   Safe markdown rendering helpers.
 
-  Renders markdown to HTML via Earmark and sanitizes the output with
-  `HtmlSanitizeEx.markdown_html/1` so that untrusted input (AI responses,
-  user-entered dashboard text) cannot inject `<script>` tags, inline event
-  handlers, or `javascript:` URLs.
+  Renders markdown to HTML with MDEx using its safe defaults (`unsafe: false`),
+  so untrusted input (AI responses, user-entered dashboard text) cannot inject
+  `<script>` tags, inline event handlers, or `javascript:` URLs — embedded raw
+  HTML is dropped rather than emitted, so no separate sanitizer is needed.
   """
 
   @doc """
-  Renders a markdown string to sanitized HTML, wrapped in `Phoenix.HTML.raw/1`.
+  Renders a markdown string to safe HTML, wrapped in `Phoenix.HTML.raw/1`.
 
-  Returns an empty string for non-binary input, and the original (escaped) text
-  if Earmark fails to parse it.
+  Returns an empty string for non-binary input, and the original text if MDEx
+  fails to parse it.
   """
   def to_safe_html(text) when is_binary(text) do
-    case Earmark.as_html(text) do
-      {:ok, html, _warnings} ->
-        html
-        |> HtmlSanitizeEx.markdown_html()
-        |> Phoenix.HTML.raw()
-
-      {:error, _html, _errors} ->
-        text
+    case MDEx.to_html(text) do
+      {:ok, html} -> Phoenix.HTML.raw(html)
+      {:error, _} -> text
     end
   end
 

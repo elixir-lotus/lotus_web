@@ -149,6 +149,57 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
     end
   end
 
+  describe "filter default values" do
+    setup do
+      create_test_users()
+
+      dashboard = dashboard_fixture(%{name: "Filtered Dashboard"})
+
+      query =
+        query_fixture(%{
+          name: "Filtered Users",
+          statement: "SELECT name FROM test_users WHERE name = {{user_name}} ORDER BY name"
+        })
+
+      card = query_card_fixture(dashboard, query, %{title: "Filtered Users"})
+
+      {:ok, filter} =
+        Lotus.create_dashboard_filter(dashboard, %{
+          name: "user_name",
+          label: "User Name",
+          filter_type: :text,
+          widget: :input,
+          default_value: "Alice",
+          position: 0
+        })
+
+      {:ok, _mapping} = Lotus.create_filter_mapping(card, filter, "user_name")
+
+      {:ok, dashboard: dashboard}
+    end
+
+    test "applies filter default value when URL has no param", %{dashboard: dashboard} do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+
+      html = render_async(live)
+
+      assert html =~ "Alice"
+      refute html =~ "Bob"
+      refute html =~ "Charlie"
+    end
+
+    test "URL param overrides filter default value", %{dashboard: dashboard} do
+      {:ok, live, _html} =
+        live(build_conn(), "/lotus/dashboards/#{dashboard.id}?user_name=Bob")
+
+      html = render_async(live)
+
+      assert html =~ "Bob"
+      refute html =~ "Alice"
+      refute html =~ "Charlie"
+    end
+  end
+
   describe "with text cards" do
     setup do
       dashboard = dashboard_fixture(%{name: "Dashboard with Text"})

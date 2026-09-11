@@ -197,4 +197,55 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
       assert has_element?(live, "input[name='filter[user_name]'][value='Alice']")
     end
   end
+
+  describe "filter default values" do
+    setup do
+      create_test_users()
+
+      dashboard = public_dashboard_fixture(%{name: "Default Filter Dashboard"})
+
+      query =
+        query_fixture(%{
+          name: "Filtered Users",
+          statement: "SELECT name FROM test_users WHERE name = {{user_name}} ORDER BY name"
+        })
+
+      card = query_card_fixture(dashboard, query, %{title: "Filtered Users"})
+
+      {:ok, filter} =
+        Lotus.create_dashboard_filter(dashboard, %{
+          name: "user_name",
+          label: "User Name",
+          filter_type: :text,
+          widget: :input,
+          default_value: "Alice",
+          position: 0
+        })
+
+      {:ok, _mapping} = Lotus.create_filter_mapping(card, filter, "user_name")
+
+      {:ok, dashboard: dashboard}
+    end
+
+    test "applies filter default value when URL has no param", %{dashboard: dashboard} do
+      {:ok, live, _html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
+
+      html = render_async(live)
+
+      assert html =~ "Alice"
+      refute html =~ "Bob"
+      refute html =~ "Charlie"
+    end
+
+    test "URL param overrides filter default value", %{dashboard: dashboard} do
+      {:ok, live, _html} =
+        live(build_conn(), "/lotus/public/#{dashboard.public_token}?user_name=Bob")
+
+      html = render_async(live)
+
+      assert html =~ "Bob"
+      refute html =~ "Alice"
+      refute html =~ "Charlie"
+    end
+  end
 end
