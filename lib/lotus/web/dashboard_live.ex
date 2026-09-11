@@ -1,7 +1,7 @@
 defmodule Lotus.Web.DashboardLive do
   use Lotus.Web, :live_view
 
-  alias Lotus.Web.Actor
+  alias Lotus.Web.{Actor, Assets}
   alias Lotus.Web.{DashboardEditorPage, PublicDashboardPage, QueriesPage, QueryEditorPage}
 
   @impl Phoenix.LiveView
@@ -16,8 +16,15 @@ defmodule Lotus.Web.DashboardLive do
 
     put_router_prefix(socket, prefix)
 
+    # A tab that stays open across a deploy reconnects to new server code
+    # with the previous CSS and JS. Remember that here; handle_params/3 has
+    # the URL and issues the full-page redirect that reloads the bundle.
+    assets_stale? =
+      connected?(socket) and Assets.stale?(get_connect_params(socket)["_track_static"])
+
     socket =
       socket
+      |> assign(:assets_stale?, assets_stale?)
       |> assign(params: params, page: page)
       |> assign(live_path: live_path, live_transport: live_transport)
       |> assign(:page_title, page_title)
@@ -55,6 +62,12 @@ defmodule Lotus.Web.DashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_params(_params, uri, %{assigns: %{assets_stale?: true}} = socket) do
+    %URI{path: path, query: query} = URI.parse(uri)
+    to = if query, do: path <> "?" <> query, else: path
+    {:noreply, redirect(socket, to: to)}
+  end
+
   def handle_params(params, uri, socket) do
     page = resolve_page(params)
     socket = assign(socket, page: page)
