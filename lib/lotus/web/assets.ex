@@ -25,12 +25,17 @@ defmodule Lotus.Web.Assets do
   #{File.read!(js_path)}
   """
 
+  # Compressed once at compile time. Each literal is referenced from exactly
+  # one function body below, so the .beam carries one copy of each variant.
+  @css_gz :zlib.gzip(@css)
+  @js_gz :zlib.gzip(@js)
+
   @impl Plug
   def init(asset), do: asset
 
   @impl Plug
   def call(conn, :css) do
-    serve_asset(conn, :css, @css, "text/css")
+    serve_asset(conn, :css, "text/css")
   end
 
   def call(conn, :js) do
@@ -39,19 +44,53 @@ defmodule Lotus.Web.Assets do
     # opt out; the CSS response needs no such exception.
     conn
     |> put_private(:plug_skip_csrf_protection, true)
-    |> serve_asset(:js, @js, "text/javascript")
+    |> serve_asset(:js, "text/javascript")
   end
+
+  @doc """
+  Whether any of the asset URLs a client is tracking belongs to a previous
+  build of this bundle.
+
+  `tracked` is the `_track_static` list the LiveView client sends on join:
+  the URLs of every `phx-track-static` tag on the page. Only URLs shaped like
+  Lotus's own asset routes (`.../css-<hash>` or `.../js-<hash>`) are
+  considered; the host application's assets are ignored. Used by
+  `Lotus.Web.DashboardLive` to force a full reload after a deploy, since
+  `Phoenix.LiveView.static_changed?/1` only knows the host's static manifest.
+  """
+  @spec stale?(term()) :: boolean()
+  def stale?(tracked) when is_list(tracked) do
+    Enum.any?(tracked, fn
+      url when is_binary(url) ->
+        path = URI.parse(url).path || ""
+
+        case Regex.run(~r"/(css|js)-([0-9a-f]{32})\z", path) do
+          [_, "css", hash] -> hash != current_hash(:css)
+          [_, "js", hash] -> hash != current_hash(:js)
+          nil -> false
+        end
+
+      _ ->
+        false
+    end)
+  end
+
+  def stale?(_), do: false
 
   # The URL carries the content hash and the response is cached as immutable,
   # so only the hash this build produced may be served under it. A stale hash
   # (an old node during a rolling deploy, or a bookmarked URL) gets a 404
   # rather than poisoning caches with the wrong bundle for a year.
-  defp serve_asset(%{path_params: %{"md5" => md5}} = conn, asset, contents, content_type) do
+  defp serve_asset(%{path_params: %{"md5" => md5}} = conn, asset, content_type) do
     if md5 == current_hash(asset) do
+      encoding = if gzip_accepted?(conn), do: :gzip, else: :identity
+
       conn
       |> put_resp_header("content-type", content_type)
       |> put_resp_header("cache-control", "public, max-age=31536000, immutable")
-      |> send_resp(200, contents)
+      |> put_resp_header("vary", "accept-encoding")
+      |> put_content_encoding(encoding)
+      |> send_resp(200, body(asset, encoding))
       |> halt()
     else
       conn
@@ -60,6 +99,20 @@ defmodule Lotus.Web.Assets do
       |> halt()
     end
   end
+
+  defp gzip_accepted?(conn) do
+    conn
+    |> get_req_header("accept-encoding")
+    |> Enum.any?(&String.contains?(String.downcase(&1), "gzip"))
+  end
+
+  defp put_content_encoding(conn, :gzip), do: put_resp_header(conn, "content-encoding", "gzip")
+  defp put_content_encoding(conn, :identity), do: conn
+
+  defp body(:css, :identity), do: @css
+  defp body(:css, :gzip), do: @css_gz
+  defp body(:js, :identity), do: @js
+  defp body(:js, :gzip), do: @js_gz
 
   for {key, val} <- [css: @css, js: @js] do
     md5 = Base.encode16(:crypto.hash(:md5, val), case: :lower)

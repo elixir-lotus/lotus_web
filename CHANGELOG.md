@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- **The asset routes serve gzip** — `Lotus.Web.Assets` compresses the stylesheet and JS bundle once at compile time and answers with `content-encoding: gzip` when the client's `accept-encoding` allows it, with `vary: accept-encoding` on every response. A cold load moves roughly 0.8 MB instead of 2 MB, which matters for hosts that serve Lotus straight from Cowboy or Bandit with no compressing proxy (#148)
+- **Open tabs reload after a deploy** — On a connected mount, `DashboardLive` compares the `phx-track-static` asset URLs the client is tracking with the hashes of the running build and issues a full-page redirect to the current URL when they differ, so a tab that stayed open through a release picks up the new bundle instead of running old JS against new server code. `Phoenix.LiveView.static_changed?/1` is not used because it only knows the host application's static manifest (#148)
+
 ### Changed
 
 - **Assets are served from routes instead of being inlined in every page** — The dashboard's stylesheet and JavaScript bundle now load from `<prefix>/css-<hash>` and `<prefix>/js-<hash>` (route helper `lotus_asset_path/3`), served by `Lotus.Web.Assets` with `cache-control: public, max-age=31536000, immutable`. A request for a hash this build did not produce returns 404 with `no-store`. Pages shrink by roughly 2 MB, browsers cache the bundle across page loads, and tools that inject markup before `</head>` or `</body>` (Tidewave, Phoenix LiveReloader) no longer corrupt the inlined script (#142, #143). Hosts with a CSP: a nonce still covers both tags; `style-src 'unsafe-inline'` on its own no longer allows the stylesheet, use a nonce or `'self'`. See the installation guide
