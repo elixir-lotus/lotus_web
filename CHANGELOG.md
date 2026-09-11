@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.0-rc.1] - 2026-04-23
+## [1.0.0-rc.1] - 2026-09-11
 
 Release candidate for v1.0. Aligns lotus_web with the Lotus core v1 adapter contract (elixir-lotus/lotus#218) and refreshes the sibling adapter deps to their v1 contract merges on `main`.
 
