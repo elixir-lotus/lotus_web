@@ -24,8 +24,6 @@
 
 You shouldn't need to deploy Metabase or Redash just to query your database. Lotus Web gives your team a full BI interface inside your existing Phoenix app — one dependency, one route, done. It shares your app's authentication, runs on your existing infrastructure, and is read-only by default.
 
-We're running Lotus Web in production at [Accomplish](https://accomplish.dev).
-
 > While Lotus Web already has a solid feature set and its API surface is stabilizing, it's still evolving. We'll make a best effort to announce breaking changes, but we can't guarantee full backwards compatibility yet.
 
 ## Quick Start
@@ -36,8 +34,8 @@ We're running Lotus Web in production at [Accomplish](https://accomplish.dev).
 # mix.exs
 def deps do
   [
-    {:lotus, "~> 0.16.0"},
-    {:lotus_web, "~> 0.14.1"}
+    {:lotus, "~> 1.0.0-rc.1"},
+    {:lotus_web, "~> 1.0.0-rc.1"}
   ]
 end
 ```
@@ -47,9 +45,9 @@ end
 ```elixir
 # config/config.exs
 config :lotus,
-  ecto_repo: MyApp.Repo,
-  default_repo: "main",
-  data_repos: %{
+  storage_repo: MyApp.Repo,
+  default_source: "main",
+  data_sources: %{
     "main" => MyApp.Repo
   }
 ```
@@ -251,6 +249,7 @@ config :lotus,
 
 | Lotus Web | Lotus | Elixir | Phoenix |
 |-----------|-------|--------|---------|
+| 1.0.0-rc.1 | 1.0.0-rc.1 | 1.18+ | 1.7+ |
 | 0.14.x | 0.16.0+ | 1.17+ | 1.7+ |
 | 0.13.x | 0.14.0+ | 1.17+ | 1.7+ |
 | 0.12.x | 0.13.0+ | 1.17+ | 1.7+ |

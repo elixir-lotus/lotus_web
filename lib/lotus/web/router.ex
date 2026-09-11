@@ -56,16 +56,20 @@ defmodule Lotus.Web.Router do
 
       scope path, alias: false, as: false do
         import Phoenix.LiveView.Router, only: [live: 3, live: 4, live_session: 3]
-        import Phoenix.Router, only: [get: 3]
+        import Phoenix.Router, only: [get: 4]
 
-        {session_name, session_opts, public_session_opts, route_opts} =
+        {session_name, session_opts, public_session_opts, route_opts, export_opts} =
           Lotus.Web.Router.__options__(prefix, opts)
 
-        get("/css-:md5", Lotus.Web.Assets, :css)
-        get("/js-:md5", Lotus.Web.Assets, :js)
+        # Compiled CSS and JS, served with immutable caching under a content
+        # hash. Named so hosts get `lotus_asset_path/3` rather than a generic
+        # `assets_path` that could collide with their own routes.
+        get("/css-:md5", Lotus.Web.Assets, :css, as: :lotus_asset)
+        get("/js-:md5", Lotus.Web.Assets, :js, as: :lotus_asset)
 
-        # Export endpoint - does not require LiveView session
-        get("/export/csv", Lotus.Web.ExportController, :csv)
+        # Export endpoint - does not require LiveView session, so it carries the
+        # resolver in the route's private data to resolve the actor itself.
+        get("/export/csv", Lotus.Web.ExportController, :csv, export_opts)
 
         # Public dashboard - separate live_session without authentication
         live_session :"#{session_name}_public", public_session_opts do
@@ -121,7 +125,9 @@ defmodule Lotus.Web.Router do
 
     session_name = Keyword.get(opts, :as, :lotus_dashboard)
 
-    {session_name, session_opts, public_session_opts, as: session_name}
+    export_opts = [private: %{lotus_resolver: opts[:resolver]}]
+
+    {session_name, session_opts, public_session_opts, [as: session_name], export_opts}
   end
 
   @doc false

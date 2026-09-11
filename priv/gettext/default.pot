@@ -1452,7 +1452,7 @@ msgstr ""
 
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:125
 #, elixir-autogen, elixir-format
-msgid "Ask me to generate a SQL query, and I can help you refine it through conversation"
+msgid "Ask me to generate a query, and I can help you refine it through conversation"
 msgstr ""
 
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:69
@@ -2021,7 +2021,7 @@ msgstr ""
 
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:180
 #, elixir-autogen, elixir-format
-msgid "Analyze your SQL and suggest performance improvements"
+msgid "Analyze your query and suggest performance improvements"
 msgstr ""
 
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:173
@@ -2041,7 +2041,7 @@ msgstr ""
 
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:163
 #, elixir-autogen, elixir-format
-msgid "Get a plain-language explanation of your SQL query"
+msgid "Get a plain-language explanation of your query"
 msgstr ""
 
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:372

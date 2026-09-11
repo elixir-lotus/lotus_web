@@ -33,7 +33,7 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
 
       # Verify the query auto-ran and shows results
       # Should see the active users (Alice and Charlie)
-      assert render(live) =~ "Alice"
+      assert render_async(live) =~ "Alice"
       assert render(live) =~ "alice@test.com"
       assert render(live) =~ "Charlie"
       assert render(live) =~ "charlie@test.com"
@@ -67,7 +67,7 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
       {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{query.id}")
 
       # The query should auto-run with default value "Alice"
-      html = render(live)
+      html = render_async(live)
       assert html =~ "Alice"
       assert html =~ "alice@test.com"
       refute html =~ "bob@test.com"
@@ -86,7 +86,7 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
       {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{query.id}")
 
       # Wait for auto-run to complete
-      assert render(live) =~ "alice@test.com"
+      assert render_async(live) =~ "alice@test.com"
 
       # Manually run with empty toolbar input — should still use default
       live
@@ -119,7 +119,7 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
     defp build_ai_conversation(messages) do
       %{
         messages: messages,
-        schema_context: %{tables_analyzed: []},
+        source_context: %{tables_analyzed: []},
         generation_count: length(Enum.filter(messages, &(&1.role == :assistant))),
         started_at: DateTime.utc_now(),
         last_activity: DateTime.utc_now()
@@ -147,13 +147,13 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
           %{
             role: :user,
             content: "Show orders with a status dropdown",
-            sql: nil,
+            statement: nil,
             timestamp: DateTime.utc_now()
           },
           %{
             role: :assistant,
             content: "Here's your SQL query:",
-            sql: "SELECT * FROM orders WHERE status = {{status}}",
+            statement: "SELECT * FROM orders WHERE status = {{status}}",
             variables: ai_variables,
             timestamp: DateTime.utc_now()
           }
@@ -221,7 +221,7 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
           %{
             role: :assistant,
             content: "Here's your query:",
-            sql: "SELECT * FROM orders WHERE status = {{status}}",
+            statement: "SELECT * FROM orders WHERE status = {{status}}",
             variables: ai_variables,
             timestamp: DateTime.utc_now()
           }
@@ -290,7 +290,8 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
           %{
             role: :assistant,
             content: "Here's your query:",
-            sql: "SELECT * FROM orders WHERE status = {{status}} AND category = {{category}}",
+            statement:
+              "SELECT * FROM orders WHERE status = {{status}} AND category = {{category}}",
             variables: ai_variables,
             timestamp: DateTime.utc_now()
           }
@@ -337,7 +338,7 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
           %{
             role: :assistant,
             content: "Here's your query:",
-            sql: "SELECT * FROM orders WHERE status = {{status}}",
+            statement: "SELECT * FROM orders WHERE status = {{status}}",
             variables: ai_variables,
             timestamp: DateTime.utc_now()
           }
@@ -371,7 +372,7 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
     test "variable-only change applies new variable settings with contextual flash" do
       {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
 
-      sql = "SELECT * FROM orders WHERE status = {{status}}"
+      statement = "SELECT * FROM orders WHERE status = {{status}}"
 
       # First: set up initial query with dropdown variable
       first_ai_variables = [
@@ -392,13 +393,13 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
           %{
             role: :user,
             content: "Show orders with a status dropdown",
-            sql: nil,
+            statement: nil,
             timestamp: DateTime.utc_now()
           },
           %{
             role: :assistant,
             content: "Here's your query:",
-            sql: sql,
+            statement: statement,
             variables: first_ai_variables,
             timestamp: DateTime.utc_now()
           }
@@ -429,26 +430,26 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
           %{
             role: :user,
             content: "Show orders with a status dropdown",
-            sql: nil,
+            statement: nil,
             timestamp: DateTime.utc_now()
           },
           %{
             role: :assistant,
             content: "Here's your query:",
-            sql: sql,
+            statement: statement,
             variables: first_ai_variables,
             timestamp: DateTime.utc_now()
           },
           %{
             role: :user,
             content: "Change status to a freeform input",
-            sql: nil,
+            statement: nil,
             timestamp: DateTime.utc_now()
           },
           %{
             role: :assistant,
             content: "Updated the variable:",
-            sql: sql,
+            statement: statement,
             variables: updated_ai_variables,
             timestamp: DateTime.utc_now()
           }
@@ -540,6 +541,53 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
 
       # Timeout should still be 2m
       assert html =~ ~s(value="120000" selected)
+    end
+  end
+
+  describe "saving a query" do
+    test "records the query language of the selected data source" do
+      {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
+
+      live
+      |> element(~s(form[phx-submit="run_query"]))
+      |> render_change(%{"query" => %{"statement" => "SELECT 1 as result"}})
+
+      live
+      |> element(~s(form[phx-submit="save_query"]))
+      |> render_submit(%{"query" => %{"name" => "Language Test", "description" => ""}})
+
+      assert [%{name: "Language Test"} = saved] = Lotus.list_queries()
+      assert saved.query_language == Lotus.Source.query_language(saved.data_source)
+      assert saved.query_language == "sql:postgres"
+    end
+  end
+
+  describe "dropdown variable options" do
+    test "populates a dropdown from its options query" do
+      create_test_users()
+
+      query =
+        query_fixture(%{
+          name: "Dropdown Options Query",
+          statement: "SELECT email FROM test_users WHERE name = {{name}}",
+          data_source: "public",
+          variables: [
+            %{
+              name: "name",
+              type: "text",
+              widget: "select",
+              options_query: "SELECT DISTINCT name FROM test_users ORDER BY name"
+            }
+          ]
+        })
+
+      {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{query.id}")
+
+      html = render_async(live)
+
+      assert html =~ "Alice"
+      assert html =~ "Bob"
+      assert html =~ "Charlie"
     end
   end
 end

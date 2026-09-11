@@ -14,6 +14,7 @@ defmodule Lotus.Web.Queries.SegmentedDataSelectorComponent do
 
   use Lotus.Web, :live_component
 
+  alias Lotus.Web.Actor
   alias Lotus.Web.Queries.ToolbarComponents, as: Toolbar
 
   @impl Phoenix.LiveComponent
@@ -126,7 +127,7 @@ defmodule Lotus.Web.Queries.SegmentedDataSelectorComponent do
   end
 
   defp load_schemas_for_source(socket, source, label, multiple) do
-    case Lotus.list_schemas(source) do
+    case Lotus.list_schemas(source, Actor.opts(socket.assigns)) do
       {:ok, schemas} ->
         options = Enum.map(schemas, &{&1, &1})
 
@@ -150,7 +151,7 @@ defmodule Lotus.Web.Queries.SegmentedDataSelectorComponent do
   end
 
   defp get_adapter_info(repo_name) do
-    source_type = Lotus.Sources.source_type(repo_name)
+    source_type = Lotus.Source.source_type(repo_name)
 
     {label, multiple, show} =
       case source_type do

@@ -2,14 +2,14 @@ defmodule Lotus.Web.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/elixir-lotus/lotus_web"
-  @version "0.14.5"
+  @version "1.0.0-rc.1"
 
   def project do
     [
       app: :lotus_web,
       name: "Lotus Web",
       version: @version,
-      elixir: "~> 1.17",
+      elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -48,14 +48,20 @@ defmodule Lotus.Web.MixProject do
       {:mdex, "~> 0.13"},
 
       # Lotus
-      {:lotus, github: "elixir-lotus/lotus", branch: "main"},
+      {:lotus, "~> 1.0.0-rc.1"},
+      {:lotus_clickhouse,
+       git: "git@github.com:elixir-lotus/lotus_clickhouse.git", branch: "main", only: :dev},
+      {:lotus_elasticsearch,
+       git: "git@github.com:elixir-lotus/lotus_elasticsearch.git", branch: "main", only: :dev},
 
       # Databases
       {:postgrex, "~> 0.20", only: [:dev, :test]},
       {:myxql, "~> 0.8", only: [:dev, :test]},
+      {:ecto_ch, "~> 0.3", only: :dev},
 
       # Tests
       {:floki, "~> 0.33", only: [:test, :dev]},
+      {:lazy_html, ">= 0.1.0", only: :test},
 
       # Dev Server
       {:bandit, "~> 1.5", only: :dev},
@@ -118,6 +124,7 @@ defmodule Lotus.Web.MixProject do
         "README.md",
         "guides/installation.md",
         "guides/getting-started.md",
+        "guides/upgrading-to-v1.md",
         "guides/ai-assistant.md",
         "guides/visualizations.md",
         "guides/dashboards.md",

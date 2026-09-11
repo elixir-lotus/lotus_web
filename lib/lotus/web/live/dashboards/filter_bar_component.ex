@@ -76,6 +76,7 @@ defmodule Lotus.Web.Dashboards.FilterBarComponent do
             name={"filter[#{@filter.name}]"}
             value={@value || ""}
             placeholder={@filter.label || @filter.name}
+            phx-debounce="500"
             class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
           />
         <% :select -> %>
@@ -105,6 +106,7 @@ defmodule Lotus.Web.Dashboards.FilterBarComponent do
             name={"filter[#{@filter.name}]"}
             value={@value || ""}
             placeholder={@filter.label || @filter.name}
+            phx-debounce="500"
             class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
           />
       <% end %>

@@ -1,10 +1,18 @@
 import { EditorView, basicSetup } from "codemirror";
 import { placeholder, keymap } from "@codemirror/view";
 import { EditorState, Compartment, Prec } from "@codemirror/state";
-import { sql, PostgreSQL, MySQL, SQLite } from "@codemirror/lang-sql";
+import { sql } from "@codemirror/lang-sql";
+import { json } from "@codemirror/lang-json";
 import { editorStyles, getCompletionStyles } from "./styles";
 import { lotusVariablesPlugin } from "./plugins/lotus_variables";
-import { ContextAwareCompletion } from "./context_aware_completion";
+import {
+  getDialectConfig,
+  getCachedDialectConfig,
+  buildSqlExtension,
+  isJsonLanguage,
+} from "./dialect_config";
+import { SqlCompletion } from "./languages/sql/completion";
+import { JsonDslCompletion } from "./languages/json_dsl/completion";
 import { load } from "./settings";
 
 const editorTheme = EditorView.theme(editorStyles);
@@ -19,45 +27,15 @@ function isDarkMode() {
   } else if (theme === "light") {
     return false;
   } else {
-    // theme === "system" - check system preference
     const wantsDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     return wantsDark;
   }
 }
 
-function dialectFromName(name = "postgres") {
-  switch (name.toLowerCase()) {
-    case "postgres":
-    case "postgresql":
-      return PostgreSQL;
-    case "mysql":
-      return MySQL;
-    case "sqlite":
-      return SQLite;
-    default:
-      return PostgreSQL;
-  }
-}
-
-function sqlExt(schema, dialectName, contextCompletion) {
-  const cfg = {
-    upperCaseKeywords: true,
-    dialect: dialectFromName(dialectName),
-  };
+function initialSqlExt(schema) {
+  const cfg = { upperCaseKeywords: true };
   if (schema) cfg.schema = schema;
-
-  const sqlLang = sql(cfg);
-
-  if (contextCompletion) {
-    return [
-      sqlLang,
-      sqlLang.language.data.of({
-        autocomplete: contextCompletion.createCompletionSource(),
-      }),
-    ];
-  }
-
-  return sqlLang;
+  return sql(cfg);
 }
 
 export function createEditor({
@@ -71,14 +49,16 @@ export function createEditor({
 }) {
   let currentSchema = schema;
   let currentDialect = dialectName;
+  let currentConfig = null;
+  let contextCompletion = null;
 
-  const contextCompletion = new ContextAwareCompletion(currentSchema);
+  const initialLang = isJsonLanguage(dialectName)
+    ? json()
+    : initialSqlExt(currentSchema);
 
   const extensions = [
     basicSetup,
-    languageCompartment.of(
-      sqlExt(currentSchema, currentDialect, contextCompletion),
-    ),
+    languageCompartment.of(initialLang),
     completionThemeCompartment.of(
       EditorView.theme(getCompletionStyles(isDarkMode())),
     ),
@@ -160,6 +140,37 @@ export function createEditor({
   const mediaQueryListener = () => updateCompletionTheme();
   mediaQuery.addEventListener("change", mediaQueryListener);
 
+  function reconfigureLanguage() {
+    if (!currentConfig) return;
+
+    if (isJsonLanguage(currentDialect)) {
+      contextCompletion = new JsonDslCompletion(currentSchema, currentConfig);
+      const jsonLang = json();
+
+      view.dispatch({
+        effects: languageCompartment.reconfigure([
+          jsonLang,
+          jsonLang.language.data.of({
+            autocomplete: contextCompletion.createCompletionSource(),
+          }),
+        ]),
+      });
+    } else {
+      contextCompletion = new SqlCompletion(currentSchema, currentConfig);
+
+      view.dispatch({
+        effects: languageCompartment.reconfigure(
+          buildSqlExtension(
+            currentConfig,
+            currentSchema,
+            contextCompletion,
+            currentDialect,
+          ),
+        ),
+      });
+    }
+  }
+
   return {
     view,
     getContent() {
@@ -167,24 +178,37 @@ export function createEditor({
     },
     setContent(content) {
       view.dispatch({
-        changes: { from: 0, to: view.state.doc.length, insert: content ?? "" },
+        changes: {
+          from: 0,
+          to: view.state.doc.length,
+          insert: content ?? "",
+        },
       });
     },
     updateSchema(newSchema) {
       currentSchema = newSchema;
-      contextCompletion.updateSchema(currentSchema);
-      view.dispatch({
-        effects: languageCompartment.reconfigure(
-          sqlExt(currentSchema, currentDialect, contextCompletion),
-        ),
-      });
+      if (contextCompletion) {
+        contextCompletion.updateSchema(currentSchema);
+      }
+      reconfigureLanguage();
     },
-    updateDialect(newDialect) {
-      currentDialect = newDialect || "postgres";
-      view.dispatch({
-        effects: languageCompartment.reconfigure(
-          sqlExt(currentSchema, currentDialect, contextCompletion),
-        ),
+    applyDialectConfig(config) {
+      currentConfig = config;
+      reconfigureLanguage();
+    },
+    updateDialect(newDialectName, fetchFn) {
+      currentDialect = newDialectName || "postgres";
+
+      const cached = getCachedDialectConfig(currentDialect);
+      if (cached) {
+        currentConfig = cached;
+        reconfigureLanguage();
+        return Promise.resolve();
+      }
+
+      return getDialectConfig(currentDialect, fetchFn).then((config) => {
+        currentConfig = config;
+        reconfigureLanguage();
       });
     },
     updateTheme() {

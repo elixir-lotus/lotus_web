@@ -37,7 +37,7 @@ priv/static/*
 .env.development.local
 
 # Tools
-.accomplish.toml
 plans/
 .claude
 CLAUDE.local.md
+docs/superpowers/*
