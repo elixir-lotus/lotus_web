@@ -5,6 +5,8 @@ defmodule Lotus.Web do
     quote do
       @moduledoc false
 
+      use Phoenix.Component
+
       import Phoenix.Controller, only: [get_csrf_token: 0, view_module: 1, view_template: 1]
 
       unquote(html_helpers())
@@ -31,9 +33,14 @@ defmodule Lotus.Web do
     end
   end
 
+  # Deliberately no `use Phoenix.Component` here: `use Phoenix.LiveView` and
+  # `use Phoenix.LiveComponent` already do it, and a second `use` registers
+  # the declarative `@before_compile` twice, defining
+  # `__phoenix_component_verify__/1` twice. Elixir 1.20 reports the second
+  # clause as redundant, which fails a --warnings-as-errors build. `html/0`
+  # has no such parent and does the `use` itself.
   defp html_helpers do
     quote do
-      use Phoenix.Component
       use Gettext, backend: Lotus.Web.Gettext
 
       import Lotus.Web.Helpers
