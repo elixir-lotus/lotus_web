@@ -14,6 +14,8 @@ Release candidate for v1.0. Aligns lotus_web with the Lotus core v1 adapter cont
 
 ### Breaking
 
+- **Elixir floor raised to 1.18** — Lotus core v1 requires `~> 1.18`, so a lotus_web declaring `~> 1.17` could not resolve it. The 1.17 / OTP 26 CI row is dropped.
+
 - **Lotus v1 config key rename: `:ecto_repo` → `:storage_repo`** — `config :lotus, ecto_repo: ...` no longer works. Host apps must update their Lotus config to `config :lotus, storage_repo: ...`. Affects `config/config.exs`, `dev.exs`, and `test/test_helper.exs` in this repo; downstream apps must apply the same rename in their own configs.
 - **`Lotus.get_table_schema/3` renamed to `Lotus.describe_table/3`** — Follows the Lotus core v1 callback rename that killed the "schema = namespace vs schema = column structure" double meaning. `SchemaBuilder.fetch_table_columns/3` and `SchemaExplorerComponent.navigate_to_table/3` updated accordingly. Downstream apps calling `Lotus.get_table_schema/3` directly must rename.
 - **`Lotus.AI.Conversation.schema_context` field renamed to `source_context`** — Internal rename aligned with the Lotus core "schema → source" terminology sweep. Affects any host app that reaches into `Conversation.schema_context` directly (uncommon).
