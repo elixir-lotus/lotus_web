@@ -33,7 +33,7 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
 
       # Verify the query auto-ran and shows results
       # Should see the active users (Alice and Charlie)
-      assert render(live) =~ "Alice"
+      assert render_async(live) =~ "Alice"
       assert render(live) =~ "alice@test.com"
       assert render(live) =~ "Charlie"
       assert render(live) =~ "charlie@test.com"
@@ -67,7 +67,7 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
       {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{query.id}")
 
       # The query should auto-run with default value "Alice"
-      html = render(live)
+      html = render_async(live)
       assert html =~ "Alice"
       assert html =~ "alice@test.com"
       refute html =~ "bob@test.com"
@@ -86,7 +86,7 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
       {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{query.id}")
 
       # Wait for auto-run to complete
-      assert render(live) =~ "alice@test.com"
+      assert render_async(live) =~ "alice@test.com"
 
       # Manually run with empty toolbar input — should still use default
       live

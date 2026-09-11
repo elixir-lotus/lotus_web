@@ -152,6 +152,7 @@ defmodule Lotus.Web.QueryEditorPage do
           id="dropdown_options_modal"
           variable_name={@dropdown_options_variable_name}
           variable_data={Variables.get_data(@query_form, @dropdown_options_variable_name)}
+          dynamic_options={@dynamic_options}
           parent={@myself}
         />
       <% end %>
@@ -1361,14 +1362,21 @@ defmodule Lotus.Web.QueryEditorPage do
   defp assign_data_sources(socket) do
     data_source_names = Lotus.list_data_source_names()
     {default_source, _module} = Lotus.default_data_source()
-    sources_map = SourcesMap.build()
 
     source_type = Lotus.Source.source_type(default_source)
 
     socket
     |> assign(data_source_names: data_source_names, default_source: default_source)
-    |> assign(sources_map: sources_map)
+    |> assign(sources_map: build_sources_map(socket))
     |> assign(source_type: source_type)
+  end
+
+  # Building the sources map lists schemas and tables for every configured
+  # source. Skipping it on the disconnected mount keeps those queries off the
+  # first render; the connected mount builds it before the editor needs a
+  # schema.
+  defp build_sources_map(socket) do
+    if connected?(socket), do: SourcesMap.build(), else: %SourcesMap{}
   end
 
   defp show_toast(socket, kind, message) do
@@ -1398,6 +1406,7 @@ defmodule Lotus.Web.QueryEditorPage do
       dropdown_options_variable_name: nil,
       editor_schema: nil,
       editor_dialect: nil,
+      dynamic_options: false,
       optional_variable_names: MapSet.new(),
       detected_variables: [],
       variable_form: to_form(%{}, as: "variables"),
@@ -1471,23 +1480,27 @@ defmodule Lotus.Web.QueryEditorPage do
       source_type = Lotus.Source.source_type(data_source)
       search_path = socket.assigns.query && socket.assigns.query.search_path
 
+      dynamic_options = dynamic_options?(data_source)
+
       case SchemaBuilder.build(socket.assigns.sources_map, data_source, search_path) do
         {:ok, schema} ->
           assign(socket,
             editor_schema: schema,
             editor_dialect: dialect,
-            source_type: source_type
+            source_type: source_type,
+            dynamic_options: dynamic_options
           )
 
         {:error, _reason} ->
           assign(socket,
             editor_schema: nil,
             editor_dialect: dialect,
-            source_type: source_type
+            source_type: source_type,
+            dynamic_options: dynamic_options
           )
       end
     else
-      assign(socket, editor_schema: nil, editor_dialect: nil)
+      assign(socket, editor_schema: nil, editor_dialect: nil, dynamic_options: false)
     end
   end
 
@@ -1653,6 +1666,17 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   defp query_language_for(_data_source), do: nil
+
+  # Whether a query against this source can return a flat list of values to
+  # populate a dropdown. Sources that answer `false` (Elasticsearch and other
+  # document-shaped languages) get manual option entry only.
+  defp dynamic_options?(data_source) when is_binary(data_source) and data_source != "" do
+    Lotus.Source.supports_feature?(data_source, :dynamic_options)
+  rescue
+    ArgumentError -> false
+  end
+
+  defp dynamic_options?(_data_source), do: false
 
   defp perform_save_operation(page, query_attrs) do
     case page do

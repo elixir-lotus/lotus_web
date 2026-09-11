@@ -242,12 +242,19 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
       socket
       |> assign(visible: false)
       |> assign(view_mode: :databases)
-      |> assign(sources_map: SourcesMap.build())
+      |> assign(sources_map: build_sources_map(socket))
       |> clear_db_state()
       |> clear_table_state()
       |> refresh_current_db_info()
 
     {:ok, socket}
+  end
+
+  # Building the sources map lists schemas and tables for every configured
+  # source. Skipping it on the disconnected mount keeps those queries off the
+  # first render; the connected mount builds it before the drawer is usable.
+  defp build_sources_map(socket) do
+    if connected?(socket), do: SourcesMap.build(), else: %SourcesMap{}
   end
 
   @impl Phoenix.LiveComponent
