@@ -1755,7 +1755,7 @@ defmodule Lotus.Web.QueryEditorPage do
           sql_query
         end
 
-      run_opts = Actor.merge([repo: repo], actor)
+      run_opts = Keyword.merge(actor, repo: repo)
 
       run_opts =
         if search_path && String.trim(search_path) != "" do

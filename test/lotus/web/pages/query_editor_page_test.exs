@@ -561,4 +561,33 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
       assert saved.query_language == "sql:postgres"
     end
   end
+
+  describe "dropdown variable options" do
+    test "populates a dropdown from its options query" do
+      create_test_users()
+
+      query =
+        query_fixture(%{
+          name: "Dropdown Options Query",
+          statement: "SELECT email FROM test_users WHERE name = {{name}}",
+          data_source: "public",
+          variables: [
+            %{
+              name: "name",
+              type: "text",
+              widget: "select",
+              options_query: "SELECT DISTINCT name FROM test_users ORDER BY name"
+            }
+          ]
+        })
+
+      {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{query.id}")
+
+      html = render_async(live)
+
+      assert html =~ "Alice"
+      assert html =~ "Bob"
+      assert html =~ "Charlie"
+    end
+  end
 end
