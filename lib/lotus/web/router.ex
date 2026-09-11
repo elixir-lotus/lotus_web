@@ -61,6 +61,12 @@ defmodule Lotus.Web.Router do
         {session_name, session_opts, public_session_opts, route_opts, export_opts} =
           Lotus.Web.Router.__options__(prefix, opts)
 
+        # Compiled CSS and JS, served with immutable caching under a content
+        # hash. Named so hosts get `lotus_asset_path/3` rather than a generic
+        # `assets_path` that could collide with their own routes.
+        get("/css-:md5", Lotus.Web.Assets, :css, as: :lotus_asset)
+        get("/js-:md5", Lotus.Web.Assets, :js, as: :lotus_asset)
+
         # Export endpoint - does not require LiveView session, so it carries the
         # resolver in the route's private data to resolve the actor itself.
         get("/export/csv", Lotus.Web.ExportController, :csv, export_opts)

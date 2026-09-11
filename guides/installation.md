@@ -185,7 +185,7 @@ or a custom plug), you'll need to configure it to allow the resources used by Lo
 
 ### Nonce-based CSP
 
-LotusWeb supports CSP nonces for inline scripts and styles. To enable them:
+LotusWeb serves its stylesheet and JavaScript bundle from two routes under the dashboard mount path (`<prefix>/css-<hash>` and `<prefix>/js-<hash>`) and loads the TailwindPlus module from a CDN. The `<link>` and `<script>` tags carry a nonce when you configure one, so a nonce-based policy covers all of them. To enable nonces:
 
 1. **Generate a nonce** in a custom plug and store it in `conn.assigns`:
 
@@ -207,7 +207,7 @@ defmodule MyAppWeb.CSPPlug do
       "content-security-policy",
       "default-src 'self'; " <>
         "script-src 'nonce-#{nonce}' https://cdn.jsdelivr.net; " <>
-        "style-src 'nonce-#{nonce}' 'unsafe-inline'; " <>
+        "style-src 'nonce-#{nonce}'; " <>
         "font-src 'self' data:; " <>
         "img-src 'self' data:; " <>
         "connect-src 'self' ws: wss:;"
@@ -251,8 +251,8 @@ LotusWeb uses the following resources that your CSP policy must allow:
 
 | Directive | Required value | Reason |
 |-----------|---------------|--------|
-| `script-src` | `'nonce-<value>'` and `https://cdn.jsdelivr.net` | Inline app script and TailwindPlus CDN module |
-| `style-src` | `'nonce-<value>'` or `'unsafe-inline'` | Inline app stylesheet |
+| `script-src` | `'nonce-<value>'` (or `'self'`) and `https://cdn.jsdelivr.net` | App JS bundle served from `<prefix>/js-<hash>`, and the TailwindPlus CDN module |
+| `style-src` | `'nonce-<value>'` (or `'self'`) | App stylesheet served from `<prefix>/css-<hash>`. `'unsafe-inline'` alone does not allow an external stylesheet |
 | `font-src` | `data:` | Embedded Inter font (base64-encoded) |
 | `img-src` | `data:` | Data URI images |
 | `connect-src` | `ws:` or `wss:` | LiveView WebSocket connection |

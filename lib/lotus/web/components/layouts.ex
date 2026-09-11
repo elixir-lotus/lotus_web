@@ -3,29 +3,16 @@ defmodule Lotus.Web.Layouts do
 
   use Lotus.Web, :html
 
-  phoenix_js_paths =
-    for app <- ~w(phoenix phoenix_html phoenix_live_view)a do
-      path = Application.app_dir(app, ["priv", "static", "#{app}.js"])
-      Module.put_attribute(__MODULE__, :external_resource, path)
-      path
-    end
-
-  @static_path Application.app_dir(:lotus_web, ["priv", "static"])
-
-  @external_resource css_path = Path.join(@static_path, "css/app.css")
-  @external_resource js_path = Path.join(@static_path, "app.js")
-
-  @css File.read!(css_path)
-
-  @js """
-  #{for path <- phoenix_js_paths, do: path |> File.read!() |> String.replace("//# sourceMappingURL=", "// ")}
-  #{File.read!(js_path)}
-  """
-
-  def render("app.css"), do: @css
-  def render("app.js"), do: @js
+  alias Lotus.Web.Assets
 
   embed_templates("layouts/*")
+
+  # The mount prefix comes from the same process-dictionary entry every other
+  # dashboard link uses (set in `DashboardLive.mount/3`), so the asset URLs
+  # follow whatever path the host mounted Lotus under.
+  defp asset_path(asset) when asset in [:css, :js] do
+    lotus_path("#{asset}-#{Assets.current_hash(asset)}")
+  end
 
   def logo(assigns) do
     ~H"""
