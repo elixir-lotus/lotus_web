@@ -4,6 +4,7 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
   """
   use Lotus.Web, :live_component
 
+  alias Lotus.Web.Actor
   alias Lotus.Web.SourcesMap
 
   # Props:
@@ -254,7 +255,7 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
   # source. Skipping it on the disconnected mount keeps those queries off the
   # first render; the connected mount builds it before the drawer is usable.
   defp build_sources_map(socket) do
-    if connected?(socket), do: SourcesMap.build(), else: %SourcesMap{}
+    if connected?(socket), do: SourcesMap.build(Actor.opts(socket.assigns)), else: %SourcesMap{}
   end
 
   @impl Phoenix.LiveComponent
@@ -317,6 +318,7 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
 
   defp navigate_to_table(socket, schema, table) do
     opts = if schema != "default", do: [search_path: schema], else: []
+    opts = Actor.merge(opts, socket.assigns)
 
     case Lotus.describe_table(socket.assigns.current_db, table, opts) do
       {:ok, columns} ->

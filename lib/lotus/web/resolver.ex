@@ -34,7 +34,43 @@ defmodule Lotus.Web.Resolver do
   """
   @callback resolve_access(user :: user()) :: access_level()
 
-  @optional_callbacks resolve_user: 1, resolve_access: 1
+  @doc """
+  Build the actor that the dashboard passes to Lotus core as `:context`.
+
+  Core hands `:context` to middleware and to the `:after_discover` telemetry
+  event without interpreting it, so this is where a host app says *who* is
+  behind a dashboard-driven query. Without it an access-control plug sees
+  `nil` for everything the dashboard runs.
+
+  Returns `nil` by default. The value is rebuilt on every mount, so it does
+  not need to survive a session round trip.
+
+  ## Examples
+
+      def resolve_context(%{id: id, roles: roles}), do: %{user_id: id, roles: roles}
+      def resolve_context(nil), do: nil
+  """
+  @callback resolve_context(user :: user()) :: term()
+
+  @doc """
+  Build the scope that the dashboard passes to Lotus core as `:scope`.
+
+  Core hands `:scope` to the visibility resolver and hashes it into the
+  discovery and result cache keys, so two scopes never read each other's
+  cached rows. Keep it low-cardinality — a tenant id, not a user id with a
+  timestamp — or the caches stop earning their keep.
+
+  Returns `nil` by default, which keeps cache keys identical to an
+  unscoped dashboard.
+
+  ## Examples
+
+      def resolve_scope(%{tenant_id: tenant_id}), do: %{tenant_id: tenant_id}
+      def resolve_scope(nil), do: nil
+  """
+  @callback resolve_scope(user :: user()) :: term()
+
+  @optional_callbacks resolve_user: 1, resolve_access: 1, resolve_context: 1, resolve_scope: 1
 
   @doc false
   def call_with_fallback(resolver, fun, args) when is_atom(fun) and is_list(args) do
@@ -48,4 +84,10 @@ defmodule Lotus.Web.Resolver do
 
   @doc false
   def resolve_access(_user), do: :all
+
+  @doc false
+  def resolve_context(_user), do: nil
+
+  @doc false
+  def resolve_scope(_user), do: nil
 end

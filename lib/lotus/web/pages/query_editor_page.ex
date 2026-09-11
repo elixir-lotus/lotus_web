@@ -8,6 +8,7 @@ defmodule Lotus.Web.QueryEditorPage do
   @default_page_size 1000
 
   alias Lotus.Query.Statement
+  alias Lotus.Web.Actor
   alias Lotus.Storage.Query
   alias Lotus.Web.ExportController
   alias Lotus.Web.Formatters.VariableOptionsFormatter, as: OptionsFormatter
@@ -572,6 +573,7 @@ defmodule Lotus.Web.QueryEditorPage do
     else
       conversation = add_user_message(socket.assigns.ai_conversation, message)
       query_context = build_ai_query_context(socket.assigns)
+      actor = Actor.opts(socket.assigns)
 
       socket =
         socket
@@ -579,10 +581,12 @@ defmodule Lotus.Web.QueryEditorPage do
         |> assign(ai_conversation: conversation)
         |> start_async(:ai_generation, fn ->
           Lotus.AI.generate_query_with_context(
-            prompt: message,
-            data_source: data_source,
-            conversation: conversation,
-            query_context: query_context
+            [
+              prompt: message,
+              data_source: data_source,
+              conversation: conversation,
+              query_context: query_context
+            ] ++ actor
           )
         end)
 
@@ -624,6 +628,7 @@ defmodule Lotus.Web.QueryEditorPage do
       {:noreply, show_toast(socket, :error, gettext("Write a query first before optimizing"))}
     else
       data_source = resolve_data_source(socket)
+      actor = Actor.opts(socket.assigns)
 
       conversation =
         add_user_message(socket.assigns.ai_conversation, gettext("Optimize this query"))
@@ -635,8 +640,10 @@ defmodule Lotus.Web.QueryEditorPage do
         |> assign(ai_conversation: conversation)
         |> start_async(:ai_optimization, fn ->
           Lotus.AI.suggest_optimizations(
-            statement: Statement.new(sql),
-            data_source: data_source
+            [
+              statement: Statement.new(sql),
+              data_source: data_source
+            ] ++ actor
           )
         end)
 
@@ -652,6 +659,7 @@ defmodule Lotus.Web.QueryEditorPage do
       {:noreply, show_toast(socket, :error, gettext("Write a query first before explaining"))}
     else
       data_source = resolve_data_source(socket)
+      actor = Actor.opts(socket.assigns)
 
       conversation =
         add_user_message(socket.assigns.ai_conversation, gettext("Explain this query"))
@@ -663,8 +671,10 @@ defmodule Lotus.Web.QueryEditorPage do
         |> assign(ai_conversation: conversation)
         |> start_async(:ai_explanation, fn ->
           Lotus.AI.explain_query(
-            statement: sql,
-            data_source: data_source
+            [
+              statement: sql,
+              data_source: data_source
+            ] ++ actor
           )
         end)
 
@@ -679,6 +689,7 @@ defmodule Lotus.Web.QueryEditorPage do
       {:noreply, show_toast(socket, :error, gettext("Write a query first before explaining"))}
     else
       data_source = resolve_data_source(socket)
+      actor = Actor.opts(socket.assigns)
 
       conversation =
         add_user_message(
@@ -693,9 +704,11 @@ defmodule Lotus.Web.QueryEditorPage do
         |> assign(ai_conversation: conversation)
         |> start_async(:ai_explanation, fn ->
           Lotus.AI.explain_query(
-            statement: sql,
-            fragment: fragment,
-            data_source: data_source
+            [
+              statement: sql,
+              fragment: fragment,
+              data_source: data_source
+            ] ++ actor
           )
         end)
 
@@ -1338,7 +1351,9 @@ defmodule Lotus.Web.QueryEditorPage do
     repo = socket.assigns.query.data_source || socket.assigns.default_source
     search_path = socket.assigns.query.search_path
 
-    case fetch_dropdown_options(assigns.sql_query, repo, search_path, limit: 3, cache: false) do
+    dropdown_opts = [limit: 3, cache: false] ++ Actor.opts(socket.assigns)
+
+    case fetch_dropdown_options(assigns.sql_query, repo, search_path, dropdown_opts) do
       {:ok, results} ->
         send_update(DropdownOptionsModal,
           id: "dropdown_options_modal",
@@ -1376,7 +1391,7 @@ defmodule Lotus.Web.QueryEditorPage do
   # first render; the connected mount builds it before the editor needs a
   # schema.
   defp build_sources_map(socket) do
-    if connected?(socket), do: SourcesMap.build(), else: %SourcesMap{}
+    if connected?(socket), do: SourcesMap.build(Actor.opts(socket.assigns)), else: %SourcesMap{}
   end
 
   defp show_toast(socket, kind, message) do
@@ -1429,7 +1444,7 @@ defmodule Lotus.Web.QueryEditorPage do
 
   defp assign_query_changeset(socket, %Query{} = query) do
     changeset = Query.update(query, %{})
-    resolved_options = resolve_variable_options(query)
+    resolved_options = resolve_variable_options(query, Actor.opts(socket.assigns))
 
     variable_values =
       case Map.get(socket.assigns, :variable_values) do
@@ -1482,7 +1497,12 @@ defmodule Lotus.Web.QueryEditorPage do
 
       dynamic_options = dynamic_options?(data_source)
 
-      case SchemaBuilder.build(socket.assigns.sources_map, data_source, search_path) do
+      case SchemaBuilder.build(
+             socket.assigns.sources_map,
+             data_source,
+             search_path,
+             Actor.opts(socket.assigns)
+           ) do
         {:ok, schema} ->
           assign(socket,
             editor_schema: schema,
@@ -1603,6 +1623,8 @@ defmodule Lotus.Web.QueryEditorPage do
         opts
       end
 
+    opts = Actor.merge(opts, socket.assigns)
+
     socket
     |> assign(running: true, error: nil, result: nil)
     |> start_async(:query_execution, fn ->
@@ -1631,7 +1653,7 @@ defmodule Lotus.Web.QueryEditorPage do
     show_settings = new_names != [] and socket.assigns.right_drawer != :variable_settings
 
     query = Ecto.Changeset.apply_changes(changeset)
-    resolved_options = resolve_variable_options(query)
+    resolved_options = resolve_variable_options(query, Actor.opts(socket.assigns))
     optional_names = Query.extract_optional_variable_names(query.statement)
 
     update_query_state(socket, changeset,
@@ -1711,7 +1733,7 @@ defmodule Lotus.Web.QueryEditorPage do
     params = %{"variables" => Enum.map(updated_variables, &Variables.to_params/1)}
     changeset = build_query_changeset(updated_query, params)
 
-    resolved_options = resolve_variable_options(updated_query)
+    resolved_options = resolve_variable_options(updated_query, Actor.opts(socket.assigns))
 
     socket
     |> update_query_state(changeset, [])
@@ -1721,6 +1743,7 @@ defmodule Lotus.Web.QueryEditorPage do
   defp fetch_dropdown_options(sql_query, repo, search_path, opts \\ []) do
     limit = Keyword.get(opts, :limit)
     use_cache = Keyword.get(opts, :cache, true)
+    actor = Keyword.take(opts, [:context, :scope])
 
     try do
       limited_query =
@@ -1732,7 +1755,7 @@ defmodule Lotus.Web.QueryEditorPage do
           sql_query
         end
 
-      run_opts = [repo: repo]
+      run_opts = Actor.merge([repo: repo], actor)
 
       run_opts =
         if search_path && String.trim(search_path) != "" do
@@ -1762,21 +1785,24 @@ defmodule Lotus.Web.QueryEditorPage do
     end
   end
 
-  defp resolve_variable_options(%{data_source: nil}), do: %{}
-  defp resolve_variable_options(%{data_source: ""}), do: %{}
+  defp resolve_variable_options(%{data_source: nil}, _opts), do: %{}
+  defp resolve_variable_options(%{data_source: ""}, _opts), do: %{}
 
-  defp resolve_variable_options(%{
-         data_source: repo,
-         search_path: search_path,
-         variables: variables
-       }) do
+  defp resolve_variable_options(
+         %{
+           data_source: repo,
+           search_path: search_path,
+           variables: variables
+         },
+         opts
+       ) do
     variables
     |> Enum.reduce(%{}, fn var, acc ->
-      process_variable_options(var, acc, repo, search_path)
+      process_variable_options(var, acc, repo, search_path, opts)
     end)
   end
 
-  defp process_variable_options(var, acc, repo, search_path) do
+  defp process_variable_options(var, acc, repo, search_path, opts) do
     case var.options_query do
       nil ->
         acc
@@ -1785,7 +1811,7 @@ defmodule Lotus.Web.QueryEditorPage do
         acc
 
       sql_query when is_binary(sql_query) ->
-        case fetch_dropdown_options(sql_query, repo, search_path) do
+        case fetch_dropdown_options(sql_query, repo, search_path, opts) do
           {:ok, results} ->
             options = OptionsFormatter.to_select_options(results)
             Map.put(acc, var.name, options)

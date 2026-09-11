@@ -126,7 +126,7 @@ defmodule Lotus.Web.Queries.SegmentedDataSelectorComponent do
   end
 
   defp load_schemas_for_source(socket, source, label, multiple) do
-    case Lotus.list_schemas(source) do
+    case Lotus.list_schemas(source, Lotus.Web.Actor.opts(socket.assigns)) do
       {:ok, schemas} ->
         options = Enum.map(schemas, &{&1, &1})
 

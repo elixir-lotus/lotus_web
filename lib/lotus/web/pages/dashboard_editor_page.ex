@@ -1127,11 +1127,12 @@ defmodule Lotus.Web.DashboardEditorPage do
     query = card.query
     vars = build_card_variables(socket, card)
     running_cards = MapSet.put(socket.assigns.running_cards, card_id)
+    opts = Lotus.Web.Actor.merge([vars: vars], socket.assigns)
 
     socket
     |> assign(running_cards: running_cards)
     |> start_async({:run_card, card_id}, fn ->
-      Lotus.run_query(query, vars: vars)
+      Lotus.run_query(query, opts)
     end)
   end
 

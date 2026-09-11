@@ -133,6 +133,51 @@ lotus_dashboard "/lotus",
 |---------|-------------|
 | `:timeout_options` | Adds a per-query timeout selector to the query editor toolbar, allowing users to override the default 5-second query timeout for long-running queries. |
 
+### Access control and the actor
+
+Pass a `:resolver` to tell the dashboard who is looking at it:
+
+```elixir
+lotus_dashboard "/lotus", resolver: MyAppWeb.LotusResolver
+```
+
+```elixir
+defmodule MyAppWeb.LotusResolver do
+  @behaviour Lotus.Web.Resolver
+
+  # Who is here.
+  def resolve_user(conn), do: conn.assigns.current_user
+
+  # What they may do in the dashboard.
+  def resolve_access(%{admin?: true}), do: :all
+  def resolve_access(nil), do: :forbidden
+  def resolve_access(_user), do: :read_only
+
+  # Who Lotus core acts for. Reaches middleware and telemetry.
+  def resolve_context(%{id: id, roles: roles}), do: %{user_id: id, roles: roles}
+  def resolve_context(nil), do: nil
+
+  # What data they may see. Reaches the visibility resolver, and is hashed
+  # into the discovery and result cache keys so two tenants never read each
+  # other's cached rows. Keep it low-cardinality.
+  def resolve_scope(%{tenant_id: tenant_id}), do: %{tenant_id: tenant_id}
+  def resolve_scope(nil), do: nil
+end
+```
+
+`resolve_access/1` gates the dashboard UI. `resolve_context/1` and
+`resolve_scope/1` gate the data: every query the dashboard runs, every schema
+it lists and every table it describes carries them into Lotus core as the
+`:context` and `:scope` options. Without them an access-control plug sees
+`nil` for everything a user does in the browser, even though the same plug
+sees a real actor for calls the host app makes itself.
+
+Every callback is optional. A dashboard with no resolver, or one that
+implements only `resolve_user/1`, calls core with no actor at all — the same
+middleware payloads and the same cache keys as before.
+
+The CSV export route resolves the actor the same way, from the conn.
+
 ## Content Security Policy (CSP)
 
 If your application sets a `Content-Security-Policy` header (via `:put_secure_browser_headers`
