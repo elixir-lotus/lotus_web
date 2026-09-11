@@ -41,3 +41,4 @@ priv/static/*
 plans/
 .claude
 CLAUDE.local.md
+docs/superpowers/*

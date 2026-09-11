@@ -1,6 +1,7 @@
 defmodule Lotus.Web.DashboardLive do
   use Lotus.Web, :live_view
 
+  alias Lotus.Web.Actor
   alias Lotus.Web.{DashboardEditorPage, PublicDashboardPage, QueriesPage, QueryEditorPage}
 
   @impl Phoenix.LiveView
@@ -11,6 +12,7 @@ defmodule Lotus.Web.DashboardLive do
 
     page = resolve_page(params)
     {resolver, user, access, features, page_title} = mount_defaults(page, session)
+    {context, scope} = Actor.resolve(resolver, user)
 
     put_router_prefix(socket, prefix)
 
@@ -23,6 +25,8 @@ defmodule Lotus.Web.DashboardLive do
       |> assign(:resolver, resolver)
       |> assign(:user, user)
       |> assign(:access, access)
+      |> assign(:context, context)
+      |> assign(:scope, scope)
       |> assign(:features, features)
       |> assign(:public_view, page.name == :public_dashboard)
       |> page.comp.handle_mount()

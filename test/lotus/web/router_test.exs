@@ -7,12 +7,13 @@ defmodule Lotus.Web.RouterTest do
 
   describe "__options__" do
     test "setting default options in the router module" do
-      {session_name, session_opts, _public_session_opts, route_opts} =
+      {session_name, session_opts, _public_session_opts, route_opts, export_opts} =
         Router.__options__("/lotus", [])
 
       assert session_name == :lotus_dashboard
       assert route_opts[:as] == :lotus_dashboard
       assert session_opts[:root_layout] == {Lotus.Web.Layouts, :root}
+      assert export_opts[:private] == %{lotus_resolver: Lotus.Web.Resolver}
     end
 
     test "passing the transport through to the session" do
@@ -57,7 +58,8 @@ defmodule Lotus.Web.RouterTest do
   end
 
   defp options_to_session(conn, opts) do
-    {_name, sess_opts, _public_sess_opts, _opts} = Router.__options__("/lotus", opts)
+    {_name, sess_opts, _public_sess_opts, _opts, _export_opts} =
+      Router.__options__("/lotus", opts)
 
     {Router, :__session__, session_opts} = Keyword.get(sess_opts, :session)
 

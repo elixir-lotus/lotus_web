@@ -48,7 +48,7 @@ config :lotus_web, Lotus.Web.Repo,
   url: System.get_env("POSTGRES_URL") || "postgres://localhost:5432/lotus_web_test"
 
 config :lotus,
-  ecto_repo: WebDev.Repo,
+  storage_repo: WebDev.Repo,
   data_sources: %{
     "main" => WebDev.Repo
   }

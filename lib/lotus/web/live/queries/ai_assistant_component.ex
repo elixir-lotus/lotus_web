@@ -1,6 +1,6 @@
 defmodule Lotus.Web.Queries.AiAssistantComponent do
   @moduledoc """
-  Conversational AI Assistant for generating and refining SQL queries.
+  Conversational AI Assistant for generating and refining queries.
   Displays conversation history with message bubbles and supports multi-turn interactions.
   """
   use Lotus.Web, :live_component
@@ -13,7 +13,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
   # - data_source: string (from query_form)
   # - generating: boolean (loading state)
   # - conversation: map (conversation history)
-  # - current_sql: string (current SQL in the editor)
+  # - current_statement: string (current query in the editor)
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
@@ -31,8 +31,8 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
     >
       <%= if @visible do %>
         <.header parent={@parent} conversation={@conversation} />
-        <.conversation_history conversation={@conversation} parent={@parent} current_sql={@current_sql} />
-        <.input_area generating={@generating} parent={@parent} current_sql={@current_sql} />
+        <.conversation_history conversation={@conversation} parent={@parent} current_statement={@current_statement} />
+        <.input_area generating={@generating} parent={@parent} current_statement={@current_statement} />
       <% end %>
     </div>
     """
@@ -89,7 +89,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
 
   attr(:conversation, :map, required: true)
   attr(:parent, :any, required: true)
-  attr(:current_sql, :string, default: nil)
+  attr(:current_statement, :string, default: nil)
 
   defp conversation_history(assigns) do
     ~H"""
@@ -99,10 +99,10 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
       class="flex-1 overflow-y-auto p-4 space-y-3"
     >
       <%= if length(@conversation.messages) == 0 do %>
-        <.empty_state parent={@parent} current_sql={@current_sql} />
+        <.empty_state parent={@parent} current_statement={@current_statement} />
       <% else %>
         <%= for {message, index} <- Enum.with_index(@conversation.messages) do %>
-          <.message_bubble message={message} index={index} parent={@parent} current_sql={@current_sql} />
+          <.message_bubble message={message} index={index} parent={@parent} current_statement={@current_statement} />
         <% end %>
       <% end %>
     </div>
@@ -110,7 +110,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
   end
 
   attr(:parent, :any, required: true)
-  attr(:current_sql, :string, default: nil)
+  attr(:current_statement, :string, default: nil)
 
   defp empty_state(assigns) do
     ~H"""
@@ -122,7 +122,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
         <%= gettext("Start a conversation") %>
       </h4>
       <p class="text-xs text-gray-500 dark:text-gray-400 max-w-xs">
-        <%= gettext("Ask me to generate a SQL query, and I can help you refine it through conversation") %>
+        <%= gettext("Ask me to generate a query, and I can help you refine it through conversation") %>
       </p>
       <div class="mt-6 text-xs text-gray-400 dark:text-gray-500 space-y-2">
         <p class="font-medium"><%= gettext("Example prompts:") %></p>
@@ -138,7 +138,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
         </p>
         <.ai_action_buttons
           parent={@parent}
-          current_sql={@current_sql}
+          current_statement={@current_statement}
           generating={false}
           size={:lg}
         />
@@ -148,7 +148,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
   end
 
   attr(:parent, :any, required: true)
-  attr(:current_sql, :string, default: nil)
+  attr(:current_statement, :string, default: nil)
   attr(:generating, :boolean, default: false)
   attr(:size, :atom, values: [:sm, :lg], default: :sm)
 
@@ -159,11 +159,11 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
         type="button"
         phx-click="explain_query"
         phx-target={@parent}
-        disabled={ai_action_disabled?(@generating, @current_sql)}
-        title={gettext("Get a plain-language explanation of your SQL query")}
+        disabled={ai_action_disabled?(@generating, @current_statement)}
+        title={gettext("Get a plain-language explanation of your query")}
         class={[
           ai_action_base_classes(@size),
-          if(ai_action_disabled?(@generating, @current_sql),
+          if(ai_action_disabled?(@generating, @current_statement),
             do: ai_action_disabled_classes(@size),
             else: "text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/20"
           )
@@ -176,11 +176,11 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
         type="button"
         phx-click="optimize_query"
         phx-target={@parent}
-        disabled={ai_action_disabled?(@generating, @current_sql)}
-        title={gettext("Analyze your SQL and suggest performance improvements")}
+        disabled={ai_action_disabled?(@generating, @current_statement)}
+        title={gettext("Analyze your query and suggest performance improvements")}
         class={[
           ai_action_base_classes(@size),
-          if(ai_action_disabled?(@generating, @current_sql),
+          if(ai_action_disabled?(@generating, @current_statement),
             do: ai_action_disabled_classes(@size),
             else: "text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
           )
@@ -193,8 +193,8 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
     """
   end
 
-  defp ai_action_disabled?(generating, current_sql),
-    do: generating or is_nil(current_sql) or current_sql == ""
+  defp ai_action_disabled?(generating, current_statement),
+    do: generating or is_nil(current_statement) or current_statement == ""
 
   defp ai_action_base_classes(:lg),
     do:
@@ -210,7 +210,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
   attr(:message, :map, required: true)
   attr(:index, :integer, required: true)
   attr(:parent, :any, required: true)
-  attr(:current_sql, :string, default: nil)
+  attr(:current_statement, :string, default: nil)
 
   defp message_bubble(assigns) do
     ~H"""
@@ -239,9 +239,9 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
                 <p class="text-xs text-gray-600 dark:text-gray-400"><%= @message.content %></p>
               <% end %>
 
-              <%= if @message.sql do %>
+              <%= if @message.statement do %>
                 <div class="mt-2 relative group">
-                  <pre class="text-xs bg-slate-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100 p-2 rounded overflow-x-auto"><code><%= @message.sql %></code></pre>
+                  <pre class="text-xs bg-slate-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100 p-2 rounded overflow-x-auto"><code><%= @message.statement %></code></pre>
                   <%= if Map.get(@message, :variables, []) != [] do %>
                     <div class="mt-1.5 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                       <Icons.variable class="h-3.5 w-3.5 text-pink-500 dark:text-pink-400" />
@@ -253,13 +253,13 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
                   <button
                     type="button"
                     phx-click="use_ai_query"
-                    phx-value-sql={@message.sql}
+                    phx-value-statement={@message.statement}
                     phx-value-message-index={@index}
                     phx-target={@parent}
                     class="mt-2 w-full inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded bg-pink-600 hover:bg-pink-700 text-white transition-colors"
                   >
                     <Icons.corner_down_right class="h-3.5 w-3.5 mr-1" />
-                    <%= if variables_only_change?(@message, @current_sql) do %>
+                    <%= if variables_only_change?(@message, @current_statement) do %>
                       <%= gettext("Apply variable changes") %>
                     <% else %>
                       <%= gettext("Use this query") %>
@@ -285,12 +285,12 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
                 </div>
               </div>
 
-              <%= if @message.sql do %>
+              <%= if @message.statement do %>
                 <details class="mt-2">
                   <summary class="text-xs cursor-pointer text-red-800 dark:text-red-300 hover:underline">
                     <%= gettext("Show failed query") %>
                   </summary>
-                  <pre class="mt-1 text-xs bg-red-100 dark:bg-red-950/30 p-2 rounded overflow-x-auto"><code><%= @message.sql %></code></pre>
+                  <pre class="mt-1 text-xs bg-red-100 dark:bg-red-950/30 p-2 rounded overflow-x-auto"><code><%= @message.statement %></code></pre>
                 </details>
               <% end %>
 
@@ -386,7 +386,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
       case @type do
         "index" -> "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
         "rewrite" -> "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
-        "schema" -> "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300"
+        "structure" -> "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300"
         "configuration" -> "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
         _ -> "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
       end
@@ -416,7 +416,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
 
   attr(:generating, :boolean, required: true)
   attr(:parent, :any, required: true)
-  attr(:current_sql, :string, default: nil)
+  attr(:current_statement, :string, default: nil)
 
   defp input_area(assigns) do
     ~H"""
@@ -424,7 +424,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
       <div class="mb-2">
         <.ai_action_buttons
           parent={@parent}
-          current_sql={@current_sql}
+          current_statement={@current_statement}
           generating={@generating}
           size={:sm}
         />
@@ -468,15 +468,15 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
     """
   end
 
-  defp variables_only_change?(message, current_sql) do
-    message.sql != nil and
+  defp variables_only_change?(message, current_statement) do
+    message.statement != nil and
       Map.get(message, :variables, []) != [] and
-      normalize_sql(message.sql) == normalize_sql(current_sql)
+      normalize_statement(message.statement) == normalize_statement(current_statement)
   end
 
-  defp normalize_sql(nil), do: nil
+  defp normalize_statement(nil), do: nil
 
-  defp normalize_sql(sql) when is_binary(sql),
+  defp normalize_statement(sql) when is_binary(sql),
     do: sql |> String.trim() |> String.replace(~r/\s+/, " ")
 
   defp variable_summary(variables) when is_list(variables) and variables != [] do
@@ -511,7 +511,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
      |> assign(visible: false)
      |> assign(generating: false)
      |> assign(conversation: new_conversation())
-     |> assign(current_sql: nil)}
+     |> assign(current_statement: nil)}
   end
 
   @impl Phoenix.LiveComponent
@@ -522,7 +522,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
   defp new_conversation do
     %{
       messages: [],
-      schema_context: %{tables_analyzed: []},
+      source_context: %{tables_analyzed: []},
       generation_count: 0,
       started_at: DateTime.utc_now(),
       last_activity: DateTime.utc_now()

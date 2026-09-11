@@ -19,26 +19,33 @@ defmodule Lotus.Web.SourcesMap do
     defstruct [:name, :is_default, :display_name, tables: []]
   end
 
-  def build() do
+  @doc """
+  Build the schema hierarchy for every configured source.
+
+  `opts` are the actor options (`:context`, `:scope`) forwarded to every core
+  discovery call, so a scoped dashboard sees only the schemas and tables its
+  visibility resolver allows.
+  """
+  def build(opts \\ []) do
     databases =
       Lotus.list_data_source_names()
-      |> Enum.map(&load_database/1)
+      |> Enum.map(&load_database(&1, opts))
       |> Enum.reject(&is_nil/1)
 
     %__MODULE__{databases: databases}
   end
 
-  defp load_database(db_name) do
-    source_type = Lotus.Sources.source_type(db_name)
-    supports_schemas = Lotus.Sources.supports_feature?(source_type, :schema_hierarchy)
+  defp load_database(db_name, opts) do
+    source_type = Lotus.Source.source_type(db_name)
+    supports_schemas = Lotus.Source.supports_feature?(db_name, :schema_hierarchy)
 
     repo = Lotus.Config.get_data_source!(db_name)
 
     schemas =
       if supports_schemas do
-        load_postgres_schemas(db_name, repo)
+        load_postgres_schemas(db_name, repo, opts)
       else
-        load_simple_tables(db_name)
+        load_simple_tables(db_name, opts)
       end
 
     %Database{
@@ -65,11 +72,12 @@ defmodule Lotus.Web.SourcesMap do
       nil
   end
 
-  defp load_postgres_schemas(db_name, repo) do
-    with {:ok, schema_names} <- Lotus.list_schemas(db_name),
-         [default_schema | _] <- Lotus.Source.default_schemas(repo),
+  defp load_postgres_schemas(db_name, _repo, opts) do
+    with {:ok, schema_names} <- Lotus.list_schemas(db_name, opts),
+         adapter <- Lotus.Source.get_source!(db_name),
+         [default_schema | _] <- Lotus.Source.Adapter.default_schemas(adapter),
          search_path <- Enum.join(schema_names, ","),
-         {:ok, all_tables} <- Lotus.list_tables(db_name, search_path: search_path) do
+         {:ok, all_tables} <- Lotus.list_tables(db_name, [search_path: search_path] ++ opts) do
       all_tables
       |> Enum.group_by(fn {schema, _table} -> schema end, fn {_schema, table} -> table end)
       |> Enum.map(fn {schema_name, tables} ->
@@ -82,22 +90,29 @@ defmodule Lotus.Web.SourcesMap do
           tables: Enum.sort(tables)
         }
       end)
-      |> Enum.sort_by(fn schema -> if schema.is_default, do: "", else: schema.name end)
+      |> Enum.sort_by(&schema_sort_key/1)
     else
       _ -> []
     end
   end
 
-  defp load_simple_tables(db_name) do
-    case Lotus.list_tables(db_name) do
+  # The default schema sorts first; the rest stay alphabetical.
+  defp schema_sort_key(%Schema{is_default: true}), do: ""
+  defp schema_sort_key(%Schema{name: name}), do: name
+
+  defp load_simple_tables(db_name, opts) do
+    adapter = Lotus.Source.get_source!(db_name)
+    schema_name = List.first(Lotus.Source.Adapter.default_schemas(adapter)) || "default"
+
+    case Lotus.list_tables(db_name, opts) do
       {:ok, tables} ->
         table_names = extract_table_names(tables)
 
         [
           %Schema{
-            name: "default",
+            name: schema_name,
             is_default: false,
-            display_name: Lotus.Sources.hierarchy_label(db_name),
+            display_name: Lotus.Source.hierarchy_label(db_name),
             tables: Enum.sort(table_names)
           }
         ]

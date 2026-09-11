@@ -33,6 +33,36 @@ services:
       - mysql_data:/var/lib/mysql
     command: --default-authentication-plugin=mysql_native_password
 
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    restart: always
+    container_name: lotus_web_clickhouse
+    ports:
+      - "9123:8123"
+      - "9100:9000"
+    environment:
+      CLICKHOUSE_DB: lotus_web_dev
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: clickhouse
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+
+  opensearch:
+    image: opensearchproject/opensearch:2.18.0
+    restart: always
+    container_name: lotus_web_opensearch
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=admin123!
+    ports:
+      - "9209:9200"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+
 volumes:
   db:
   mysql_data:
+  clickhouse_data:
+  opensearch_data:

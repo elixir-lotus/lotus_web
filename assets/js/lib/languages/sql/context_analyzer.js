@@ -1,32 +1,15 @@
-export class SQLContextAnalyzer {
-  constructor() {
-    this.keywords = new Set([
-      "select",
-      "from",
-      "where",
-      "join",
-      "inner",
-      "left",
-      "right",
-      "outer",
-      "on",
-      "as",
-      "and",
-      "or",
-      "order",
-      "by",
-      "group",
-      "having",
-      "limit",
-      "offset",
-      "union",
-      "distinct",
-      "count",
-      "sum",
-      "avg",
-      "max",
-      "min",
-    ]);
+import { SQL_DEFAULTS } from "./defaults.js";
+
+export class SqlContextAnalyzer {
+  constructor(config = {}) {
+    const allKeywords = [
+      ...SQL_DEFAULTS.keywords,
+      ...(config.keywords || []).map((k) => k.toLowerCase()),
+    ];
+    this.keywords = new Set(allKeywords);
+    this.contextBoundaries = (config.contextBoundaries || []).map((b) =>
+      b.toLowerCase(),
+    );
   }
 
   analyzeContext(query, cursorPos) {
@@ -137,6 +120,15 @@ export class SQLContextAnalyzer {
 
   determineContextType(beforeCursor) {
     const trimmed = beforeCursor.trim();
+
+    // Check adapter-specific context boundaries first
+    for (const boundary of this.contextBoundaries) {
+      const pattern = new RegExp(`\\b${boundary}\\s*$`, "i");
+      if (pattern.test(trimmed)) {
+        if (boundary === "prewhere") return "after_where";
+        return `after_${boundary}`;
+      }
+    }
 
     if (/\bselect\s*$/i.test(trimmed)) {
       return "after_select";

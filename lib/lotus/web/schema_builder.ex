@@ -5,8 +5,13 @@ defmodule Lotus.Web.SchemaBuilder do
 
   @doc """
   Builds schema for CodeMirror autocomplete from SourcesMap and search_path.
+
+  `opts` are the actor options (`:context`, `:scope`) forwarded to the core
+  calls that describe each table.
   """
-  def build(%SourcesMap{} = sources_map, data_repo, search_path \\ nil) do
+  def build(sources_map, data_repo, search_path \\ nil, opts \\ [])
+
+  def build(%SourcesMap{} = sources_map, data_repo, search_path, opts) do
     case SourcesMap.get_database(sources_map, data_repo) do
       nil ->
         {:error, :database_not_found}
@@ -15,7 +20,7 @@ defmodule Lotus.Web.SchemaBuilder do
         schema_map =
           database
           |> determine_selected_schemas(data_repo, search_path)
-          |> build_schema_map(database, data_repo)
+          |> build_schema_map(database, data_repo, opts)
 
         {:ok, schema_map}
     end
@@ -33,25 +38,25 @@ defmodule Lotus.Web.SchemaBuilder do
     if database.supports_schemas do
       case Lotus.Config.data_sources()[data_repo] do
         nil -> ["public"]
-        repo -> Lotus.Source.default_schemas(repo)
+        _repo -> Lotus.Source.Adapter.default_schemas(Lotus.Source.get_source!(data_repo))
       end
     else
       Enum.map(database.schemas, & &1.name)
     end
   end
 
-  defp build_schema_map(selected_schemas, database, data_repo) do
+  defp build_schema_map(selected_schemas, database, data_repo, opts) do
     database.schemas
     |> Enum.filter(&(&1.name in selected_schemas))
     |> Enum.reduce(%{}, fn schema, acc ->
-      build_tables_for_schema(schema, selected_schemas, database, data_repo, acc)
+      build_tables_for_schema(schema, selected_schemas, database, data_repo, acc, opts)
     end)
   end
 
-  defp build_tables_for_schema(schema, selected_schemas, database, data_repo, acc) do
+  defp build_tables_for_schema(schema, selected_schemas, database, data_repo, acc, opts) do
     Enum.reduce(schema.tables, acc, fn table_name, inner_acc ->
       qualified_table = qualify_table_name(table_name, schema, selected_schemas, database)
-      columns = fetch_table_columns(data_repo, table_name, schema)
+      columns = fetch_table_columns(data_repo, table_name, schema, opts)
       Map.put(inner_acc, qualified_table, columns)
     end)
   end
@@ -64,8 +69,8 @@ defmodule Lotus.Web.SchemaBuilder do
     end
   end
 
-  defp fetch_table_columns(data_repo, table_name, schema) do
-    case Lotus.get_table_schema(data_repo, table_name, search_path: schema.name) do
+  defp fetch_table_columns(data_repo, table_name, schema, opts) do
+    case Lotus.describe_table(data_repo, table_name, [search_path: schema.name] ++ opts) do
       {:ok, columns} -> Enum.map(columns, & &1.name)
       {:error, _} -> []
     end

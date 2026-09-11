@@ -7,7 +7,9 @@ defmodule Lotus.Web.QueryEditorPage do
 
   @default_page_size 1000
 
+  alias Lotus.Query.Statement
   alias Lotus.Storage.Query
+  alias Lotus.Web.Actor
   alias Lotus.Web.ExportController
   alias Lotus.Web.Formatters.VariableOptionsFormatter, as: OptionsFormatter
   alias Lotus.Web.Page
@@ -78,7 +80,7 @@ defmodule Lotus.Web.QueryEditorPage do
               data_source={@query_form[:data_source].value}
               generating={@ai_generating}
               conversation={@ai_conversation}
-              current_sql={@query_form[:statement].value}
+              current_statement={@query_form[:statement].value}
             />
 
             <div class={[
@@ -109,6 +111,7 @@ defmodule Lotus.Web.QueryEditorPage do
                   query_timeout={@query_timeout}
                   timeout_options_enabled={:timeout_options in (@features || [])}
                   source_type={@source_type}
+                  data_source={@default_source}
                 />
 
                 <.results_pill
@@ -150,6 +153,7 @@ defmodule Lotus.Web.QueryEditorPage do
           id="dropdown_options_modal"
           variable_name={@dropdown_options_variable_name}
           variable_data={Variables.get_data(@query_form, @dropdown_options_variable_name)}
+          dynamic_options={@dynamic_options}
           parent={@myself}
         />
       <% end %>
@@ -569,6 +573,7 @@ defmodule Lotus.Web.QueryEditorPage do
     else
       conversation = add_user_message(socket.assigns.ai_conversation, message)
       query_context = build_ai_query_context(socket.assigns)
+      actor = Actor.opts(socket.assigns)
 
       socket =
         socket
@@ -576,10 +581,12 @@ defmodule Lotus.Web.QueryEditorPage do
         |> assign(ai_conversation: conversation)
         |> start_async(:ai_generation, fn ->
           Lotus.AI.generate_query_with_context(
-            prompt: message,
-            data_source: data_source,
-            conversation: conversation,
-            query_context: query_context
+            [
+              prompt: message,
+              data_source: data_source,
+              conversation: conversation,
+              query_context: query_context
+            ] ++ actor
           )
         end)
 
@@ -588,15 +595,15 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   @impl Phoenix.LiveComponent
-  def handle_event("use_ai_query", %{"sql" => sql} = params, socket) do
-    current_sql = socket.assigns.query_form[:statement].value
-    sql_changed = sql != current_sql
+  def handle_event("use_ai_query", %{"statement" => statement} = params, socket) do
+    current_statement = socket.assigns.query_form[:statement].value
+    statement_changed = statement != current_statement
     ai_variables = extract_ai_variables(params, socket)
 
-    socket = apply_ai_query(socket, sql, ai_variables)
+    socket = apply_ai_query(socket, statement, ai_variables)
 
     flash_message =
-      case {sql_changed, ai_variables != nil} do
+      case {statement_changed, ai_variables != nil} do
         {true, true} -> gettext("Query and variable settings applied")
         {true, false} -> gettext("Query inserted into editor")
         {false, true} -> gettext("Variable settings updated")
@@ -621,6 +628,7 @@ defmodule Lotus.Web.QueryEditorPage do
       {:noreply, show_toast(socket, :error, gettext("Write a query first before optimizing"))}
     else
       data_source = resolve_data_source(socket)
+      actor = Actor.opts(socket.assigns)
 
       conversation =
         add_user_message(socket.assigns.ai_conversation, gettext("Optimize this query"))
@@ -632,8 +640,10 @@ defmodule Lotus.Web.QueryEditorPage do
         |> assign(ai_conversation: conversation)
         |> start_async(:ai_optimization, fn ->
           Lotus.AI.suggest_optimizations(
-            sql: sql,
-            data_source: data_source
+            [
+              statement: Statement.new(sql),
+              data_source: data_source
+            ] ++ actor
           )
         end)
 
@@ -649,6 +659,7 @@ defmodule Lotus.Web.QueryEditorPage do
       {:noreply, show_toast(socket, :error, gettext("Write a query first before explaining"))}
     else
       data_source = resolve_data_source(socket)
+      actor = Actor.opts(socket.assigns)
 
       conversation =
         add_user_message(socket.assigns.ai_conversation, gettext("Explain this query"))
@@ -660,8 +671,10 @@ defmodule Lotus.Web.QueryEditorPage do
         |> assign(ai_conversation: conversation)
         |> start_async(:ai_explanation, fn ->
           Lotus.AI.explain_query(
-            sql: sql,
-            data_source: data_source
+            [
+              statement: sql,
+              data_source: data_source
+            ] ++ actor
           )
         end)
 
@@ -676,6 +689,7 @@ defmodule Lotus.Web.QueryEditorPage do
       {:noreply, show_toast(socket, :error, gettext("Write a query first before explaining"))}
     else
       data_source = resolve_data_source(socket)
+      actor = Actor.opts(socket.assigns)
 
       conversation =
         add_user_message(
@@ -690,9 +704,11 @@ defmodule Lotus.Web.QueryEditorPage do
         |> assign(ai_conversation: conversation)
         |> start_async(:ai_explanation, fn ->
           Lotus.AI.explain_query(
-            sql: sql,
-            fragment: fragment,
-            data_source: data_source
+            [
+              statement: sql,
+              fragment: fragment,
+              data_source: data_source
+            ] ++ actor
           )
         end)
 
@@ -818,6 +834,17 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   @impl Phoenix.LiveComponent
+  def handle_event("fetch_dialect_config", %{"dialect" => dialect_name}, socket) do
+    config =
+      case find_source_for_dialect(dialect_name, socket.assigns) do
+        nil -> %{language: "sql", keywords: [], types: [], functions: [], context_boundaries: []}
+        source_name -> Lotus.Source.editor_config(source_name)
+      end
+
+    {:reply, %{config: config}, socket}
+  end
+
+  @impl Phoenix.LiveComponent
   def handle_event("variables_detected", %{"variables" => names}, socket) do
     names = List.wrap(names)
     existing_variables = socket.assigns.query.variables
@@ -846,6 +873,29 @@ defmodule Lotus.Web.QueryEditorPage do
   @impl Phoenix.LiveComponent
   def handle_event("copy_query", _params, socket) do
     {:noreply, push_event(socket, "copy-editor-content", %{})}
+  end
+
+  @impl Phoenix.LiveComponent
+  def handle_event("format_query", _params, socket) do
+    {:noreply,
+     push_event(socket, "format-editor-content", %{
+       dialect: socket.assigns.editor_dialect
+     })}
+  end
+
+  @impl Phoenix.LiveComponent
+  def handle_event("format-editor-content-success", _params, socket) do
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveComponent
+  def handle_event("format-editor-content-error", %{"error" => error}, socket) do
+    {:noreply,
+     show_toast(
+       socket,
+       :error,
+       gettext("Could not format query: %{error}", error: error)
+     )}
   end
 
   @impl Phoenix.LiveComponent
@@ -1068,12 +1118,12 @@ defmodule Lotus.Web.QueryEditorPage do
     conversation = socket.assigns.ai_conversation
 
     case result do
-      {:ok, %{sql: sql, variables: variables}} ->
+      {:ok, %{statement: statement, variables: variables}} ->
         conversation =
           add_assistant_response(
             conversation,
             gettext("Here's your query:"),
-            sql,
+            statement,
             variables || []
           )
 
@@ -1301,7 +1351,9 @@ defmodule Lotus.Web.QueryEditorPage do
     repo = socket.assigns.query.data_source || socket.assigns.default_source
     search_path = socket.assigns.query.search_path
 
-    case fetch_dropdown_options(assigns.sql_query, repo, search_path, limit: 3, cache: false) do
+    dropdown_opts = [limit: 3, cache: false] ++ Actor.opts(socket.assigns)
+
+    case fetch_dropdown_options(assigns.sql_query, repo, search_path, dropdown_opts) do
       {:ok, results} ->
         send_update(DropdownOptionsModal,
           id: "dropdown_options_modal",
@@ -1325,14 +1377,21 @@ defmodule Lotus.Web.QueryEditorPage do
   defp assign_data_sources(socket) do
     data_source_names = Lotus.list_data_source_names()
     {default_source, _module} = Lotus.default_data_source()
-    sources_map = SourcesMap.build()
 
-    source_type = Lotus.Sources.source_type(default_source)
+    source_type = Lotus.Source.source_type(default_source)
 
     socket
     |> assign(data_source_names: data_source_names, default_source: default_source)
-    |> assign(sources_map: sources_map)
+    |> assign(sources_map: build_sources_map(socket))
     |> assign(source_type: source_type)
+  end
+
+  # Building the sources map lists schemas and tables for every configured
+  # source. Skipping it on the disconnected mount keeps those queries off the
+  # first render; the connected mount builds it before the editor needs a
+  # schema.
+  defp build_sources_map(socket) do
+    if connected?(socket), do: SourcesMap.build(Actor.opts(socket.assigns)), else: %SourcesMap{}
   end
 
   defp show_toast(socket, kind, message) do
@@ -1362,6 +1421,7 @@ defmodule Lotus.Web.QueryEditorPage do
       dropdown_options_variable_name: nil,
       editor_schema: nil,
       editor_dialect: nil,
+      dynamic_options: false,
       optional_variable_names: MapSet.new(),
       detected_variables: [],
       variable_form: to_form(%{}, as: "variables"),
@@ -1384,7 +1444,7 @@ defmodule Lotus.Web.QueryEditorPage do
 
   defp assign_query_changeset(socket, %Query{} = query) do
     changeset = Query.update(query, %{})
-    resolved_options = resolve_variable_options(query)
+    resolved_options = resolve_variable_options(query, Actor.opts(socket.assigns))
 
     variable_values =
       case Map.get(socket.assigns, :variable_values) do
@@ -1432,34 +1492,56 @@ defmodule Lotus.Web.QueryEditorPage do
   defp maybe_update_editor_schema(socket, data_source) do
     if data_source && data_source != "" do
       dialect = dialect_for_repo(data_source)
-      source_type = Lotus.Sources.source_type(data_source)
+      source_type = Lotus.Source.source_type(data_source)
       search_path = socket.assigns.query && socket.assigns.query.search_path
 
-      case SchemaBuilder.build(socket.assigns.sources_map, data_source, search_path) do
+      dynamic_options = dynamic_options?(data_source)
+
+      case SchemaBuilder.build(
+             socket.assigns.sources_map,
+             data_source,
+             search_path,
+             Actor.opts(socket.assigns)
+           ) do
         {:ok, schema} ->
           assign(socket,
             editor_schema: schema,
             editor_dialect: dialect,
-            source_type: source_type
+            source_type: source_type,
+            dynamic_options: dynamic_options
           )
 
         {:error, _reason} ->
           assign(socket,
             editor_schema: nil,
             editor_dialect: dialect,
-            source_type: source_type
+            source_type: source_type,
+            dynamic_options: dynamic_options
           )
       end
     else
-      assign(socket, editor_schema: nil, editor_dialect: nil)
+      assign(socket, editor_schema: nil, editor_dialect: nil, dynamic_options: false)
     end
   end
 
   defp dialect_for_repo(repo_name) do
-    case Lotus.Sources.query_language(repo_name) do
+    case Lotus.Source.query_language(repo_name) do
       "sql:" <> dialect -> dialect
+      "json:" <> _ = full -> full
       _ -> "sql"
     end
+  end
+
+  defp find_source_for_dialect(dialect_name, assigns) do
+    data_source_names = assigns[:data_source_names] || []
+
+    Enum.find(data_source_names, fn name ->
+      case Lotus.Source.query_language(name) do
+        "sql:" <> ^dialect_name -> true
+        ^dialect_name -> true
+        _ -> false
+      end
+    end)
   end
 
   defp build_query_changeset(query, params, action \\ :validate) do
@@ -1541,6 +1623,8 @@ defmodule Lotus.Web.QueryEditorPage do
         opts
       end
 
+    opts = Actor.merge(opts, socket.assigns)
+
     socket
     |> assign(running: true, error: nil, result: nil)
     |> start_async(:query_execution, fn ->
@@ -1569,7 +1653,7 @@ defmodule Lotus.Web.QueryEditorPage do
     show_settings = new_names != [] and socket.assigns.right_drawer != :variable_settings
 
     query = Ecto.Changeset.apply_changes(changeset)
-    resolved_options = resolve_variable_options(query)
+    resolved_options = resolve_variable_options(query, Actor.opts(socket.assigns))
     optional_names = Query.extract_optional_variable_names(query.statement)
 
     update_query_state(socket, changeset,
@@ -1589,9 +1673,32 @@ defmodule Lotus.Web.QueryEditorPage do
       "statement" => current_query.statement,
       "data_source" => current_query.data_source,
       "search_path" => current_query.search_path,
+      "query_language" => query_language_for(current_query.data_source),
       "variables" => Enum.map(current_query.variables, &Variables.to_params/1)
     }
   end
+
+  # The language a saved query is written in, recorded so core can reject the
+  # query when its source is later repointed at an engine that speaks a
+  # different language. Sources that no longer exist record nothing.
+  defp query_language_for(data_source) when is_binary(data_source) and data_source != "" do
+    Lotus.Source.query_language(data_source)
+  rescue
+    ArgumentError -> nil
+  end
+
+  defp query_language_for(_data_source), do: nil
+
+  # Whether a query against this source can return a flat list of values to
+  # populate a dropdown. Sources that answer `false` (Elasticsearch and other
+  # document-shaped languages) get manual option entry only.
+  defp dynamic_options?(data_source) when is_binary(data_source) and data_source != "" do
+    Lotus.Source.supports_feature?(data_source, :dynamic_options)
+  rescue
+    ArgumentError -> false
+  end
+
+  defp dynamic_options?(_data_source), do: false
 
   defp perform_save_operation(page, query_attrs) do
     case page do
@@ -1626,26 +1733,29 @@ defmodule Lotus.Web.QueryEditorPage do
     params = %{"variables" => Enum.map(updated_variables, &Variables.to_params/1)}
     changeset = build_query_changeset(updated_query, params)
 
-    resolved_options = resolve_variable_options(updated_query)
+    resolved_options = resolve_variable_options(updated_query, Actor.opts(socket.assigns))
 
     socket
     |> update_query_state(changeset, [])
     |> assign(:resolved_variable_options, resolved_options)
   end
 
-  defp fetch_dropdown_options(sql_query, repo, search_path, opts \\ []) do
+  defp fetch_dropdown_options(sql_query, repo, search_path, opts) do
     limit = Keyword.get(opts, :limit)
     use_cache = Keyword.get(opts, :cache, true)
+    actor = Keyword.take(opts, [:context, :scope])
 
     try do
       limited_query =
         if limit do
-          Lotus.Sources.limit_query(repo, sql_query, limit)
+          repo
+          |> Lotus.Source.limit_query(Statement.new(sql_query), limit)
+          |> Map.fetch!(:body)
         else
           sql_query
         end
 
-      run_opts = [repo: repo]
+      run_opts = Keyword.merge(actor, repo: repo)
 
       run_opts =
         if search_path && String.trim(search_path) != "" do
@@ -1675,21 +1785,24 @@ defmodule Lotus.Web.QueryEditorPage do
     end
   end
 
-  defp resolve_variable_options(%{data_source: nil}), do: %{}
-  defp resolve_variable_options(%{data_source: ""}), do: %{}
+  defp resolve_variable_options(%{data_source: nil}, _opts), do: %{}
+  defp resolve_variable_options(%{data_source: ""}, _opts), do: %{}
 
-  defp resolve_variable_options(%{
-         data_source: repo,
-         search_path: search_path,
-         variables: variables
-       }) do
+  defp resolve_variable_options(
+         %{
+           data_source: repo,
+           search_path: search_path,
+           variables: variables
+         },
+         opts
+       ) do
     variables
     |> Enum.reduce(%{}, fn var, acc ->
-      process_variable_options(var, acc, repo, search_path)
+      process_variable_options(var, acc, repo, search_path, opts)
     end)
   end
 
-  defp process_variable_options(var, acc, repo, search_path) do
+  defp process_variable_options(var, acc, repo, search_path, opts) do
     case var.options_query do
       nil ->
         acc
@@ -1698,7 +1811,7 @@ defmodule Lotus.Web.QueryEditorPage do
         acc
 
       sql_query when is_binary(sql_query) ->
-        case fetch_dropdown_options(sql_query, repo, search_path) do
+        case fetch_dropdown_options(sql_query, repo, search_path, opts) do
           {:ok, results} ->
             options = OptionsFormatter.to_select_options(results)
             Map.put(acc, var.name, options)
@@ -1734,10 +1847,8 @@ defmodule Lotus.Web.QueryEditorPage do
 
     filename = "#{timestamp}_#{base_name}.csv"
 
-    source_type = Lotus.Sources.source_type(repo)
-
     search_path =
-      if Lotus.Sources.supports_feature?(source_type, :search_path),
+      if Lotus.Source.supports_feature?(repo, :search_path),
         do: query.search_path,
         else: nil
 
@@ -1876,7 +1987,7 @@ defmodule Lotus.Web.QueryEditorPage do
   defp new_conversation do
     %{
       messages: [],
-      schema_context: %{tables_analyzed: []},
+      source_context: %{tables_analyzed: []},
       generation_count: 0,
       started_at: DateTime.utc_now(),
       last_activity: DateTime.utc_now()
@@ -1915,7 +2026,7 @@ defmodule Lotus.Web.QueryEditorPage do
     sql = assigns.query_form[:statement].value
 
     if is_binary(sql) and sql != "" do
-      %{sql: sql, variables: Enum.map(assigns.query.variables, &variable_to_ai_context/1)}
+      %{statement: sql, variables: Enum.map(assigns.query.variables, &variable_to_ai_context/1)}
     else
       nil
     end
@@ -1945,8 +2056,8 @@ defmodule Lotus.Web.QueryEditorPage do
   defp maybe_add_query_error(socket, error_msg) do
     if socket.assigns.left_drawer == :ai_assistant do
       # Get the current SQL from the editor (what the user just ran)
-      current_sql = socket.assigns.query.statement
-      add_error_message(socket.assigns.ai_conversation, to_string(error_msg), current_sql)
+      current_statement = socket.assigns.query.statement
+      add_error_message(socket.assigns.ai_conversation, to_string(error_msg), current_statement)
     else
       socket.assigns.ai_conversation
     end
@@ -1956,7 +2067,7 @@ defmodule Lotus.Web.QueryEditorPage do
     message = %{
       role: :user,
       content: content,
-      sql: nil,
+      statement: nil,
       timestamp: DateTime.utc_now()
     }
 
@@ -1967,11 +2078,11 @@ defmodule Lotus.Web.QueryEditorPage do
     }
   end
 
-  defp add_assistant_response(conversation, content, sql, variables) do
+  defp add_assistant_response(conversation, content, statement, variables) do
     message = %{
       role: :assistant,
       content: content,
-      sql: sql,
+      statement: statement,
       variables: variables,
       timestamp: DateTime.utc_now()
     }
@@ -1988,7 +2099,7 @@ defmodule Lotus.Web.QueryEditorPage do
     message = %{
       role: :optimization,
       content: nil,
-      sql: nil,
+      statement: nil,
       suggestions: suggestions,
       timestamp: DateTime.utc_now()
     }
@@ -2004,7 +2115,7 @@ defmodule Lotus.Web.QueryEditorPage do
     message = %{
       role: :explanation,
       content: explanation,
-      sql: nil,
+      statement: nil,
       timestamp: DateTime.utc_now()
     }
 
@@ -2015,11 +2126,11 @@ defmodule Lotus.Web.QueryEditorPage do
     }
   end
 
-  defp add_error_message(conversation, error_content, sql \\ nil) do
+  defp add_error_message(conversation, error_content, statement \\ nil) do
     message = %{
       role: :error,
       content: error_content,
-      sql: sql,
+      statement: statement,
       timestamp: DateTime.utc_now()
     }
 

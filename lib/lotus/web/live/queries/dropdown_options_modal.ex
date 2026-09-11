@@ -1,6 +1,10 @@
 defmodule Lotus.Web.Queries.DropdownOptionsModal do
   @moduledoc """
-  Modal component for configuring dropdown options with custom list and SQL query support.
+  Modal component for configuring dropdown options, by hand or from a query.
+
+  Query-based population is offered only where the data source declares the
+  `:dynamic_options` feature. Sources whose query language returns shaped
+  documents rather than a flat list of rows get manual entry only.
   """
 
   use Lotus.Web, :live_component
@@ -12,6 +16,7 @@ defmodule Lotus.Web.Queries.DropdownOptionsModal do
   def mount(socket) do
     {:ok,
      socket
+     |> assign(:dynamic_options, false)
      |> assign(:option_source, :static)
      |> assign(:custom_options, "")
      |> assign(:sql_query, "")
@@ -23,7 +28,7 @@ defmodule Lotus.Web.Queries.DropdownOptionsModal do
 
   @impl Phoenix.LiveComponent
   def handle_event("change_option_source", %{"source" => source}, socket) do
-    option_source = parse_option_source(source)
+    option_source = parse_option_source(source, socket.assigns.dynamic_options)
 
     socket =
       socket
@@ -111,7 +116,7 @@ defmodule Lotus.Web.Queries.DropdownOptionsModal do
         </h3>
 
         <div class="grid grid-cols-5 gap-6">
-          <div class="col-span-1 space-y-3">
+          <div :if={@dynamic_options} class="col-span-1 space-y-3">
             <div phx-click="change_option_source" phx-value-source="static" phx-target={@myself}>
               <.input
                 type="radio"
@@ -132,7 +137,7 @@ defmodule Lotus.Web.Queries.DropdownOptionsModal do
             </div>
           </div>
 
-          <div class="col-span-4 space-y-3">
+          <div class={if @dynamic_options, do: "col-span-4 space-y-3", else: "col-span-5 space-y-3"}>
             <div>
               <textarea
                 phx-keyup={if @option_source == :static, do: "update_custom_options", else: "update_sql_query"}
@@ -287,7 +292,13 @@ defmodule Lotus.Web.Queries.DropdownOptionsModal do
 
   def update(assigns, socket) do
     variable_data = assigns.variable_data || %{}
-    option_source = QueryVariable.get_option_source(variable_data)
+
+    option_source =
+      variable_data
+      |> QueryVariable.get_option_source()
+      |> to_string()
+      |> parse_option_source(assigns.dynamic_options)
+
     custom_options = OptionsFormatter.to_display_format(variable_data.static_options)
     sql_query = variable_data.options_query || ""
 
@@ -299,7 +310,6 @@ defmodule Lotus.Web.Queries.DropdownOptionsModal do
      |> assign(:sql_query, sql_query)}
   end
 
-  defp parse_option_source("static"), do: :static
-  defp parse_option_source("query"), do: :query
-  defp parse_option_source(_), do: :static
+  defp parse_option_source("query", true), do: :query
+  defp parse_option_source(_source, _dynamic_options), do: :static
 end

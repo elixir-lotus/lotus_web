@@ -6,6 +6,8 @@ defmodule Lotus.Web.ExportController do
   use Phoenix.Controller, formats: [:csv]
 
   alias Lotus.Export
+  alias Lotus.Web.Actor
+  alias Lotus.Web.Resolver
   alias Lotus.Storage.Query
 
   plug(:fetch_query_params)
@@ -122,6 +124,8 @@ defmodule Lotus.Web.ExportController do
         opts
       end
 
+    opts = Actor.merge(opts, resolve_actor(conn))
+
     query
     |> Export.stream_csv(opts)
     |> Enum.reduce_while(conn, fn chunk, conn ->
@@ -130,6 +134,20 @@ defmodule Lotus.Web.ExportController do
         {:error, :closed} -> {:halt, conn}
       end
     end)
+  end
+
+  # The export route sits outside the LiveView session, so the dashboard route
+  # hands it the resolver in the route's private data and it resolves the actor
+  # from the conn itself. A dashboard mounted without a resolver exports
+  # unscoped, exactly as it did before.
+  defp resolve_actor(conn) do
+    case conn.private[:lotus_resolver] do
+      nil ->
+        {nil, nil}
+
+      resolver ->
+        Actor.resolve(resolver, Resolver.call_with_fallback(resolver, :resolve_user, [conn]))
+    end
   end
 
   @doc """

@@ -19,7 +19,7 @@ Application.put_env(:lotus_web, Lotus.Web.ReportingTestRepo,
   pool: Ecto.Adapters.SQL.Sandbox
 )
 
-Application.put_env(:lotus, :ecto_repo, Lotus.Web.TestRepo)
+Application.put_env(:lotus, :storage_repo, Lotus.Web.TestRepo)
 
 Application.put_env(:lotus, :data_sources, %{
   "public" => Lotus.Web.TestRepo,
@@ -50,6 +50,16 @@ defmodule Lotus.Web.ErrorHTML do
   end
 end
 
+# A resolver that gives the dashboard an actor, so tests can assert that
+# :context and :scope reach Lotus core from a UI-driven call.
+defmodule Lotus.Web.Test.ScopedResolver do
+  @behaviour Lotus.Web.Resolver
+
+  def resolve_user(_conn), do: %{id: 42, tenant_id: "acme"}
+  def resolve_context(%{id: id}), do: %{user_id: id}
+  def resolve_scope(%{tenant_id: tenant_id}), do: %{tenant_id: tenant_id}
+end
+
 defmodule Lotus.Web.Test.Router do
   use Phoenix.Router
 
@@ -64,6 +74,11 @@ defmodule Lotus.Web.Test.Router do
     pipe_through(:browser)
 
     lotus_dashboard("/lotus", features: [:timeout_options])
+
+    lotus_dashboard("/scoped",
+      as: :scoped_dashboard,
+      resolver: Lotus.Web.Test.ScopedResolver
+    )
   end
 end
 
