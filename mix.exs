@@ -61,6 +61,7 @@ defmodule Lotus.Web.MixProject do
 
       # Tests
       {:floki, "~> 0.33", only: [:test, :dev]},
+      {:lazy_html, ">= 0.1.0", only: :test},
 
       # Dev Server
       {:bandit, "~> 1.5", only: :dev},
