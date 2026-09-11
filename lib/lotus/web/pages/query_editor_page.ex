@@ -1740,7 +1740,7 @@ defmodule Lotus.Web.QueryEditorPage do
     |> assign(:resolved_variable_options, resolved_options)
   end
 
-  defp fetch_dropdown_options(sql_query, repo, search_path, opts \\ []) do
+  defp fetch_dropdown_options(sql_query, repo, search_path, opts) do
     limit = Keyword.get(opts, :limit)
     use_cache = Keyword.get(opts, :cache, true)
     actor = Keyword.take(opts, [:context, :scope])

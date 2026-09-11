@@ -90,11 +90,15 @@ defmodule Lotus.Web.SourcesMap do
           tables: Enum.sort(tables)
         }
       end)
-      |> Enum.sort_by(fn schema -> if schema.is_default, do: "", else: schema.name end)
+      |> Enum.sort_by(&schema_sort_key/1)
     else
       _ -> []
     end
   end
+
+  # The default schema sorts first; the rest stay alphabetical.
+  defp schema_sort_key(%Schema{is_default: true}), do: ""
+  defp schema_sort_key(%Schema{name: name}), do: name
 
   defp load_simple_tables(db_name, opts) do
     adapter = Lotus.Source.get_source!(db_name)

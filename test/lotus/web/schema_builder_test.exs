@@ -169,7 +169,7 @@ defmodule Lotus.Web.SchemaBuilderTest do
 
       Enum.each(schema, fn {_table_name, columns} ->
         assert is_list(columns)
-        assert length(columns) > 0
+        refute columns == []
       end)
     end
 

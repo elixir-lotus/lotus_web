@@ -19,7 +19,7 @@ defmodule Lotus.Web.VegaSpecBuilderTest do
     test "returns a non-empty list of strings" do
       ids = VegaSpecBuilder.chart_type_ids()
       assert is_list(ids)
-      assert length(ids) > 0
+      refute ids == []
       assert Enum.all?(ids, &is_binary/1)
     end
 
