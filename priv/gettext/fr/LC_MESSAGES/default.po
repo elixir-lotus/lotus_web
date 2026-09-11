@@ -1452,8 +1452,8 @@ msgstr "Demander à l'IA de corriger"
 
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:125
 #, elixir-autogen, elixir-format
-msgid "Ask me to generate a SQL query, and I can help you refine it through conversation"
-msgstr "Demandez-moi de générer une requête SQL, et je peux vous aider à l'affiner par la conversation"
+msgid "Ask me to generate a query, and I can help you refine it through conversation"
+msgstr "Demandez-moi de générer une requête, et je peux vous aider à l'affiner par la conversation"
 
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:69
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:70
@@ -2021,8 +2021,8 @@ msgstr "Votre requête est déjà bien optimisée !"
 
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:180
 #, elixir-autogen, elixir-format
-msgid "Analyze your SQL and suggest performance improvements"
-msgstr "Analyser votre SQL et suggérer des améliorations de performance"
+msgid "Analyze your query and suggest performance improvements"
+msgstr "Analyser votre requête et suggérer des améliorations de performance"
 
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:173
 #, elixir-autogen, elixir-format
@@ -2041,8 +2041,8 @@ msgstr "Échec de l'explication : %{error}"
 
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:163
 #, elixir-autogen, elixir-format
-msgid "Get a plain-language explanation of your SQL query"
-msgstr "Obtenir une explication en langage courant de votre requête SQL"
+msgid "Get a plain-language explanation of your query"
+msgstr "Obtenir une explication en langage courant de votre requête"
 
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:372
 #, elixir-autogen, elixir-format

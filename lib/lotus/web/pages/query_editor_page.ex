@@ -7,6 +7,7 @@ defmodule Lotus.Web.QueryEditorPage do
 
   @default_page_size 1000
 
+  alias Lotus.Query.Statement
   alias Lotus.Storage.Query
   alias Lotus.Web.ExportController
   alias Lotus.Web.Formatters.VariableOptionsFormatter, as: OptionsFormatter
@@ -78,7 +79,7 @@ defmodule Lotus.Web.QueryEditorPage do
               data_source={@query_form[:data_source].value}
               generating={@ai_generating}
               conversation={@ai_conversation}
-              current_sql={@query_form[:statement].value}
+              current_statement={@query_form[:statement].value}
             />
 
             <div class={[
@@ -589,15 +590,15 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   @impl Phoenix.LiveComponent
-  def handle_event("use_ai_query", %{"sql" => sql} = params, socket) do
-    current_sql = socket.assigns.query_form[:statement].value
-    sql_changed = sql != current_sql
+  def handle_event("use_ai_query", %{"statement" => statement} = params, socket) do
+    current_statement = socket.assigns.query_form[:statement].value
+    statement_changed = statement != current_statement
     ai_variables = extract_ai_variables(params, socket)
 
-    socket = apply_ai_query(socket, sql, ai_variables)
+    socket = apply_ai_query(socket, statement, ai_variables)
 
     flash_message =
-      case {sql_changed, ai_variables != nil} do
+      case {statement_changed, ai_variables != nil} do
         {true, true} -> gettext("Query and variable settings applied")
         {true, false} -> gettext("Query inserted into editor")
         {false, true} -> gettext("Variable settings updated")
@@ -633,7 +634,7 @@ defmodule Lotus.Web.QueryEditorPage do
         |> assign(ai_conversation: conversation)
         |> start_async(:ai_optimization, fn ->
           Lotus.AI.suggest_optimizations(
-            sql: sql,
+            statement: Statement.new(sql),
             data_source: data_source
           )
         end)
@@ -661,7 +662,7 @@ defmodule Lotus.Web.QueryEditorPage do
         |> assign(ai_conversation: conversation)
         |> start_async(:ai_explanation, fn ->
           Lotus.AI.explain_query(
-            sql: sql,
+            statement: sql,
             data_source: data_source
           )
         end)
@@ -691,7 +692,7 @@ defmodule Lotus.Web.QueryEditorPage do
         |> assign(ai_conversation: conversation)
         |> start_async(:ai_explanation, fn ->
           Lotus.AI.explain_query(
-            sql: sql,
+            statement: sql,
             fragment: fragment,
             data_source: data_source
           )
@@ -1103,12 +1104,12 @@ defmodule Lotus.Web.QueryEditorPage do
     conversation = socket.assigns.ai_conversation
 
     case result do
-      {:ok, %{sql: sql, variables: variables}} ->
+      {:ok, %{statement: statement, variables: variables}} ->
         conversation =
           add_assistant_response(
             conversation,
             gettext("Here's your query:"),
-            sql,
+            statement,
             variables || []
           )
 
@@ -1637,9 +1638,21 @@ defmodule Lotus.Web.QueryEditorPage do
       "statement" => current_query.statement,
       "data_source" => current_query.data_source,
       "search_path" => current_query.search_path,
+      "query_language" => query_language_for(current_query.data_source),
       "variables" => Enum.map(current_query.variables, &Variables.to_params/1)
     }
   end
+
+  # The language a saved query is written in, recorded so core can reject the
+  # query when its source is later repointed at an engine that speaks a
+  # different language. Sources that no longer exist record nothing.
+  defp query_language_for(data_source) when is_binary(data_source) and data_source != "" do
+    Lotus.Source.query_language(data_source)
+  rescue
+    ArgumentError -> nil
+  end
+
+  defp query_language_for(_data_source), do: nil
 
   defp perform_save_operation(page, query_attrs) do
     case page do
@@ -1688,7 +1701,9 @@ defmodule Lotus.Web.QueryEditorPage do
     try do
       limited_query =
         if limit do
-          Lotus.Source.limit_query(repo, sql_query, limit)
+          repo
+          |> Lotus.Source.limit_query(Statement.new(sql_query), limit)
+          |> Map.fetch!(:body)
         else
           sql_query
         end
@@ -1961,7 +1976,7 @@ defmodule Lotus.Web.QueryEditorPage do
     sql = assigns.query_form[:statement].value
 
     if is_binary(sql) and sql != "" do
-      %{sql: sql, variables: Enum.map(assigns.query.variables, &variable_to_ai_context/1)}
+      %{statement: sql, variables: Enum.map(assigns.query.variables, &variable_to_ai_context/1)}
     else
       nil
     end
@@ -1991,8 +2006,8 @@ defmodule Lotus.Web.QueryEditorPage do
   defp maybe_add_query_error(socket, error_msg) do
     if socket.assigns.left_drawer == :ai_assistant do
       # Get the current SQL from the editor (what the user just ran)
-      current_sql = socket.assigns.query.statement
-      add_error_message(socket.assigns.ai_conversation, to_string(error_msg), current_sql)
+      current_statement = socket.assigns.query.statement
+      add_error_message(socket.assigns.ai_conversation, to_string(error_msg), current_statement)
     else
       socket.assigns.ai_conversation
     end
@@ -2002,7 +2017,7 @@ defmodule Lotus.Web.QueryEditorPage do
     message = %{
       role: :user,
       content: content,
-      sql: nil,
+      statement: nil,
       timestamp: DateTime.utc_now()
     }
 
@@ -2013,11 +2028,11 @@ defmodule Lotus.Web.QueryEditorPage do
     }
   end
 
-  defp add_assistant_response(conversation, content, sql, variables) do
+  defp add_assistant_response(conversation, content, statement, variables) do
     message = %{
       role: :assistant,
       content: content,
-      sql: sql,
+      statement: statement,
       variables: variables,
       timestamp: DateTime.utc_now()
     }
@@ -2034,7 +2049,7 @@ defmodule Lotus.Web.QueryEditorPage do
     message = %{
       role: :optimization,
       content: nil,
-      sql: nil,
+      statement: nil,
       suggestions: suggestions,
       timestamp: DateTime.utc_now()
     }
@@ -2050,7 +2065,7 @@ defmodule Lotus.Web.QueryEditorPage do
     message = %{
       role: :explanation,
       content: explanation,
-      sql: nil,
+      statement: nil,
       timestamp: DateTime.utc_now()
     }
 
@@ -2061,11 +2076,11 @@ defmodule Lotus.Web.QueryEditorPage do
     }
   end
 
-  defp add_error_message(conversation, error_content, sql \\ nil) do
+  defp add_error_message(conversation, error_content, statement \\ nil) do
     message = %{
       role: :error,
       content: error_content,
-      sql: sql,
+      statement: statement,
       timestamp: DateTime.utc_now()
     }
 
