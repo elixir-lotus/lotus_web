@@ -130,7 +130,7 @@ end
 | Option | Default | Description |
 |--------|---------|-------------|
 | `:as` | `:lotus_dashboard` | Route and live session name. Change it if you mount the dashboard more than once. |
-| `:on_mount` | `[]` | Extra `on_mount` hooks, run before Lotus Web's own locale and authentication hooks. |
+| `:on_mount` | `[]` | Extra `on_mount` hooks, run before Lotus's own `Lotus.Web.Locale` and `Lotus.Web.Authentication` hooks. |
 | `:socket_path` | `"/live"` | Path of the Phoenix LiveView socket the dashboard connects to. Set it if your endpoint mounts the socket elsewhere. |
 | `:transport` | `"websocket"` | LiveView transport, either `"websocket"` or `"longpoll"`. |
 | `:resolver` | `Lotus.Web.Resolver` | Module implementing `Lotus.Web.Resolver` for authentication, access control and the actor. See below. |
@@ -233,7 +233,7 @@ package and are served from two routes under the mount path:
 - `<prefix>/js-<hash>`
 
 `<hash>` is the MD5 of the compiled asset, so the URL changes whenever the
-bundle does. The dashboard's asset plug answers with
+bundle does. `Lotus.Web.Assets` answers with
 `cache-control: public, max-age=31536000, immutable`, and with
 `content-encoding: gzip` when the request's `accept-encoding` allows it
 (`vary: accept-encoding` is always set). A request for a hash this build did

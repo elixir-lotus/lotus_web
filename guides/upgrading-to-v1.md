@@ -106,7 +106,7 @@ They now load from two routes under your mount path, added by
 - `<prefix>/css-<hash>`
 - `<prefix>/js-<hash>`
 
-The dashboard's asset plug serves them with
+`Lotus.Web.Assets` serves them with
 `cache-control: public, max-age=31536000, immutable`, gzipped when the
 client's `accept-encoding` allows it, and answers a hash this build did not
 produce with a 404 and `cache-control: no-store`. The route helper is

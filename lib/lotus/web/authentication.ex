@@ -1,5 +1,13 @@
 defmodule Lotus.Web.Authentication do
-  @moduledoc false
+  @moduledoc """
+  `on_mount` hook that applies the access level of the resolver.
+
+  `Lotus.Web.Router.lotus_dashboard/2` adds this hook to the live session
+  after the host's own `:on_mount` hooks, so a host never lists it. The hook
+  assigns the resolver, the user and the access level that
+  `Lotus.Web.Resolver` produced at the session, and stops a `:forbidden`
+  mount with a redirect.
+  """
 
   import Phoenix.Component
   import Phoenix.LiveView

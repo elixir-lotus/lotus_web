@@ -1,5 +1,14 @@
 defmodule Lotus.Web.Locale do
-  @moduledoc false
+  @moduledoc """
+  `on_mount` hook that sets the dashboard locale.
+
+  `Lotus.Web.Router.lotus_dashboard/2` adds this hook to the live session
+  after the host's own `:on_mount` hooks, so a host never lists it. The hook
+  reads `"lotus_locale"` from the session and falls back to the configured
+  default locale. Write that key in a plug to choose the language:
+
+      put_session(conn, :lotus_locale, "fr")
+  """
 
   import Phoenix.Component, only: [assign: 3]
 
