@@ -12,7 +12,7 @@ defmodule Lotus.Web.ActorPlumbingTest do
     def init(opts), do: opts
 
     def call(payload, _opts) do
-      send(recipient(), {:middleware, Map.take(payload, [:context, :scope])})
+      send(recipient(), {:middleware, Map.take(payload, [:context, :scope, :table_name])})
       {:cont, payload}
     end
 
@@ -26,7 +26,9 @@ defmodule Lotus.Web.ActorPlumbingTest do
 
     Application.put_env(:lotus, :middleware, %{
       before_query: [{RecorderPlug, []}],
-      after_list_tables: [{RecorderPlug, []}]
+      after_list_schemas: [{RecorderPlug, []}],
+      after_list_tables: [{RecorderPlug, []}],
+      after_describe_table: [{RecorderPlug, []}]
     })
 
     Lotus.Config.reload!()
@@ -45,6 +47,16 @@ defmodule Lotus.Web.ActorPlumbingTest do
     end)
 
     :ok
+  end
+
+  # Every payload recorded so far. The dashboard must carry the actor on all of
+  # them, not only on the ones a page makes directly.
+  defp drain_middleware(acc \\ []) do
+    receive do
+      {:middleware, payload} -> drain_middleware([payload | acc])
+    after
+      100 -> Enum.reverse(acc)
+    end
   end
 
   defp await_middleware(key) do
@@ -76,6 +88,41 @@ defmodule Lotus.Web.ActorPlumbingTest do
       render_async(live)
 
       assert %{context: %{user_id: 42}, scope: %{tenant_id: "acme"}} = await_middleware(:scope)
+    end
+
+    # A LiveComponent holds only what its parent passes, so a component that
+    # calls core needs the actor handed down. Assert on every discovery call the
+    # editor makes, not only the ones the page makes itself.
+    test "every discovery call the query editor makes carries the actor" do
+      {:ok, live, _html} = live(build_conn(), "/scoped/queries/new")
+      render_async(live)
+
+      payloads = drain_middleware()
+
+      assert payloads != [], "no discovery call reached the middleware"
+
+      for payload <- payloads do
+        assert payload.context == %{user_id: 42}
+        assert payload.scope == %{tenant_id: "acme"}
+      end
+    end
+
+    # `describe_table/3` runs only from the schema explorer, so a payload for it
+    # proves the actor reached that component rather than the page.
+    test "passes the actor into describe_table from the schema explorer" do
+      {:ok, live, _html} = live(build_conn(), "/scoped/queries/new")
+      render_async(live)
+
+      live |> element("[phx-click='toggle_schema_explorer']") |> render_click()
+
+      live
+      |> element("[phx-click='select_table'][phx-value-table='test_users']")
+      |> render_click()
+
+      payload = await_middleware(:table_name)
+
+      assert payload.context == %{user_id: 42}
+      assert payload.scope == %{tenant_id: "acme"}
     end
   end
 

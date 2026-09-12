@@ -291,6 +291,8 @@ source. Nothing to change; pages just render sooner.
 - [ ] Translation overrides re-merged if you have any
 - [ ] `current_sql` and `@message.sql` renamed if you render the AI component
 - [ ] `resolve_context/1` and `resolve_scope/1` added if you run access control
+- [ ] `config :lotus_web, strict_actor: true` in `dev` and `test` to catch a
+      dashboard call that lost the actor
 
 ---
 

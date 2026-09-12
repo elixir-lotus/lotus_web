@@ -12,7 +12,7 @@ defmodule Lotus.Web.DashboardLive do
 
     page = resolve_page(params)
     {resolver, user, access, features, page_title} = mount_defaults(page, session)
-    {context, scope} = Actor.resolve(resolver, user)
+    {context, scope} = actor = Actor.resolve(resolver, user)
 
     put_router_prefix(socket, prefix)
 
@@ -34,6 +34,7 @@ defmodule Lotus.Web.DashboardLive do
       |> assign(:access, access)
       |> assign(:context, context)
       |> assign(:scope, scope)
+      |> assign(:actor, actor)
       |> assign(:features, features)
       |> assign(:public_view, page.name == :public_dashboard)
       |> page.comp.handle_mount()

@@ -35,6 +35,8 @@ config :phoenix, stacktrace_depth: 20
 
 config :lotus_web, :ecto_repos, [WebDev.Repo, WebDev.ReportingRepo]
 
+config :lotus_web, strict_actor: true
+
 config :lotus_web, Lotus.Web.Gettext,
   default_locale: "en",
   locales: ~w(en fr),
