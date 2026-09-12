@@ -64,6 +64,13 @@ defmodule Lotus.Web.ActorTest do
       assert error.message =~ "actor={@actor}"
     end
 
+    test "the check is off unless a host asks for it" do
+      Application.put_env(:lotus_web, :strict_actor, false)
+      on_exit(fn -> Application.put_env(:lotus_web, :strict_actor, true) end)
+
+      assert Actor.opts(%{}) == []
+    end
+
     test "an explicit actor tuple skips the check" do
       assert Actor.opts({nil, nil}) == []
       assert Actor.opts({%{user_id: 7}, nil}) == [context: %{user_id: 7}]

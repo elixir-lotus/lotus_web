@@ -202,6 +202,22 @@ middleware payloads and the same cache keys as before.
 
 The CSV export route resolves the actor the same way, from the conn.
 
+#### Catching an actor that never arrived
+
+A dashboard component holds only the assigns its parent passes it, so a
+component nobody hands the actor to calls core unscoped, and does it silently:
+`context: nil` from a deliberately unscoped dashboard and `context` never set
+at all look the same at the call site. Turn on the strict check while you
+develop:
+
+```elixir
+# config/dev.exs and config/test.exs
+config :lotus_web, strict_actor: true
+```
+
+Lotus then raises instead of quietly dropping the actor. Leave it off in
+production, where an unscoped call is better than a crashed dashboard.
+
 The public dashboard route (`<prefix>/public/:token`) is deliberately outside
 this: it mounts with no resolver, so it has no user, no context and no scope,
 and it is fixed at `:read_only` access. A public dashboard therefore runs its

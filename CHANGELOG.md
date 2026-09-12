@@ -26,11 +26,12 @@
 
 ### Added
 
-- **`Lotus.Web.Actor.opts/1` raises on assigns that carry no actor.** Outside
-  `:prod`, assigns with no `:context` key at all mean the actor never reached
-  the component, which is a wiring mistake rather than an unscoped dashboard.
-  The two used to look the same. The check is compiled out of a production
-  build.
+- **`config :lotus_web, strict_actor: true` catches a dashboard call that lost
+  the actor.** Assigns with no `:context` key at all mean the actor never
+  reached the component, which is a wiring mistake rather than an unscoped
+  dashboard; the two used to look the same. With the option on,
+  `Lotus.Web.Actor.opts/1` raises instead. Off by default, so production keeps
+  degrading to an unscoped call rather than crashing.
 
 - **A resolver module that does not exist now fails the compile.** The router
   accepted any atom for `:resolver`, so a typo in the module name left the

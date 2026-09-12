@@ -11,16 +11,20 @@ defmodule Lotus.Web.Actor do
   A `nil` context and a `nil` scope produce `[]`, so an unscoped dashboard
   calls core exactly as it did before an actor existed — same middleware
   payloads, same cache keys.
+
+  ## Catching an actor that never arrived
+
+  A `Phoenix.LiveComponent` holds only what its parent passes, so a component
+  nobody handed the actor to calls core unscoped, and silently. Set
+
+      config :lotus_web, strict_actor: true
+
+  in `dev` and `test` and `opts/1` raises for assigns that carry no `:context`
+  key at all, which tells that mistake apart from a dashboard that has no actor
+  to give. Leave it off in production, where an unscoped call beats a crash.
   """
 
   alias Lotus.Web.Resolver
-
-  # A LiveComponent holds only what its parent passes, so assigns that carry no
-  # `:context` key at all mean the actor never reached this component. That is a
-  # wiring mistake, not an unscoped dashboard, and it is worth a loud failure
-  # while developing. Silent in production, where the call still degrades to an
-  # unscoped one.
-  @raise_on_missing_actor Mix.env() != :prod
 
   @typedoc """
   The actor as the dashboard carries it between components: `{context, scope}`.
@@ -52,21 +56,7 @@ defmodule Lotus.Web.Actor do
   """
   @spec opts(map() | t()) :: keyword()
   def opts(%{} = assigns) do
-    if @raise_on_missing_actor and not Map.has_key?(assigns, :context) do
-      raise ArgumentError, """
-      Lotus.Web.Actor.opts/1 got assigns that carry no :context key.
-
-      A LiveComponent holds only what its parent passes, so this usually means
-      the actor was never handed down. Pass it as a prop:
-
-          <.live_component module={MyComponent} id="my-component" actor={@actor} />
-
-      and call `Actor.opts(@actor)` in the component.
-
-      For a call that is deliberately unscoped, such as a public dashboard, pass
-      the actor explicitly as `Actor.opts({nil, nil})`.
-      """
-    end
+    check_actor_arrived!(assigns)
 
     opts({assigns[:context], assigns[:scope]})
   end
@@ -85,4 +75,33 @@ defmodule Lotus.Web.Actor do
   def merge(opts, source) when is_list(opts) do
     Keyword.merge(opts(source), opts)
   end
+
+  # A LiveComponent holds only what its parent passes, so assigns that carry no
+  # `:context` key at all mean the actor never reached this component. That is a
+  # wiring mistake, not an unscoped dashboard, and it is worth a loud failure
+  # while developing.
+  #
+  # Off unless a host asks for it, so a production dashboard degrades to an
+  # unscoped call rather than a crash.
+  defp check_actor_arrived!(assigns) do
+    if strict_actor?() and not Map.has_key?(assigns, :context) do
+      raise ArgumentError, """
+      Lotus.Web.Actor.opts/1 got assigns that carry no :context key.
+
+      A LiveComponent holds only what its parent passes, so this usually means
+      the actor was never handed down. Pass it as a prop:
+
+          <.live_component module={MyComponent} id="my-component" actor={@actor} />
+
+      and call `Actor.opts(@actor)` in the component.
+
+      For a call that is deliberately unscoped, such as a public dashboard,
+      pass the actor explicitly as `Actor.opts({nil, nil})`.
+      """
+    end
+
+    :ok
+  end
+
+  defp strict_actor?, do: Application.get_env(:lotus_web, :strict_actor, false)
 end
