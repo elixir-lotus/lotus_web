@@ -1,5 +1,26 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **A host resolver that is not loaded yet no longer fails open.**
+  `Lotus.Web.Resolver.call_with_fallback/3` asked `function_exported?/3`
+  whether the host resolver implements a callback. That function answers
+  `false` for a module the BEAM has not loaded, and modules load lazily
+  outside a release, so the dashboard silently used its own permissive
+  defaults: every visitor got `:all` access and the actor was `nil`. The
+  check now loads the module first with `Code.ensure_loaded?/1`.
+
+### Added
+
+- **A resolver module that does not exist now fails the compile.** The router
+  accepted any atom for `:resolver`, so a typo in the module name left the
+  dashboard on its permissive defaults and gave every visitor full access.
+  `lotus_dashboard` now verifies the module through `@after_verify`, which
+  runs after the host router is compiled — `Code.ensure_compiled/1` at macro
+  expansion would deadlock on a resolver that uses `~p`.
+
 ## [1.0.0] - 2026-09-12
 
 Aligns lotus_web with the Lotus core v1 adapter contract. The dashboard no longer assumes every data source is SQL: the editor picks its language from the source, non-SQL sources get JSON mode with structure-aware completions, and features a source cannot support are hidden rather than failing. Requires Lotus 1.0.

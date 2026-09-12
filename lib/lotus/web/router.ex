@@ -28,7 +28,9 @@ defmodule Lotus.Web.Router do
     `"websocket"`.
 
   * `:resolver` — a module implementing the `Lotus.Web.Resolver` behaviour for custom authentication
-    and access control.
+    and access control. The module must exist: a resolver that cannot be loaded fails the compile,
+    because Lotus would otherwise fall back to its permissive defaults and give every visitor full
+    access.
 
   * `:features` — a list of optional feature flags to enable. Defaults to `[]`.
     Supported features:
@@ -53,6 +55,8 @@ defmodule Lotus.Web.Router do
   defmacro lotus_dashboard(path, opts \\ []) do
     quote bind_quoted: binding() do
       prefix = Phoenix.Router.scoped_path(__MODULE__, path)
+
+      Lotus.Web.Router.__register_resolver_check__(__MODULE__, opts)
 
       scope path, alias: false, as: false do
         import Phoenix.LiveView.Router, only: [live: 3, live: 4, live_session: 3]
@@ -82,6 +86,47 @@ defmodule Lotus.Web.Router do
           live("/:page/:id", Lotus.Web.DashboardLive, :show, route_opts)
         end
       end
+    end
+  end
+
+  @doc false
+  def __register_resolver_check__(module, opts) do
+    resolver = Keyword.get(opts, :resolver, @default_opts[:resolver])
+
+    if resolver not in [nil, Lotus.Web.Resolver] do
+      # The resolver may not be compiled yet, and it cannot be compiled on
+      # demand here: a resolver that uses `~p` depends on the router, so
+      # `Code.ensure_compiled/1` would deadlock. `@after_verify` runs once the
+      # router is compiled, when the resolver is available.
+      unless Module.has_attribute?(module, :lotus_resolvers) do
+        Module.register_attribute(module, :lotus_resolvers, accumulate: true, persist: true)
+        Module.put_attribute(module, :after_verify, {__MODULE__, :__verify_resolvers__})
+      end
+
+      Module.put_attribute(module, :lotus_resolvers, resolver)
+    end
+  end
+
+  @doc false
+  def __verify_resolvers__(module) do
+    module.__info__(:attributes)
+    |> Keyword.get_values(:lotus_resolvers)
+    |> List.flatten()
+    |> Enum.uniq()
+    |> Enum.each(&verify_resolver!(&1, module))
+  end
+
+  defp verify_resolver!(resolver, module) do
+    unless Code.ensure_loaded?(resolver) do
+      raise ArgumentError, """
+      the :resolver given to lotus_dashboard in #{inspect(module)} does not exist:
+
+          #{inspect(resolver)}
+
+      Check the module name for a typo. Lotus falls back to its own permissive \
+      defaults for a resolver it cannot load, which would give every visitor \
+      full access to the dashboard.
+      """
     end
   end
 

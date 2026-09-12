@@ -2,6 +2,7 @@ defmodule Lotus.Web.ResolverTest do
   use ExUnit.Case, async: true
 
   alias Lotus.Web.Resolver
+  alias Lotus.Web.Test.LazyResolver
 
   defmodule FullImpl do
     @behaviour Resolver
@@ -38,5 +39,30 @@ defmodule Lotus.Web.ResolverTest do
       # But it does implement resolve_user/1
       assert :only_user == Resolver.call_with_fallback(PartialImpl, :resolve_user, [%Plug.Conn{}])
     end
+
+    test "loads the resolver module before it decides on the fallback" do
+      # The BEAM loads modules on first use, so a host resolver is often not
+      # loaded yet when the dashboard mounts. It must not fail open.
+      unload(LazyResolver)
+
+      assert :read_only == Resolver.call_with_fallback(LazyResolver, :resolve_access, [%{}])
+
+      unload(LazyResolver)
+
+      assert %{id: 7} == Resolver.call_with_fallback(LazyResolver, :resolve_user, [%Plug.Conn{}])
+    end
+
+    test "falls back to default when the module does not exist at all" do
+      assert :all == Resolver.call_with_fallback(NoSuchResolverModule, :resolve_access, [%{}])
+
+      assert nil ==
+               Resolver.call_with_fallback(NoSuchResolverModule, :resolve_user, [%Plug.Conn{}])
+    end
+  end
+
+  defp unload(module) do
+    :code.purge(module)
+    :code.delete(module)
+    refute :erlang.module_loaded(module)
   end
 end
