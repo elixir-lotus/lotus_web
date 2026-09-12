@@ -3,6 +3,8 @@ defmodule Lotus.Web.Dashboards.FilterBarComponent do
   Renders the dashboard filter bar with filter widgets.
   """
 
+  alias Lotus.Web.Dashboards.FilterValues
+
   use Lotus.Web, :live_component
 
   @impl Phoenix.LiveComponent
@@ -155,10 +157,7 @@ defmodule Lotus.Web.Dashboards.FilterBarComponent do
   defp option_label(%{value: value}), do: value
   defp option_label(value), do: to_string(value)
 
-  defp parse_date_range(nil), do: {nil, nil}
-  defp parse_date_range(%{"start" => start, "end" => end_val}), do: {start, end_val}
-  defp parse_date_range(%{start: start, end: end_val}), do: {start, end_val}
-  defp parse_date_range(_), do: {nil, nil}
+  defp parse_date_range(value), do: FilterValues.split_date_range(value)
 
   @impl Phoenix.LiveComponent
   def update(params, socket) do

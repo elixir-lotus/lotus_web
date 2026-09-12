@@ -7,6 +7,7 @@ defmodule Lotus.Web.PublicDashboardPage do
 
   use Lotus.Web, :live_component
 
+  alias Lotus.Web.Dashboards.FilterValues
   alias Lotus.Web.Dashboards.CardGridComponent
   alias Lotus.Web.Dashboards.FilterBarComponent
   alias Lotus.Web.Page
@@ -130,6 +131,8 @@ defmodule Lotus.Web.PublicDashboardPage do
   end
 
   def handle_event("filter_changed", %{"filter" => filter_values}, socket) do
+    filter_values = FilterValues.normalize(filter_values)
+
     {:noreply,
      socket
      |> assign(filter_values: filter_values)
@@ -225,23 +228,10 @@ defmodule Lotus.Web.PublicDashboardPage do
   end
 
   defp push_filter_params_to_url(socket, filter_values) do
-    params =
-      filter_values
-      |> Enum.reject(fn {_k, v} -> v == "" or is_nil(v) end)
-      |> Map.new()
-
-    push_event(socket, "update-query-params", %{params: params})
+    push_event(socket, "update-query-params", %{params: FilterValues.to_params(filter_values)})
   end
 
-  defp extract_filter_values(params, filters) do
-    for filter <- filters,
-        value = present(Map.get(params, filter.name)) || present(filter.default_value),
-        into: %{},
-        do: {filter.name, value}
-  end
-
-  defp present(value) when is_binary(value) and value != "", do: value
-  defp present(_), do: nil
+  defp extract_filter_values(params, filters), do: FilterValues.from_params(params, filters)
 
   defp build_card_variables(socket, card) do
     filter_values = socket.assigns.filter_values

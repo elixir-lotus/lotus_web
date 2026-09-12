@@ -7,6 +7,7 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   use Lotus.Web, :live_component
 
+  alias Lotus.Web.Dashboards.FilterValues
   alias Lotus.Web.Actor
   alias Lotus.Web.Dashboards.AddCardModal
   alias Lotus.Web.Dashboards.CardGridComponent
@@ -674,6 +675,8 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("filter_changed", %{"filter" => filter_values}, socket) do
+    filter_values = FilterValues.normalize(filter_values)
+
     socket =
       socket
       |> assign(filter_values: filter_values)
@@ -1558,23 +1561,10 @@ defmodule Lotus.Web.DashboardEditorPage do
   defp normalize_mappings(_, _), do: %{}
 
   defp push_filter_params_to_url(socket, filter_values) do
-    params =
-      filter_values
-      |> Enum.reject(fn {_k, v} -> v == "" or is_nil(v) end)
-      |> Map.new()
-
-    push_event(socket, "update-query-params", %{params: params})
+    push_event(socket, "update-query-params", %{params: FilterValues.to_params(filter_values)})
   end
 
-  defp extract_filter_values(params, filters) do
-    for filter <- filters,
-        value = present(Map.get(params, filter.name)) || present(filter.default_value),
-        into: %{},
-        do: {filter.name, value}
-  end
-
-  defp present(value) when is_binary(value) and value != "", do: value
-  defp present(_), do: nil
+  defp extract_filter_values(params, filters), do: FilterValues.from_params(params, filters)
 
   defp upsert_filter(filters, filter) do
     if Enum.any?(filters, &(&1.id == filter.id)) do

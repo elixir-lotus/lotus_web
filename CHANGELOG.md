@@ -4,6 +4,23 @@
 
 Aligns lotus_web with the Lotus core v1 adapter contract. The dashboard no longer assumes every data source is SQL: the editor picks its language from the source, non-SQL sources get JSON mode with structure-aware completions, and features a source cannot support are hidden rather than failing. Requires Lotus 1.0.
 
+### Fixed
+
+- **Date-range dashboard filters survive a page load.** The picker posts its
+  two inputs under one filter name, so the value arrived as a nested
+  `%{"start" => _, "end" => _}` map. That map went into the URL, but the
+  code reading params back accepted only strings, so every reload fell back
+  to the filter's default and silently discarded the range the user picked.
+- **Date-range filter transforms are reachable from the dashboard.**
+  `Lotus.Dashboards` applies `date_range_start` and `date_range_end` to a
+  `"start,end"` string, but the dashboard produced the nested map above and
+  nothing converted between the two, so mapping one date-range filter to a
+  query's start and end variables could not work. Filter values now
+  normalize to the string form on the way in, which is both what the URL
+  round-trips and what the transforms parse. New
+  `Lotus.Web.Dashboards.FilterValues` owns that shape, replacing helpers
+  that were duplicated across the editor and public dashboard pages.
+
 ### Added
 
 - **AI buttons are gated on what the source supports** — Explain and Optimize

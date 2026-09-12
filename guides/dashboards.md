@@ -232,7 +232,7 @@ Filter values are reflected in the URL as query parameters. For example:
 - Sharing the URL pre-fills the filters for the recipient
 - Works on both the dashboard editor and public shared dashboards
 
-On load, a filter takes its value from the URL parameter if present, and falls back to its configured default value otherwise. A date-range filter is the exception: its value is a start/end pair rather than a single string, so it does not round-trip through the URL. Use two date filters when you want the window to be shareable.
+On load, a filter takes its value from the URL parameter if present, and falls back to its configured default value otherwise. A date-range filter carries both dates in one parameter as a comma-separated `start,end` string, so a shared link restores the window the sender had. An open end keeps its comma, so `2026-01-01,` is a start with no end.
 
 ### Filters on Public Dashboards
 
@@ -360,7 +360,7 @@ A filter mapping can carry an optional transform, which splits one filter value 
 Lotus.run_dashboard(dashboard, filter_values: %{"window" => "2026-01-01,2026-03-31"})
 ```
 
-A value with no comma is passed through unchanged to both variables. Transforms are not exposed in the dashboard editor — use two date filters there, as in the example above.
+A value with no comma is passed through unchanged to both variables. A date-range filter produces exactly this shape, so a single date-range filter can feed a query's start and end variables through two mappings. The editor does not expose transforms yet, so set them from code.
 
 ## Dashboard Workflow
 
