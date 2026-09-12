@@ -44,6 +44,12 @@ The migration is core's, not the dashboard's. It renames the `lotus_queries`
 `data_repo` column to `data_source` and adds the `query_language` column. See
 the core guide for the Postgres, MySQL and SQLite details.
 
+Watch the core guide's note on `data_repo:` **attribute keys** while you are
+there. It is the one rename that raises nothing: a `create_query/1` call that
+still passes `data_repo:` saves a query with no source at all, and a dashboard
+card built from it runs against the default source instead of the one you
+named.
+
 Then apply core's config renames, which the dashboard inherits:
 
 ```diff
@@ -55,6 +61,20 @@ Then apply core's config renames, which the dashboard inherits:
 -  data_repos: %{"main" => MyApp.Repo}
 +  data_sources: %{"main" => MyApp.Repo}
 ```
+
+### A new NIF enters your build
+
+`mdex` replaces `earmark` as the markdown renderer (§6 covers what that
+changes on screen), and `mdex` is a Rust NIF that arrives through
+`rustler_precompiled`. For most hosts `mix deps.get` downloads a prebuilt
+artifact and nothing else changes, but plan for it if any of this is true:
+
+- You build releases in a slim container. The precompiled artifact is fetched
+  at `deps.get` time, so it must be in the image layer you copy forward.
+- You target an architecture with no prebuilt artifact, or you set
+  `RUSTLER_PRECOMPILED_FORCE_BUILD`. Then the build needs a Rust toolchain.
+- You vendor dependencies or audit checksums. There is a new
+  `rustler_precompiled` entry and a new fetch at build time to account for.
 
 ---
 
@@ -166,6 +186,11 @@ source. Nothing to change; pages just render sooner.
 - [ ] `mix ecto.migrate`
 - [ ] Config renamed: `storage_repo`, `default_source`, `data_sources`
 - [ ] Host-app calls renamed — grep for `data_repo`, `run_sql`, `get_table_schema`
+- [ ] `data_repo:` attribute keys renamed in `create_query/1` and
+      `update_query/2` attrs, seeds and fixtures — the old key is dropped
+      silently and the changeset still succeeds
+- [ ] A Rust NIF (`mdex` via `rustler_precompiled`) is in the dep tree — check
+      your release or container build
 - [ ] Translation overrides re-merged if you have any
 - [ ] `current_sql` and `@message.sql` renamed if you render the AI component
 - [ ] `resolve_context/1` and `resolve_scope/1` added if you run access control
