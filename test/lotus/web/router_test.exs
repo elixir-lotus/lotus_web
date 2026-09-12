@@ -50,6 +50,79 @@ defmodule Lotus.Web.RouterTest do
     end
   end
 
+  describe "resolver verification" do
+    test "compiling a router with a resolver that does not exist fails the compile" do
+      assert {:error, %ArgumentError{} = error} =
+               compile_router("MissingResolverRouter", resolver: MyApp.NoSuchResolver)
+
+      assert error.message =~ "MyApp.NoSuchResolver"
+      assert error.message =~ ":resolver"
+    end
+
+    test "compiling a router with a resolver that exists succeeds" do
+      assert :ok = compile_router("RealResolverRouter", resolver: Lotus.Web.Test.LazyResolver)
+    end
+
+    test "compiling a router without a resolver succeeds" do
+      assert :ok = compile_router("DefaultResolverRouter", [])
+    end
+  end
+
+  # The check runs in `@after_verify`, which the parallel checker calls from its
+  # own process, so a raise there exits the caller instead of unwinding into
+  # `assert_raise`. Compile in a monitored process and read the exit reason.
+  defp compile_router(name, opts) do
+    {result, _log} = ExUnit.CaptureLog.with_log(fn -> compile_in_task(name, opts) end)
+    result
+  end
+
+  defp compile_in_task(name, opts) do
+    call =
+      case opts do
+        [] -> ~s(lotus_dashboard "/lotus")
+        opts -> ~s(lotus_dashboard "/lotus", #{inspect(opts)})
+      end
+
+    source = """
+    defmodule Lotus.Web.RouterTest.#{name} do
+      use Phoenix.Router
+
+      import Lotus.Web.Router
+
+      scope "/" do
+        #{call}
+      end
+    end
+    """
+
+    parent = self()
+
+    {pid, ref} =
+      spawn_monitor(fn ->
+        ExUnit.CaptureIO.capture_io(:stderr, fn ->
+          Code.compile_string(source)
+          send(parent, :compiled)
+        end)
+      end)
+
+    receive do
+      {:DOWN, ^ref, :process, ^pid, :normal} ->
+        receive do
+          :compiled -> :ok
+        after
+          0 -> {:error, :no_result}
+        end
+
+      {:DOWN, ^ref, :process, ^pid, {%{__exception__: true} = error, _stack}} ->
+        {:error, error}
+
+      {:DOWN, ^ref, :process, ^pid, reason} ->
+        {:error, reason}
+    after
+      10_000 -> {:error, :timeout}
+    end
+  end
+
   defp options_to_session(opts) do
     :get
     |> conn("/lotus")
