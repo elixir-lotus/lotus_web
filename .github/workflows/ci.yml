@@ -80,3 +80,35 @@ jobs:
       - run: mix test
 
       - run: mix dialyzer
+
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+
+    env:
+      MIX_ENV: dev
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.20"
+          otp-version: "29.0.2"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: docs-${{ hashFiles('**/mix.lock') }}
+          restore-keys: docs-
+
+      - run: mix deps.get
+
+      - name: Seed fake assets
+        run: mkdir -p priv/static/css && touch priv/static/css/app.css && touch priv/static/app.js
+
+      # `warnings_as_errors` is on for docs, so a guide that links a module
+      # with @moduledoc false fails here rather than at hex.publish.
+      - run: mix docs

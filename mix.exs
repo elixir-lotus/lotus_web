@@ -117,6 +117,9 @@ defmodule Lotus.Web.MixProject do
     [
       main: "readme",
       name: "Lotus Web",
+      # A guide that links a module with @moduledoc false breaks the build
+      # rather than the release.
+      warnings_as_errors: true,
       source_ref: "v#{@version}",
       canonical: "http://hexdocs.pm/lotus_web",
       source_url: @source_url,
