@@ -32,6 +32,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:timeout_options_enabled, :boolean, default: false)
   attr(:source_type, :atom, default: :postgres)
   attr(:data_source, :string, default: nil)
+  attr(:actor, :any, required: true)
 
   def editor(assigns) do
     search_path_field = assigns.form[:search_path]
@@ -62,6 +63,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
       <div class="bg-editor-light dark:bg-editor-dark">
         <.render_toolbar
           form={@form}
+          actor={@actor}
           data_source_names={@data_source_names}
           right_drawer={@right_drawer}
           left_drawer={@left_drawer}
@@ -158,6 +160,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:query_timeout, :integer, default: 5_000)
   attr(:timeout_options_enabled, :boolean, default: false)
   attr(:supports_formatting, :boolean, default: false)
+  attr(:actor, :any, required: true)
 
   def render_toolbar(assigns) do
     ~H"""
@@ -168,6 +171,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
           <.live_component
             module={SegmentedDataSelectorComponent}
             id="data-selector"
+            actor={@actor}
             source_field={@form[:data_source]}
             schema_field={@form[:search_path]}
             source_options={Enum.map(@data_source_names, &{&1, &1})}

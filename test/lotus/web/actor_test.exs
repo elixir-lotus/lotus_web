@@ -51,7 +51,22 @@ defmodule Lotus.Web.ActorTest do
 
     test "an unscoped dashboard calls core with no actor options at all" do
       assert Actor.opts(%{context: nil, scope: nil}) == []
-      assert Actor.opts(%{}) == []
+      assert Actor.opts({nil, nil}) == []
+    end
+
+    test "assigns with no :context key at all mean the actor never arrived" do
+      # A LiveComponent holds only what its parent passes. An unscoped
+      # dashboard has `context: nil`; a component nobody passed the actor to
+      # has no `:context` key. The two must not look the same.
+      error = assert_raise ArgumentError, fn -> Actor.opts(%{}) end
+
+      assert error.message =~ "no :context key"
+      assert error.message =~ "actor={@actor}"
+    end
+
+    test "an explicit actor tuple skips the check" do
+      assert Actor.opts({nil, nil}) == []
+      assert Actor.opts({%{user_id: 7}, nil}) == [context: %{user_id: 7}]
     end
   end
 

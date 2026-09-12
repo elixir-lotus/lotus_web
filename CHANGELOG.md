@@ -4,6 +4,18 @@
 
 ### Fixed
 
+- **The schema explorer and the source selector no longer lose the actor.**
+  A `Phoenix.LiveComponent` holds only what its parent passes, and neither
+  component was given `:context` or `:scope`, so `SourcesMap.build/1`,
+  `Lotus.describe_table/3` and `Lotus.list_schemas/2` always ran unscoped.
+  A scope-aware visibility resolver therefore showed one set of tables in
+  the explorer and allowed another in the editor, every role shared one
+  discovery cache entry, and middleware and telemetry recorded these calls
+  with no user. The dashboard now carries the actor as a single `:actor`
+  assign and hands it down to both components. The explorer also built its
+  sources map in `mount/1`, before a parent's assigns arrive; it now builds
+  in `update/2`, once the actor is known.
+
 - **A host resolver that is not loaded yet no longer fails open.**
   `Lotus.Web.Resolver.call_with_fallback/3` asked `function_exported?/3`
   whether the host resolver implements a callback. That function answers
@@ -13,6 +25,12 @@
   check now loads the module first with `Code.ensure_loaded?/1`.
 
 ### Added
+
+- **`Lotus.Web.Actor.opts/1` raises on assigns that carry no actor.** Outside
+  `:prod`, assigns with no `:context` key at all mean the actor never reached
+  the component, which is a wiring mistake rather than an unscoped dashboard.
+  The two used to look the same. The check is compiled out of a production
+  build.
 
 - **A resolver module that does not exist now fails the compile.** The router
   accepted any atom for `:resolver`, so a typo in the module name left the

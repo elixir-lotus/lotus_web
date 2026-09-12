@@ -57,6 +57,7 @@ defmodule Lotus.Web.QueryEditorPage do
             <.live_component
               module={SchemaExplorerComponent}
               id="schema-explorer"
+              actor={@actor}
               visible={@right_drawer == :schema_explorer}
               parent={@myself}
               initial_db={@query_form[:data_source].value}
@@ -95,6 +96,7 @@ defmodule Lotus.Web.QueryEditorPage do
                 <.editor
                   form={@query_form}
                   target={@myself}
+                  actor={@actor}
                   minimized={@editor_minimized}
                   data_source_names={@data_source_names}
                   schema={@editor_schema}

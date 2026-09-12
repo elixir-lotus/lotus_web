@@ -243,7 +243,8 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
       socket
       |> assign(visible: false)
       |> assign(view_mode: :databases)
-      |> assign(sources_map: build_sources_map(socket))
+      |> assign(sources_map: %SourcesMap{})
+      |> assign(sources_map_built?: false)
       |> clear_db_state()
       |> clear_table_state()
       |> refresh_current_db_info()
@@ -252,10 +253,18 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
   end
 
   # Building the sources map lists schemas and tables for every configured
-  # source. Skipping it on the disconnected mount keeps those queries off the
+  # source, so it must run with the actor. `mount/1` is too early: a
+  # LiveComponent gets its parent's assigns in `update/2`, so the actor is not
+  # there yet. Skipping it on the disconnected mount keeps those queries off the
   # first render; the connected mount builds it before the drawer is usable.
-  defp build_sources_map(socket) do
-    if connected?(socket), do: SourcesMap.build(Actor.opts(socket.assigns)), else: %SourcesMap{}
+  defp maybe_build_sources_map(socket) do
+    if connected?(socket) and not socket.assigns.sources_map_built? do
+      socket
+      |> assign(sources_map: SourcesMap.build(Actor.opts(socket.assigns.actor)))
+      |> assign(sources_map_built?: true)
+    else
+      socket
+    end
   end
 
   @impl Phoenix.LiveComponent
@@ -263,6 +272,7 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
     socket =
       socket
       |> assign(params)
+      |> maybe_build_sources_map()
       |> maybe_navigate_to_database(params[:initial_db])
       |> refresh_current_db_info()
 
@@ -318,7 +328,7 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
 
   defp navigate_to_table(socket, schema, table) do
     opts = if schema != "default", do: [search_path: schema], else: []
-    opts = Actor.merge(opts, socket.assigns)
+    opts = Actor.merge(opts, socket.assigns.actor)
 
     case Lotus.describe_table(socket.assigns.current_db, table, opts) do
       {:ok, columns} ->
