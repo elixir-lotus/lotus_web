@@ -1,62 +1,74 @@
 # Variables and Widgets Guide
 
-LotusWeb's variables and widgets feature allows you to create dynamic, reusable SQL queries with user-friendly input controls. This guide covers everything you need to know about using variables effectively.
+LotusWeb's variables and widgets feature lets you build dynamic, reusable queries with user-friendly input controls. This guide covers everything you need to know about using variables effectively.
+
+Variables are part of Lotus core's template syntax, not part of any one query language. They work the same way in a SQL query and in a JSON DSL query — what differs is how the source's adapter substitutes the value, which is covered under [Security](#security).
 
 ## Overview
 
-Variables in LotusWeb use a simple `{{variable_name}}` syntax that gets automatically detected in your SQL queries. When detected, variables appear as input controls in the query toolbar, making your queries interactive and reusable.
+Variables use a `{{variable_name}}` syntax that is detected automatically in your query. When detected, variables appear as input controls in the query toolbar, making your queries interactive and reusable.
 
 ## Basic Variable Syntax
 
 ### Adding Variables to Queries
 
-Simply wrap any variable name in double curly braces:
+Wrap any variable name in double curly braces:
 
 ```sql
-SELECT * 
-FROM orders 
+SELECT *
+FROM orders
 WHERE status = {{order_status}}
   AND created_at >= {{start_date}}
   AND total_amount >= {{minimum_amount}}
+```
+
+The same query against an Elasticsearch source is a Query DSL object. Because the template has to stay valid JSON, wrap the placeholder in quotes — the adapter strips them when it inlines the encoded value:
+
+```json
+{"query": {"bool": {"filter": [{"term": {"status": "{{order_status}}"}}]}}}
 ```
 
 ### Variable Names
 
 - Must contain only letters, numbers, and underscores
 - Case-sensitive (`{{Status}}` and `{{status}}` are different variables)
-- Automatically converted to friendly labels (e.g., `min_age` becomes "Min Age")
+- Automatically converted to friendly labels (e.g. `min_age` becomes "Min Age")
 
 ## Variable Types
+
+A variable can be one of three types. This is the complete list — `Lotus.Storage.QueryVariable` rejects anything else.
 
 ### Text Variables
 - **Purpose**: String values, text input
 - **Usage**: `WHERE name = {{customer_name}}`
-- **Output**: Automatically quoted for SQL safety
-- **Example**: Input "John" becomes `'John'` in the query
+- **Binding**: Passed as a bound parameter, never concatenated into the query
 
-### Number Variables  
+### Number Variables
 - **Purpose**: Integers and decimal numbers
 - **Usage**: `WHERE price >= {{min_price}}`
-- **Output**: Raw number, no quotes
-- **Example**: Input "99.99" becomes `99.99` in the query
+- **Binding**: Validated as numeric before binding
 
 ### Date Variables
 - **Purpose**: Date values with calendar picker
 - **Usage**: `WHERE created_at >= {{start_date}}`
-- **Output**: ISO date format (YYYY-MM-DD)
-- **Widget**: Always uses date picker (no input/select option)
+- **Input format**: ISO date (YYYY-MM-DD)
+- **Widget**: Always uses the date picker — the widget choice is hidden for date variables
 
 ## Widget Types
+
+A variable stores one of two widgets, `input` or `select`. The toolbar renders four controls from those two values plus the variable's type and its `list` flag.
 
 ### Input Widgets
 - **Best for**: Free-form text and number entry
 - **Available for**: Text and Number variables
-- **User experience**: Simple text input field
+- **User experience**: Simple text input field, typed `number` for number variables
 
 ### Dropdown Widgets
-- **Best for**: Predefined lists of options  
+- **Best for**: Predefined lists of options
 - **Available for**: Text and Number variables
-- **Configuration**: Custom list or SQL query options
+- **Configuration**: Custom list, or a query, in the "Dropdown values" modal
+
+A select widget must define either static options or an options query — the changeset rejects one with neither.
 
 #### Static Options Format
 
@@ -71,14 +83,14 @@ cancelled
 **Value and label pairs** (using `|` separator):
 ```
 active | Active
-pending | Pending  
+pending | Pending
 completed | Completed
 cancelled | Cancelled
 ```
 
-#### SQL Query Options
+#### Options from a Query
 
-**Dynamic dropdown options** populated from database queries:
+**Dynamic dropdown options** populated from the data source:
 
 **Single column query** (value = label):
 ```sql
@@ -92,19 +104,21 @@ SELECT user_id, email FROM users WHERE active = true ORDER BY email
 
 **Query requirements**:
 - Must return 1 or 2 columns
-- If 2+ columns, first is used as value, second as label
-- Results are cached for performance
-- Queries executed with current data source and search path
-- Built-in "Test Query" button validates before saving
+- If 2 or more columns, the first is used as value, the second as label
+- Results are cached under Lotus's `:options` cache profile
+- Runs against the query's own data source and search path, with the dashboard's resolved actor
+- Built-in "Test Query" button validates and previews before saving
+
+> **Not every source offers this.** The "From query" mode is shown only when the selected data source declares the `:dynamic_options` feature — that is, a query against it can return a flat list of values. Document-shaped sources such as Elasticsearch declare `false`, and the modal offers manual entry only. A variable that carries an options query from an earlier source opens on manual entry rather than a mode it cannot use.
 
 ### Date Picker Widgets
-- **Automatic**: All date variables use date picker
+- **Automatic**: All date variables use the date picker
 - **User experience**: Calendar interface
-- **Output**: Always ISO date format
+- **Input**: ISO date format
 
 ## List Variables (Multi-Value)
 
-Variables can be configured to accept multiple values, which is useful for SQL `IN` clauses and similar multi-value patterns.
+Variables can be configured to accept multiple values, which is useful for `IN` clauses and similar multi-value patterns.
 
 ### Enabling List Mode
 
@@ -114,14 +128,14 @@ Variables can be configured to accept multiple values, which is useful for SQL `
 
 ### Widget Behavior
 
-The widget type depends on whether the variable has dropdown options configured:
+The control depends on whether the variable has dropdown options configured:
 
-- **Tag Input** (no dropdown options) — A chip-style input where users type values and press Enter to add them. Each value appears as a tag with an X button to remove it. Supports both text and number types.
-- **Multiselect** (with dropdown options) — A multi-select dropdown that lets users pick multiple values from the configured static or SQL-query options.
+- **Tag Input** (widget `input`) — A chip-style control where users type values and press Enter to add them. Each value appears as a tag with an X button to remove it. The inner field is typed `number` for number variables.
+- **Multiselect** (widget `select`) — A multi-select dropdown that lets users pick several values from the configured static or query-backed options.
 
 ### How Values Are Stored
 
-List variable values are stored as comma-separated strings internally and automatically split into individual values at query execution time. For example, entering tags `active`, `pending`, and `completed` stores `"active,pending,completed"` and expands to three separate parameter values.
+List variable values are stored as comma-separated strings internally and split into individual values at execution time. Entering tags `active`, `pending` and `completed` stores `"active,pending,completed"` and expands to three bound values.
 
 ### Example: Filtering with IN Clauses
 
@@ -138,14 +152,27 @@ WHERE status IN ({{statuses}})
 
 ### Default Values for List Variables
 
-You can set a comma-separated default value for list variables. For example, setting the default to `active,pending` will pre-populate the tag input with two chips or pre-select two options in the multiselect dropdown.
+You can set a comma-separated default value for list variables. Setting the default to `active,pending` pre-populates the tag input with two chips, or pre-selects two options in the multiselect dropdown.
+
+## Optional Clauses
+
+Wrapping part of a query in `[[ ... ]]` makes the clause optional: if any variable inside it has no value, the whole block is removed before the query runs. A value can come from the widget or from the variable's default.
+
+```sql
+SELECT * FROM orders
+WHERE 1 = 1
+  [[AND status = {{order_status}}]]
+  [[AND created_at >= {{start_date}}]]
+```
+
+Variables that appear only inside `[[ ]]` are marked with an **Optional** badge in the settings panel, and their toolbar widget shows "All" as the placeholder rather than "Enter value". A variable that is *not* optional and has neither a supplied value nor a default fails with `Missing required variable: <name>` instead of binding a NULL.
 
 ## Variable Settings Panel
 
 ### Accessing Settings
 1. Add variables to your query using `{{variable_name}}` syntax
 2. Variables automatically appear in the toolbar
-3. Click the "Variable settings" {x} icon in the toolbar
+3. Click the "Variable settings" {x} icon in the toolbar, or press **Cmd/Ctrl+X**
 4. Settings panel opens on the right side
 
 The settings panel has two tabs:
@@ -155,7 +182,7 @@ The settings panel has two tabs:
 ### Variable Persistence
 When you save a query, **all variable configurations are saved with it**:
 - Variable types (Text, Number, Date)
-- Widget types (Input, Dropdown)  
+- Widget types (Input, Dropdown)
 - Labels and static options
 - Default values
 
@@ -167,12 +194,12 @@ When you save a query, **all variable configurations are saved with it**:
 
 ### Multi-Filter Dashboard Query
 ```sql
-SELECT 
+SELECT
   DATE(created_at) as date,
   status,
   COUNT(*) as order_count,
   SUM(total_amount) as total_revenue
-FROM orders 
+FROM orders
 WHERE status = {{order_status}}
   AND created_at BETWEEN {{start_date}} AND {{end_date}}
   AND total_amount >= {{min_amount}}
@@ -183,31 +210,32 @@ ORDER BY date DESC
 **Variable Configuration**:
 - `order_status`: Text, Dropdown with static options: "active|Active", "pending|Pending", "completed|Completed"
 - `start_date`: Date (automatic date picker)
-- `end_date`: Date (automatic date picker)  
+- `end_date`: Date (automatic date picker)
 - `min_amount`: Number, Input with default value "0"
 
 ### User Analysis Query
 ```sql
-SELECT 
+SELECT
   u.email,
   u.created_at,
   COUNT(o.id) as order_count
 FROM users u
 LEFT JOIN orders o ON u.id = o.user_id
 WHERE u.created_at >= {{registration_date}}
-  AND ({{user_email}} IS NULL OR u.email LIKE '%' || {{user_email}} || '%')
+  [[AND u.email LIKE '%' || {{user_email}} || '%']]
+GROUP BY u.email, u.created_at
 HAVING COUNT(o.id) >= {{min_orders}}
 ORDER BY order_count DESC
 ```
 
 **Variable Configuration**:
 - `registration_date`: Date, default value "2024-01-01"
-- `user_email`: Text, Input with label "Search Email", default value ""
+- `user_email`: Text, Input with label "Search Email" — optional, so the clause drops out when it is blank
 - `min_orders`: Number, Input with default value "1"
 
 ### Dynamic Category Analysis Query
 ```sql
-SELECT 
+SELECT
   c.name as category_name,
   COUNT(p.id) as product_count,
   AVG(p.price) as avg_price
@@ -220,8 +248,28 @@ ORDER BY product_count DESC
 ```
 
 **Variable Configuration**:
-- `category_id`: Number, Dropdown with SQL query: `SELECT id, name FROM categories WHERE active = true ORDER BY name`
+- `category_id`: Number, Dropdown populated by the query `SELECT id, name FROM categories WHERE active = true ORDER BY name`
 - `product_status`: Text, Dropdown with static options: "true|Active", "false|Inactive"
+
+### Elasticsearch Query with a Variable
+
+```json
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {"term": {"level": "{{log_level}}"}},
+        {"range": {"@timestamp": {"gte": "{{since}}"}}}
+      ]
+    }
+  },
+  "size": 50
+}
+```
+
+**Variable Configuration**:
+- `log_level`: Text, Dropdown with static options — the source does not support `:dynamic_options`, so the values are typed by hand
+- `since`: Date
 
 ## Best Practices
 
@@ -232,8 +280,8 @@ ORDER BY product_count DESC
 
 ### Default Values
 - Always provide sensible defaults for a better user experience
-- Use common filter values (e.g., "last 30 days" for dates)
-- Consider empty/null defaults for optional filters
+- Use common filter values (e.g. "last 30 days" for dates)
+- Use `[[ ]]` rather than a blank default for filters that should simply disappear
 - **Set defaults if you want queries to auto-run** - widgets start empty unless defaults are configured
 
 ### Widget Selection
@@ -241,44 +289,46 @@ ORDER BY product_count DESC
   - Status fields with known values
   - Boolean-like choices (Active/Inactive)
   - Small, fixed lists that rarely change
-- **Use SQL Query Dropdowns** for:
+  - Any dropdown on a source that does not support `:dynamic_options`
+- **Use Query Dropdowns** for:
   - User lists, category selections
-  - Dynamic lookups from database tables
+  - Dynamic lookups from source tables
   - Lists that change frequently
 - **Use Input fields** for:
   - Free-form text search
   - Numeric thresholds
   - Custom values not in predefined lists
 - **Enable "Allow multiple values"** for:
-  - SQL `IN` clause filters (e.g., multiple statuses, regions, or IDs)
+  - `IN` clause filters (multiple statuses, regions, or IDs)
   - Any parameter where users need to select more than one value
 
 ### Query Design
-- Design queries to handle empty/null variables gracefully
-- Use `{{variable}} IS NULL OR` patterns for optional filters
+- Design queries so a blank filter is meaningful — usually with `[[ ]]`
 - Test queries with different variable combinations
 
-## Security Features
+## Security
 
-### Parameterized Queries
-- All variables are sent as prepared statement parameters
-- **No string interpolation** - prevents SQL injection attacks
-- Values are properly escaped based on variable type
+### Substitution Is Owned by the Adapter
+
+`Lotus.Storage.Query.compile/2` never writes a value into the query text itself. It folds each variable through the adapter's `substitute_variable/5` (or `substitute_list_variable/5`) callback, and each adapter picks the safe strategy for its own language:
+
+- **SQL adapters** add a placeholder (`$1`, `?`, …) to the statement body and push the value into the parameter list. Nothing is interpolated, so there is no SQL injection surface.
+- **JSON and DSL adapters** inline the value as a literal encoded by the language's own encoder. That encoder is the escaping boundary — this is why the Elasticsearch template quotes `"{{status}}"` and the adapter removes the quotes for non-string values.
+- **Adapters with no `{{var}}` model** return `{:error, :unsupported}`, and a query with variables will not compile against them.
 
 ### Type Safety
-- Text variables are automatically quoted
-- Number variables are validated as numeric
+- Number variables are validated as numeric before binding
 - Date variables use ISO format validation
+- Column types detected from the source refine the cast where they are available
 
-### Safe Defaults
-- Empty variables default to NULL in SQL
-- No direct database string concatenation
-- All queries go through Lotus's security layer
+### Missing Values
+- A required variable with no supplied value and no default fails with `Missing required variable: <name>` rather than silently binding NULL
+- Variables inside `[[ ]]` are removed with their clause instead
 
 ## Troubleshooting
 
 ### Variables Not Appearing
-- **Check syntax**: Must be exactly `{{variable_name}}`  
+- **Check syntax**: Must be exactly `{{variable_name}}`
 - **Check name**: Only letters, numbers, underscores allowed
 - **Refresh editor**: Sometimes requires re-typing the variable
 
@@ -286,26 +336,26 @@ ORDER BY product_count DESC
 - **Static options format**: One option per line
 - **Custom options**: Either `value` (doubles as value/label) or `value | label` syntax
 - **Empty lines**: Remove empty lines between options
-- **SQL queries**: Use "Test Query" button to validate before saving
+- **Options queries**: Use the "Test Query" button to validate before saving
 - **Query columns**: Must return 1 or 2 columns (value, label)
+- **No "From query" option**: The selected data source does not declare `:dynamic_options`; enter the values by hand
 
 ### Date Variables Issues
-- **Widget type**: Date variables always use date picker (no input/dropdown)
-- **Format**: Outputs ISO date format (YYYY-MM-DD)
-- **Timezone**: Uses browser's local timezone for date picker
+- **Widget type**: Date variables always use the date picker (no input/dropdown choice)
+- **Format**: ISO date format (YYYY-MM-DD)
+- **Timezone**: Uses the browser's local timezone for the date picker
 
 ## Configuration Modal
 
 ### Accessing Dropdown Options Configuration
 1. Set a variable to use a Dropdown widget in Variable Settings
 2. Click the "Configure options" button next to the dropdown widget selection
-3. Choose between "Custom list" or "From SQL" in the configuration modal
+3. Where the source supports it, choose between **"Custom list"** and **"From query"**; otherwise the modal opens straight into the custom list
 
 ### Modal Features
 - **Custom list**: Text area for entering static options (one per line)
-- **From SQL**: Text area for SQL queries with syntax highlighting
-- **Test Query**: Validate SQL queries and preview first 3 results before saving
-- **Live preview**: Shows how options will appear in the dropdown
+- **From query**: Monospaced text area for the options query
+- **Test Query**: Validate the query and preview the first 3 results before saving
 - **Error handling**: Clear error messages for invalid queries or syntax
 
 ## Variables on Dashboards

@@ -1235,6 +1235,7 @@ defmodule Lotus.Web.QueryEditorPage do
             :not_configured -> gettext("AI features are not configured")
             :api_key_not_configured -> gettext("API key is missing or invalid")
             msg when is_binary(msg) -> msg
+            {:ai_feature_unsupported, _feature, reason} -> reason
             other -> gettext("Optimization failed: %{error}", error: inspect(other))
           end
 
@@ -1286,6 +1287,7 @@ defmodule Lotus.Web.QueryEditorPage do
             :not_configured -> gettext("AI features are not configured")
             :api_key_not_configured -> gettext("API key is missing or invalid")
             msg when is_binary(msg) -> msg
+            {:ai_feature_unsupported, _feature, reason} -> reason
             other -> gettext("Explanation failed: %{error}", error: inspect(other))
           end
 

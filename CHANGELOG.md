@@ -1,22 +1,39 @@
 # Changelog
 
-## [Unreleased]
+## [1.0.0] - 2026-09-12
+
+Aligns lotus_web with the Lotus core v1 adapter contract. The dashboard no longer assumes every data source is SQL: the editor picks its language from the source, non-SQL sources get JSON mode with structure-aware completions, and features a source cannot support are hidden rather than failing. Requires Lotus 1.0.
+
+### Fixed
+
+- **Date-range dashboard filters survive a page load.** The picker posts its
+  two inputs under one filter name, so the value arrived as a nested
+  `%{"start" => _, "end" => _}` map. That map went into the URL, but the
+  code reading params back accepted only strings, so every reload fell back
+  to the filter's default and silently discarded the range the user picked.
+- **Date-range filter transforms are reachable from the dashboard.**
+  `Lotus.Dashboards` applies `date_range_start` and `date_range_end` to a
+  `"start,end"` string, but the dashboard produced the nested map above and
+  nothing converted between the two, so mapping one date-range filter to a
+  query's start and end variables could not work. Filter values now
+  normalize to the string form on the way in, which is both what the URL
+  round-trips and what the transforms parse. New
+  `Lotus.Web.Dashboards.FilterValues` owns that shape, replacing helpers
+  that were duplicated across the editor and public dashboard pages.
 
 ### Added
 
+- **AI buttons are gated on what the source supports** — Explain and Optimize
+  are disabled, with the adapter's own reason as the tooltip, for a data
+  source whose adapter declares the feature unsupported. Core has exposed
+  `Lotus.AI.supports?/2` and `unsupported_reason/2` since 1.0, but the
+  dashboard never called them, so the buttons stayed live and the failure
+  arrived as an inspected `{:ai_feature_unsupported, _, _}` tuple in the chat.
+  That tuple is now rendered as the reason.
+- **`Cmd/Ctrl+Shift+F` is listed in the keyboard shortcuts modal.** The
+  pretty-print binding existed but was not discoverable.
 - **The asset routes serve gzip** — `Lotus.Web.Assets` compresses the stylesheet and JS bundle once at compile time and answers with `content-encoding: gzip` when the client's `accept-encoding` allows it, with `vary: accept-encoding` on every response. A cold load moves roughly 0.8 MB instead of 2 MB, which matters for hosts that serve Lotus straight from Cowboy or Bandit with no compressing proxy (#148)
 - **Open tabs reload after a deploy** — On a connected mount, `DashboardLive` compares the `phx-track-static` asset URLs the client is tracking with the hashes of the running build and issues a full-page redirect to the current URL when they differ, so a tab that stayed open through a release picks up the new bundle instead of running old JS against new server code. `Phoenix.LiveView.static_changed?/1` is not used because it only knows the host application's static manifest (#148)
-
-### Changed
-
-- **Assets are served from routes instead of being inlined in every page** — The dashboard's stylesheet and JavaScript bundle now load from `<prefix>/css-<hash>` and `<prefix>/js-<hash>` (route helper `lotus_asset_path/3`), served by `Lotus.Web.Assets` with `cache-control: public, max-age=31536000, immutable`. A request for a hash this build did not produce returns 404 with `no-store`. Pages shrink by roughly 2 MB, browsers cache the bundle across page loads, and tools that inject markup before `</head>` or `</body>` (Tidewave, Phoenix LiveReloader) no longer corrupt the inlined script (#142, #143). Hosts with a CSP: a nonce still covers both tags; `style-src 'unsafe-inline'` on its own no longer allows the stylesheet, use a nonce or `'self'`. See the installation guide
-
-## [1.0.0-rc.1] - 2026-09-11
-
-Release candidate for v1.0. Aligns lotus_web with the Lotus core v1 adapter contract (elixir-lotus/lotus#218) and refreshes the sibling adapter deps to their v1 contract merges on `main`.
-
-### Added
-
 - **The dashboard passes an actor into Lotus core** — two optional `Lotus.Web.Resolver` callbacks, `resolve_context/1` and `resolve_scope/1`, say who the dashboard is acting for and what data they may see. The resolved pair rides along as the `:context` and `:scope` options on every core call the UI makes: running a query from the editor or a dashboard card, streaming a CSV export, building the sources map, describing a table for editor autocomplete, listing schemas for the source picker, testing a dropdown's options query, and every AI generate / optimize / explain call. `:context` reaches middleware and telemetry; `:scope` reaches the visibility resolver and is hashed into the cache key, so two scopes never read each other's cached rows. Without this an access-control plug saw `nil` for everything a user did in the browser. Both callbacks are optional and default to `nil`, so a dashboard without a resolver calls core exactly as it did before — same middleware payloads, same cache keys. The new `Lotus.Web.Actor` module builds the options; see the [installation guide](guides/installation.md) for a worked resolver
 - **Elasticsearch/OpenSearch dev server integration** — Added `lotus_elasticsearch` adapter to dev server with OpenSearch docker service (port 9209), `WebDev.SearchClient` module, `dev_logs` sample index with seed data, and an "Error Logs" sample query using JSON DSL
 - **JSON language mode with context-aware autocomplete for JSON DSLs** — Non-SQL data sources (e.g. Elasticsearch) now get CodeMirror JSON syntax highlighting and structure-aware completions instead of SQL mode. `JsonDslCompletion` walks the `@lezer/json` syntax tree via `syntaxTree()` to determine the cursor's key path and consults the adapter's `context_schema` (new `editor_config/1` field in Lotus core) for the valid completion set: root-level keys inside `{↓}`, `must`/`should`/`filter` inside a `bool` block, schema field names inside `match`/`term`/`range`, range operators (`gte`/`lte`/…) inside a range-field object, and value literals (`asc`/`desc`, calendar-interval units, …) at value positions. Adapters that omit `context_schema` get a flat "every keyword at every position" behavior instead of structural suggestions. Added `@codemirror/lang-json` dependency and `JsonDslCompletion` class under `languages/json_dsl/`. `dialect_for_repo/1` preserves `"json:"`-prefixed language identifiers (elixir-lotus/lotus_web#126)
@@ -38,6 +55,7 @@ Release candidate for v1.0. Aligns lotus_web with the Lotus core v1 adapter cont
 
 ### Changed
 
+- **Assets are served from routes instead of being inlined in every page** — The dashboard's stylesheet and JavaScript bundle now load from `<prefix>/css-<hash>` and `<prefix>/js-<hash>` (route helper `lotus_asset_path/3`), served by `Lotus.Web.Assets` with `cache-control: public, max-age=31536000, immutable`. A request for a hash this build did not produce returns 404 with `no-store`. Pages shrink by roughly 2 MB, browsers cache the bundle across page loads, and tools that inject markup before `</head>` or `</body>` (Tidewave, Phoenix LiveReloader) no longer corrupt the inlined script (#142, #143). Hosts with a CSP: a nonce still covers both tags; `style-src 'unsafe-inline'` on its own no longer allows the stylesheet, use a nonce or `'self'`. See the installation guide
 - **Bumped `credo` to 1.7.19** — 1.7.12 crashes tokenizing sigils on the Elixir version this release is built against, so `mix credo` could not run at all
 - **Dropdown options are gated on the source's `:dynamic_options` feature** — populating a variable's dropdown from a query only works where a query returns a flat list of values. The modal now offers the "From query" mode only when the selected source declares the new core `:dynamic_options` feature; document-shaped sources (Elasticsearch) get manual entry only, and a variable that carries an options query from an earlier source opens on manual entry rather than a mode it cannot use (#127)
 - **`SourcesMap.build/0` no longer runs on the disconnected mount** — listing schemas and tables for every configured source ran twice, once for the static render nobody interacts with. `QueryEditorPage` and `SchemaExplorerComponent` now build it on the connected mount only, so the first paint no longer waits on those queries (#128)

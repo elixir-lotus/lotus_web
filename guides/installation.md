@@ -6,9 +6,9 @@ This guide walks you through setting up LotusWeb in your Phoenix application.
 
 - **Elixir 1.18+** and **OTP 26+**
 - **Phoenix 1.7+** for LiveView compatibility
-- **[Lotus 1.0.0-rc.1](https://hex.pm/packages/lotus)** configured in your application
+- **[Lotus 1.0](https://hex.pm/packages/lotus)** configured in your application
 
-> **Version Compatibility**: LotusWeb 1.0.0-rc.1 requires Lotus 1.0.0-rc.1. The v1 contract renamed several config keys (`:ecto_repo` → `:storage_repo`, `:data_repos` → `:data_sources`, `:default_repo` → `:default_source`); see the Lotus [Upgrading to v1.0](https://hexdocs.pm/lotus/upgrading-to-v1.html) guide if you're coming from 0.x.
+> **Version Compatibility**: LotusWeb 1.0 requires Lotus 1.0. The v1 contract renamed several config keys (`:ecto_repo` → `:storage_repo`, `:data_repos` → `:data_sources`, `:default_repo` → `:default_source`). There is no compatibility shim — Lotus raises at boot if it finds an old key. See the Lotus [Upgrading to v1.0](https://hexdocs.pm/lotus/upgrading-to-v1.html) guide if you're coming from 0.x, and the lotus_web [Upgrading to v1.0](upgrading-to-v1.md) guide for what changes in the dashboard.
 
 ## Step 1: Add Dependency
 
@@ -17,8 +17,8 @@ Add `lotus` and `lotus_web` to your dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:lotus, "~> 1.0.0-rc.1"},
-    {:lotus_web, "~> 1.0.0-rc.1"}
+    {:lotus, "~> 1.0"},
+    {:lotus_web, "~> 1.0"}
   ]
 end
 ```
@@ -36,6 +36,8 @@ config :lotus,
   data_sources: %{
     "main" => MyApp.Repo,
     "analytics" => MyApp.AnalyticsRepo  # Optional: multiple data sources
+    # A non-Ecto source is a config map instead of a repo module, e.g.
+    # "logs" => %{adapter: :elasticsearch, url: "http://localhost:9200"}
   },
   # Recommended: Enable caching for better dashboard performance
   cache: %{
@@ -120,6 +122,28 @@ end
 
 **Note**: Your `:browser` pipeline must include `fetch_session` and `fetch_flash` plugs for LotusWeb to work correctly. Most Phoenix apps have these by default.
 
+### Router options
+
+`lotus_dashboard/2` accepts these options. Any other option raises an
+`ArgumentError` at compile time.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `:as` | `:lotus_dashboard` | Route and live session name. Change it if you mount the dashboard more than once. |
+| `:on_mount` | `[]` | Extra `on_mount` hooks, run before Lotus's own `Lotus.Web.Locale` and `Lotus.Web.Authentication` hooks. |
+| `:socket_path` | `"/live"` | Path of the Phoenix LiveView socket the dashboard connects to. Set it if your endpoint mounts the socket elsewhere. |
+| `:transport` | `"websocket"` | LiveView transport, either `"websocket"` or `"longpoll"`. |
+| `:resolver` | `Lotus.Web.Resolver` | Module implementing `Lotus.Web.Resolver` for authentication, access control and the actor. See below. |
+| `:csp_nonce_assign_key` | `nil` | Assign key (or a `%{script: key, style: key}` map) holding the CSP nonce. See [Content Security Policy](#content-security-policy-csp). |
+| `:features` | `[]` | Optional feature flags. See below. |
+
+The macro mounts more than the main LiveViews: it also adds the two asset
+routes, the CSV export route, and a second live session for public dashboards
+at `<prefix>/public/:token` that skips the resolver entirely. Every one of
+them is declared inside your `scope`, so they all go through the same
+pipeline — mounting behind `:require_authenticated_user` protects the assets
+and the export route too.
+
 ### Optional Features
 
 You can enable additional features by passing the `features` option:
@@ -178,10 +202,49 @@ middleware payloads and the same cache keys as before.
 
 The CSV export route resolves the actor the same way, from the conn.
 
+The public dashboard route (`<prefix>/public/:token`) is deliberately outside
+this: it mounts with no resolver, so it has no user, no context and no scope,
+and it is fixed at `:read_only` access. A public dashboard therefore runs its
+cards with whatever visibility your static configuration allows. Publish a
+dashboard only if every card is safe to show unauthenticated.
+
+## Assets
+
+The dashboard's stylesheet and JavaScript bundle ship inside the `lotus_web`
+package and are served from two routes under the mount path:
+
+- `<prefix>/css-<hash>`
+- `<prefix>/js-<hash>`
+
+`<hash>` is the MD5 of the compiled asset, so the URL changes whenever the
+bundle does. `Lotus.Web.Assets` answers with
+`cache-control: public, max-age=31536000, immutable`, and with
+`content-encoding: gzip` when the request's `accept-encoding` allows it
+(`vary: accept-encoding` is always set). A request for a hash this build did
+not produce gets a 404 with `cache-control: no-store`, so a stale URL from an
+old node during a rolling deploy can never poison a cache.
+
+There is nothing to add to your endpoint: the routes come from
+`lotus_dashboard/2` and do not go through `Plug.Static` or your asset
+pipeline. The route helper is `lotus_asset_path/3` if you need to build the
+URLs yourself.
+
+A browser tab that stays open across a deploy is handled too. On the
+connected mount the dashboard compares the `phx-track-static` URLs the client
+is tracking against the hashes of the running build, and issues a full-page
+redirect when they differ, so the tab picks up the new bundle instead of
+running old JavaScript against new server code.
+
 ## Content Security Policy (CSP)
 
 If your application sets a `Content-Security-Policy` header (via `:put_secure_browser_headers`
 or a custom plug), you'll need to configure it to allow the resources used by LotusWeb.
+
+> **Changed in 1.0**: the stylesheet used to be inlined in the page and is now
+> an external request to `<prefix>/css-<hash>`. A policy that allowed it with
+> `style-src 'unsafe-inline'` alone no longer does — `'unsafe-inline'` governs
+> inline style content, not external stylesheets. Use a nonce or `'self'`.
+> The same applies to the JavaScript bundle and `script-src`.
 
 ### Nonce-based CSP
 

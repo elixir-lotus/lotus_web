@@ -6,10 +6,12 @@ LotusWeb includes built-in charting capabilities to visualize your query results
 
 After running a query, you can switch between table and chart views to visualize your data:
 
-- **16 chart types** across four categories — Charts, Distribution, Part of whole, and Single value
+- **18 chart types** across four categories — Charts, Distribution, Part of whole, and Single value
 - **Flexible configuration** - Configure axes, grouping fields, and type-specific options
 - **Dark mode support** - Charts automatically adapt to your theme
 - **Keyboard shortcuts** - Quick access to visualization features
+
+Charts are built from a result's columns and rows, so they work with any data source Lotus can run — the examples below are SQL because most sources are, but a JSON DSL source that returns tabular results charts the same way.
 
 ## Chart Types
 
@@ -21,7 +23,7 @@ Chart types are organized into four categories in the settings panel.
 
 Best for comparing categorical data with discrete values.
 
-**When to use:** Comparing values across categories (e.g., sales by region), displaying counts or totals, showing rankings.
+**When to use:** Comparing values across categories (e.g. sales by region), displaying counts or totals, showing rankings.
 
 **Config:** X-Axis Field, Y-Axis Field, optional Color/Series Field.
 
@@ -33,9 +35,9 @@ GROUP BY department;
 
 #### Horizontal Bar
 
-Same as bar chart but with swapped axes — the category field is on the Y-axis and the value field on the X-axis. Useful for long category labels.
+Same as bar chart but with swapped axes — the category field is drawn on the Y-axis and the value field on the X-axis. Useful for long category labels.
 
-**Config:** X-Axis Field (value), Y-Axis Field (category), optional Color/Series Field.
+**Config:** X-Axis Field (category), Y-Axis Field (value), optional Color/Series Field. The fields keep their names; only the rendering swaps.
 
 #### Line Chart
 
@@ -55,7 +57,7 @@ ORDER BY date;
 
 #### Area Chart
 
-Best for showing cumulative totals or volume over time. Like line chart but with filled area.
+Best for showing cumulative totals or volume over time. Like the line chart but with a filled area.
 
 **Config:** X-Axis Field, Y-Axis Field, optional Color/Series Field.
 
@@ -100,7 +102,7 @@ WHERE quantity_sold > 0;
 
 Extends scatter with a third dimension — circle size varies by a numeric field.
 
-**Config:** X-Axis Field, Y-Axis Field, Size Field, optional Color/Series Field.
+**Config:** X-Axis Field, Y-Axis Field, optional Color/Series Field, optional Size Field.
 
 ```sql
 SELECT price, quantity_sold, revenue
@@ -113,7 +115,7 @@ Set Size Field to `revenue` to make bubble size proportional to revenue.
 
 Shows the distribution of a single numeric variable as binned bars.
 
-**Config:** X-Axis Field (the numeric field to bin).
+**Config:** Data Field (the numeric field to bin), Number of Bins (default 10, between 2 and 100), optional Color/Series Field.
 
 ```sql
 SELECT salary FROM employees;
@@ -123,7 +125,7 @@ SELECT salary FROM employees;
 
 Color-encoded matrix showing the relationship between two categorical or ordinal fields.
 
-**Config:** X-Axis Field, Y-Axis Field, Color/Series Field (the value to encode as color intensity).
+**Config:** Column Field (X), Row Field (Y), optional Value Field for the colour intensity. Leave the Value Field empty to colour by the row field itself.
 
 ```sql
 SELECT day_of_week, hour_of_day, COUNT(*) as events
@@ -147,7 +149,7 @@ GROUP BY status;
 
 #### Donut Chart
 
-Same as pie chart but with a hollow center. Uses the same configuration.
+Same as the pie chart but with a hollow center. Uses the same configuration.
 
 **Config:** X-Axis Field (category), Y-Axis Field (value).
 
@@ -177,13 +179,13 @@ ORDER BY display_order;
 
 ### Single value
 
-These chart types use a **Value Field** instead of X/Y axes. They display a single metric prominently.
+Four of these chart types use a **Value Field** instead of X/Y axes, and all four accept an optional **Label** that replaces the column name under the number.
 
 #### KPI Card
 
 Displays a single number prominently — ideal for dashboard headline metrics.
 
-**Config:** Value Field.
+**Config:** Value Field, optional Label.
 
 ```sql
 SELECT COUNT(*) as total_users FROM users;
@@ -191,9 +193,9 @@ SELECT COUNT(*) as total_users FROM users;
 
 #### Trend
 
-KPI-style display with a delta comparison showing change vs. a previous period or comparison field.
+KPI-style display with a delta comparison showing change against a comparison field.
 
-**Config:** Value Field, optional Comparison Field.
+**Config:** Value Field, optional Label, optional Comparison Field. Leave the Comparison Field empty to compare against the previous row.
 
 ```sql
 SELECT
@@ -208,7 +210,7 @@ Set Value Field to `this_week` and Comparison Field to `last_week`.
 
 Semicircular arc showing a value within a defined range.
 
-**Config:** Value Field, Min Value (default 0), Max Value (default 100).
+**Config:** Value Field, optional Label, Min Value (default 0), Max Value (default 100).
 
 ```sql
 SELECT AVG(score) as avg_score FROM reviews;
@@ -218,7 +220,7 @@ SELECT AVG(score) as avg_score FROM reviews;
 
 Horizontal bar showing progress toward a goal.
 
-**Config:** Value Field, Goal Value.
+**Config:** Value Field, optional Label, Goal Value (default 100).
 
 ```sql
 SELECT COUNT(*) as completed FROM tasks WHERE status = 'done';
@@ -226,9 +228,16 @@ SELECT COUNT(*) as completed FROM tasks WHERE status = 'done';
 
 #### Sparkline
 
-Compact inline line chart — useful in dashboards for showing trends without axis labels.
+Compact inline line chart — useful in dashboards for showing trends without axis labels. Despite sitting in the Single value group, it plots a series: it takes X and Y fields like the cartesian charts.
 
-**Config:** X-Axis Field (typically a date), Value Field.
+**Config:** X-Axis Field (typically a date), Y-Axis Field. The Color/Series selector is offered but the sparkline spec ignores it — a sparkline draws one series.
+
+```sql
+SELECT DATE(event_time) as date, COUNT(*) as events
+FROM activity_log
+GROUP BY DATE(event_time)
+ORDER BY date;
+```
 
 ## Configuring Charts
 
@@ -236,17 +245,19 @@ Compact inline line chart — useful in dashboards for showing trends without ax
 
 Access visualization settings in two ways:
 - Click the **chart icon** in the editor toolbar
-- Press **Cmd/Ctrl+Shift+V** keyboard shortcut
+- Press **Cmd/Ctrl+Shift+V**
 
 ### Chart Type Tab
 
-The first tab displays all 16 chart types organized into four groups: Charts, Distribution, Part of whole, and Single value. Click any icon to select that chart type.
+The first tab displays all 18 chart types organized into four groups: Charts, Distribution, Part of whole, and Single value. Click any icon to select that chart type.
+
+Switching type keeps the fields the new type can still use and drops the rest, so moving between bar, line and area does not clear your axes.
 
 ### Configure Tab
 
 The second tab shows configuration fields that vary by chart type:
 
-**Standard charts** (bar, horizontal bar, line, area, scatter, heatmap, pie, donut, funnel, waterfall):
+**Standard charts** (bar, horizontal bar, line, area, scatter, bubble, pie, donut, funnel, waterfall, sparkline):
 
 | Setting | Description | Required |
 |---------|-------------|----------|
@@ -260,39 +271,54 @@ The second tab shows configuration fields that vary by chart type:
 |---------|-------------|----------|
 | **Size Field** | Numeric field controlling circle size | No |
 
-**Combo chart** adds:
+**Combo chart** replaces the series field with:
 
 | Setting | Description | Required |
 |---------|-------------|----------|
 | **Y2 Field** | Field for the secondary Y-axis (line) | Yes |
 | **Y2 Axis Title** | Custom label for the secondary axis | No |
 
-**Histogram** requires only the X-Axis Field (the numeric field to bin).
+**Histogram:**
+
+| Setting | Description | Required |
+|---------|-------------|----------|
+| **Data Field** | The numeric field to bin | Yes |
+| **Number of Bins** | 2 to 100, default 10 | No |
+| **Color/Series Field** | Optional field to group bars by color | No |
+
+**Heatmap:**
+
+| Setting | Description | Required |
+|---------|-------------|----------|
+| **Column Field** | Categorical field for the X-axis | Yes |
+| **Row Field** | Categorical field for the Y-axis | Yes |
+| **Value Field** | Numeric field for colour intensity | No |
 
 **Single value charts** (KPI, trend, gauge, progress):
 
 | Setting | Description | Required |
 |---------|-------------|----------|
 | **Value Field** | The numeric field to display | Yes |
+| **Label** | Custom caption under the number | No |
 | **Comparison Field** | Field to compare against (trend only) | No |
 | **Min Value / Max Value** | Range for gauge display | No |
 | **Goal Value** | Target value for progress bar | No |
 
-**Sparkline** uses X-Axis Field and Value Field.
-
 ### Axis Options
 
-Fine-tune your chart display (available on cartesian chart types):
+Fine-tune your chart display. The Axis Display section appears for bar, horizontal bar, line, area, scatter and bubble charts:
 
 - **Show Labels** - Toggle axis labels on/off
 - **X-Axis Title** - Custom label for the horizontal axis
 - **Y-Axis Title** - Custom label for the vertical axis
 
+Axis titles are a query-editor setting; the dashboard card settings drawer does not expose them.
+
 ### Configuration Status
 
 A status indicator shows whether your chart is ready:
 - **Green checkmark** - Configuration is valid
-- **Amber warning** - Missing required fields
+- **Amber warning** - Missing required fields, with a hint naming the field the chart type needs
 
 ## Keyboard Shortcuts
 
@@ -301,6 +327,8 @@ A status indicator shows whether your chart is ready:
 | Cmd/Ctrl+Shift+V | Toggle visualization settings drawer |
 | Cmd/Ctrl+1 | Switch to table view |
 | Cmd/Ctrl+2 | Switch to chart view |
+
+With focus inside the editor, **Cmd/Ctrl+G** also toggles the visualization drawer, opening it on the Configure tab when the chart is already configured.
 
 ## Best Practices
 
@@ -327,10 +355,12 @@ A status indicator shows whether your chart is ready:
 For the best visualization results:
 
 1. **Ensure numeric Y-axis data** - The Y-axis field should contain numbers for most chart types
-2. **Use dates for time series** - When charting over time, use DATE or TIMESTAMP columns for the X-axis
+2. **Use dates for time series** - When charting over time, return date or timestamp values for the X-axis
 3. **Limit categories** - For bar and pie charts, aim for fewer than 10 categories for readability
 4. **Include grouping columns** - To create multi-series charts, include a category column for the Color/Series field
-5. **Order your data** - For line and area charts, ORDER BY your date/time column
+5. **Order your data** - For line and area charts, order by your date/time column in the query
+
+Decimals, dates, times and UUID binaries returned by the source are normalized to JSON-safe values before they reach Vega-Lite, so you do not have to cast them in the query.
 
 ### Common Query Patterns
 
@@ -362,7 +392,7 @@ Set X-Axis to `date` and Y-Axis to `total`.
 
 ### Chart Not Rendering
 
-- **Check field selection** - Ensure both X-Axis and Y-Axis fields are selected
+- **Check field selection** - Ensure the fields the chart type needs are selected: X and Y for cartesian charts, Value Field for KPI, trend, gauge and progress, Data Field for the histogram
 - **Verify data types** - The Y-Axis field must contain numeric values
 - **Check for empty results** - Run the query first and confirm data is returned
 
@@ -375,9 +405,9 @@ Set X-Axis to `date` and Y-Axis to `total`.
 
 - **Wrong chart type** - Consider if another chart type better suits your data
 - **Too many categories** - Reduce categories or switch from pie to bar chart
-- **Missing ORDER BY** - For time series, ensure data is ordered by the time column
+- **Unordered time series** - For line and area charts, order the results by the time column
 
 ### Performance Issues
 
-- **Limit result size** - Large datasets may slow chart rendering; use LIMIT or aggregate data
-- **Aggregate in SQL** - Perform grouping and aggregation in your query rather than charting raw data
+- **Limit result size** - Large datasets may slow chart rendering; bound or aggregate the result
+- **Aggregate in the query** - Perform grouping and aggregation in your query rather than charting raw rows
