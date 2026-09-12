@@ -2,7 +2,7 @@ defmodule Lotus.Web.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/elixir-lotus/lotus_web"
-  @version "1.0.0-rc.1"
+  @version "1.0.0"
 
   def project do
     [
@@ -48,7 +48,7 @@ defmodule Lotus.Web.MixProject do
       {:mdex, "~> 0.13"},
 
       # Lotus
-      {:lotus, "~> 1.0.0-rc.1"},
+      {:lotus, "~> 1.0"},
       {:lotus_clickhouse,
        git: "git@github.com:elixir-lotus/lotus_clickhouse.git", branch: "main", only: :dev},
       {:lotus_elasticsearch,

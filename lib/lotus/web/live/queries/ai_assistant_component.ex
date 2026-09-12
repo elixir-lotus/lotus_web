@@ -31,8 +31,18 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
     >
       <%= if @visible do %>
         <.header parent={@parent} conversation={@conversation} />
-        <.conversation_history conversation={@conversation} parent={@parent} current_statement={@current_statement} />
-        <.input_area generating={@generating} parent={@parent} current_statement={@current_statement} />
+        <.conversation_history
+          conversation={@conversation}
+          parent={@parent}
+          current_statement={@current_statement}
+          data_source={@data_source}
+        />
+        <.input_area
+          generating={@generating}
+          parent={@parent}
+          current_statement={@current_statement}
+          data_source={@data_source}
+        />
       <% end %>
     </div>
     """
@@ -90,6 +100,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
   attr(:conversation, :map, required: true)
   attr(:parent, :any, required: true)
   attr(:current_statement, :string, default: nil)
+  attr(:data_source, :string, default: nil)
 
   defp conversation_history(assigns) do
     ~H"""
@@ -99,7 +110,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
       class="flex-1 overflow-y-auto p-4 space-y-3"
     >
       <%= if length(@conversation.messages) == 0 do %>
-        <.empty_state parent={@parent} current_statement={@current_statement} />
+        <.empty_state parent={@parent} current_statement={@current_statement} data_source={@data_source} />
       <% else %>
         <%= for {message, index} <- Enum.with_index(@conversation.messages) do %>
           <.message_bubble message={message} index={index} parent={@parent} current_statement={@current_statement} />
@@ -111,6 +122,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
 
   attr(:parent, :any, required: true)
   attr(:current_statement, :string, default: nil)
+  attr(:data_source, :string, default: nil)
 
   defp empty_state(assigns) do
     ~H"""
@@ -139,6 +151,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
         <.ai_action_buttons
           parent={@parent}
           current_statement={@current_statement}
+          data_source={@data_source}
           generating={false}
           size={:lg}
         />
@@ -149,21 +162,27 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
 
   attr(:parent, :any, required: true)
   attr(:current_statement, :string, default: nil)
+  attr(:data_source, :string, default: nil)
   attr(:generating, :boolean, default: false)
   attr(:size, :atom, values: [:sm, :lg], default: :sm)
 
   defp ai_action_buttons(assigns) do
+    assigns =
+      assigns
+      |> assign(:explain_reason, ai_unsupported_reason(assigns.data_source, :explanation))
+      |> assign(:optimize_reason, ai_unsupported_reason(assigns.data_source, :optimization))
+
     ~H"""
     <div class="flex items-center gap-2">
       <button
         type="button"
         phx-click="explain_query"
         phx-target={@parent}
-        disabled={ai_action_disabled?(@generating, @current_statement)}
-        title={gettext("Get a plain-language explanation of your query")}
+        disabled={ai_action_disabled?(@generating, @current_statement, @explain_reason)}
+        title={@explain_reason || gettext("Get a plain-language explanation of your query")}
         class={[
           ai_action_base_classes(@size),
-          if(ai_action_disabled?(@generating, @current_statement),
+          if(ai_action_disabled?(@generating, @current_statement, @explain_reason),
             do: ai_action_disabled_classes(@size),
             else: "text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/20"
           )
@@ -176,11 +195,11 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
         type="button"
         phx-click="optimize_query"
         phx-target={@parent}
-        disabled={ai_action_disabled?(@generating, @current_statement)}
-        title={gettext("Analyze your query and suggest performance improvements")}
+        disabled={ai_action_disabled?(@generating, @current_statement, @optimize_reason)}
+        title={@optimize_reason || gettext("Analyze your query and suggest performance improvements")}
         class={[
           ai_action_base_classes(@size),
-          if(ai_action_disabled?(@generating, @current_statement),
+          if(ai_action_disabled?(@generating, @current_statement, @optimize_reason),
             do: ai_action_disabled_classes(@size),
             else: "text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
           )
@@ -193,8 +212,24 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
     """
   end
 
-  defp ai_action_disabled?(generating, current_statement),
-    do: generating or is_nil(current_statement) or current_statement == ""
+  defp ai_action_disabled?(generating, current_statement, unsupported_reason),
+    do:
+      generating or is_nil(current_statement) or current_statement == "" or
+        not is_nil(unsupported_reason)
+
+  # An adapter declares per-feature AI capabilities, so a source that cannot
+  # explain or optimize says so with a reason. Surface it on a disabled button
+  # rather than letting the user click into an error.
+  #
+  # Anything unexpected here leaves the button enabled: a UI gate that fails
+  # closed on an unresolvable source would hide a feature that works.
+  defp ai_unsupported_reason(source, feature) when is_binary(source) and source != "" do
+    Lotus.AI.unsupported_reason(source, feature)
+  rescue
+    _ -> nil
+  end
+
+  defp ai_unsupported_reason(_source, _feature), do: nil
 
   defp ai_action_base_classes(:lg),
     do:
@@ -417,6 +452,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
   attr(:generating, :boolean, required: true)
   attr(:parent, :any, required: true)
   attr(:current_statement, :string, default: nil)
+  attr(:data_source, :string, default: nil)
 
   defp input_area(assigns) do
     ~H"""
@@ -425,6 +461,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
         <.ai_action_buttons
           parent={@parent}
           current_statement={@current_statement}
+          data_source={@data_source}
           generating={@generating}
           size={:sm}
         />
