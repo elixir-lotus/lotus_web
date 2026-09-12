@@ -1,8 +1,7 @@
 defmodule Lotus.Web.Test.LazyResolver do
-  @moduledoc """
-  A resolver that lives in a compiled `.beam` file so a test can unload it and
-  check that `Lotus.Web.Resolver.call_with_fallback/3` loads it on demand.
-  """
+  @moduledoc false
+  # A resolver that lives in a compiled `.beam` file so a test can unload it
+  # and check that the resolver fallback loads it on demand.
 
   @behaviour Lotus.Web.Resolver
 

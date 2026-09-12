@@ -1,5 +1,21 @@
 defmodule Lotus.Web.Router do
-  @moduledoc false
+  @moduledoc """
+  Mounts the dashboard in a host router.
+
+  Import the module and call `lotus_dashboard/2` inside a scope:
+
+      import Lotus.Web.Router
+
+      scope "/" do
+        pipe_through [:browser, :require_authenticated_user]
+
+        lotus_dashboard "/lotus"
+      end
+
+  The macro defines the live sessions, the routes of the dashboard pages, the
+  public dashboard route, the CSV export route, and the asset routes. See
+  `lotus_dashboard/2` for the options.
+  """
 
   @default_opts [
     socket_path: "/live",

@@ -117,6 +117,7 @@ defmodule Lotus.Web.MixProject do
     [
       main: "readme",
       name: "Lotus Web",
+      warnings_as_errors: true,
       source_ref: "v#{@version}",
       canonical: "http://hexdocs.pm/lotus_web",
       source_url: @source_url,

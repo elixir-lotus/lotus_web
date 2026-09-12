@@ -1,5 +1,17 @@
 defmodule Lotus.Web.Assets do
-  @moduledoc false
+  @moduledoc """
+  Serves the dashboard's CSS and JavaScript bundle.
+
+  `Lotus.Web.Router.lotus_dashboard/2` mounts this plug at
+  `<prefix>/css-<hash>` and `<prefix>/js-<hash>`, where `<hash>` is the MD5 of
+  the compiled asset. A host never calls it: the URLs come from the layout
+  through `lotus_asset_path/3`.
+
+  The bundle is read and gzipped at compile time, so a response costs no disk
+  read. Because each URL names the build it came from, the plug answers with
+  `cache-control: public, max-age=31536000, immutable`, and answers a hash
+  this build did not produce with a 404 and `cache-control: no-store`.
+  """
 
   @behaviour Plug
 
@@ -54,8 +66,8 @@ defmodule Lotus.Web.Assets do
   `tracked` is the `_track_static` list the LiveView client sends on join:
   the URLs of every `phx-track-static` tag on the page. Only URLs shaped like
   Lotus's own asset routes (`.../css-<hash>` or `.../js-<hash>`) are
-  considered; the host application's assets are ignored. Used by
-  `Lotus.Web.DashboardLive` to force a full reload after a deploy, since
+  considered; the host application's assets are ignored. The dashboard
+  LiveView uses it to force a full reload after a deploy, since
   `Phoenix.LiveView.static_changed?/1` only knows the host's static manifest.
   """
   @spec stale?(term()) :: boolean()
