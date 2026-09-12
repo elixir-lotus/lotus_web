@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [1.1.0] - 2026-09-12
+
+Two actor defects, and the guard rails that keep them from coming back. A host
+resolver that the BEAM had not loaded yet was ignored, which gave every visitor
+full access; and the schema explorer and source selector called Lotus with no
+actor, so a scope-aware visibility resolver disagreed with itself. No host code
+has to change.
 
 ### Fixed
 
