@@ -1,6 +1,8 @@
 defmodule Lotus.Web.Helpers do
   @moduledoc false
 
+  use Gettext, backend: Lotus.Web.Gettext
+
   alias Phoenix.VerifiedRoutes
 
   # Routing Helpers
@@ -75,6 +77,17 @@ defmodule Lotus.Web.Helpers do
     |> List.wrap()
     |> Enum.member?(to_string(value))
   end
+
+  @doc """
+  The message for a content change that a `:before_content_change` plug refused.
+
+  Shows the plug's reason when it is a string. Any other reason, such as an
+  exception, gets a generic message, so internal terms never reach the page.
+  """
+  def refused_message(reason) when is_binary(reason),
+    do: gettext("The change was refused: %{reason}", reason: reason)
+
+  def refused_message(_reason), do: gettext("The change was refused")
 
   require Logger
 

@@ -10,6 +10,7 @@ defmodule Lotus.Web.QueryEditorPage do
   alias Lotus.Query.Statement
   alias Lotus.Storage.Query
   alias Lotus.Web.Actor
+  alias Lotus.Web.Authorization
   alias Lotus.Web.ExportController
   alias Lotus.Web.Formatters.VariableOptionsFormatter, as: OptionsFormatter
   alias Lotus.Web.Page
@@ -29,12 +30,32 @@ defmodule Lotus.Web.QueryEditorPage do
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
+    source = current_source(assigns)
+    {save_action, save_resource} = save_permission(assigns)
+
+    assigns =
+      assign(assigns,
+        can_save: Authorization.allowed?(assigns, save_action, save_resource),
+        can_delete:
+          assigns.page.mode == :edit and
+            Authorization.allowed?(assigns, :delete_query, assigns.query),
+        can_query: Authorization.allowed?(assigns, :query, source),
+        can_export: Authorization.allowed?(assigns, :export, source),
+        can_ai: Authorization.allowed?(assigns, :ai_generate, source)
+      )
+
     ~H"""
     <div id="query-editor-page" class="flex flex-col h-full overflow-y-auto">
       <div id="toast-listener" phx-hook="Toast" class="hidden"></div>
       <div class="mx-auto w-full px-0 sm:px-0 lg:px-6 py-0 sm:py-6 min-h-full sm:h-full flex flex-col">
         <div class="bg-white dark:bg-gray-800 shadow rounded-lg min-h-full sm:h-full flex flex-col">
-          <.header statement_empty={@statement_empty} query={@query} mode={@page.mode} />
+          <.header
+            statement_empty={@statement_empty}
+            query={@query}
+            mode={@page.mode}
+            can_save={@can_save}
+            can_delete={@can_delete}
+          />
 
           <div class="relative flex-1 sm:overflow-hidden">
             <%= if @left_drawer != nil or @right_drawer != nil do %>
@@ -58,6 +79,7 @@ defmodule Lotus.Web.QueryEditorPage do
               module={SchemaExplorerComponent}
               id="schema-explorer"
               actor={@actor}
+              source_names={@data_source_names}
               visible={@right_drawer == :schema_explorer}
               parent={@myself}
               initial_db={@query_form[:data_source].value}
@@ -74,6 +96,7 @@ defmodule Lotus.Web.QueryEditorPage do
             />
 
             <.live_component
+              :if={@can_ai}
               module={AiAssistantComponent}
               id="ai-assistant"
               visible={@left_drawer == :ai_assistant}
@@ -114,6 +137,8 @@ defmodule Lotus.Web.QueryEditorPage do
                   timeout_options_enabled={:timeout_options in (@features || [])}
                   source_type={@source_type}
                   data_source={@default_source}
+                  can_query={@can_query}
+                  can_ai={@can_ai}
                 />
 
                 <.results_pill
@@ -138,6 +163,7 @@ defmodule Lotus.Web.QueryEditorPage do
                   visualization_config={@visualization_config}
                   visualization_view_mode={@visualization_view_mode}
                   visualization_visible={@left_drawer == :visualization}
+                  can_export={@can_export}
                 />
               </div>
 
@@ -146,8 +172,8 @@ defmodule Lotus.Web.QueryEditorPage do
         </div>
       </div>
 
-      <.save_modal query_form={@query_form} target={@myself} />
-      <.delete_modal :if={@page.mode == :edit} target={@myself} />
+      <.save_modal :if={@can_save} query_form={@query_form} target={@myself} />
+      <.delete_modal :if={@page.mode == :edit and @can_delete} target={@myself} />
 
       <%= if @modal == :dropdown_options do %>
         <.live_component
@@ -179,7 +205,7 @@ defmodule Lotus.Web.QueryEditorPage do
       </h2>
       </div>
       <div class="flex gap-3">
-        <%= if @mode == :edit do %>
+        <%= if @mode == :edit and @can_delete do %>
           <.button
             type="button"
             variant="light"
@@ -190,6 +216,7 @@ defmodule Lotus.Web.QueryEditorPage do
           </.button>
         <% end %>
         <.button
+          :if={@can_save}
           type="button"
           disabled={@statement_empty}
           phx-click={show_modal("save-query-modal")}
@@ -432,54 +459,52 @@ defmodule Lotus.Web.QueryEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("save_query", %{"query" => save_params}, socket) do
-    if socket.assigns[:access] == :read_only do
-      send(
-        self(),
-        {:put_flash, [:error, gettext("You don't have permission to save queries")]}
-      )
+    query_attrs = build_query_attrs(save_params, socket.assigns.query)
 
-      {:noreply,
-       socket
-       |> push_event("close-modal", %{id: "save-query-modal"})}
-    else
-      query_attrs = build_query_attrs(save_params, socket.assigns.query)
-      result = perform_save_operation(socket.assigns.page, query_attrs)
+    case perform_save_operation(socket, query_attrs) do
+      {:ok, query} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("Query saved successfully!"))
+         |> push_patch(to: lotus_path(["queries", query.id]), replace: true)
+         |> assign(query: query)
+         |> assign_query_changeset(query)}
 
-      case result do
-        {:ok, query} ->
-          # Save visualization config if present
-          save_visualization(query, socket.assigns.visualization_config)
+      {:error, %Ecto.Changeset{data: %Query{}} = cs} ->
+        {:noreply,
+         socket
+         |> show_toast(:error, gettext("Failed to save query"))
+         |> assign(query_changeset: cs, query_form: to_form(cs, as: "query"))}
 
-          {:noreply,
-           socket
-           |> put_flash(:info, gettext("Query saved successfully!"))
-           |> push_patch(to: lotus_path(["queries", query.id]), replace: true)
-           |> assign(query: query)
-           |> assign_query_changeset(query)}
+      {:deny, reason} ->
+        {:noreply,
+         socket
+         |> deny(reason)
+         |> push_event("close-modal", %{id: "save-query-modal"})}
 
-        {:error, %Ecto.Changeset{} = cs} ->
-          {:noreply,
-           socket
-           |> show_toast(:error, gettext("Failed to save query"))
-           |> assign(query_changeset: cs, query_form: to_form(cs, as: "query"))}
-      end
+      {:error, :not_found} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("Query not found"))
+         |> push_navigate(to: lotus_path(:queries), replace: true)}
+
+      {:error, {:halted, reason}} ->
+        {:noreply,
+         socket
+         |> show_toast(:error, refused_message(reason))
+         |> push_event("close-modal", %{id: "save-query-modal"})}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> show_toast(:error, gettext("Failed to save query"))
+         |> push_event("close-modal", %{id: "save-query-modal"})}
     end
   end
 
   @impl Phoenix.LiveComponent
   def handle_event("delete_query", _params, socket) do
-    if socket.assigns[:access] == :read_only do
-      send(
-        self(),
-        {:put_flash, [:error, gettext("You don't have permission to delete queries")]}
-      )
-
-      {:noreply,
-       socket
-       |> push_event("close-modal", %{id: "delete-query-modal"})}
-    else
-      delete_query(socket)
-    end
+    delete_query(socket)
   end
 
   @impl Phoenix.LiveComponent
@@ -522,25 +547,7 @@ defmodule Lotus.Web.QueryEditorPage do
   # AI Assistant event handlers
 
   def handle_event("toggle_ai_assistant", _params, socket) do
-    if Lotus.AI.enabled?() do
-      conversation =
-        if socket.assigns.left_drawer == :ai_assistant do
-          socket.assigns.ai_conversation
-        else
-          socket.assigns[:ai_conversation] || new_conversation()
-        end
-
-      new_drawer = if socket.assigns.left_drawer == :ai_assistant, do: nil, else: :ai_assistant
-
-      {:noreply, assign(socket, left_drawer: new_drawer, ai_conversation: conversation)}
-    else
-      {:noreply,
-       socket
-       |> put_flash(
-         :error,
-         gettext("AI features are not configured. Please add AI configuration.")
-       )}
-    end
+    authorize_ai(socket, fn -> ai_toggle_assistant(socket) end)
   end
 
   def handle_event("close_ai_assistant", _params, socket) do
@@ -562,38 +569,7 @@ defmodule Lotus.Web.QueryEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("send_ai_message", %{"message" => message}, socket) do
-    data_source = resolve_data_source(socket)
-
-    if is_nil(data_source) or data_source == "" do
-      conversation =
-        add_error_message(
-          socket.assigns.ai_conversation,
-          gettext("Please select a data source first")
-        )
-
-      {:noreply, assign(socket, ai_conversation: conversation)}
-    else
-      conversation = add_user_message(socket.assigns.ai_conversation, message)
-      query_context = build_ai_query_context(socket.assigns)
-      actor = Actor.opts(socket.assigns)
-
-      socket =
-        socket
-        |> assign(ai_generating: true)
-        |> assign(ai_conversation: conversation)
-        |> start_async(:ai_generation, fn ->
-          Lotus.AI.generate_query_with_context(
-            [
-              prompt: message,
-              data_source: data_source,
-              conversation: conversation,
-              query_context: query_context
-            ] ++ actor
-          )
-        end)
-
-      {:noreply, socket}
-    end
+    authorize_ai(socket, fn -> ai_send_message(socket, message) end)
   end
 
   @impl Phoenix.LiveComponent
@@ -624,98 +600,16 @@ defmodule Lotus.Web.QueryEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("optimize_query", _params, socket) do
-    sql = socket.assigns.query_form[:statement].value
-
-    if is_nil(sql) or String.trim(sql) == "" do
-      {:noreply, show_toast(socket, :error, gettext("Write a query first before optimizing"))}
-    else
-      data_source = resolve_data_source(socket)
-      actor = Actor.opts(socket.assigns)
-
-      conversation =
-        add_user_message(socket.assigns.ai_conversation, gettext("Optimize this query"))
-
-      socket =
-        socket
-        |> assign(left_drawer: :ai_assistant)
-        |> assign(ai_generating: true)
-        |> assign(ai_conversation: conversation)
-        |> start_async(:ai_optimization, fn ->
-          Lotus.AI.suggest_optimizations(
-            [
-              statement: Statement.new(sql),
-              data_source: data_source
-            ] ++ actor
-          )
-        end)
-
-      {:noreply, socket}
-    end
+    authorize_ai(socket, fn -> ai_optimize_query(socket) end)
   end
 
   @impl Phoenix.LiveComponent
   def handle_event("explain_query", _params, socket) do
-    sql = socket.assigns.query_form[:statement].value
-
-    if is_nil(sql) or String.trim(sql) == "" do
-      {:noreply, show_toast(socket, :error, gettext("Write a query first before explaining"))}
-    else
-      data_source = resolve_data_source(socket)
-      actor = Actor.opts(socket.assigns)
-
-      conversation =
-        add_user_message(socket.assigns.ai_conversation, gettext("Explain this query"))
-
-      socket =
-        socket
-        |> assign(left_drawer: :ai_assistant)
-        |> assign(ai_generating: true)
-        |> assign(ai_conversation: conversation)
-        |> start_async(:ai_explanation, fn ->
-          Lotus.AI.explain_query(
-            [
-              statement: sql,
-              data_source: data_source
-            ] ++ actor
-          )
-        end)
-
-      {:noreply, socket}
-    end
+    authorize_ai(socket, fn -> ai_explain_query(socket) end)
   end
 
   def handle_event("explain_fragment", %{"fragment" => fragment}, socket) do
-    sql = socket.assigns.query_form[:statement].value
-
-    if is_nil(sql) or String.trim(sql) == "" do
-      {:noreply, show_toast(socket, :error, gettext("Write a query first before explaining"))}
-    else
-      data_source = resolve_data_source(socket)
-      actor = Actor.opts(socket.assigns)
-
-      conversation =
-        add_user_message(
-          socket.assigns.ai_conversation,
-          gettext("Explain this fragment: `%{fragment}`", fragment: fragment)
-        )
-
-      socket =
-        socket
-        |> assign(left_drawer: :ai_assistant)
-        |> assign(ai_generating: true)
-        |> assign(ai_conversation: conversation)
-        |> start_async(:ai_explanation, fn ->
-          Lotus.AI.explain_query(
-            [
-              statement: sql,
-              fragment: fragment,
-              data_source: data_source
-            ] ++ actor
-          )
-        end)
-
-      {:noreply, socket}
-    end
+    authorize_ai(socket, fn -> ai_explain_fragment(socket, fragment) end)
   end
 
   # Visualization event handlers
@@ -910,7 +804,10 @@ defmodule Lotus.Web.QueryEditorPage do
         {:noreply, show_toast(socket, :error, gettext("No query results to export"))}
 
       _result ->
-        {:noreply, generate_export_url(socket)}
+        case Authorization.authorize(socket.assigns, :export, query_source(socket)) do
+          :allow -> {:noreply, generate_export_url(socket)}
+          {:deny, reason} -> {:noreply, deny(socket, reason)}
+        end
     end
   end
 
@@ -1352,12 +1249,18 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   def update(%{action: :test_dropdown_query} = assigns, socket) do
-    repo = socket.assigns.query.data_source || socket.assigns.default_source
+    repo = query_source(socket)
     search_path = socket.assigns.query.search_path
 
     dropdown_opts = [limit: 3, cache: false] ++ Actor.opts(socket.assigns)
 
-    case fetch_dropdown_options(assigns.sql_query, repo, search_path, dropdown_opts) do
+    result =
+      case Authorization.authorize(socket.assigns, :query, repo) do
+        :allow -> fetch_dropdown_options(assigns.sql_query, repo, search_path, dropdown_opts)
+        {:deny, reason} -> {:error, reason}
+      end
+
+    case result do
       {:ok, results} ->
         send_update(DropdownOptionsModal,
           id: "dropdown_options_modal",
@@ -1378,37 +1281,48 @@ defmodule Lotus.Web.QueryEditorPage do
     {:ok, assign(socket, assigns)}
   end
 
+  # The editor offers, browses and autocompletes only the sources the user may
+  # query, so a denied source's schemas, tables and columns are never listed.
   defp assign_data_sources(socket) do
-    data_source_names = Lotus.list_data_source_names()
+    data_source_names =
+      Enum.filter(
+        Lotus.list_data_source_names(),
+        &Authorization.allowed?(socket.assigns, :query, &1)
+      )
+
     {default_source, _module} = Lotus.default_data_source()
 
     source_type = Lotus.Source.source_type(default_source)
 
     socket
     |> assign(data_source_names: data_source_names, default_source: default_source)
-    |> assign(sources_map: build_sources_map(socket))
+    |> assign(sources_map: build_sources_map(socket, data_source_names))
     |> assign(source_type: source_type)
   end
 
-  # Building the sources map lists schemas and tables for every configured
-  # source. Skipping it on the disconnected mount keeps those queries off the
+  # Building the sources map lists schemas and tables for every source it is
+  # given. Skipping it on the disconnected mount keeps those queries off the
   # first render; the connected mount builds it before the editor needs a
   # schema.
-  defp build_sources_map(socket) do
-    if connected?(socket), do: SourcesMap.build(Actor.opts(socket.assigns)), else: %SourcesMap{}
+  defp build_sources_map(socket, source_names) do
+    if connected?(socket),
+      do: SourcesMap.build(Actor.opts(socket.assigns), source_names),
+      else: %SourcesMap{}
   end
 
   defp show_toast(socket, kind, message) do
     push_event(socket, "toast", %{kind: kind, message: message})
   end
 
-  defp resolve_data_source(socket) do
-    case socket.assigns.query_form[:data_source].value do
-      nil -> socket.assigns.default_source
-      "" -> socket.assigns.default_source
-      data_source -> data_source
-    end
-  end
+  defp resolve_data_source(socket), do: current_source(socket.assigns)
+
+  # The source the editor acts on. Render and every handler resolve it the same
+  # way, so a hidden control and a handler decision never disagree.
+  defp current_source(assigns),
+    do: source_or_default(assigns.query_form[:data_source].value, assigns)
+
+  defp source_or_default(source, assigns) when source in [nil, ""], do: assigns.default_source
+  defp source_or_default(source, _assigns), do: source
 
   defp assign_ui_state(socket) do
     assign(socket,
@@ -1448,7 +1362,7 @@ defmodule Lotus.Web.QueryEditorPage do
 
   defp assign_query_changeset(socket, %Query{} = query) do
     changeset = Query.update(query, %{})
-    resolved_options = resolve_variable_options(query, Actor.opts(socket.assigns))
+    resolved_options = resolve_variable_options(query, socket.assigns)
 
     variable_values =
       case Map.get(socket.assigns, :variable_values) do
@@ -1486,6 +1400,7 @@ defmodule Lotus.Web.QueryEditorPage do
     query = socket.assigns[:query]
     variable_values = Map.get(socket.assigns, :variable_values, %{})
 
+    # execute_query/2 asks for :query and shows the reason on a deny.
     if Lotus.can_run?(query, vars: variable_values) do
       execute_query(socket, query)
     else
@@ -1494,7 +1409,8 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   defp maybe_update_editor_schema(socket, data_source) do
-    if data_source && data_source != "" do
+    if data_source && data_source != "" &&
+         Authorization.allowed?(socket.assigns, :query, data_source) do
       dialect = dialect_for_repo(data_source)
       source_type = Lotus.Source.source_type(data_source)
       search_path = socket.assigns.query && socket.assigns.query.search_path
@@ -1568,8 +1484,20 @@ defmodule Lotus.Web.QueryEditorPage do
       query_form: form
     ]
 
-    assign(socket, base_assigns ++ additional_assigns)
+    socket
+    |> assign(base_assigns ++ additional_assigns)
+    |> close_denied_ai_drawer()
   end
+
+  # The AI drawer belongs to the selected source. When the user picks a source
+  # without :ai_generate, close it rather than leave an empty margin behind.
+  defp close_denied_ai_drawer(%{assigns: %{left_drawer: :ai_assistant}} = socket) do
+    if Authorization.allowed?(socket.assigns, :ai_generate, resolve_data_source(socket)),
+      do: socket,
+      else: assign(socket, left_drawer: nil)
+  end
+
+  defp close_denied_ai_drawer(socket), do: socket
 
   defp check_statement_empty(statement) when is_binary(statement) do
     statement |> String.trim() |> Kernel.==("")
@@ -1593,9 +1521,19 @@ defmodule Lotus.Web.QueryEditorPage do
 
   defp maybe_update_timeout(socket, _params), do: socket
 
+  # Every run goes through here: the run button, pagination, filters, sorts and
+  # the auto-run of a saved query. Ask once, in this one place.
   defp execute_query(socket, query) do
+    repo = source_or_default(query.data_source, socket.assigns)
+
+    case Authorization.authorize(socket.assigns, :query, repo) do
+      :allow -> start_query(socket, query, repo)
+      {:deny, reason} -> assign(socket, running: false, result: nil, error: reason)
+    end
+  end
+
+  defp start_query(socket, query, repo) do
     vars = Map.get(socket.assigns, :variable_values, %{})
-    repo = query.data_source || socket.assigns.default_source
     page_size = socket.assigns.page_size || @default_page_size
     page_index = socket.assigns.page_index || 0
     query_timeout = socket.assigns[:query_timeout]
@@ -1657,7 +1595,7 @@ defmodule Lotus.Web.QueryEditorPage do
     show_settings = new_names != [] and socket.assigns.right_drawer != :variable_settings
 
     query = Ecto.Changeset.apply_changes(changeset)
-    resolved_options = resolve_variable_options(query, Actor.opts(socket.assigns))
+    resolved_options = resolve_variable_options(query, socket.assigns)
     optional_names = Query.extract_optional_variable_names(query.statement)
 
     update_query_state(socket, changeset,
@@ -1704,16 +1642,217 @@ defmodule Lotus.Web.QueryEditorPage do
 
   defp dynamic_options?(_data_source), do: false
 
-  defp perform_save_operation(page, query_attrs) do
-    case page do
-      %{mode: :edit, id: id} ->
-        case Lotus.get_query(id) do
-          nil -> {:error, "Query not found"}
-          %Query{} = query -> Lotus.update_query(query, query_attrs)
+  # The query and its chart settings save together: a refused or failed write of
+  # either leaves neither saved.
+  defp perform_save_operation(socket, query_attrs) do
+    with {:ok, stored} <- authorize_save(socket) do
+      opts = Actor.opts(socket.assigns)
+      config = socket.assigns.visualization_config
+
+      Lotus.repo().transaction(fn -> save_query_and_chart(stored, query_attrs, config, opts) end)
+    end
+  end
+
+  # Runs inside the transaction: returns the query, or rolls back with the error.
+  defp save_query_and_chart(stored, query_attrs, config, opts) do
+    with {:ok, query} <- write_query(stored, query_attrs, opts),
+         {:ok, _visualization} <- save_visualization(query, config, opts) do
+      query
+    else
+      {:error, reason} -> Lotus.repo().rollback(reason)
+    end
+  end
+
+  # Authorizes against the stored query, not the one in the editor, which
+  # carries the user's unsaved changes. Returns the stored query, or nil for a
+  # new one.
+  defp authorize_save(%{assigns: %{page: %{mode: :edit, id: id}}} = socket) do
+    with %Query{} = query <- Lotus.get_query(id) || {:error, :not_found},
+         :allow <- Authorization.authorize(socket.assigns, :update_query, query) do
+      {:ok, query}
+    end
+  end
+
+  defp authorize_save(socket) do
+    with :allow <- Authorization.authorize(socket.assigns, :create_query), do: {:ok, nil}
+  end
+
+  defp write_query(nil, attrs, opts), do: Lotus.create_query(attrs, opts)
+  defp write_query(%Query{} = query, attrs, opts), do: Lotus.update_query(query, attrs, opts)
+
+  # Saving on an existing query's page updates it; anything else creates one.
+  defp save_permission(%{page: %{mode: :edit}, query: %Query{} = query}),
+    do: {:update_query, query}
+
+  defp save_permission(_assigns), do: {:create_query, nil}
+
+  defp query_source(socket) do
+    source_or_default(socket.assigns.query.data_source, socket.assigns)
+  end
+
+  # The flash belongs to the parent LiveView, so a component asks it to set one.
+  defp deny(socket, reason) do
+    send(self(), {:put_flash, [:error, reason]})
+    socket
+  end
+
+  # Every AI entry point asks first. The controls are hidden, but an event can
+  # still arrive from the editor context menu or a crafted client.
+  defp authorize_ai(socket, fun) do
+    case Authorization.authorize(socket.assigns, :ai_generate, resolve_data_source(socket)) do
+      :allow -> fun.()
+      {:deny, reason} -> {:noreply, deny(socket, reason)}
+    end
+  end
+
+  defp ai_toggle_assistant(socket) do
+    if Lotus.AI.enabled?() do
+      conversation =
+        if socket.assigns.left_drawer == :ai_assistant do
+          socket.assigns.ai_conversation
+        else
+          socket.assigns[:ai_conversation] || new_conversation()
         end
 
-      %{mode: :new} ->
-        Lotus.create_query(query_attrs)
+      new_drawer = if socket.assigns.left_drawer == :ai_assistant, do: nil, else: :ai_assistant
+
+      {:noreply, assign(socket, left_drawer: new_drawer, ai_conversation: conversation)}
+    else
+      {:noreply,
+       socket
+       |> put_flash(
+         :error,
+         gettext("AI features are not configured. Please add AI configuration.")
+       )}
+    end
+  end
+
+  defp ai_send_message(socket, message) do
+    data_source = resolve_data_source(socket)
+
+    if is_nil(data_source) or data_source == "" do
+      conversation =
+        add_error_message(
+          socket.assigns.ai_conversation,
+          gettext("Please select a data source first")
+        )
+
+      {:noreply, assign(socket, ai_conversation: conversation)}
+    else
+      conversation = add_user_message(socket.assigns.ai_conversation, message)
+      query_context = build_ai_query_context(socket.assigns)
+      actor = Actor.opts(socket.assigns)
+
+      socket =
+        socket
+        |> assign(ai_generating: true)
+        |> assign(ai_conversation: conversation)
+        |> start_async(:ai_generation, fn ->
+          Lotus.AI.generate_query_with_context(
+            [
+              prompt: message,
+              data_source: data_source,
+              conversation: conversation,
+              query_context: query_context
+            ] ++ actor
+          )
+        end)
+
+      {:noreply, socket}
+    end
+  end
+
+  defp ai_optimize_query(socket) do
+    sql = socket.assigns.query_form[:statement].value
+
+    if is_nil(sql) or String.trim(sql) == "" do
+      {:noreply, show_toast(socket, :error, gettext("Write a query first before optimizing"))}
+    else
+      data_source = resolve_data_source(socket)
+      actor = Actor.opts(socket.assigns)
+
+      conversation =
+        add_user_message(socket.assigns.ai_conversation, gettext("Optimize this query"))
+
+      socket =
+        socket
+        |> assign(left_drawer: :ai_assistant)
+        |> assign(ai_generating: true)
+        |> assign(ai_conversation: conversation)
+        |> start_async(:ai_optimization, fn ->
+          Lotus.AI.suggest_optimizations(
+            [
+              statement: Statement.new(sql),
+              data_source: data_source
+            ] ++ actor
+          )
+        end)
+
+      {:noreply, socket}
+    end
+  end
+
+  defp ai_explain_query(socket) do
+    sql = socket.assigns.query_form[:statement].value
+
+    if is_nil(sql) or String.trim(sql) == "" do
+      {:noreply, show_toast(socket, :error, gettext("Write a query first before explaining"))}
+    else
+      data_source = resolve_data_source(socket)
+      actor = Actor.opts(socket.assigns)
+
+      conversation =
+        add_user_message(socket.assigns.ai_conversation, gettext("Explain this query"))
+
+      socket =
+        socket
+        |> assign(left_drawer: :ai_assistant)
+        |> assign(ai_generating: true)
+        |> assign(ai_conversation: conversation)
+        |> start_async(:ai_explanation, fn ->
+          Lotus.AI.explain_query(
+            [
+              statement: sql,
+              data_source: data_source
+            ] ++ actor
+          )
+        end)
+
+      {:noreply, socket}
+    end
+  end
+
+  defp ai_explain_fragment(socket, fragment) do
+    sql = socket.assigns.query_form[:statement].value
+
+    if is_nil(sql) or String.trim(sql) == "" do
+      {:noreply, show_toast(socket, :error, gettext("Write a query first before explaining"))}
+    else
+      data_source = resolve_data_source(socket)
+      actor = Actor.opts(socket.assigns)
+
+      conversation =
+        add_user_message(
+          socket.assigns.ai_conversation,
+          gettext("Explain this fragment: `%{fragment}`", fragment: fragment)
+        )
+
+      socket =
+        socket
+        |> assign(left_drawer: :ai_assistant)
+        |> assign(ai_generating: true)
+        |> assign(ai_conversation: conversation)
+        |> start_async(:ai_explanation, fn ->
+          Lotus.AI.explain_query(
+            [
+              statement: sql,
+              fragment: fragment,
+              data_source: data_source
+            ] ++ actor
+          )
+        end)
+
+      {:noreply, socket}
     end
   end
 
@@ -1737,7 +1876,7 @@ defmodule Lotus.Web.QueryEditorPage do
     params = %{"variables" => Enum.map(updated_variables, &Variables.to_params/1)}
     changeset = build_query_changeset(updated_query, params)
 
-    resolved_options = resolve_variable_options(updated_query, Actor.opts(socket.assigns))
+    resolved_options = resolve_variable_options(updated_query, socket.assigns)
 
     socket
     |> update_query_state(changeset, [])
@@ -1789,21 +1928,27 @@ defmodule Lotus.Web.QueryEditorPage do
     end
   end
 
-  defp resolve_variable_options(%{data_source: nil}, _opts), do: %{}
-  defp resolve_variable_options(%{data_source: ""}, _opts), do: %{}
+  defp resolve_variable_options(%{data_source: nil}, _assigns), do: %{}
+  defp resolve_variable_options(%{data_source: ""}, _assigns), do: %{}
 
+  # An options query runs on the query's source, so it needs :query there too.
   defp resolve_variable_options(
          %{
            data_source: repo,
            search_path: search_path,
            variables: variables
          },
-         opts
+         assigns
        ) do
-    variables
-    |> Enum.reduce(%{}, fn var, acc ->
-      process_variable_options(var, acc, repo, search_path, opts)
-    end)
+    if Authorization.allowed?(assigns, :query, repo) do
+      opts = Actor.opts(assigns)
+
+      Enum.reduce(variables, %{}, fn var, acc ->
+        process_variable_options(var, acc, repo, search_path, opts)
+      end)
+    else
+      %{}
+    end
   end
 
   defp process_variable_options(var, acc, repo, search_path, opts) do
@@ -1829,7 +1974,7 @@ defmodule Lotus.Web.QueryEditorPage do
   defp generate_export_url(socket) do
     query = socket.assigns.query
     vars = Map.get(socket.assigns, :variable_values, %{})
-    repo = query.data_source || socket.assigns.default_source
+    repo = source_or_default(query.data_source, socket.assigns)
 
     timestamp =
       DateTime.utc_now()
@@ -1887,9 +2032,9 @@ defmodule Lotus.Web.QueryEditorPage do
     push_event(socket, "open-blank", %{location: export_path})
   end
 
-  defp delete_query(socket) do
-    query_id = socket.assigns.page.id
-
+  # Only a saved query's page has one to delete. The new query page has no id,
+  # so a crafted event there does nothing.
+  defp delete_query(%{assigns: %{page: %{mode: :edit, id: query_id}}} = socket) do
     case Lotus.get_query(query_id) do
       nil ->
         {:noreply,
@@ -1898,12 +2043,24 @@ defmodule Lotus.Web.QueryEditorPage do
          |> push_navigate(to: lotus_path(:queries), replace: true)}
 
       query ->
-        case Lotus.delete_query(query) do
-          {:ok, _} ->
+        with :allow <- Authorization.authorize(socket.assigns, :delete_query, query),
+             {:ok, _} <- Lotus.delete_query(query, Actor.opts(socket.assigns)) do
+          {:noreply,
+           socket
+           |> put_flash(:info, gettext("Query deleted successfully"))
+           |> push_navigate(to: lotus_path(:queries), replace: true)}
+        else
+          {:deny, reason} ->
             {:noreply,
              socket
-             |> put_flash(:info, gettext("Query deleted successfully"))
-             |> push_navigate(to: lotus_path(:queries), replace: true)}
+             |> deny(reason)
+             |> push_event("close-modal", %{id: "delete-query-modal"})}
+
+          {:error, {:halted, reason}} ->
+            {:noreply,
+             socket
+             |> show_toast(:error, refused_message(reason))
+             |> push_event("close-modal", %{id: "delete-query-modal"})}
 
           {:error, _} ->
             {:noreply,
@@ -1914,24 +2071,24 @@ defmodule Lotus.Web.QueryEditorPage do
     end
   end
 
+  defp delete_query(socket), do: {:noreply, socket}
+
   # Visualization persistence
 
-  defp save_visualization(_query, nil), do: :ok
-  defp save_visualization(_query, config) when config == %{}, do: :ok
+  defp save_visualization(_query, nil, _opts), do: {:ok, nil}
+  defp save_visualization(_query, config, _opts) when config == %{}, do: {:ok, nil}
 
-  defp save_visualization(query, config) when is_map(config) do
+  defp save_visualization(query, config, opts) when is_map(config) do
     case Lotus.list_visualizations(query.id) do
       [] ->
-        # Create new visualization
-        Lotus.create_visualization(query.id, %{
-          name: "Default",
-          position: 0,
-          config: config
-        })
+        Lotus.create_visualization(
+          query.id,
+          %{name: "Default", position: 0, config: config},
+          opts
+        )
 
       [existing | _] ->
-        # Update existing visualization
-        Lotus.update_visualization(existing, %{config: config})
+        Lotus.update_visualization(existing, %{config: config}, opts)
     end
   end
 

@@ -7,6 +7,7 @@ defmodule Lotus.Web.QueriesPage do
 
   use Lotus.Web, :live_component
 
+  alias Lotus.Web.Authorization
   alias Lotus.Web.Page
 
   @impl Phoenix.LiveComponent
@@ -47,9 +48,15 @@ defmodule Lotus.Web.QueriesPage do
           <%!-- Content --%>
           <div class="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8">
             <%= if @active_tab == :queries do %>
-              <.queries_table queries={@queries} />
+              <.queries_table
+                queries={@queries}
+                can_create={Authorization.allowed?(assigns, :create_query)}
+              />
             <% else %>
-              <.dashboards_table dashboards={@dashboards} />
+              <.dashboards_table
+                dashboards={@dashboards}
+                can_create={Authorization.allowed?(assigns, :manage_dashboard)}
+              />
             <% end %>
           </div>
         </div>
@@ -75,6 +82,7 @@ defmodule Lotus.Web.QueriesPage do
         <Icons.terminal class="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
         <p><%= gettext("No saved queries yet.") %></p>
         <.link
+          :if={@can_create}
           navigate={lotus_path(["queries", "new"])}
           class="mt-2 inline-block text-pink-600 hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300"
         >
@@ -111,6 +119,7 @@ defmodule Lotus.Web.QueriesPage do
         <Icons.squares_2x2 class="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
         <p><%= gettext("No dashboards yet.") %></p>
         <.link
+          :if={@can_create}
           navigate={lotus_path(["dashboards", "new"])}
           class="mt-2 inline-block text-pink-600 hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300"
         >

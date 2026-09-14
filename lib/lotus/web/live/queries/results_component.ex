@@ -24,6 +24,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   attr(:visualization_config, :map, default: nil)
   attr(:visualization_view_mode, :atom, default: :table)
   attr(:visualization_visible, :boolean, default: false)
+  attr(:can_export, :boolean, default: true)
 
   def render_result(assigns) do
     ~H"""
@@ -67,6 +68,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
             visualization_config={@visualization_config}
             visualization_view_mode={@visualization_view_mode}
             visualization_visible={@visualization_visible}
+            can_export={@can_export}
           />
 
         <% is_binary(@error) and @error != "" -> %>
@@ -268,6 +270,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   attr(:visualization_config, :map, default: nil)
   attr(:visualization_view_mode, :atom, default: :table)
   attr(:visualization_visible, :boolean, default: false)
+  attr(:can_export, :boolean, default: true)
 
   defp bottom_bar(assigns) do
     ~H"""
@@ -294,6 +297,8 @@ defmodule Lotus.Web.Queries.ResultsComponent do
             <Icons.chevron_right class="h-5 w-5" />
           </button>
           <button
+            :if={@can_export}
+            id="export-csv-btn"
             phx-click="export_csv"
             phx-target={@target}
             title={gettext("Export query results to CSV")}

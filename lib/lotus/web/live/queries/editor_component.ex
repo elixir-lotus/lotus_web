@@ -33,6 +33,8 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:source_type, :atom, default: :postgres)
   attr(:data_source, :string, default: nil)
   attr(:actor, :any, required: true)
+  attr(:can_query, :boolean, default: true)
+  attr(:can_ai, :boolean, default: true)
 
   def editor(assigns) do
     search_path_field = assigns.form[:search_path]
@@ -78,9 +80,11 @@ defmodule Lotus.Web.Queries.EditorComponent do
           query_timeout={@query_timeout}
           timeout_options_enabled={@timeout_options_enabled}
           supports_formatting={@supports_formatting}
+          can_query={@can_query}
+          can_ai={@can_ai}
         />
 
-        <div id="editor-context-menu-wrapper" phx-hook="EditorContextMenu" data-ai-enabled={to_string(ai_enabled?())} class={["relative pb-8", if(@minimized, do: "hidden", else: "")]}>
+        <div id="editor-context-menu-wrapper" phx-hook="EditorContextMenu" data-ai-enabled={to_string(@can_ai and ai_enabled?())} class={["relative pb-8", if(@minimized, do: "hidden", else: "")]}>
           <%!-- AI Generation Loading Overlay --%>
           <%= if assigns[:ai_generating] do %>
             <div class="absolute inset-0 bg-white/70 dark:bg-gray-900/70 z-30 flex items-center justify-center backdrop-blur-sm">
@@ -116,10 +120,10 @@ defmodule Lotus.Web.Queries.EditorComponent do
           <button
             id="run-query-btn"
             type="submit"
-            disabled={@running or @statement_empty}
+            disabled={@running or @statement_empty or not @can_query}
             class={[
               "absolute bottom-4 right-4 w-12 h-12 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center bg-pink-600",
-              if(@running or @statement_empty,
+              if(@running or @statement_empty or not @can_query,
                 do: "cursor-not-allowed opacity-50",
                 else: "hover:bg-pink-500 hover:shadow-xl transform hover:scale-105"
               )
@@ -161,6 +165,8 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:timeout_options_enabled, :boolean, default: false)
   attr(:supports_formatting, :boolean, default: false)
   attr(:actor, :any, required: true)
+  attr(:can_query, :boolean, default: true)
+  attr(:can_ai, :boolean, default: true)
 
   def render_toolbar(assigns) do
     ~H"""
@@ -206,6 +212,8 @@ defmodule Lotus.Web.Queries.EditorComponent do
             running={@running}
             statement_empty={@statement_empty}
             supports_formatting={@supports_formatting}
+            can_query={@can_query}
+            can_ai={@can_ai}
           />
         </div>
       </div>
@@ -257,6 +265,8 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:running, :boolean, default: false)
   attr(:statement_empty, :boolean, default: false)
   attr(:supports_formatting, :boolean, default: false)
+  attr(:can_query, :boolean, default: true)
+  attr(:can_ai, :boolean, default: true)
 
   def render_actions(assigns) do
     ~H"""
@@ -275,10 +285,10 @@ defmodule Lotus.Web.Queries.EditorComponent do
         <button
           id="toolbar-run-query-btn"
           type="submit"
-          disabled={@running or @statement_empty}
+          disabled={@running or @statement_empty or not @can_query}
           class={[
             "p-2 transition-colors",
-            if(@running or @statement_empty,
+            if(@running or @statement_empty or not @can_query,
               do: "text-gray-300 dark:text-gray-600 cursor-not-allowed",
               else: "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400"
             )
@@ -333,7 +343,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
       </button>
 
       <%!-- AI Assistant button --%>
-      <%= if ai_enabled?() do %>
+      <%= if @can_ai and ai_enabled?() do %>
         <button
           id="ai-assistant-btn"
           type="button"

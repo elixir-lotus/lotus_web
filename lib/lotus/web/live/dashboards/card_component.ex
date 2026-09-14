@@ -12,14 +12,19 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   def render(assigns) do
     is_public = Map.get(assigns, :public, false)
     show_header = not (is_public and assigns.card.card_type in [:heading, :text])
-    assigns = assign(assigns, show_header: show_header, is_public: is_public)
+    # Selecting a card opens its settings, so a user who may not manage the
+    # dashboard gets neither the click nor the gear.
+    can_manage = Map.get(assigns, :can_manage, true)
+
+    assigns =
+      assign(assigns, show_header: show_header, is_public: is_public, can_manage: can_manage)
 
     ~H"""
     <div
       id={@id}
       class={card_classes(@selected, @card.card_type, @show_header, @is_public)}
       style={grid_position(@card.layout)}
-      phx-click="select_card"
+      phx-click={@can_manage && "select_card"}
       phx-value-card-id={@card.id}
       phx-target={@parent}
     >
@@ -42,6 +47,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
                 </button>
               <% end %>
               <button
+                :if={@can_manage}
                 phx-click="open_card_settings"
                 phx-value-card-id={@card.id}
                 phx-target={@parent}

@@ -8,7 +8,9 @@ defmodule Lotus.Web.Dashboards.SettingsDrawer do
 
   @impl Phoenix.LiveComponent
   def mount(socket) do
-    {:ok, assign(socket, visible: false, dashboard: nil)}
+    # The parent passes what the user may do. Until it does, show nothing that
+    # writes.
+    {:ok, assign(socket, visible: false, dashboard: nil, can_share: false, can_manage: false)}
   end
 
   @impl Phoenix.LiveComponent
@@ -40,7 +42,7 @@ defmodule Lotus.Web.Dashboards.SettingsDrawer do
           <%!-- Content --%>
           <div class="flex-1 overflow-y-auto p-4 space-y-6">
             <%!-- Auto-refresh --%>
-            <div>
+            <div :if={@can_manage}>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <%= gettext("Auto-refresh") %>
               </label>
@@ -75,7 +77,7 @@ defmodule Lotus.Web.Dashboards.SettingsDrawer do
             </div>
 
             <%!-- Public Sharing --%>
-            <div>
+            <div :if={@can_share or @dashboard.public_token}>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <%= gettext("Public Sharing") %>
               </label>
@@ -107,6 +109,7 @@ defmodule Lotus.Web.Dashboards.SettingsDrawer do
                     </button>
                   </div>
                   <button
+                    :if={@can_share}
                     type="button"
                     phx-click="disable_sharing"
                     phx-target={@parent}
@@ -140,7 +143,7 @@ defmodule Lotus.Web.Dashboards.SettingsDrawer do
             </div>
 
             <%!-- Danger Zone --%>
-            <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div :if={@can_manage} class="pt-4 border-t border-gray-200 dark:border-gray-700">
               <h4 class="text-sm font-medium text-red-600 dark:text-red-400 mb-3">
                 <%= gettext("Danger Zone") %>
               </h4>

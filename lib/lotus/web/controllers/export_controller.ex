@@ -7,6 +7,7 @@ defmodule Lotus.Web.ExportController do
 
   alias Lotus.Export
   alias Lotus.Web.Actor
+  alias Lotus.Web.Authorization
   alias Lotus.Web.Resolver
   alias Lotus.Storage.Query
 
@@ -50,19 +51,38 @@ defmodule Lotus.Web.ExportController do
     |> text("Missing export token.")
   end
 
+  # The export route sits outside the LiveView session, so the dashboard route
+  # hands it the resolver in the route's private data and it resolves the user
+  # from the conn itself. A dashboard mounted without a resolver exports
+  # unscoped and with full access, exactly as it did before.
+  #
+  # The token proves the dashboard built the export; it does not prove the
+  # user may still export from that source, so ask before loading the query.
+  # An export runs the statement in the token, so it needs :query there too.
   defp stream_csv_export(conn, export_params) do
-    case build_query(export_params) do
-      %Query{} = query ->
-        filename =
-          export_params
-          |> Map.get("filename", "export.csv")
-          |> sanitize_filename()
+    resolver = conn.private[:lotus_resolver]
+    user = Resolver.call_with_fallback(resolver, :resolve_user, [conn])
+    access = Resolver.call_with_fallback(resolver, :resolve_access, [user])
+    source = export_params["repo"]
 
+    with :allow <- Authorization.decide(resolver, user, access, :query, source),
+         :allow <- Authorization.decide(resolver, user, access, :export, source),
+         %Query{} = query <- build_query(export_params) do
+      filename =
+        export_params
+        |> Map.get("filename", "export.csv")
+        |> sanitize_filename()
+
+      conn
+      |> put_resp_content_type("text/csv")
+      |> put_resp_header("content-disposition", ~s(attachment; filename="#{filename}"))
+      |> send_chunked(200)
+      |> stream_chunks(query, export_params, Actor.resolve(resolver, user))
+    else
+      {:deny, reason} ->
         conn
-        |> put_resp_content_type("text/csv")
-        |> put_resp_header("content-disposition", ~s(attachment; filename="#{filename}"))
-        |> send_chunked(200)
-        |> stream_chunks(query, export_params)
+        |> put_status(:forbidden)
+        |> text(reason)
 
       nil ->
         conn
@@ -110,7 +130,7 @@ defmodule Lotus.Web.ExportController do
 
   defp build_variables(_), do: []
 
-  defp stream_chunks(conn, query, export_params) do
+  defp stream_chunks(conn, query, export_params, actor) do
     repo = export_params["repo"]
     vars = export_params["vars"] || %{}
     search_path = export_params["search_path"]
@@ -124,7 +144,7 @@ defmodule Lotus.Web.ExportController do
         opts
       end
 
-    opts = Actor.merge(opts, resolve_actor(conn))
+    opts = Actor.merge(opts, actor)
 
     query
     |> Export.stream_csv(opts)
@@ -134,20 +154,6 @@ defmodule Lotus.Web.ExportController do
         {:error, :closed} -> {:halt, conn}
       end
     end)
-  end
-
-  # The export route sits outside the LiveView session, so the dashboard route
-  # hands it the resolver in the route's private data and it resolves the actor
-  # from the conn itself. A dashboard mounted without a resolver exports
-  # unscoped, exactly as it did before.
-  defp resolve_actor(conn) do
-    case conn.private[:lotus_resolver] do
-      nil ->
-        {nil, nil}
-
-      resolver ->
-        Actor.resolve(resolver, Resolver.call_with_fallback(resolver, :resolve_user, [conn]))
-    end
   end
 
   @doc """

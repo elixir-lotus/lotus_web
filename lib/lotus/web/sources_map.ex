@@ -25,10 +25,13 @@ defmodule Lotus.Web.SourcesMap do
   `opts` are the actor options (`:context`, `:scope`) forwarded to every core
   discovery call, so a scoped dashboard sees only the schemas and tables its
   visibility resolver allows.
+
+  `source_names` limits the map to those sources. The dashboard passes the
+  sources the user may query, so a denied source's schemas are never listed.
   """
-  def build(opts \\ []) do
+  def build(opts \\ [], source_names \\ Lotus.list_data_source_names()) do
     databases =
-      Lotus.list_data_source_names()
+      source_names
       |> Enum.map(&load_database(&1, opts))
       |> Enum.reject(&is_nil/1)
 

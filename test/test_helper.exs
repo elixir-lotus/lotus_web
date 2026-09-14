@@ -60,6 +60,31 @@ defmodule Lotus.Web.Test.ScopedResolver do
   def resolve_scope(%{tenant_id: tenant_id}), do: %{tenant_id: tenant_id}
 end
 
+# A resolver that implements authorize/3 and allows only viewing dashboards and
+# running queries on sources other than "reporting", so tests can assert that
+# every other control is hidden and every other handler refuses.
+defmodule Lotus.Web.Test.RestrictedResolver do
+  @behaviour Lotus.Web.Resolver
+
+  def resolve_user(_conn), do: %{id: 7}
+  def resolve_access(_user), do: :all
+
+  def authorize(_user, :query, "reporting"), do: {:deny, "Restricted: query"}
+  # Allowed, so a test can show that exporting also needs :query on the source.
+  def authorize(_user, :export, "reporting"), do: :allow
+  def authorize(_user, action, _resource) when action in [:query, :view_dashboard], do: :allow
+  def authorize(_user, action, _resource), do: {:deny, "Restricted: #{action}"}
+end
+
+# A resolver with only resolve_access/1, so tests can assert the decision that
+# derives from :read_only.
+defmodule Lotus.Web.Test.ReadOnlyResolver do
+  @behaviour Lotus.Web.Resolver
+
+  def resolve_user(_conn), do: %{id: 8}
+  def resolve_access(_user), do: :read_only
+end
+
 defmodule Lotus.Web.Test.Router do
   use Phoenix.Router
 
@@ -78,6 +103,16 @@ defmodule Lotus.Web.Test.Router do
     lotus_dashboard("/scoped",
       as: :scoped_dashboard,
       resolver: Lotus.Web.Test.ScopedResolver
+    )
+
+    lotus_dashboard("/restricted",
+      as: :restricted_dashboard,
+      resolver: Lotus.Web.Test.RestrictedResolver
+    )
+
+    lotus_dashboard("/read_only",
+      as: :read_only_dashboard,
+      resolver: Lotus.Web.Test.ReadOnlyResolver
     )
   end
 end

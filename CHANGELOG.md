@@ -1,5 +1,94 @@
 # Changelog
 
+## [Unreleased]
+
+A resolver can now decide per action and per resource, not only once per
+session. A resolver that does not implement the new callback keeps the
+behaviour it had.
+
+### Added
+
+- **`c:Lotus.Web.Resolver.authorize/3` decides what a user may do.** The
+  dashboard asks `authorize(user, action, resource)` and gets `:allow` or
+  `{:deny, reason}`. The actions are `:query`, `:export`, `:create_query`,
+  `:update_query`, `:delete_query`, `:share_query`, `:share_dashboard`,
+  `:view_dashboard`, `:manage_dashboard`, `:ai_generate`, `:manage_source` and
+  `:manage_cache`. Without the callback,
+  the decision derives from `resolve_access/1`: `:all` allows every action,
+  and `:read_only` allows `:query`, `:export` and `:view_dashboard`.
+  `Lotus.Web.Authorization` is the one place the dashboard asks, and lists the
+  resource each action takes.
+
+- **The dashboard hides the controls a user may not use.** Save and delete on
+  queries and dashboards, CSV export, the AI assistant and its editor context
+  menu, the public link, Add Card, the filter edit controls and the "New" menu
+  render only when the resolver allows them. The handlers ask again, so a
+  crafted event is refused too.
+
+### Changed
+
+- **The CSV export route asks for `:query` and `:export` on the source and
+  answers `403` on a deny.** Before, the route checked only the signed token,
+  and the token carries the statement it runs. A `:read_only` user can still
+  export; a user whose access is `:forbidden` now cannot.
+
+- **The query editor lists only the sources the user may query.** The source
+  selector, the schema explorer and the editor autocomplete no longer show the
+  schemas, tables and columns of a denied source.
+
+- **Card, filter and auto-refresh edits ask for `:manage_dashboard`.** A user
+  who may not manage a dashboard no longer sees the card settings gear or the
+  auto-refresh setting, and a crafted edit is refused.
+
+- **With `strict_actor: true`, authorization raises for assigns that lack
+  `:resolver` or `:access`**, the same as `Lotus.Web.Actor.opts/1` does for a
+  missing actor. Without the option, the decision still falls back to full
+  access.
+
+- **Running a query, the AI assistant, the new dashboard page and opening a
+  dashboard ask the resolver.** A denied run shows the reason in place of the
+  results. A denied dashboard sends the user back to the dashboard list.
+
+- **Dashboard cards and dropdown option queries ask for `:query` on their
+  source.** Viewing a dashboard no longer runs a card whose source the user may
+  not query; the card shows the reason instead. Adding a card asks for
+  `:manage_dashboard`.
+
+- **Saving a dashboard no longer writes its public link.** Only enabling and
+  disabling sharing change it, so a save from a page opened before the link
+  was turned off does not turn it back on.
+
+- **A refused dashboard save or delete says "You don't have permission to
+  modify dashboards".** The two messages were different before.
+
+- **Every content change carries the actor.** Creating, updating or deleting a
+  query, a chart, a dashboard, a card, a filter or a filter mapping passes
+  `:context` to Lotus, so a `:before_content_change` or `:after_content_change`
+  plug knows who made the change.
+
+- **A refused content change says so.** When a `:before_content_change` plug
+  halts, the editor shows "The change was refused" with the plug's reason when
+  it is a string, keeps the page as it was, and writes nothing.
+
+- **Public sharing calls `Lotus.enable_public_sharing/2` and
+  `Lotus.disable_public_sharing/2`.** Plugs see the sharing operations instead
+  of a plain dashboard update, and the token comes from Lotus.
+
+### Fixed
+
+- **The query formatter's controls and error message are in French.**
+  "Pretty-print query", its JSON sources hint and "Could not format query" had
+  no French translation, so a French dashboard showed them in English.
+
+- **A dashboard save is all or nothing.** The dashboard, its cards, filters and
+  filter mappings save in one transaction. Before, the results of card
+  deletes and of every filter and filter mapping write were not checked, so a
+  failed write could leave part of the dashboard saved while the page said it
+  was saved.
+
+- **A query and its chart settings save together.** A failed chart settings
+  write no longer leaves the query saved while the page reports success.
+
 ## [1.1.0] - 2026-09-12
 
 Two actor defects, and the guard rails that keep them from coming back. A host

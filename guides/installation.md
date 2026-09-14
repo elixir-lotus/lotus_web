@@ -196,11 +196,79 @@ it lists and every table it describes carries them into Lotus core as the
 `nil` for everything a user does in the browser, even though the same plug
 sees a real actor for calls the host app makes itself.
 
+Every query, chart, dashboard, card, filter and filter mapping the dashboard
+creates, updates or deletes carries `:context` too, so a
+`:before_content_change` plug knows who made the change. When such a plug
+halts, the dashboard shows that the change was refused, with the plug's reason
+when it is a string, and writes nothing. A dashboard save is one transaction.
+
 Every callback is optional. A dashboard with no resolver, or one that
 implements only `resolve_user/1`, calls core with no actor at all — the same
 middleware payloads and the same cache keys as before.
 
 The CSV export route resolves the actor the same way, from the conn.
+
+#### Fine-grained permissions
+
+`resolve_access/1` gives one level for the whole session. To decide per action,
+implement `authorize/3`. The dashboard asks it before it renders a control, and
+does not render the control on a deny. It asks again in the event handler and
+shows the reason to the user. The CSV export route asks for `:query` and
+`:export` on the source and answers `403` with the reason.
+
+The query editor offers, browses and autocompletes only the sources the user
+may `:query`, so the schemas, tables and columns of a denied source are never
+listed.
+
+```elixir
+defmodule MyAppWeb.LotusResolver do
+  @behaviour Lotus.Web.Resolver
+
+  def authorize(%{role: :admin}, _action, _resource), do: :allow
+
+  def authorize(%{role: :analyst}, action, _resource)
+      when action in [:query, :export, :view_dashboard, :create_query],
+      do: :allow
+
+  def authorize(_user, action, _resource),
+    do: {:deny, "Your role does not allow #{action}"}
+end
+```
+
+| Action | Resource |
+|---|---|
+| `:query` | the data source name |
+| `:export` | the data source name |
+| `:ai_generate` | the data source name |
+| `:create_query` | `nil` |
+| `:update_query` | the stored `%Lotus.Storage.Query{}` |
+| `:delete_query` | the `%Lotus.Storage.Query{}` |
+| `:share_query` | the `%Lotus.Storage.Query{}` (no dashboard control asks it yet) |
+| `:share_dashboard` | the `%Lotus.Dashboards.Dashboard{}` whose public link changes |
+| `:view_dashboard` | the `%Lotus.Dashboards.Dashboard{}` |
+| `:manage_dashboard` | `nil` for a new dashboard, else the `%Lotus.Dashboards.Dashboard{}` |
+| `:manage_source` | `nil` |
+| `:manage_cache` | `nil` |
+
+Without `authorize/3`, the decision derives from `resolve_access/1`:
+
+| `resolve_access/1` | Decision |
+|---|---|
+| `:all` | allow every action |
+| `:read_only` | allow `:query`, `:export` and `:view_dashboard`; deny the rest |
+| `:forbidden` | deny every action (the dashboard redirects before it asks) |
+
+To keep that default for some actions, call
+`Lotus.Web.Authorization.default_decision(resolve_access(user), action)` from
+your callback.
+
+The dashboard calls `authorize/3` on every render. Do not do I/O in each call:
+load the policy once and cache it. A public dashboard never calls it, because
+it has no user.
+
+With `strict_actor: true` (see below), a component that asks without the
+dashboard's `:resolver` and `:access` assigns raises instead of falling back
+to full access.
 
 #### Catching an actor that never arrived
 

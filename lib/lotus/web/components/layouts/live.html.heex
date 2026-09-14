@@ -22,7 +22,14 @@
         <div class="flex items-center space-x-2 sm:space-x-4">
           <%= if not Map.get(assigns, :public_view, false) do %>
             <%!-- New Button with Dropdown --%>
-            <div class="relative" id="new-item-dropdown">
+            <div
+              :if={
+                Lotus.Web.Authorization.allowed?(assigns, :create_query) or
+                  Lotus.Web.Authorization.allowed?(assigns, :manage_dashboard)
+              }
+              class="relative"
+              id="new-item-dropdown"
+            >
               <.button
                 type="button"
                 phx-click={JS.toggle(to: "#new-dropdown-menu")}
@@ -38,6 +45,7 @@
                 phx-click-away={JS.hide(to: "#new-dropdown-menu")}
               >
                 <.link
+                  :if={Lotus.Web.Authorization.allowed?(assigns, :create_query)}
                   navigate={lotus_path(["queries", "new"])}
                   class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
@@ -45,6 +53,7 @@
                   <%= gettext("Query") %>
                 </.link>
                 <.link
+                  :if={Lotus.Web.Authorization.allowed?(assigns, :manage_dashboard)}
                   navigate={lotus_path(["dashboards", "new"])}
                   class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >

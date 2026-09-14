@@ -11,6 +11,24 @@ defmodule Lotus.Web.Resolver do
           | :forbidden
           | {:forbidden, String.t()}
 
+  @typedoc """
+  An action the dashboard asks `c:authorize/3` about. See
+  `Lotus.Web.Authorization` for the resource each action takes.
+  """
+  @type action ::
+          :query
+          | :export
+          | :create_query
+          | :update_query
+          | :delete_query
+          | :share_query
+          | :share_dashboard
+          | :view_dashboard
+          | :manage_dashboard
+          | :ai_generate
+          | :manage_source
+          | :manage_cache
+
   @doc """
   Extract the current user from a Plug.Conn when the dashboard mounts.
 
@@ -70,16 +88,55 @@ defmodule Lotus.Web.Resolver do
   """
   @callback resolve_scope(user :: user()) :: term()
 
-  @optional_callbacks resolve_user: 1, resolve_access: 1, resolve_context: 1, resolve_scope: 1
+  @doc """
+  Decide whether a user may perform an action on a resource.
+
+  The dashboard asks before it renders a control, and hides the control when
+  the answer is a deny. It asks again in the event handler and shows the
+  reason of a deny to the user. The CSV export route asks for `:query` and
+  `:export` on the source and answers `403` on a deny. The query editor offers,
+  browses and autocompletes only the sources the user may `:query`.
+
+  `resource` is `nil` for an action that takes no resource, a data source
+  name for `:query`, `:export` and `:ai_generate`, and a query or dashboard
+  struct for the content actions. `Lotus.Web.Authorization` lists each one.
+
+  Without this callback the decision derives from `c:resolve_access/1`, see
+  `Lotus.Web.Authorization.default_decision/2`. The dashboard calls it on
+  render, so it must not do I/O per call. A public dashboard never calls it.
+
+  ## Examples
+
+      def authorize(%{role: :analyst}, action, _resource)
+          when action in [:query, :export, :view_dashboard, :create_query],
+          do: :allow
+
+      def authorize(%{role: :admin}, _action, _resource), do: :allow
+
+      def authorize(_user, action, _resource),
+        do: {:deny, "Your role does not allow \#{action}"}
+  """
+  @callback authorize(user :: user(), action :: action(), resource :: term()) ::
+              :allow | {:deny, String.t()}
+
+  @optional_callbacks resolve_user: 1,
+                      resolve_access: 1,
+                      resolve_context: 1,
+                      resolve_scope: 1,
+                      authorize: 3
 
   @doc false
   def call_with_fallback(resolver, fun, args) when is_atom(fun) and is_list(args) do
-    resolver =
-      if Code.ensure_loaded?(resolver) and function_exported?(resolver, fun, length(args)),
-        do: resolver,
-        else: __MODULE__
+    resolver = if implements?(resolver, fun, length(args)), do: resolver, else: __MODULE__
 
     apply(resolver, fun, args)
+  end
+
+  # Loads the module first: `function_exported?/3` answers `false` for a module
+  # the BEAM has not loaded yet, which would make the dashboard fail open.
+  @doc false
+  def implements?(resolver, fun, arity) do
+    Code.ensure_loaded?(resolver) and function_exported?(resolver, fun, arity)
   end
 
   @doc false
@@ -93,4 +150,8 @@ defmodule Lotus.Web.Resolver do
 
   @doc false
   def resolve_scope(_user), do: nil
+
+  @doc false
+  def authorize(user, action, _resource),
+    do: Lotus.Web.Authorization.default_decision(resolve_access(user), action)
 end

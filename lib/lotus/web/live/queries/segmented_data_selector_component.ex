@@ -103,7 +103,7 @@ defmodule Lotus.Web.Queries.SegmentedDataSelectorComponent do
   defp maybe_load_schemas(socket) do
     source = socket.assigns.source_field.value
 
-    if source && source != "" do
+    if source && source != "" && offered_source?(socket, source) do
       case get_adapter_info(source) do
         %{show: false} ->
           assign_hidden_schema(socket)
@@ -114,6 +114,12 @@ defmodule Lotus.Web.Queries.SegmentedDataSelectorComponent do
     else
       assign_hidden_schema(socket)
     end
+  end
+
+  # The parent offers only the sources the user may query. Never list schemas
+  # for another one, even when a crafted form value names it.
+  defp offered_source?(socket, source) do
+    Enum.any?(socket.assigns.source_options, fn {_label, value} -> value == source end)
   end
 
   defp assign_hidden_schema(socket) do

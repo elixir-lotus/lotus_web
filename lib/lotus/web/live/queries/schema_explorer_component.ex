@@ -260,7 +260,11 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
   defp maybe_build_sources_map(socket) do
     if connected?(socket) and not socket.assigns.sources_map_built? do
       socket
-      |> assign(sources_map: SourcesMap.build(Actor.opts(socket.assigns.actor)))
+      # The parent passes only the sources the user may query.
+      |> assign(
+        sources_map:
+          SourcesMap.build(Actor.opts(socket.assigns.actor), socket.assigns.source_names)
+      )
       |> assign(sources_map_built?: true)
     else
       socket
