@@ -19,8 +19,10 @@ defmodule Lotus.Web.Resolver do
           :query
           | :export
           | :create_query
+          | :update_query
           | :delete_query
           | :share_query
+          | :share_dashboard
           | :view_dashboard
           | :manage_dashboard
           | :ai_generate
@@ -91,8 +93,9 @@ defmodule Lotus.Web.Resolver do
 
   The dashboard asks before it renders a control, and hides the control when
   the answer is a deny. It asks again in the event handler and shows the
-  reason of a deny to the user. The CSV export route asks for `:export` and
-  answers `403` on a deny.
+  reason of a deny to the user. The CSV export route asks for `:query` and
+  `:export` on the source and answers `403` on a deny. The query editor offers,
+  browses and autocompletes only the sources the user may `:query`.
 
   `resource` is `nil` for an action that takes no resource, a data source
   name for `:query`, `:export` and `:ai_generate`, and a query or dashboard

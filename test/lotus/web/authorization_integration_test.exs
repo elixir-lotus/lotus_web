@@ -56,7 +56,7 @@ defmodule Lotus.Web.AuthorizationIntegrationTest do
 
       render_submit(page, "save_query", %{"query" => %{"name" => "Renamed"}})
       assert Lotus.get_query(query.id).name == "Users"
-      assert render(live) =~ "Restricted: create_query"
+      assert render(live) =~ "Restricted: update_query"
 
       render_click(page, "export_csv", %{})
       refute_push_event(live, "open-blank", _)
@@ -105,7 +105,7 @@ defmodule Lotus.Web.AuthorizationIntegrationTest do
 
       render_click(editor, "enable_sharing", %{})
       assert Lotus.get_dashboard(dashboard.id).public_token == nil
-      assert render(live) =~ "Restricted: share_query"
+      assert render(live) =~ "Restricted: share_dashboard"
 
       render_submit(editor, "save_dashboard", %{"dashboard" => %{"name" => "Renamed"}})
       assert Lotus.get_dashboard(dashboard.id).name == "Sales"
@@ -146,6 +146,59 @@ defmodule Lotus.Web.AuthorizationIntegrationTest do
       html = render(live)
       assert html =~ "Restricted: manage_dashboard"
       refute html =~ ~s(id="card-)
+    end
+
+    test "a saved query on a source the user may not query shows the reason on load" do
+      query =
+        query_fixture(%{name: "Report", statement: "SELECT 1 AS n", data_source: "reporting"})
+
+      {:ok, live, _html} = live(build_conn(), "/restricted/queries/#{query.id}")
+
+      assert render(live) =~ "Restricted: query"
+    end
+
+    test "the editor offers only the sources the user may query" do
+      {:ok, live, _html} = live(build_conn(), "/restricted/queries/new")
+
+      # The source selector renders its options as listbox items, not <option>.
+      assert has_element?(live, ~s(li[role="option"][data-value="public"]))
+      refute has_element?(live, ~s(li[role="option"][data-value="reporting"]))
+    end
+
+    test "the dashboard hides card settings and refuses crafted card edits" do
+      dashboard = dashboard_fixture(%{name: "Cards"})
+      card = dashboard_card_fixture(dashboard, %{title: "Note"})
+
+      {:ok, live, _html} = live(build_conn(), "/restricted/dashboards/#{dashboard.id}")
+
+      refute has_element?(live, ~s(button[phx-click="open_card_settings"]))
+      refute has_element?(live, ~s(#card-#{card.id}[phx-click]))
+
+      live
+      |> with_target("#dashboard-editor")
+      |> render_click("delete_card", %{"card-id" => to_string(card.id)})
+
+      assert render(live) =~ "Restricted: manage_dashboard"
+      assert has_element?(live, "#card-#{card.id}")
+
+      live |> element(~s(button[phx-click="toggle_settings"])) |> render_click()
+
+      refute has_element?(live, ~s(select[name="auto_refresh_seconds"]))
+    end
+
+    test "the export route also needs :query on the source" do
+      token =
+        ExportController.generate_token(Lotus.Web.Endpoint, %{
+          "query_attrs" => %{"statement" => "SELECT 1 AS n", "variables" => []},
+          "repo" => "reporting",
+          "vars" => %{},
+          "filename" => "report.csv"
+        })
+
+      conn = get(build_conn(), ~p"/restricted/export/csv?token=#{token}")
+
+      assert conn.status == 403
+      assert conn.resp_body == "Restricted: query"
     end
 
     test "the new dashboard page sends the user back" do
@@ -204,6 +257,31 @@ defmodule Lotus.Web.AuthorizationIntegrationTest do
   end
 
   describe "no resolver" do
+    test "saving a query that was deleted meanwhile sends the user back" do
+      query = users_query()
+
+      {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{query.id}")
+      render_async(live)
+
+      {:ok, _} = Lotus.delete_query(query)
+
+      assert {:error, {:live_redirect, %{to: _}}} =
+               live
+               |> with_target("#query-editor-page")
+               |> render_submit("save_query", %{"query" => %{"name" => "Gone"}})
+    end
+
+    test "a crafted delete on the new query page does nothing" do
+      {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
+
+      html =
+        live
+        |> with_target("#query-editor-page")
+        |> render_click("delete_query", %{})
+
+      assert html =~ "New Query"
+    end
+
     test "saving a dashboard does not turn a disabled public link back on" do
       dashboard = public_dashboard_fixture(%{name: "Shared"})
 

@@ -25,7 +25,7 @@ defmodule Lotus.Web.DashboardEditorPage do
     assigns =
       assign(assigns,
         can_manage: Authorization.allowed?(assigns, :manage_dashboard, resource),
-        can_share: resource != nil and Authorization.allowed?(assigns, :share_query, resource)
+        can_share: resource != nil and Authorization.allowed?(assigns, :share_dashboard, resource)
       )
 
     ~H"""
@@ -101,6 +101,7 @@ defmodule Lotus.Web.DashboardEditorPage do
                   card_errors={@card_errors}
                   running_cards={@running_cards}
                   selected_card_id={@selected_card && @selected_card.id}
+                  can_manage={@can_manage}
                   parent={@myself}
                 />
               <% end %>
@@ -520,51 +521,17 @@ defmodule Lotus.Web.DashboardEditorPage do
     end
   end
 
+  # Card, filter and auto-refresh edits change only the page until Save, but a
+  # user who may not manage the dashboard gets no editor: each handler asks.
+
   @impl Phoenix.LiveComponent
   def handle_event("select_card", %{"card-id" => card_id}, socket) do
-    card_id = parse_id(card_id)
-    card = Enum.find(socket.assigns.dashboard.cards, &(&1.id == card_id))
-
-    columns =
-      if card && card.card_type == :query do
-        case Map.get(socket.assigns.card_results, card_id) do
-          %{columns: cols} -> cols
-          _ -> []
-        end
-      else
-        []
-      end
-
-    {:noreply,
-     assign(socket,
-       selected_card: card,
-       selected_card_columns: columns,
-       card_settings_visible: card != nil
-     )}
+    authorize_manage(socket, fn -> do_select_card(socket, card_id) end)
   end
 
   @impl Phoenix.LiveComponent
   def handle_event("open_card_settings", %{"card-id" => card_id}, socket) do
-    card_id = parse_id(card_id)
-    card = Enum.find(socket.assigns.dashboard.cards, &(&1.id == card_id))
-
-    columns =
-      if card && card.card_type == :query do
-        case Map.get(socket.assigns.card_results, card_id) do
-          %{columns: cols} -> cols
-          _ -> []
-        end
-      else
-        []
-      end
-
-    {:noreply,
-     assign(socket,
-       selected_card: card,
-       selected_card_columns: columns,
-       card_settings_visible: true,
-       settings_visible: false
-     )}
+    authorize_manage(socket, fn -> do_open_card_settings(socket, card_id) end)
   end
 
   @impl Phoenix.LiveComponent
@@ -574,22 +541,14 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("delete_card", %{"card-id" => card_id}, socket) do
-    card_id = parse_id(card_id)
-    dashboard = socket.assigns.dashboard
-    updated_cards = Enum.reject(dashboard.cards, &(&1.id == card_id))
-    updated_dashboard = %{dashboard | cards: updated_cards}
-
-    {:noreply,
-     socket
-     |> assign(dashboard: updated_dashboard)
-     |> assign(card_settings_visible: false, selected_card: nil)}
+    authorize_manage(socket, fn -> do_delete_card(socket, card_id) end)
   end
 
   @impl Phoenix.LiveComponent
   def handle_event("update_card_title", %{"title" => title, "card_id" => card_id}, socket) do
-    card_id = parse_id(card_id)
-    socket = update_card_and_selection(socket, card_id, fn card -> %{card | title: title} end)
-    {:noreply, socket}
+    authorize_manage(socket, fn ->
+      {:noreply, update_card_and_selection(socket, parse_id(card_id), &%{&1 | title: title})}
+    end)
   end
 
   @impl Phoenix.LiveComponent
@@ -598,43 +557,14 @@ defmodule Lotus.Web.DashboardEditorPage do
         %{"content" => content, "card_id" => card_id} = params,
         socket
       ) do
-    case parse_card_type(params["card_type"]) do
-      nil ->
-        {:noreply, socket}
-
-      card_type ->
-        card_id = parse_id(card_id)
-
-        formatted_content =
-          case card_type do
-            :link -> %{"url" => content}
-            :text -> %{"text" => content}
-            :heading -> %{"text" => content}
-            :query -> content
-          end
-
-        socket =
-          update_card_and_selection(socket, card_id, fn card ->
-            %{card | content: formatted_content}
-          end)
-
-        {:noreply, socket}
-    end
+    authorize_manage(socket, fn ->
+      do_update_card_content(socket, card_id, content, params["card_type"])
+    end)
   end
 
   @impl Phoenix.LiveComponent
   def handle_event("update_card_layout", %{"card_id" => card_id, "layout" => layout}, socket) do
-    card_id = parse_id(card_id)
-
-    layout = %{
-      x: parse_int(layout["x"], 0),
-      y: parse_int(layout["y"], 0),
-      w: parse_int(layout["w"], 6),
-      h: parse_int(layout["h"], 4)
-    }
-
-    socket = update_card_and_selection(socket, card_id, fn card -> %{card | layout: layout} end)
-    {:noreply, socket}
+    authorize_manage(socket, fn -> do_update_card_layout(socket, card_id, layout) end)
   end
 
   @impl Phoenix.LiveComponent
@@ -643,19 +573,7 @@ defmodule Lotus.Web.DashboardEditorPage do
         %{"card_id" => card_id, "visualization" => viz},
         socket
       ) do
-    card_id = parse_id(card_id)
-
-    socket =
-      update_card_and_selection(socket, card_id, fn card ->
-        existing =
-          (card.visualization_config || %{})
-          |> Map.new(fn {k, v} -> {to_string(k), v} end)
-
-        config = VegaSpecBuilder.build_config(Map.merge(existing, viz))
-        %{card | visualization_config: config}
-      end)
-
-    {:noreply, socket}
+    authorize_manage(socket, fn -> do_update_card_visualization(socket, card_id, viz) end)
   end
 
   @impl Phoenix.LiveComponent
@@ -664,17 +582,11 @@ defmodule Lotus.Web.DashboardEditorPage do
         %{"card-id" => card_id, "filter-name" => filter_name} = params,
         socket
       ) do
-    card_id = parse_id(card_id)
     variable_name = params["filter_mapping"]["#{filter_name}"]
 
-    socket =
-      update_card_and_selection(socket, card_id, fn card ->
-        mappings = normalize_mappings(card.filter_mappings, socket.assigns.dashboard.filters)
-        updated_mappings = Map.put(mappings, filter_name, variable_name)
-        %{card | filter_mappings: updated_mappings}
-      end)
-
-    {:noreply, socket}
+    authorize_manage(socket, fn ->
+      do_update_filter_mapping(socket, card_id, filter_name, variable_name)
+    end)
   end
 
   @impl Phoenix.LiveComponent
@@ -708,32 +620,12 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("add_filter", _params, socket) do
-    next_position = length(socket.assigns.dashboard.filters)
-
-    new_filter = %{
-      id: "new_#{System.unique_integer([:positive])}",
-      name: "",
-      label: "",
-      filter_type: :text,
-      widget: :input,
-      default_value: nil,
-      config: %{},
-      position: next_position
-    }
-
-    {:noreply, assign(socket, filter_modal_open: true, editing_filter: new_filter)}
+    authorize_manage(socket, fn -> do_add_filter(socket) end)
   end
 
   @impl Phoenix.LiveComponent
   def handle_event("edit_filter", %{"filter-id" => filter_id}, socket) do
-    filter_id = maybe_parse_id(filter_id)
-    filter = Enum.find(socket.assigns.dashboard.filters, &(&1.id == filter_id))
-
-    if filter do
-      {:noreply, assign(socket, filter_modal_open: true, editing_filter: filter)}
-    else
-      {:noreply, socket}
-    end
+    authorize_manage(socket, fn -> do_edit_filter(socket, filter_id) end)
   end
 
   @impl Phoenix.LiveComponent
@@ -743,47 +635,12 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("save_filter", %{"filter" => filter_params}, socket) do
-    editing = socket.assigns.editing_filter
-    dashboard = socket.assigns.dashboard
-
-    filter = %{
-      editing
-      | name: filter_params["name"] || "",
-        label: filter_params["label"] || "",
-        filter_type: parse_filter_type(filter_params["filter_type"]),
-        widget: parse_filter_widget(filter_params["widget"]),
-        default_value: nullify(filter_params["default_value"]),
-        config: build_filter_config(filter_params)
-    }
-
-    filters = upsert_filter(dashboard.filters, filter)
-
-    dashboard = %{dashboard | filters: filters}
-
-    {:noreply,
-     socket
-     |> assign(dashboard: dashboard, filter_modal_open: false, editing_filter: nil)
-     |> run_all_cards()}
+    authorize_manage(socket, fn -> do_save_filter(socket, filter_params) end)
   end
 
   @impl Phoenix.LiveComponent
   def handle_event("delete_filter", %{"filter-id" => filter_id}, socket) do
-    filter_id = maybe_parse_id(filter_id)
-    dashboard = socket.assigns.dashboard
-    filters = Enum.reject(dashboard.filters, &(&1.id == filter_id))
-    dashboard = %{dashboard | filters: filters}
-
-    filter_values =
-      Map.drop(socket.assigns.filter_values, [
-        Enum.find_value(socket.assigns.dashboard.filters, fn f ->
-          if f.id == filter_id, do: f.name
-        end)
-      ])
-
-    {:noreply,
-     socket
-     |> assign(dashboard: dashboard, filter_values: filter_values)
-     |> run_all_cards()}
+    authorize_manage(socket, fn -> do_delete_filter(socket, filter_id) end)
   end
 
   @impl Phoenix.LiveComponent
@@ -802,14 +659,12 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("update_auto_refresh", %{"auto_refresh_seconds" => seconds}, socket) do
-    seconds = if seconds == "", do: nil, else: String.to_integer(seconds)
-    dashboard = %{socket.assigns.dashboard | auto_refresh_seconds: seconds}
-    {:noreply, assign(socket, dashboard: dashboard)}
+    authorize_manage(socket, fn -> do_update_auto_refresh(socket, seconds) end)
   end
 
   @impl Phoenix.LiveComponent
   def handle_event("enable_sharing", _params, socket) do
-    case Authorization.authorize(socket.assigns, :share_query, socket.assigns.dashboard) do
+    case Authorization.authorize(socket.assigns, :share_dashboard, socket.assigns.dashboard) do
       :allow -> do_enable_sharing(socket)
       {:deny, reason} -> {:noreply, deny(socket, reason)}
     end
@@ -817,7 +672,7 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("disable_sharing", _params, socket) do
-    case Authorization.authorize(socket.assigns, :share_query, socket.assigns.dashboard) do
+    case Authorization.authorize(socket.assigns, :share_dashboard, socket.assigns.dashboard) do
       :allow -> do_disable_sharing(socket)
       {:deny, reason} -> {:noreply, deny(socket, reason)}
     end
@@ -1051,7 +906,7 @@ defmodule Lotus.Web.DashboardEditorPage do
       "name" => params["name"],
       "description" => params["description"],
       # No "public_token": only the sharing handlers, which ask for
-      # :share_query, write it. A save from a page opened before the link was
+      # :share_dashboard, write it. A save from a page opened before the link was
       # turned off must not turn it back on.
       "auto_refresh_seconds" => dashboard.auto_refresh_seconds
     }
@@ -1220,6 +1075,196 @@ defmodule Lotus.Web.DashboardEditorPage do
   defp deny(socket, reason) do
     send(self(), {:put_flash, [:error, reason]})
     socket
+  end
+
+  defp authorize_manage(socket, fun) do
+    resource = dashboard_resource(socket.assigns.page, socket.assigns.dashboard)
+
+    case Authorization.authorize(socket.assigns, :manage_dashboard, resource) do
+      :allow -> fun.()
+      {:deny, reason} -> {:noreply, deny(socket, reason)}
+    end
+  end
+
+  defp do_select_card(socket, card_id) do
+    card_id = parse_id(card_id)
+    card = Enum.find(socket.assigns.dashboard.cards, &(&1.id == card_id))
+
+    {:noreply,
+     assign(socket,
+       selected_card: card,
+       selected_card_columns: card_columns(socket, card),
+       card_settings_visible: card != nil
+     )}
+  end
+
+  defp do_open_card_settings(socket, card_id) do
+    card_id = parse_id(card_id)
+    card = Enum.find(socket.assigns.dashboard.cards, &(&1.id == card_id))
+
+    {:noreply,
+     assign(socket,
+       selected_card: card,
+       selected_card_columns: card_columns(socket, card),
+       card_settings_visible: true,
+       settings_visible: false
+     )}
+  end
+
+  defp card_columns(socket, %{card_type: :query, id: card_id}) do
+    case Map.get(socket.assigns.card_results, card_id) do
+      %{columns: cols} -> cols
+      _ -> []
+    end
+  end
+
+  defp card_columns(_socket, _card), do: []
+
+  defp do_delete_card(socket, card_id) do
+    card_id = parse_id(card_id)
+    dashboard = socket.assigns.dashboard
+    updated_cards = Enum.reject(dashboard.cards, &(&1.id == card_id))
+    updated_dashboard = %{dashboard | cards: updated_cards}
+
+    {:noreply,
+     socket
+     |> assign(dashboard: updated_dashboard)
+     |> assign(card_settings_visible: false, selected_card: nil)}
+  end
+
+  defp do_update_card_content(socket, card_id, content, card_type) do
+    case parse_card_type(card_type) do
+      nil ->
+        {:noreply, socket}
+
+      card_type ->
+        formatted_content =
+          case card_type do
+            :link -> %{"url" => content}
+            :text -> %{"text" => content}
+            :heading -> %{"text" => content}
+            :query -> content
+          end
+
+        socket =
+          update_card_and_selection(socket, parse_id(card_id), fn card ->
+            %{card | content: formatted_content}
+          end)
+
+        {:noreply, socket}
+    end
+  end
+
+  defp do_update_card_layout(socket, card_id, layout) do
+    layout = %{
+      x: parse_int(layout["x"], 0),
+      y: parse_int(layout["y"], 0),
+      w: parse_int(layout["w"], 6),
+      h: parse_int(layout["h"], 4)
+    }
+
+    {:noreply,
+     update_card_and_selection(socket, parse_id(card_id), fn card -> %{card | layout: layout} end)}
+  end
+
+  defp do_update_card_visualization(socket, card_id, viz) do
+    socket =
+      update_card_and_selection(socket, parse_id(card_id), fn card ->
+        existing =
+          (card.visualization_config || %{})
+          |> Map.new(fn {k, v} -> {to_string(k), v} end)
+
+        config = VegaSpecBuilder.build_config(Map.merge(existing, viz))
+        %{card | visualization_config: config}
+      end)
+
+    {:noreply, socket}
+  end
+
+  defp do_update_filter_mapping(socket, card_id, filter_name, variable_name) do
+    socket =
+      update_card_and_selection(socket, parse_id(card_id), fn card ->
+        mappings = normalize_mappings(card.filter_mappings, socket.assigns.dashboard.filters)
+        updated_mappings = Map.put(mappings, filter_name, variable_name)
+        %{card | filter_mappings: updated_mappings}
+      end)
+
+    {:noreply, socket}
+  end
+
+  defp do_add_filter(socket) do
+    next_position = length(socket.assigns.dashboard.filters)
+
+    new_filter = %{
+      id: "new_#{System.unique_integer([:positive])}",
+      name: "",
+      label: "",
+      filter_type: :text,
+      widget: :input,
+      default_value: nil,
+      config: %{},
+      position: next_position
+    }
+
+    {:noreply, assign(socket, filter_modal_open: true, editing_filter: new_filter)}
+  end
+
+  defp do_edit_filter(socket, filter_id) do
+    filter_id = maybe_parse_id(filter_id)
+
+    case Enum.find(socket.assigns.dashboard.filters, &(&1.id == filter_id)) do
+      nil -> {:noreply, socket}
+      filter -> {:noreply, assign(socket, filter_modal_open: true, editing_filter: filter)}
+    end
+  end
+
+  defp do_save_filter(socket, filter_params) do
+    editing = socket.assigns.editing_filter
+    dashboard = socket.assigns.dashboard
+
+    filter = %{
+      editing
+      | name: filter_params["name"] || "",
+        label: filter_params["label"] || "",
+        filter_type: parse_filter_type(filter_params["filter_type"]),
+        widget: parse_filter_widget(filter_params["widget"]),
+        default_value: nullify(filter_params["default_value"]),
+        config: build_filter_config(filter_params)
+    }
+
+    filters = upsert_filter(dashboard.filters, filter)
+
+    dashboard = %{dashboard | filters: filters}
+
+    {:noreply,
+     socket
+     |> assign(dashboard: dashboard, filter_modal_open: false, editing_filter: nil)
+     |> run_all_cards()}
+  end
+
+  defp do_delete_filter(socket, filter_id) do
+    filter_id = maybe_parse_id(filter_id)
+    dashboard = socket.assigns.dashboard
+    filters = Enum.reject(dashboard.filters, &(&1.id == filter_id))
+    dashboard = %{dashboard | filters: filters}
+
+    filter_name =
+      Enum.find_value(socket.assigns.dashboard.filters, fn f ->
+        if f.id == filter_id, do: f.name
+      end)
+
+    filter_values = Map.drop(socket.assigns.filter_values, [filter_name])
+
+    {:noreply,
+     socket
+     |> assign(dashboard: dashboard, filter_values: filter_values)
+     |> run_all_cards()}
+  end
+
+  defp do_update_auto_refresh(socket, seconds) do
+    seconds = if seconds == "", do: nil, else: String.to_integer(seconds)
+    dashboard = %{socket.assigns.dashboard | auto_refresh_seconds: seconds}
+    {:noreply, assign(socket, dashboard: dashboard)}
   end
 
   defp load_dashboard(id) do

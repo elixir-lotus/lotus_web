@@ -11,8 +11,9 @@ behaviour it had.
 - **`c:Lotus.Web.Resolver.authorize/3` decides what a user may do.** The
   dashboard asks `authorize(user, action, resource)` and gets `:allow` or
   `{:deny, reason}`. The actions are `:query`, `:export`, `:create_query`,
-  `:delete_query`, `:share_query`, `:view_dashboard`, `:manage_dashboard`,
-  `:ai_generate`, `:manage_source` and `:manage_cache`. Without the callback,
+  `:update_query`, `:delete_query`, `:share_query`, `:share_dashboard`,
+  `:view_dashboard`, `:manage_dashboard`, `:ai_generate`, `:manage_source` and
+  `:manage_cache`. Without the callback,
   the decision derives from `resolve_access/1`: `:all` allows every action,
   and `:read_only` allows `:query`, `:export` and `:view_dashboard`.
   `Lotus.Web.Authorization` is the one place the dashboard asks, and lists the
@@ -26,9 +27,23 @@ behaviour it had.
 
 ### Changed
 
-- **The CSV export route asks for `:export` and answers `403` on a deny.**
-  Before, the route checked only the signed token. A `:read_only` user can
-  still export; a user whose access is `:forbidden` now cannot.
+- **The CSV export route asks for `:query` and `:export` on the source and
+  answers `403` on a deny.** Before, the route checked only the signed token,
+  and the token carries the statement it runs. A `:read_only` user can still
+  export; a user whose access is `:forbidden` now cannot.
+
+- **The query editor lists only the sources the user may query.** The source
+  selector, the schema explorer and the editor autocomplete no longer show the
+  schemas, tables and columns of a denied source.
+
+- **Card, filter and auto-refresh edits ask for `:manage_dashboard`.** A user
+  who may not manage a dashboard no longer sees the card settings gear or the
+  auto-refresh setting, and a crafted edit is refused.
+
+- **With `strict_actor: true`, authorization raises for assigns that lack
+  `:resolver` or `:access`**, the same as `Lotus.Web.Actor.opts/1` does for a
+  missing actor. Without the option, the decision still falls back to full
+  access.
 
 - **Running a query, the AI assistant, the new dashboard page and opening a
   dashboard ask the resolver.** A denied run shows the reason in place of the

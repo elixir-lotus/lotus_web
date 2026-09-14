@@ -42,7 +42,7 @@ defmodule Lotus.Web.Dashboards.SettingsDrawer do
           <%!-- Content --%>
           <div class="flex-1 overflow-y-auto p-4 space-y-6">
             <%!-- Auto-refresh --%>
-            <div>
+            <div :if={@can_manage}>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <%= gettext("Auto-refresh") %>
               </label>

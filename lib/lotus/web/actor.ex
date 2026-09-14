@@ -84,7 +84,7 @@ defmodule Lotus.Web.Actor do
   # Off unless a host asks for it, so a production dashboard degrades to an
   # unscoped call rather than a crash.
   defp check_actor_arrived!(assigns) do
-    if strict_actor?() and not Map.has_key?(assigns, :context) do
+    if strict?() and not Map.has_key?(assigns, :context) do
       raise ArgumentError, """
       Lotus.Web.Actor.opts/1 got assigns that carry no :context key.
 
@@ -103,5 +103,7 @@ defmodule Lotus.Web.Actor do
     :ok
   end
 
-  defp strict_actor?, do: Application.get_env(:lotus_web, :strict_actor, false)
+  # Also read by Lotus.Web.Authorization, which treats missing assigns the same way.
+  @doc false
+  def strict?, do: Application.get_env(:lotus_web, :strict_actor, false)
 end

@@ -58,12 +58,15 @@ defmodule Lotus.Web.ExportController do
   #
   # The token proves the dashboard built the export; it does not prove the
   # user may still export from that source, so ask before loading the query.
+  # An export runs the statement in the token, so it needs :query there too.
   defp stream_csv_export(conn, export_params) do
     resolver = conn.private[:lotus_resolver]
     user = Resolver.call_with_fallback(resolver, :resolve_user, [conn])
     access = Resolver.call_with_fallback(resolver, :resolve_access, [user])
+    source = export_params["repo"]
 
-    with :allow <- Authorization.decide(resolver, user, access, :export, export_params["repo"]),
+    with :allow <- Authorization.decide(resolver, user, access, :query, source),
+         :allow <- Authorization.decide(resolver, user, access, :export, source),
          %Query{} = query <- build_query(export_params) do
       filename =
         export_params

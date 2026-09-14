@@ -70,6 +70,8 @@ defmodule Lotus.Web.Test.RestrictedResolver do
   def resolve_access(_user), do: :all
 
   def authorize(_user, :query, "reporting"), do: {:deny, "Restricted: query"}
+  # Allowed, so a test can show that exporting also needs :query on the source.
+  def authorize(_user, :export, "reporting"), do: :allow
   def authorize(_user, action, _resource) when action in [:query, :view_dashboard], do: :allow
   def authorize(_user, action, _resource), do: {:deny, "Restricted: #{action}"}
 end

@@ -101,12 +101,25 @@ defmodule Lotus.Web.AuthorizationTest do
     end
 
     test "with no resolver, derives the decision from :access" do
-      assert Authorization.authorize(%{access: :all}, :manage_cache) == :allow
-      assert {:deny, _} = Authorization.authorize(%{access: :read_only}, :manage_cache)
+      assert Authorization.authorize(%{resolver: nil, access: :all}, :manage_cache) == :allow
+
+      assert {:deny, _} =
+               Authorization.authorize(%{resolver: nil, access: :read_only}, :manage_cache)
     end
 
-    test "with no :access assign, keeps full access as the dashboard did before" do
-      assert Authorization.authorize(%{}, :delete_query, %{}) == :allow
+    test "raises under strict_actor when assigns carry no :resolver or :access key" do
+      # config/config.exs turns strict_actor on for the suite.
+      assert_raise ArgumentError, ~r/no :resolver or :access key/, fn ->
+        Authorization.authorize(%{}, :delete_query, %{})
+      end
+
+      assert_raise ArgumentError, fn ->
+        Authorization.authorize(%{access: :all}, :query, "reporting")
+      end
+
+      assert_raise ArgumentError, fn ->
+        Authorization.authorize(%{resolver: nil}, :query, "reporting")
+      end
     end
 
     test "never asks the host for a public dashboard" do
@@ -118,7 +131,7 @@ defmodule Lotus.Web.AuthorizationTest do
     end
 
     test "denies when the resolver returns something other than a decision" do
-      assigns = %{resolver: BrokenResolver, user: @user}
+      assigns = %{resolver: BrokenResolver, user: @user, access: :all}
 
       log =
         capture_log(fn ->
@@ -132,6 +145,7 @@ defmodule Lotus.Web.AuthorizationTest do
       assigns = %{
         resolver: RecordingResolver,
         user: @user,
+        access: :all,
         permissions: %{create_query: true}
       }
 
@@ -142,14 +156,24 @@ defmodule Lotus.Web.AuthorizationTest do
 
   describe "allowed?/3" do
     test "reads the :permissions cache for an action without a resource" do
-      assigns = %{resolver: RecordingResolver, user: @user, permissions: %{create_query: true}}
+      assigns = %{
+        resolver: RecordingResolver,
+        user: @user,
+        access: :all,
+        permissions: %{create_query: true}
+      }
 
       assert Authorization.allowed?(assigns, :create_query)
       refute_received {:authorize, _, _, _}
     end
 
     test "asks the resolver for an action with a resource" do
-      assigns = %{resolver: RecordingResolver, user: @user, permissions: %{create_query: true}}
+      assigns = %{
+        resolver: RecordingResolver,
+        user: @user,
+        access: :all,
+        permissions: %{create_query: true}
+      }
 
       assert Authorization.allowed?(assigns, :query, "reporting")
       refute Authorization.allowed?(assigns, :query, "billing")
@@ -169,7 +193,7 @@ defmodule Lotus.Web.AuthorizationTest do
     end
 
     test "does not read an older cache" do
-      assigns = %{access: :all, permissions: %{create_query: false}}
+      assigns = %{resolver: nil, access: :all, permissions: %{create_query: false}}
 
       assert %{create_query: true} = Authorization.permissions(assigns)
     end

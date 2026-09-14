@@ -30,12 +30,15 @@ defmodule Lotus.Web.QueryEditorPage do
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
-    source = assigns.query_form[:data_source].value || assigns[:default_source]
+    source = current_source(assigns)
+    {save_action, save_resource} = save_permission(assigns)
 
     assigns =
       assign(assigns,
-        can_save: Authorization.allowed?(assigns, :create_query, save_resource(assigns)),
-        can_delete: Authorization.allowed?(assigns, :delete_query, assigns.query),
+        can_save: Authorization.allowed?(assigns, save_action, save_resource),
+        can_delete:
+          assigns.page.mode == :edit and
+            Authorization.allowed?(assigns, :delete_query, assigns.query),
         can_query: Authorization.allowed?(assigns, :query, source),
         can_export: Authorization.allowed?(assigns, :export, source),
         can_ai: Authorization.allowed?(assigns, :ai_generate, source)
@@ -76,6 +79,7 @@ defmodule Lotus.Web.QueryEditorPage do
               module={SchemaExplorerComponent}
               id="schema-explorer"
               actor={@actor}
+              source_names={@data_source_names}
               visible={@right_drawer == :schema_explorer}
               parent={@myself}
               initial_db={@query_form[:data_source].value}
@@ -480,6 +484,12 @@ defmodule Lotus.Web.QueryEditorPage do
          socket
          |> deny(reason)
          |> push_event("close-modal", %{id: "save-query-modal"})}
+
+      {:error, :not_found} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("Query not found"))
+         |> push_navigate(to: lotus_path(:queries), replace: true)}
     end
   end
 
@@ -1230,7 +1240,7 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   def update(%{action: :test_dropdown_query} = assigns, socket) do
-    repo = socket.assigns.query.data_source || socket.assigns.default_source
+    repo = query_source(socket)
     search_path = socket.assigns.query.search_path
 
     dropdown_opts = [limit: 3, cache: false] ++ Actor.opts(socket.assigns)
@@ -1262,37 +1272,48 @@ defmodule Lotus.Web.QueryEditorPage do
     {:ok, assign(socket, assigns)}
   end
 
+  # The editor offers, browses and autocompletes only the sources the user may
+  # query, so a denied source's schemas, tables and columns are never listed.
   defp assign_data_sources(socket) do
-    data_source_names = Lotus.list_data_source_names()
+    data_source_names =
+      Enum.filter(
+        Lotus.list_data_source_names(),
+        &Authorization.allowed?(socket.assigns, :query, &1)
+      )
+
     {default_source, _module} = Lotus.default_data_source()
 
     source_type = Lotus.Source.source_type(default_source)
 
     socket
     |> assign(data_source_names: data_source_names, default_source: default_source)
-    |> assign(sources_map: build_sources_map(socket))
+    |> assign(sources_map: build_sources_map(socket, data_source_names))
     |> assign(source_type: source_type)
   end
 
-  # Building the sources map lists schemas and tables for every configured
-  # source. Skipping it on the disconnected mount keeps those queries off the
+  # Building the sources map lists schemas and tables for every source it is
+  # given. Skipping it on the disconnected mount keeps those queries off the
   # first render; the connected mount builds it before the editor needs a
   # schema.
-  defp build_sources_map(socket) do
-    if connected?(socket), do: SourcesMap.build(Actor.opts(socket.assigns)), else: %SourcesMap{}
+  defp build_sources_map(socket, source_names) do
+    if connected?(socket),
+      do: SourcesMap.build(Actor.opts(socket.assigns), source_names),
+      else: %SourcesMap{}
   end
 
   defp show_toast(socket, kind, message) do
     push_event(socket, "toast", %{kind: kind, message: message})
   end
 
-  defp resolve_data_source(socket) do
-    case socket.assigns.query_form[:data_source].value do
-      nil -> socket.assigns.default_source
-      "" -> socket.assigns.default_source
-      data_source -> data_source
-    end
-  end
+  defp resolve_data_source(socket), do: current_source(socket.assigns)
+
+  # The source the editor acts on. Render and every handler resolve it the same
+  # way, so a hidden control and a handler decision never disagree.
+  defp current_source(assigns),
+    do: source_or_default(assigns.query_form[:data_source].value, assigns)
+
+  defp source_or_default(source, assigns) when source in [nil, ""], do: assigns.default_source
+  defp source_or_default(source, _assigns), do: source
 
   defp assign_ui_state(socket) do
     assign(socket,
@@ -1370,8 +1391,8 @@ defmodule Lotus.Web.QueryEditorPage do
     query = socket.assigns[:query]
     variable_values = Map.get(socket.assigns, :variable_values, %{})
 
-    if Lotus.can_run?(query, vars: variable_values) and
-         Authorization.allowed?(socket.assigns, :query, query_source(socket)) do
+    # execute_query/2 asks for :query and shows the reason on a deny.
+    if Lotus.can_run?(query, vars: variable_values) do
       execute_query(socket, query)
     else
       socket
@@ -1379,7 +1400,8 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   defp maybe_update_editor_schema(socket, data_source) do
-    if data_source && data_source != "" do
+    if data_source && data_source != "" &&
+         Authorization.allowed?(socket.assigns, :query, data_source) do
       dialect = dialect_for_repo(data_source)
       source_type = Lotus.Source.source_type(data_source)
       search_path = socket.assigns.query && socket.assigns.query.search_path
@@ -1453,8 +1475,20 @@ defmodule Lotus.Web.QueryEditorPage do
       query_form: form
     ]
 
-    assign(socket, base_assigns ++ additional_assigns)
+    socket
+    |> assign(base_assigns ++ additional_assigns)
+    |> close_denied_ai_drawer()
   end
+
+  # The AI drawer belongs to the selected source. When the user picks a source
+  # without :ai_generate, close it rather than leave an empty margin behind.
+  defp close_denied_ai_drawer(%{assigns: %{left_drawer: :ai_assistant}} = socket) do
+    if Authorization.allowed?(socket.assigns, :ai_generate, resolve_data_source(socket)),
+      do: socket,
+      else: assign(socket, left_drawer: nil)
+  end
+
+  defp close_denied_ai_drawer(socket), do: socket
 
   defp check_statement_empty(statement) when is_binary(statement) do
     statement |> String.trim() |> Kernel.==("")
@@ -1481,7 +1515,7 @@ defmodule Lotus.Web.QueryEditorPage do
   # Every run goes through here: the run button, pagination, filters, sorts and
   # the auto-run of a saved query. Ask once, in this one place.
   defp execute_query(socket, query) do
-    repo = query.data_source || socket.assigns.default_source
+    repo = source_or_default(query.data_source, socket.assigns)
 
     case Authorization.authorize(socket.assigns, :query, repo) do
       :allow -> start_query(socket, query, repo)
@@ -1614,17 +1648,20 @@ defmodule Lotus.Web.QueryEditorPage do
   # Authorizes against the stored query, not the one in the editor, which
   # carries the user's unsaved changes.
   defp update_saved_query(socket, id, query_attrs) do
-    with %Query{} = query <- Lotus.get_query(id) || {:error, "Query not found"},
-         :allow <- Authorization.authorize(socket.assigns, :create_query, query) do
+    with %Query{} = query <- Lotus.get_query(id) || {:error, :not_found},
+         :allow <- Authorization.authorize(socket.assigns, :update_query, query) do
       Lotus.update_query(query, query_attrs)
     end
   end
 
-  defp save_resource(%{page: %{mode: :edit}, query: %Query{} = query}), do: query
-  defp save_resource(_assigns), do: nil
+  # Saving on an existing query's page updates it; anything else creates one.
+  defp save_permission(%{page: %{mode: :edit}, query: %Query{} = query}),
+    do: {:update_query, query}
+
+  defp save_permission(_assigns), do: {:create_query, nil}
 
   defp query_source(socket) do
-    socket.assigns.query.data_source || socket.assigns.default_source
+    source_or_default(socket.assigns.query.data_source, socket.assigns)
   end
 
   # The flash belongs to the parent LiveView, so a component asks it to set one.
@@ -1911,7 +1948,7 @@ defmodule Lotus.Web.QueryEditorPage do
   defp generate_export_url(socket) do
     query = socket.assigns.query
     vars = Map.get(socket.assigns, :variable_values, %{})
-    repo = query.data_source || socket.assigns.default_source
+    repo = source_or_default(query.data_source, socket.assigns)
 
     timestamp =
       DateTime.utc_now()
@@ -1969,9 +2006,9 @@ defmodule Lotus.Web.QueryEditorPage do
     push_event(socket, "open-blank", %{location: export_path})
   end
 
-  defp delete_query(socket) do
-    query_id = socket.assigns.page.id
-
+  # Only a saved query's page has one to delete. The new query page has no id,
+  # so a crafted event there does nothing.
+  defp delete_query(%{assigns: %{page: %{mode: :edit, id: query_id}}} = socket) do
     case Lotus.get_query(query_id) do
       nil ->
         {:noreply,
@@ -2001,6 +2038,8 @@ defmodule Lotus.Web.QueryEditorPage do
         end
     end
   end
+
+  defp delete_query(socket), do: {:noreply, socket}
 
   # Visualization persistence
 

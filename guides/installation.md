@@ -207,8 +207,12 @@ The CSV export route resolves the actor the same way, from the conn.
 `resolve_access/1` gives one level for the whole session. To decide per action,
 implement `authorize/3`. The dashboard asks it before it renders a control, and
 does not render the control on a deny. It asks again in the event handler and
-shows the reason to the user. The CSV export route asks for `:export` and
-answers `403` with the reason.
+shows the reason to the user. The CSV export route asks for `:query` and
+`:export` on the source and answers `403` with the reason.
+
+The query editor offers, browses and autocompletes only the sources the user
+may `:query`, so the schemas, tables and columns of a denied source are never
+listed.
 
 ```elixir
 defmodule MyAppWeb.LotusResolver do
@@ -230,9 +234,11 @@ end
 | `:query` | the data source name |
 | `:export` | the data source name |
 | `:ai_generate` | the data source name |
-| `:create_query` | `nil` for a new query, the `%Lotus.Storage.Query{}` for an update |
+| `:create_query` | `nil` |
+| `:update_query` | the stored `%Lotus.Storage.Query{}` |
 | `:delete_query` | the `%Lotus.Storage.Query{}` |
-| `:share_query` | the `%Lotus.Dashboards.Dashboard{}` whose public link changes |
+| `:share_query` | the `%Lotus.Storage.Query{}` (no dashboard control asks it yet) |
+| `:share_dashboard` | the `%Lotus.Dashboards.Dashboard{}` whose public link changes |
 | `:view_dashboard` | the `%Lotus.Dashboards.Dashboard{}` |
 | `:manage_dashboard` | `nil` for a new dashboard, else the `%Lotus.Dashboards.Dashboard{}` |
 | `:manage_source` | `nil` |
@@ -253,6 +259,10 @@ your callback.
 The dashboard calls `authorize/3` on every render. Do not do I/O in each call:
 load the policy once and cache it. A public dashboard never calls it, because
 it has no user.
+
+With `strict_actor: true` (see below), a component that asks without the
+dashboard's `:resolver` and `:access` assigns raises instead of falling back
+to full access.
 
 #### Catching an actor that never arrived
 

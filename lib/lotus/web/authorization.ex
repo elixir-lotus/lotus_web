@@ -18,9 +18,11 @@ defmodule Lotus.Web.Authorization do
   | `:query` | the data source name |
   | `:export` | the data source name |
   | `:ai_generate` | the data source name |
-  | `:create_query` | `nil` for a new query, the `%Lotus.Storage.Query{}` for an update |
+  | `:create_query` | `nil` |
+  | `:update_query` | the stored `%Lotus.Storage.Query{}` |
   | `:delete_query` | the `%Lotus.Storage.Query{}` |
-  | `:share_query` | the `%Lotus.Dashboards.Dashboard{}` whose public link changes |
+  | `:share_query` | the `%Lotus.Storage.Query{}` (no dashboard control asks it yet) |
+  | `:share_dashboard` | the `%Lotus.Dashboards.Dashboard{}` whose public link changes |
   | `:view_dashboard` | the `%Lotus.Dashboards.Dashboard{}` |
   | `:manage_dashboard` | `nil` for a new dashboard, else the `%Lotus.Dashboards.Dashboard{}` |
   | `:manage_source` | `nil` |
@@ -38,14 +40,17 @@ defmodule Lotus.Web.Authorization do
 
   require Logger
 
+  alias Lotus.Web.Actor
   alias Lotus.Web.Resolver
 
   @actions [
     :query,
     :export,
     :create_query,
+    :update_query,
     :delete_query,
     :share_query,
+    :share_dashboard,
     :view_dashboard,
     :manage_dashboard,
     :ai_generate,
@@ -90,6 +95,11 @@ defmodule Lotus.Web.Authorization do
 
   A public dashboard has no user, so the host is not asked: the decision
   derives from `:read_only` access.
+
+  Assigns with no `:resolver` or `:access` key mean the dashboard never handed
+  them down, and the decision falls back to full access. Under
+  `config :lotus_web, strict_actor: true` that raises instead, the same as
+  `Lotus.Web.Actor.opts/1` does for a missing actor.
   """
   @spec authorize(map(), Resolver.action(), term()) :: decision()
   def authorize(assigns, action, resource \\ nil)
@@ -98,6 +108,8 @@ defmodule Lotus.Web.Authorization do
     do: default_decision(:read_only, action)
 
   def authorize(%{} = assigns, action, resource) do
+    check_wiring!(assigns)
+
     decide(
       assigns[:resolver],
       assigns[:user],
@@ -168,13 +180,33 @@ defmodule Lotus.Web.Authorization do
   def reason(:query), do: gettext("You don't have permission to run queries")
   def reason(:export), do: gettext("You don't have permission to export query results")
   def reason(:create_query), do: gettext("You don't have permission to save queries")
+  def reason(:update_query), do: gettext("You don't have permission to edit queries")
   def reason(:delete_query), do: gettext("You don't have permission to delete queries")
-  def reason(:share_query), do: gettext("You don't have permission to share")
+  def reason(:share_query), do: gettext("You don't have permission to share queries")
+  def reason(:share_dashboard), do: gettext("You don't have permission to share dashboards")
   def reason(:view_dashboard), do: gettext("You don't have permission to view this dashboard")
   def reason(:manage_dashboard), do: gettext("You don't have permission to modify dashboards")
   def reason(:ai_generate), do: gettext("You don't have permission to use the AI assistant")
   def reason(:manage_source), do: gettext("You don't have permission to manage data sources")
   def reason(:manage_cache), do: gettext("You don't have permission to manage the cache")
+
+  # Assigns without these keys did not come from the dashboard mount, so a
+  # component was never handed them. Falling back to full access hides that
+  # mistake; under strict_actor it fails loudly, as a missing actor does.
+  defp check_wiring!(assigns) do
+    if Actor.strict?() and
+         not (Map.has_key?(assigns, :resolver) and Map.has_key?(assigns, :access)) do
+      raise ArgumentError, """
+      Lotus.Web.Authorization got assigns with no :resolver or :access key.
+
+      A LiveComponent holds only what its parent passes, so this usually means
+      the dashboard assigns were never handed down. Pass them from the page, or
+      call Lotus.Web.Authorization.decide/5 with explicit values.
+      """
+    end
+
+    :ok
+  end
 
   # A host callback that returns something other than a decision is a bug in
   # the host. Refuse, so the mistake fails closed, and say why in the log.

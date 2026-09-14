@@ -24,6 +24,7 @@ defmodule Lotus.Web.Dashboards.CardGridComponent do
           running={MapSet.member?(@running_cards, card.id)}
           selected={card.id == @selected_card_id}
           public={Map.get(assigns, :public, false)}
+          can_manage={Map.get(assigns, :can_manage, true)}
           parent={@parent}
         />
       <% end %>
