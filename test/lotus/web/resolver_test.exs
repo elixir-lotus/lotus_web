@@ -25,6 +25,12 @@ defmodule Lotus.Web.ResolverTest do
     test "resolve_access/1 returns :all by default" do
       assert Resolver.resolve_access(%{}) == :all
     end
+
+    test "authorize/3 allows every action by default, as :all access does" do
+      for action <- Lotus.Web.Authorization.actions() do
+        assert Resolver.authorize(%{}, action, nil) == :allow
+      end
+    end
   end
 
   describe "call_with_fallback/3" do

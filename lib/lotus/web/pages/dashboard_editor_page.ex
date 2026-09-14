@@ -9,6 +9,7 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   alias Lotus.Web.Dashboards.FilterValues
   alias Lotus.Web.Actor
+  alias Lotus.Web.Authorization
   alias Lotus.Web.Dashboards.AddCardModal
   alias Lotus.Web.Dashboards.CardGridComponent
   alias Lotus.Web.Dashboards.CardSettingsDrawer
@@ -19,6 +20,14 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
+    resource = dashboard_resource(assigns.page, assigns.dashboard)
+
+    assigns =
+      assign(assigns,
+        can_manage: Authorization.allowed?(assigns, :manage_dashboard, resource),
+        can_share: resource != nil and Authorization.allowed?(assigns, :share_query, resource)
+      )
+
     ~H"""
     <div id="dashboard-editor" class="flex flex-col h-full overflow-hidden">
       <div class="mx-auto w-full px-0 sm:px-0 lg:px-6 py-0 sm:py-6 h-full flex flex-col">
@@ -30,14 +39,16 @@ defmodule Lotus.Web.DashboardEditorPage do
             mode={@page.mode}
             running={MapSet.size(@running_cards) > 0}
             parent={@myself}
+            can_manage={@can_manage}
           />
 
-          <%!-- Filter Bar --%>
+          <%!-- Filter Bar. `public` hides the controls that edit filters. --%>
           <.live_component
             module={FilterBarComponent}
             id="filter-bar"
             filters={@dashboard.filters}
             filter_values={@filter_values}
+            public={not @can_manage}
             parent={@myself}
           />
 
@@ -60,6 +71,8 @@ defmodule Lotus.Web.DashboardEditorPage do
               visible={@settings_visible}
               dashboard={@dashboard}
               uri={@current_uri}
+              can_share={@can_share}
+              can_manage={@can_manage}
               parent={@myself}
             />
 
@@ -94,6 +107,8 @@ defmodule Lotus.Web.DashboardEditorPage do
 
               <%!-- Add Card Button --%>
               <button
+                :if={@can_manage}
+                id="add-card-btn"
                 phx-click="show_add_card_modal"
                 phx-target={@myself}
                 class="mt-4 w-full border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-pink-500 hover:bg-pink-50/50 dark:hover:bg-pink-900/20 transition-all group"
@@ -191,7 +206,7 @@ defmodule Lotus.Web.DashboardEditorPage do
           <Icons.cog_6_tooth class="h-5 w-5" />
         </button>
 
-        <%= if @mode == :edit do %>
+        <%= if @mode == :edit and @can_manage do %>
           <.button
             type="button"
             variant="light"
@@ -203,6 +218,7 @@ defmodule Lotus.Web.DashboardEditorPage do
           </.button>
         <% end %>
         <.button
+          :if={@can_manage}
           type="button"
           phx-click="show_save_modal"
           phx-target={@parent}
@@ -450,25 +466,24 @@ defmodule Lotus.Web.DashboardEditorPage do
 
     case socket.assigns.page do
       %{mode: :new} ->
-        dashboard = new_dashboard()
-        {:noreply, assign_dashboard(socket, dashboard)}
+        case Authorization.authorize(socket.assigns, :manage_dashboard) do
+          :allow -> {:noreply, assign_dashboard(socket, new_dashboard())}
+          {:deny, reason} -> {:noreply, leave(socket, reason)}
+        end
 
       %{mode: :edit, id: id} ->
-        case load_dashboard(id) do
-          nil ->
-            {:noreply,
-             socket
-             |> put_flash(:error, gettext("Dashboard not found"))
-             |> push_navigate(to: lotus_path("", %{tab: "dashboards"}))}
+        with %{} = dashboard <- load_dashboard(id),
+             :allow <- Authorization.authorize(socket.assigns, :view_dashboard, dashboard) do
+          filter_values = extract_filter_values(params, dashboard.filters)
 
-          dashboard ->
-            filter_values = extract_filter_values(params, dashboard.filters)
-
-            {:noreply,
-             socket
-             |> assign_dashboard(dashboard)
-             |> assign(filter_values: filter_values)
-             |> run_all_cards()}
+          {:noreply,
+           socket
+           |> assign_dashboard(dashboard)
+           |> assign(filter_values: filter_values)
+           |> run_all_cards()}
+        else
+          nil -> {:noreply, leave(socket, gettext("Dashboard not found"))}
+          {:deny, reason} -> {:noreply, leave(socket, reason)}
         end
     end
   end
@@ -487,15 +502,20 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("confirm_add_card", %{"type" => type} = params, socket) do
-    case parse_card_type(type) do
+    resource = dashboard_resource(socket.assigns.page, socket.assigns.dashboard)
+
+    with :allow <- Authorization.authorize(socket.assigns, :manage_dashboard, resource),
+         card_type when not is_nil(card_type) <- parse_card_type(type) do
+      query_id = Map.get(params, "query-id")
+      query_id = if query_id && query_id != "", do: String.to_integer(query_id), else: nil
+
+      socket = add_card(socket, card_type, query_id)
+      {:noreply, assign(socket, add_card_modal_open: false)}
+    else
+      {:deny, reason} ->
+        {:noreply, socket |> deny(reason) |> assign(add_card_modal_open: false)}
+
       nil ->
-        {:noreply, assign(socket, add_card_modal_open: false)}
-
-      card_type ->
-        query_id = Map.get(params, "query-id")
-        query_id = if query_id && query_id != "", do: String.to_integer(query_id), else: nil
-
-        socket = add_card(socket, card_type, query_id)
         {:noreply, assign(socket, add_card_modal_open: false)}
     end
   end
@@ -789,29 +809,17 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("enable_sharing", _params, socket) do
-    if socket.assigns[:access] == :read_only do
-      send(
-        self(),
-        {:put_flash, [:error, gettext("You don't have permission to modify dashboards")]}
-      )
-
-      {:noreply, socket}
-    else
-      do_enable_sharing(socket)
+    case Authorization.authorize(socket.assigns, :share_query, socket.assigns.dashboard) do
+      :allow -> do_enable_sharing(socket)
+      {:deny, reason} -> {:noreply, deny(socket, reason)}
     end
   end
 
   @impl Phoenix.LiveComponent
   def handle_event("disable_sharing", _params, socket) do
-    if socket.assigns[:access] == :read_only do
-      send(
-        self(),
-        {:put_flash, [:error, gettext("You don't have permission to modify dashboards")]}
-      )
-
-      {:noreply, socket}
-    else
-      do_disable_sharing(socket)
+    case Authorization.authorize(socket.assigns, :share_query, socket.assigns.dashboard) do
+      :allow -> do_disable_sharing(socket)
+      {:deny, reason} -> {:noreply, deny(socket, reason)}
     end
   end
 
@@ -836,15 +844,11 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("save_dashboard", %{"dashboard" => params}, socket) do
-    if socket.assigns[:access] == :read_only do
-      send(
-        self(),
-        {:put_flash, [:error, gettext("You don't have permission to save dashboards")]}
-      )
+    resource = dashboard_resource(socket.assigns.page, socket.assigns.dashboard)
 
-      {:noreply, assign(socket, save_modal_open: false)}
-    else
-      do_save_dashboard(socket, params)
+    case Authorization.authorize(socket.assigns, :manage_dashboard, resource) do
+      :allow -> do_save_dashboard(socket, params)
+      {:deny, reason} -> {:noreply, socket |> deny(reason) |> assign(save_modal_open: false)}
     end
   end
 
@@ -860,15 +864,9 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("delete_dashboard", _params, socket) do
-    if socket.assigns[:access] == :read_only do
-      send(
-        self(),
-        {:put_flash, [:error, gettext("You don't have permission to delete dashboards")]}
-      )
-
-      {:noreply, assign(socket, delete_modal_open: false)}
-    else
-      do_delete_dashboard(socket)
+    case Authorization.authorize(socket.assigns, :manage_dashboard, socket.assigns.dashboard) do
+      :allow -> do_delete_dashboard(socket)
+      {:deny, reason} -> {:noreply, socket |> deny(reason) |> assign(delete_modal_open: false)}
     end
   end
 
@@ -1052,8 +1050,10 @@ defmodule Lotus.Web.DashboardEditorPage do
     attrs = %{
       "name" => params["name"],
       "description" => params["description"],
-      "auto_refresh_seconds" => dashboard.auto_refresh_seconds,
-      "public_token" => dashboard.public_token
+      # No "public_token": only the sharing handlers, which ask for
+      # :share_query, write it. A save from a page opened before the link was
+      # turned off must not turn it back on.
+      "auto_refresh_seconds" => dashboard.auto_refresh_seconds
     }
 
     result = perform_save_dashboard(socket.assigns.page, attrs, dashboard)
@@ -1127,7 +1127,24 @@ defmodule Lotus.Web.DashboardEditorPage do
     card && card.card_type == :query && card.query
   end
 
+  # Every card run goes through here: the first load, refresh, auto-refresh and
+  # a filter change. Viewing a dashboard does not grant running its queries.
   defp execute_card_query(socket, card_id, card) do
+    source = card.query.data_source || elem(Lotus.default_data_source(), 0)
+
+    case Authorization.authorize(socket.assigns, :query, source) do
+      :allow ->
+        start_card_query(socket, card_id, card)
+
+      {:deny, reason} ->
+        assign(socket,
+          card_errors: Map.put(socket.assigns.card_errors, card_id, reason),
+          card_results: Map.delete(socket.assigns.card_results, card_id)
+        )
+    end
+  end
+
+  defp start_card_query(socket, card_id, card) do
     query = card.query
     vars = build_card_variables(socket, card)
     running_cards = MapSet.put(socket.assigns.running_cards, card_id)
@@ -1187,6 +1204,22 @@ defmodule Lotus.Web.DashboardEditorPage do
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now()
     }
+  end
+
+  defp leave(socket, message) do
+    socket
+    |> put_flash(:error, message)
+    |> push_navigate(to: lotus_path("", %{tab: "dashboards"}))
+  end
+
+  # A dashboard that is not saved yet has no resource to authorize against.
+  defp dashboard_resource(%{mode: :edit}, dashboard), do: dashboard
+  defp dashboard_resource(_page, _dashboard), do: nil
+
+  # The flash belongs to the parent LiveView, so a component asks it to set one.
+  defp deny(socket, reason) do
+    send(self(), {:put_flash, [:error, reason]})
+    socket
   end
 
   defp load_dashboard(id) do

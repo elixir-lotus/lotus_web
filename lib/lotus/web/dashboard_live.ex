@@ -1,7 +1,7 @@
 defmodule Lotus.Web.DashboardLive do
   use Lotus.Web, :live_view
 
-  alias Lotus.Web.{Actor, Assets}
+  alias Lotus.Web.{Actor, Assets, Authorization}
   alias Lotus.Web.{DashboardEditorPage, PublicDashboardPage, QueriesPage, QueryEditorPage}
 
   @impl Phoenix.LiveView
@@ -37,9 +37,16 @@ defmodule Lotus.Web.DashboardLive do
       |> assign(:actor, actor)
       |> assign(:features, features)
       |> assign(:public_view, page.name == :public_dashboard)
+      |> assign_permissions()
       |> page.comp.handle_mount()
 
     {:ok, socket}
+  end
+
+  # The actions without a resource are decided once here, so templates can ask
+  # on every render without calling the host each time.
+  defp assign_permissions(socket) do
+    assign(socket, :permissions, Authorization.permissions(socket.assigns))
   end
 
   defp mount_defaults(%{name: :public_dashboard}, _session),

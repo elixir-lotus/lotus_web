@@ -200,7 +200,7 @@ lotus_dashboard "/lotus",
 
 ### Access Control and the Actor
 
-A `Lotus.Web.Resolver` decides who the dashboard is for and what they may do. All four callbacks are optional:
+A `Lotus.Web.Resolver` decides who the dashboard is for and what they may do. All five callbacks are optional:
 
 ```elixir
 defmodule MyApp.LotusResolver do
@@ -222,8 +222,16 @@ defmodule MyApp.LotusResolver do
   @impl true
   def resolve_scope(%{tenant_id: tenant_id}), do: %{tenant_id: tenant_id}
   def resolve_scope(nil), do: nil
+
+  # Decides per action. Without it, the decision derives from resolve_access/1
+  @impl true
+  def authorize(%{admin?: true}, _action, _resource), do: :allow
+  def authorize(_user, action, _resource) when action in [:query, :view_dashboard], do: :allow
+  def authorize(_user, action, _resource), do: {:deny, "Not allowed: #{action}"}
 end
 ```
+
+`authorize/3` is asked before a control renders and again when the user acts, so a control the user may not use is not shown. See [Fine-grained permissions](guides/installation.md#fine-grained-permissions) for the actions and the default.
 
 `resolve_context/1` and `resolve_scope/1` ride along on every core call the UI makes — running a query, streaming a CSV export, listing schemas, describing a table, and every AI call — so an access-control plug sees the actual user instead of `nil`. Scoped results are cached per scope, so two scopes never read each other's rows.
 

@@ -1,5 +1,57 @@
 # Changelog
 
+## [Unreleased]
+
+A resolver can now decide per action and per resource, not only once per
+session. A resolver that does not implement the new callback keeps the
+behaviour it had.
+
+### Added
+
+- **`c:Lotus.Web.Resolver.authorize/3` decides what a user may do.** The
+  dashboard asks `authorize(user, action, resource)` and gets `:allow` or
+  `{:deny, reason}`. The actions are `:query`, `:export`, `:create_query`,
+  `:delete_query`, `:share_query`, `:view_dashboard`, `:manage_dashboard`,
+  `:ai_generate`, `:manage_source` and `:manage_cache`. Without the callback,
+  the decision derives from `resolve_access/1`: `:all` allows every action,
+  and `:read_only` allows `:query`, `:export` and `:view_dashboard`.
+  `Lotus.Web.Authorization` is the one place the dashboard asks, and lists the
+  resource each action takes.
+
+- **The dashboard hides the controls a user may not use.** Save and delete on
+  queries and dashboards, CSV export, the AI assistant and its editor context
+  menu, the public link, Add Card, the filter edit controls and the "New" menu
+  render only when the resolver allows them. The handlers ask again, so a
+  crafted event is refused too.
+
+### Changed
+
+- **The CSV export route asks for `:export` and answers `403` on a deny.**
+  Before, the route checked only the signed token. A `:read_only` user can
+  still export; a user whose access is `:forbidden` now cannot.
+
+- **Running a query, the AI assistant, the new dashboard page and opening a
+  dashboard ask the resolver.** A denied run shows the reason in place of the
+  results. A denied dashboard sends the user back to the dashboard list.
+
+- **Dashboard cards and dropdown option queries ask for `:query` on their
+  source.** Viewing a dashboard no longer runs a card whose source the user may
+  not query; the card shows the reason instead. Adding a card asks for
+  `:manage_dashboard`.
+
+- **Saving a dashboard no longer writes its public link.** Only enabling and
+  disabling sharing change it, so a save from a page opened before the link
+  was turned off does not turn it back on.
+
+- **A refused dashboard save or delete says "You don't have permission to
+  modify dashboards".** The two messages were different before.
+
+### Fixed
+
+- **The query formatter's controls and error message are in French.**
+  "Pretty-print query", its JSON sources hint and "Could not format query" had
+  no French translation, so a French dashboard showed them in English.
+
 ## [1.1.0] - 2026-09-12
 
 Two actor defects, and the guard rails that keep them from coming back. A host

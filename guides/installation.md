@@ -202,6 +202,58 @@ middleware payloads and the same cache keys as before.
 
 The CSV export route resolves the actor the same way, from the conn.
 
+#### Fine-grained permissions
+
+`resolve_access/1` gives one level for the whole session. To decide per action,
+implement `authorize/3`. The dashboard asks it before it renders a control, and
+does not render the control on a deny. It asks again in the event handler and
+shows the reason to the user. The CSV export route asks for `:export` and
+answers `403` with the reason.
+
+```elixir
+defmodule MyAppWeb.LotusResolver do
+  @behaviour Lotus.Web.Resolver
+
+  def authorize(%{role: :admin}, _action, _resource), do: :allow
+
+  def authorize(%{role: :analyst}, action, _resource)
+      when action in [:query, :export, :view_dashboard, :create_query],
+      do: :allow
+
+  def authorize(_user, action, _resource),
+    do: {:deny, "Your role does not allow #{action}"}
+end
+```
+
+| Action | Resource |
+|---|---|
+| `:query` | the data source name |
+| `:export` | the data source name |
+| `:ai_generate` | the data source name |
+| `:create_query` | `nil` for a new query, the `%Lotus.Storage.Query{}` for an update |
+| `:delete_query` | the `%Lotus.Storage.Query{}` |
+| `:share_query` | the `%Lotus.Dashboards.Dashboard{}` whose public link changes |
+| `:view_dashboard` | the `%Lotus.Dashboards.Dashboard{}` |
+| `:manage_dashboard` | `nil` for a new dashboard, else the `%Lotus.Dashboards.Dashboard{}` |
+| `:manage_source` | `nil` |
+| `:manage_cache` | `nil` |
+
+Without `authorize/3`, the decision derives from `resolve_access/1`:
+
+| `resolve_access/1` | Decision |
+|---|---|
+| `:all` | allow every action |
+| `:read_only` | allow `:query`, `:export` and `:view_dashboard`; deny the rest |
+| `:forbidden` | deny every action (the dashboard redirects before it asks) |
+
+To keep that default for some actions, call
+`Lotus.Web.Authorization.default_decision(resolve_access(user), action)` from
+your callback.
+
+The dashboard calls `authorize/3` on every render. Do not do I/O in each call:
+load the policy once and cache it. A public dashboard never calls it, because
+it has no user.
+
 #### Catching an actor that never arrived
 
 A dashboard component holds only the assigns its parent passes it, so a
