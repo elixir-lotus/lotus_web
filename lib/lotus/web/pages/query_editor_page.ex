@@ -1282,12 +1282,12 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   # The editor offers, browses and autocompletes only the sources the user may
-  # query, so a denied source's schemas, tables and columns are never listed.
+  # browse, so a denied source's schemas, tables and columns are never listed.
   defp assign_data_sources(socket) do
     data_source_names =
       Enum.filter(
         Lotus.list_data_source_names(),
-        &Authorization.allowed?(socket.assigns, :query, &1)
+        &Authorization.discoverable?(socket.assigns, &1)
       )
 
     {default_source, _module} = Lotus.default_data_source()
@@ -1410,7 +1410,7 @@ defmodule Lotus.Web.QueryEditorPage do
 
   defp maybe_update_editor_schema(socket, data_source) do
     if data_source && data_source != "" &&
-         Authorization.allowed?(socket.assigns, :query, data_source) do
+         Authorization.discoverable?(socket.assigns, data_source) do
       dialect = dialect_for_repo(data_source)
       source_type = Lotus.Source.source_type(data_source)
       search_path = socket.assigns.query && socket.assigns.query.search_path
@@ -1645,7 +1645,8 @@ defmodule Lotus.Web.QueryEditorPage do
   # The query and its chart settings save together: a refused or failed write of
   # either leaves neither saved.
   defp perform_save_operation(socket, query_attrs) do
-    with {:ok, stored} <- authorize_save(socket) do
+    with {:ok, stored} <- authorize_save(socket),
+         :allow <- authorize_target_source(socket, stored, query_attrs) do
       opts = Actor.opts(socket.assigns)
       config = socket.assigns.visualization_config
 
@@ -1675,6 +1676,17 @@ defmodule Lotus.Web.QueryEditorPage do
 
   defp authorize_save(socket) do
     with :allow <- Authorization.authorize(socket.assigns, :create_query), do: {:ok, nil}
+  end
+
+  # A save can put the query on another source. Keeping its stored source needs
+  # nothing more. Any other source, and the source of a new query, needs :query
+  # there, the same as running the query does.
+  defp authorize_target_source(socket, stored, query_attrs) do
+    target = source_or_default(query_attrs["data_source"], socket.assigns)
+
+    if stored && source_or_default(stored.data_source, socket.assigns) == target,
+      do: :allow,
+      else: Authorization.authorize(socket.assigns, :query, target)
   end
 
   defp write_query(nil, attrs, opts), do: Lotus.create_query(attrs, opts)

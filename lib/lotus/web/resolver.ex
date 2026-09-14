@@ -18,6 +18,7 @@ defmodule Lotus.Web.Resolver do
   @type action ::
           :query
           | :export
+          | :discover
           | :create_query
           | :update_query
           | :delete_query
@@ -95,10 +96,11 @@ defmodule Lotus.Web.Resolver do
   the answer is a deny. It asks again in the event handler and shows the
   reason of a deny to the user. The CSV export route asks for `:query` and
   `:export` on the source and answers `403` on a deny. The query editor offers,
-  browses and autocompletes only the sources the user may `:query`.
+  browses and autocompletes only the sources the user may `:discover` or
+  `:query`.
 
   `resource` is `nil` for an action that takes no resource, a data source
-  name for `:query`, `:export` and `:ai_generate`, and a query or dashboard
+  name for `:query`, `:export`, `:discover` and `:ai_generate`, and a query or dashboard
   struct for the content actions. `Lotus.Web.Authorization` lists each one.
 
   Without this callback the decision derives from `c:resolve_access/1`, see

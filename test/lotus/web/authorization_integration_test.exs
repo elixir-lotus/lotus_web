@@ -219,6 +219,57 @@ defmodule Lotus.Web.AuthorizationIntegrationTest do
     end
   end
 
+  # Mounted with Lotus.Web.Test.EditorResolver, which allows everything except
+  # running queries on "reporting", where it allows only :discover.
+  describe "a source the user may browse but not query" do
+    test "the editor lists it" do
+      {:ok, live, _html} = live(build_conn(), "/editor/queries/new")
+
+      assert has_element?(live, ~s(li[role="option"][data-value="public"]))
+      assert has_element?(live, ~s(li[role="option"][data-value="reporting"]))
+    end
+
+    test "a save that moves a query to it is refused" do
+      query = query_fixture(%{name: "Moved", statement: "SELECT 1", data_source: "public"})
+
+      {:ok, live, _html} = live(build_conn(), "/editor/queries/#{query.id}")
+      render_async(live)
+
+      live
+      |> element(~s(form[phx-submit="run_query"]))
+      |> render_change(%{"query" => %{"data_source" => "reporting", "statement" => "SELECT 1"}})
+
+      live
+      |> with_target("#query-editor-page")
+      |> render_submit("save_query", %{"query" => %{"name" => "Moved"}})
+
+      assert Lotus.get_query(query.id).data_source == "public"
+      assert render(live) =~ "Editor: query"
+    end
+
+    test "a save that keeps the stored source needs no :query there" do
+      query =
+        query_fixture(%{name: "Stays", statement: "SELECT 1 AS n", data_source: "reporting"})
+
+      {:ok, live, _html} = live(build_conn(), "/editor/queries/#{query.id}")
+      render_async(live)
+
+      live
+      |> with_target("#query-editor-page")
+      |> render_submit("save_query", %{"query" => %{"name" => "Renamed"}})
+
+      assert Lotus.get_query(query.id).name == "Renamed"
+    end
+
+    test "its dropdown options do not run" do
+      query = options_query("reporting")
+
+      {:ok, live, _html} = live(build_conn(), "/editor/queries/#{query.id}")
+
+      refute render_async(live) =~ "hidden-option"
+    end
+  end
+
   # Mounted with Lotus.Web.Test.ReadOnlyResolver, which implements only
   # resolve_access/1 and returns :read_only.
   describe "a resolver that returns :read_only and has no authorize/3" do
@@ -257,6 +308,14 @@ defmodule Lotus.Web.AuthorizationIntegrationTest do
   end
 
   describe "no resolver" do
+    test "dropdown options run on a source the user may query" do
+      query = options_query("reporting")
+
+      {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{query.id}")
+
+      assert render_async(live) =~ "hidden-option"
+    end
+
     test "saving a query that was deleted meanwhile sends the user back" do
       query = users_query()
 
@@ -315,6 +374,24 @@ defmodule Lotus.Web.AuthorizationIntegrationTest do
       assert has_element?(live, ~s(button[phx-click="show_save_modal"]))
       assert has_element?(live, ~s(button[phx-click="show_delete_modal"]))
     end
+  end
+
+  # The options query builds its value from two strings, so the value appears in
+  # the page only when the query ran, not from the rendered SQL text.
+  defp options_query(source) do
+    query_fixture(%{
+      name: "Options",
+      statement: "SELECT {{v}} AS v",
+      data_source: source,
+      variables: [
+        %{
+          name: "v",
+          type: "text",
+          widget: "select",
+          options_query: "SELECT 'hidden' || '-option' AS v"
+        }
+      ]
+    })
   end
 
   defp users_query do

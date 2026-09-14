@@ -217,8 +217,10 @@ shows the reason to the user. The CSV export route asks for `:query` and
 `:export` on the source and answers `403` with the reason.
 
 The query editor offers, browses and autocompletes only the sources the user
-may `:query`, so the schemas, tables and columns of a denied source are never
-listed.
+may `:discover` or `:query`, so the schemas, tables and columns of a denied
+source are never listed. Running a query and its dropdown options needs
+`:query`. A save that puts a query on a source other than its stored one, or
+saves a new query, needs `:query` on that source too.
 
 ```elixir
 defmodule MyAppWeb.LotusResolver do
@@ -240,6 +242,7 @@ end
 | `:query` | the data source name |
 | `:export` | the data source name |
 | `:ai_generate` | the data source name |
+| `:discover` | the data source name |
 | `:create_query` | `nil` |
 | `:update_query` | the stored `%Lotus.Storage.Query{}` |
 | `:delete_query` | the `%Lotus.Storage.Query{}` |
@@ -255,7 +258,7 @@ Without `authorize/3`, the decision derives from `resolve_access/1`:
 | `resolve_access/1` | Decision |
 |---|---|
 | `:all` | allow every action |
-| `:read_only` | allow `:query`, `:export` and `:view_dashboard`; deny the rest |
+| `:read_only` | allow `:query`, `:export`, `:discover` and `:view_dashboard`; deny the rest |
 | `:forbidden` | deny every action (the dashboard redirects before it asks) |
 
 To keep that default for some actions, call

@@ -95,10 +95,16 @@ defmodule Lotus.Web.ContentChangeTest do
 
       {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{query.id}")
 
+      # The saved query runs on load. Its result renders the page again from the
+      # LiveView's assigns, which would drop a config set before it arrives.
+      render_async(live)
+
       Phoenix.LiveView.send_update(live.pid, Lotus.Web.QueryEditorPage,
         id: "page",
         visualization_config: %{"chart_type" => "bar", "x_field" => "a", "y_field" => "b"}
       )
+
+      render(live)
 
       live
       |> with_target("#query-editor-page")
