@@ -178,7 +178,7 @@ msgstr "Exporter les résultats de la requête en CSV"
 msgid "Failed to copy to clipboard!"
 msgstr "Échec de la copie dans le presse-papiers !"
 
-#: lib/lotus/web/pages/query_editor_page.ex:2068
+#: lib/lotus/web/pages/query_editor_page.ex:2080
 #, elixir-autogen, elixir-format
 msgid "Failed to delete query"
 msgstr "Impossible de supprimer la requête"
@@ -313,7 +313,7 @@ msgstr "Requêtes"
 msgid "Query copied to clipboard!"
 msgstr "Requête copiée dans le presse-papiers !"
 
-#: lib/lotus/web/pages/query_editor_page.ex:2050
+#: lib/lotus/web/pages/query_editor_page.ex:2062
 #, elixir-autogen, elixir-format
 msgid "Query deleted successfully"
 msgstr "Requête supprimée avec succès"
@@ -326,14 +326,14 @@ msgid "Query execution failed"
 msgstr "Échec de l'exécution de la requête"
 
 #: lib/lotus/web/pages/dashboard_editor_page.ex:804
-#: lib/lotus/web/pages/query_editor_page.ex:1927
+#: lib/lotus/web/pages/query_editor_page.ex:1939
 #, elixir-autogen, elixir-format
 msgid "Query execution failed: %{reason}"
 msgstr "Échec de l'exécution de la requête : %{reason}"
 
 #: lib/lotus/web/pages/query_editor_page.ex:321
 #: lib/lotus/web/pages/query_editor_page.ex:488
-#: lib/lotus/web/pages/query_editor_page.ex:2042
+#: lib/lotus/web/pages/query_editor_page.ex:2054
 #, elixir-autogen, elixir-format
 msgid "Query not found"
 msgstr "Requête introuvable"
@@ -539,12 +539,12 @@ msgstr "Type de widget"
 msgid "Widgets"
 msgstr "Widgets"
 
-#: lib/lotus/web/authorization.ex:184
+#: lib/lotus/web/authorization.ex:198
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to delete queries"
 msgstr "Vous n'avez pas l'autorisation de supprimer des requêtes"
 
-#: lib/lotus/web/authorization.ex:182
+#: lib/lotus/web/authorization.ex:196
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to save queries"
 msgstr "Vous n'avez pas l'autorisation d'enregistrer des requêtes"
@@ -1371,7 +1371,7 @@ msgstr "Partage public activé"
 msgid "Save the dashboard first to enable public sharing."
 msgstr "Enregistrez d'abord le tableau de bord pour activer le partage public."
 
-#: lib/lotus/web/authorization.ex:188
+#: lib/lotus/web/authorization.ex:202
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to modify dashboards"
 msgstr "Vous n'avez pas l'autorisation de modifier des tableaux de bord"
@@ -1388,7 +1388,7 @@ msgstr "Assistant IA"
 msgid "AI features are not configured"
 msgstr "Les fonctionnalités IA ne sont pas configurées"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1725
+#: lib/lotus/web/pages/query_editor_page.ex:1737
 #, elixir-autogen, elixir-format
 msgid "AI features are not configured. Please add AI configuration."
 msgstr "Les fonctionnalités IA ne sont pas configurées. Veuillez ajouter la configuration IA."
@@ -1415,7 +1415,7 @@ msgstr "Échec de la génération de la requête : %{error}"
 msgid "Generate query with AI"
 msgstr "Générer la requête avec l'IA"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1737
+#: lib/lotus/web/pages/query_editor_page.ex:1749
 #, elixir-autogen, elixir-format
 msgid "Please select a data source first"
 msgstr "Veuillez d'abord sélectionner une source de données"
@@ -1984,7 +1984,7 @@ msgstr "Échec de l'optimisation : %{error}"
 msgid "Optimize query"
 msgstr "Optimiser la requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1775
+#: lib/lotus/web/pages/query_editor_page.ex:1787
 #, elixir-autogen, elixir-format
 msgid "Optimize this query"
 msgstr "Optimiser cette requête"
@@ -2019,7 +2019,7 @@ msgstr "Analyser votre requête et suggérer des améliorations de performance"
 msgid "Explain query"
 msgstr "Expliquer la requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1805
+#: lib/lotus/web/pages/query_editor_page.ex:1817
 #, elixir-autogen, elixir-format
 msgid "Explain this query"
 msgstr "Expliquer cette requête"
@@ -2075,7 +2075,7 @@ msgstr "L'IA réfléchit..."
 msgid "Clear all sorts"
 msgstr "Effacer tous les tris"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1837
+#: lib/lotus/web/pages/query_editor_page.ex:1849
 #, elixir-autogen, elixir-format
 msgid "Explain this fragment: `%{fragment}`"
 msgstr "Expliquer ce fragment : `%{fragment}`"
@@ -2137,13 +2137,13 @@ msgstr "Veuillez d'abord tester votre requête et vérifier qu'elle renvoie des 
 msgid "Query cannot be empty"
 msgstr "La requête ne peut pas être vide"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1799
-#: lib/lotus/web/pages/query_editor_page.ex:1829
+#: lib/lotus/web/pages/query_editor_page.ex:1811
+#: lib/lotus/web/pages/query_editor_page.ex:1841
 #, elixir-autogen, elixir-format
 msgid "Write a query first before explaining"
 msgstr "Écrivez d'abord une requête avant de l'expliquer"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1769
+#: lib/lotus/web/pages/query_editor_page.ex:1781
 #, elixir-autogen, elixir-format
 msgid "Write a query first before optimizing"
 msgstr "Écrivez d'abord une requête avant d'optimiser"
@@ -2168,47 +2168,47 @@ msgstr "Mettre en forme la requête"
 msgid "Pretty-print the query (JSON sources)"
 msgstr "Mettre en forme la requête (sources JSON)"
 
-#: lib/lotus/web/authorization.ex:181
+#: lib/lotus/web/authorization.ex:194
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to export query results"
 msgstr "Vous n'avez pas l'autorisation d'exporter les résultats de requêtes"
 
-#: lib/lotus/web/authorization.ex:190
+#: lib/lotus/web/authorization.ex:204
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to manage data sources"
 msgstr "Vous n'avez pas l'autorisation de gérer les sources de données"
 
-#: lib/lotus/web/authorization.ex:191
+#: lib/lotus/web/authorization.ex:205
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to manage the cache"
 msgstr "Vous n'avez pas l'autorisation de gérer le cache"
 
-#: lib/lotus/web/authorization.ex:180
+#: lib/lotus/web/authorization.ex:193
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to run queries"
 msgstr "Vous n'avez pas l'autorisation d'exécuter des requêtes"
 
-#: lib/lotus/web/authorization.ex:189
+#: lib/lotus/web/authorization.ex:203
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to use the AI assistant"
 msgstr "Vous n'avez pas l'autorisation d'utiliser l'assistant IA"
 
-#: lib/lotus/web/authorization.ex:187
+#: lib/lotus/web/authorization.ex:201
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to view this dashboard"
 msgstr "Vous n'avez pas l'autorisation d'afficher ce tableau de bord"
 
-#: lib/lotus/web/authorization.ex:183
+#: lib/lotus/web/authorization.ex:197
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to edit queries"
 msgstr "Vous n'avez pas l'autorisation de modifier des requêtes"
 
-#: lib/lotus/web/authorization.ex:186
+#: lib/lotus/web/authorization.ex:200
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to share dashboards"
 msgstr "Vous n'avez pas l'autorisation de partager des tableaux de bord"
 
-#: lib/lotus/web/authorization.ex:185
+#: lib/lotus/web/authorization.ex:199
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to share queries"
 msgstr "Vous n'avez pas l'autorisation de partager des requêtes"
@@ -2222,3 +2222,8 @@ msgstr "La modification a été refusée"
 #, elixir-autogen, elixir-format
 msgid "The change was refused: %{reason}"
 msgstr "La modification a été refusée : %{reason}"
+
+#: lib/lotus/web/authorization.ex:195
+#, elixir-autogen, elixir-format
+msgid "You don't have permission to browse this data source"
+msgstr "Vous n'avez pas l'autorisation de parcourir cette source de données"

@@ -10,12 +10,12 @@ behaviour it had.
 
 - **`c:Lotus.Web.Resolver.authorize/3` decides what a user may do.** The
   dashboard asks `authorize(user, action, resource)` and gets `:allow` or
-  `{:deny, reason}`. The actions are `:query`, `:export`, `:create_query`,
-  `:update_query`, `:delete_query`, `:share_query`, `:share_dashboard`,
-  `:view_dashboard`, `:manage_dashboard`, `:ai_generate`, `:manage_source` and
-  `:manage_cache`. Without the callback,
-  the decision derives from `resolve_access/1`: `:all` allows every action,
-  and `:read_only` allows `:query`, `:export` and `:view_dashboard`.
+  `{:deny, reason}`. The actions are `:query`, `:export`, `:discover`,
+  `:create_query`, `:update_query`, `:delete_query`, `:share_query`,
+  `:share_dashboard`, `:view_dashboard`, `:manage_dashboard`, `:ai_generate`,
+  `:manage_source` and `:manage_cache`. Without the callback, the decision
+  derives from `resolve_access/1`: `:all` allows every action, and
+  `:read_only` allows `:query`, `:export`, `:discover` and `:view_dashboard`.
   `Lotus.Web.Authorization` is the one place the dashboard asks, and lists the
   resource each action takes.
 
@@ -32,9 +32,14 @@ behaviour it had.
   and the token carries the statement it runs. A `:read_only` user can still
   export; a user whose access is `:forbidden` now cannot.
 
-- **The query editor lists only the sources the user may query.** The source
-  selector, the schema explorer and the editor autocomplete no longer show the
-  schemas, tables and columns of a denied source.
+- **The query editor lists only the sources the user may browse.** A source
+  appears in the source selector, the schema explorer and the editor
+  autocomplete when the user may `:discover` or `:query` it. Running a query
+  and its dropdown options still needs `:query`.
+
+- **Saving a query on another source asks for `:query` there.** A save that
+  moves a query to a source other than its stored one, or saves a new query,
+  is refused when the user may not query that source.
 
 - **Card, filter and auto-refresh edits ask for `:manage_dashboard`.** A user
   who may not manage a dashboard no longer sees the card settings gear or the

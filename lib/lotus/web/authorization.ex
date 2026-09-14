@@ -18,6 +18,7 @@ defmodule Lotus.Web.Authorization do
   | `:query` | the data source name |
   | `:export` | the data source name |
   | `:ai_generate` | the data source name |
+  | `:discover` | the data source name |
   | `:create_query` | `nil` |
   | `:update_query` | the stored `%Lotus.Storage.Query{}` |
   | `:delete_query` | the `%Lotus.Storage.Query{}` |
@@ -46,6 +47,7 @@ defmodule Lotus.Web.Authorization do
   @actions [
     :query,
     :export,
+    :discover,
     :create_query,
     :update_query,
     :delete_query,
@@ -58,7 +60,7 @@ defmodule Lotus.Web.Authorization do
     :manage_cache
   ]
 
-  @read_only_actions [:query, :export, :view_dashboard]
+  @read_only_actions [:query, :export, :discover, :view_dashboard]
 
   @resourceless_actions [:create_query, :manage_dashboard, :manage_source, :manage_cache]
 
@@ -151,7 +153,7 @@ defmodule Lotus.Web.Authorization do
   | Access | Decision |
   |---|---|
   | `:all` | `:allow` for every action |
-  | `:read_only` | `:allow` for `:query`, `:export` and `:view_dashboard`, `{:deny, reason}` for the rest |
+  | `:read_only` | `:allow` for `:query`, `:export`, `:discover` and `:view_dashboard`, `{:deny, reason}` for the rest |
   | `:forbidden`, `{:forbidden, path}` | `{:deny, reason}` for every action |
 
   A host resolver can call it to keep the default for some actions.
@@ -162,6 +164,17 @@ defmodule Lotus.Web.Authorization do
   def default_decision(:read_only, action) when action in @read_only_actions, do: :allow
 
   def default_decision(_access, action) when action in @actions, do: {:deny, reason(action)}
+
+  @doc """
+  Return `true` when the user in `assigns` may browse `source`: see it in the
+  source list, and see its schemas, tables and columns.
+
+  Browsing needs `:discover` or `:query` on the source. Running a query on it
+  still needs `:query`.
+  """
+  @spec discoverable?(map(), String.t()) :: boolean()
+  def discoverable?(assigns, source),
+    do: allowed?(assigns, :discover, source) or allowed?(assigns, :query, source)
 
   @doc """
   Compute the decisions for the actions without a resource, as a map of
@@ -179,6 +192,7 @@ defmodule Lotus.Web.Authorization do
   @spec reason(Resolver.action()) :: String.t()
   def reason(:query), do: gettext("You don't have permission to run queries")
   def reason(:export), do: gettext("You don't have permission to export query results")
+  def reason(:discover), do: gettext("You don't have permission to browse this data source")
   def reason(:create_query), do: gettext("You don't have permission to save queries")
   def reason(:update_query), do: gettext("You don't have permission to edit queries")
   def reason(:delete_query), do: gettext("You don't have permission to delete queries")

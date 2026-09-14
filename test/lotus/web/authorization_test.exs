@@ -47,8 +47,8 @@ defmodule Lotus.Web.AuthorizationTest do
       end
     end
 
-    test ":read_only allows querying, exporting and viewing dashboards only" do
-      allowed = [:query, :export, :view_dashboard]
+    test ":read_only allows querying, exporting, browsing and viewing dashboards only" do
+      allowed = [:query, :export, :discover, :view_dashboard]
 
       for action <- Authorization.actions() do
         decision = Authorization.default_decision(:read_only, action)
@@ -196,6 +196,23 @@ defmodule Lotus.Web.AuthorizationTest do
       assigns = %{resolver: nil, access: :all, permissions: %{create_query: false}}
 
       assert %{create_query: true} = Authorization.permissions(assigns)
+    end
+  end
+
+  describe "discoverable?/2" do
+    test "allows browsing a source through :discover or :query" do
+      assigns = %{resolver: RecordingResolver, user: @user, access: :all}
+
+      # RecordingResolver denies :discover everywhere and allows :query on "reporting".
+      assert Authorization.discoverable?(assigns, "reporting")
+      assert_received {:authorize, @user, :discover, "reporting"}
+      assert_received {:authorize, @user, :query, "reporting"}
+
+      refute Authorization.discoverable?(assigns, "billing")
+    end
+
+    test "with :read_only access, browsing is allowed" do
+      assert Authorization.discoverable?(%{resolver: nil, access: :read_only}, "reporting")
     end
   end
 

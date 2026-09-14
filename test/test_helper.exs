@@ -76,6 +76,18 @@ defmodule Lotus.Web.Test.RestrictedResolver do
   def authorize(_user, action, _resource), do: {:deny, "Restricted: #{action}"}
 end
 
+# A resolver that allows everything except running queries on "reporting",
+# where it allows only browsing, so tests can tell :discover from :query.
+defmodule Lotus.Web.Test.EditorResolver do
+  @behaviour Lotus.Web.Resolver
+
+  def resolve_user(_conn), do: %{id: 9}
+  def resolve_access(_user), do: :all
+
+  def authorize(_user, :query, "reporting"), do: {:deny, "Editor: query"}
+  def authorize(_user, _action, _resource), do: :allow
+end
+
 # A resolver with only resolve_access/1, so tests can assert the decision that
 # derives from :read_only.
 defmodule Lotus.Web.Test.ReadOnlyResolver do
@@ -113,6 +125,11 @@ defmodule Lotus.Web.Test.Router do
     lotus_dashboard("/read_only",
       as: :read_only_dashboard,
       resolver: Lotus.Web.Test.ReadOnlyResolver
+    )
+
+    lotus_dashboard("/editor",
+      as: :editor_dashboard,
+      resolver: Lotus.Web.Test.EditorResolver
     )
   end
 end
