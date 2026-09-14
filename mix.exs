@@ -48,7 +48,7 @@ defmodule Lotus.Web.MixProject do
       {:mdex, "~> 0.13"},
 
       # Lotus
-      {:lotus, "~> 1.0"},
+      {:lotus, github: "elixir-lotus/lotus", branch: "main", override: true},
       {:lotus_clickhouse,
        git: "git@github.com:elixir-lotus/lotus_clickhouse.git", branch: "main", only: :dev},
       {:lotus_elasticsearch,

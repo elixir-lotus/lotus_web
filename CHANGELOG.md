@@ -61,11 +61,33 @@ behaviour it had.
 - **A refused dashboard save or delete says "You don't have permission to
   modify dashboards".** The two messages were different before.
 
+- **Every content change carries the actor.** Creating, updating or deleting a
+  query, a chart, a dashboard, a card, a filter or a filter mapping passes
+  `:context` to Lotus, so a `:before_content_change` or `:after_content_change`
+  plug knows who made the change.
+
+- **A refused content change says so.** When a `:before_content_change` plug
+  halts, the editor shows "The change was refused" with the plug's reason when
+  it is a string, keeps the page as it was, and writes nothing.
+
+- **Public sharing calls `Lotus.enable_public_sharing/2` and
+  `Lotus.disable_public_sharing/2`.** Plugs see the sharing operations instead
+  of a plain dashboard update, and the token comes from Lotus.
+
 ### Fixed
 
 - **The query formatter's controls and error message are in French.**
   "Pretty-print query", its JSON sources hint and "Could not format query" had
   no French translation, so a French dashboard showed them in English.
+
+- **A dashboard save is all or nothing.** The dashboard, its cards, filters and
+  filter mappings save in one transaction. Before, the results of card
+  deletes and of every filter and filter mapping write were not checked, so a
+  failed write could leave part of the dashboard saved while the page said it
+  was saved.
+
+- **A query and its chart settings save together.** A failed chart settings
+  write no longer leaves the query saved while the page reports success.
 
 ## [1.1.0] - 2026-09-12
 

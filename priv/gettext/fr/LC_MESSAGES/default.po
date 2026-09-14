@@ -173,17 +173,18 @@ msgstr "Exporter (.csv)"
 msgid "Export query results to CSV"
 msgstr "Exporter les résultats de la requête en CSV"
 
-#: lib/lotus/web/pages/query_editor_page.ex:757
+#: lib/lotus/web/pages/query_editor_page.ex:766
 #, elixir-autogen, elixir-format
 msgid "Failed to copy to clipboard!"
 msgstr "Échec de la copie dans le presse-papiers !"
 
-#: lib/lotus/web/pages/query_editor_page.ex:2036
+#: lib/lotus/web/pages/query_editor_page.ex:2068
 #, elixir-autogen, elixir-format
 msgid "Failed to delete query"
 msgstr "Impossible de supprimer la requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:479
+#: lib/lotus/web/pages/query_editor_page.ex:476
+#: lib/lotus/web/pages/query_editor_page.ex:500
 #, elixir-autogen, elixir-format
 msgid "Failed to save query"
 msgstr "Impossible d'enregistrer la requête"
@@ -259,8 +260,8 @@ msgstr "Nouvelle requête"
 msgid "Next"
 msgstr "Suivant"
 
-#: lib/lotus/web/pages/query_editor_page.ex:792
-#: lib/lotus/web/pages/query_editor_page.ex:795
+#: lib/lotus/web/pages/query_editor_page.ex:801
+#: lib/lotus/web/pages/query_editor_page.ex:804
 #, elixir-autogen, elixir-format
 msgid "No query results to export"
 msgstr "Aucun résultat de requête à exporter"
@@ -307,32 +308,32 @@ msgstr "Aperçu (3 premiers résultats) :"
 msgid "Queries"
 msgstr "Requêtes"
 
-#: lib/lotus/web/pages/query_editor_page.ex:752
+#: lib/lotus/web/pages/query_editor_page.ex:761
 #, elixir-autogen, elixir-format
 msgid "Query copied to clipboard!"
 msgstr "Requête copiée dans le presse-papiers !"
 
-#: lib/lotus/web/pages/query_editor_page.ex:2024
+#: lib/lotus/web/pages/query_editor_page.ex:2050
 #, elixir-autogen, elixir-format
 msgid "Query deleted successfully"
 msgstr "Requête supprimée avec succès"
 
 #: lib/lotus/web/pages/public_dashboard_page.ex:175
-#: lib/lotus/web/pages/query_editor_page.ex:1220
-#: lib/lotus/web/pages/query_editor_page.ex:1224
+#: lib/lotus/web/pages/query_editor_page.ex:1229
+#: lib/lotus/web/pages/query_editor_page.ex:1233
 #, elixir-autogen, elixir-format
 msgid "Query execution failed"
 msgstr "Échec de l'exécution de la requête"
 
 #: lib/lotus/web/pages/dashboard_editor_page.ex:804
-#: lib/lotus/web/pages/query_editor_page.ex:1901
+#: lib/lotus/web/pages/query_editor_page.ex:1927
 #, elixir-autogen, elixir-format
 msgid "Query execution failed: %{reason}"
 msgstr "Échec de l'exécution de la requête : %{reason}"
 
 #: lib/lotus/web/pages/query_editor_page.ex:321
-#: lib/lotus/web/pages/query_editor_page.ex:491
-#: lib/lotus/web/pages/query_editor_page.ex:2016
+#: lib/lotus/web/pages/query_editor_page.ex:488
+#: lib/lotus/web/pages/query_editor_page.ex:2042
 #, elixir-autogen, elixir-format
 msgid "Query not found"
 msgstr "Requête introuvable"
@@ -342,7 +343,7 @@ msgstr "Requête introuvable"
 msgid "Query running..."
 msgstr "Requête en cours..."
 
-#: lib/lotus/web/pages/query_editor_page.ex:471
+#: lib/lotus/web/pages/query_editor_page.ex:468
 #, elixir-autogen, elixir-format
 msgid "Query saved successfully!"
 msgstr "Requête enregistrée avec succès !"
@@ -1037,15 +1038,14 @@ msgstr "Tableau de bord introuvable"
 msgid "Dashboard Settings"
 msgstr "Paramètres du tableau de bord"
 
-#: lib/lotus/web/pages/dashboard_editor_page.ex:963
+#: lib/lotus/web/pages/dashboard_editor_page.ex:959
 #, elixir-autogen, elixir-format
 msgid "Dashboard deleted successfully"
 msgstr "Tableau de bord supprimé avec succès"
 
 #: lib/lotus/web/pages/dashboard_editor_page.ex:486
-#: lib/lotus/web/pages/dashboard_editor_page.ex:863
-#: lib/lotus/web/pages/dashboard_editor_page.ex:891
-#: lib/lotus/web/pages/dashboard_editor_page.ex:969
+#: lib/lotus/web/pages/dashboard_editor_page.ex:873
+#: lib/lotus/web/pages/dashboard_editor_page.ex:965
 #, elixir-autogen, elixir-format
 msgid "Dashboard not found"
 msgstr "Tableau de bord introuvable"
@@ -1055,7 +1055,7 @@ msgstr "Tableau de bord introuvable"
 msgid "Dashboard not found or no longer public"
 msgstr "Tableau de bord introuvable ou n'est plus public"
 
-#: lib/lotus/web/pages/dashboard_editor_page.ex:920
+#: lib/lotus/web/pages/dashboard_editor_page.ex:901
 #, elixir-autogen, elixir-format
 msgid "Dashboard saved successfully!"
 msgstr "Tableau de bord enregistré avec succès !"
@@ -1131,8 +1131,8 @@ msgstr "Lien externe"
 msgid "Failed to delete dashboard"
 msgstr "Impossible de supprimer le tableau de bord"
 
-#: lib/lotus/web/pages/dashboard_editor_page.ex:926
-#: lib/lotus/web/pages/dashboard_editor_page.ex:930
+#: lib/lotus/web/pages/dashboard_editor_page.ex:907
+#: lib/lotus/web/pages/dashboard_editor_page.ex:915
 #, elixir-autogen, elixir-format
 msgid "Failed to save dashboard"
 msgstr "Impossible d'enregistrer le tableau de bord"
@@ -1341,12 +1341,12 @@ msgstr "minute"
 msgid "minutes"
 msgstr "minutes"
 
-#: lib/lotus/web/pages/dashboard_editor_page.ex:894
+#: lib/lotus/web/pages/dashboard_editor_page.ex:861
 #, elixir-autogen, elixir-format
 msgid "Failed to disable sharing"
 msgstr "Impossible de désactiver le partage"
 
-#: lib/lotus/web/pages/dashboard_editor_page.ex:866
+#: lib/lotus/web/pages/dashboard_editor_page.ex:851
 #, elixir-autogen, elixir-format
 msgid "Failed to enable sharing"
 msgstr "Impossible d'activer le partage"
@@ -1356,12 +1356,12 @@ msgstr "Impossible d'activer le partage"
 msgid "Height"
 msgstr "Hauteur"
 
-#: lib/lotus/web/pages/dashboard_editor_page.ex:880
+#: lib/lotus/web/pages/dashboard_editor_page.ex:859
 #, elixir-autogen, elixir-format
 msgid "Public sharing disabled"
 msgstr "Partage public désactivé"
 
-#: lib/lotus/web/pages/dashboard_editor_page.ex:852
+#: lib/lotus/web/pages/dashboard_editor_page.ex:849
 #, elixir-autogen, elixir-format
 msgid "Public sharing enabled"
 msgstr "Partage public activé"
@@ -1381,21 +1381,21 @@ msgstr "Vous n'avez pas l'autorisation de modifier des tableaux de bord"
 msgid "AI Assistant"
 msgstr "Assistant IA"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1031
-#: lib/lotus/web/pages/query_editor_page.ex:1125
-#: lib/lotus/web/pages/query_editor_page.ex:1177
+#: lib/lotus/web/pages/query_editor_page.ex:1040
+#: lib/lotus/web/pages/query_editor_page.ex:1134
+#: lib/lotus/web/pages/query_editor_page.ex:1186
 #, elixir-autogen, elixir-format
 msgid "AI features are not configured"
 msgstr "Les fonctionnalités IA ne sont pas configurées"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1699
+#: lib/lotus/web/pages/query_editor_page.ex:1725
 #, elixir-autogen, elixir-format
 msgid "AI features are not configured. Please add AI configuration."
 msgstr "Les fonctionnalités IA ne sont pas configurées. Veuillez ajouter la configuration IA."
 
-#: lib/lotus/web/pages/query_editor_page.ex:1043
-#: lib/lotus/web/pages/query_editor_page.ex:1126
-#: lib/lotus/web/pages/query_editor_page.ex:1178
+#: lib/lotus/web/pages/query_editor_page.ex:1052
+#: lib/lotus/web/pages/query_editor_page.ex:1135
+#: lib/lotus/web/pages/query_editor_page.ex:1187
 #, elixir-autogen, elixir-format
 msgid "API key is missing or invalid"
 msgstr "La clé API est manquante ou invalide"
@@ -1405,7 +1405,7 @@ msgstr "La clé API est manquante ou invalide"
 msgid "Describe your query in plain English"
 msgstr "Décrivez votre requête en langage naturel"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1079
+#: lib/lotus/web/pages/query_editor_page.ex:1088
 #, elixir-autogen, elixir-format
 msgid "Failed to generate query: %{error}"
 msgstr "Échec de la génération de la requête : %{error}"
@@ -1415,12 +1415,12 @@ msgstr "Échec de la génération de la requête : %{error}"
 msgid "Generate query with AI"
 msgstr "Générer la requête avec l'IA"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1711
+#: lib/lotus/web/pages/query_editor_page.ex:1737
 #, elixir-autogen, elixir-format
 msgid "Please select a data source first"
 msgstr "Veuillez d'abord sélectionner une source de données"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1093
+#: lib/lotus/web/pages/query_editor_page.ex:1102
 #, elixir-autogen, elixir-format
 msgid "Query generation timed out or crashed"
 msgstr "La génération de la requête a expiré ou s'est interrompue"
@@ -1466,7 +1466,7 @@ msgstr "Exemples de requêtes :"
 msgid "Find top 10 products by revenue"
 msgstr "Trouver les 10 meilleurs produits par chiffre d'affaires"
 
-#: lib/lotus/web/pages/query_editor_page.ex:588
+#: lib/lotus/web/pages/query_editor_page.ex:597
 #, elixir-autogen, elixir-format
 msgid "Please fix the error and generate a corrected query"
 msgstr "Veuillez corriger l'erreur et générer une requête corrigée"
@@ -1476,8 +1476,8 @@ msgstr "Veuillez corriger l'erreur et générer une requête corrigée"
 msgid "Query Failed"
 msgstr "Échec de la requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:577
-#: lib/lotus/web/pages/query_editor_page.ex:579
+#: lib/lotus/web/pages/query_editor_page.ex:586
+#: lib/lotus/web/pages/query_editor_page.ex:588
 #, elixir-autogen, elixir-format
 msgid "Query inserted into editor"
 msgstr "Requête insérée dans l'éditeur"
@@ -1700,7 +1700,7 @@ msgstr "Part du tout"
 msgid "Progress Bar"
 msgstr "Barre de progression"
 
-#: lib/lotus/web/pages/query_editor_page.ex:576
+#: lib/lotus/web/pages/query_editor_page.ex:585
 #, elixir-autogen, elixir-format
 msgid "Query and variable settings applied"
 msgstr "Paramètres de requête et de variable appliqués"
@@ -1822,7 +1822,7 @@ msgstr "Utiliser la ligne précédente"
 msgid "Value Field"
 msgstr "Champ de valeur"
 
-#: lib/lotus/web/pages/query_editor_page.ex:578
+#: lib/lotus/web/pages/query_editor_page.ex:587
 #, elixir-autogen, elixir-format
 msgid "Variable settings updated"
 msgstr "Paramètres de variable mis à jour"
@@ -1974,7 +1974,7 @@ msgid_plural "%{count} optimization suggestions:"
 msgstr[0] "%{count} suggestion d'optimisation :"
 msgstr[1] "%{count} suggestions d'optimisation :"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1129
+#: lib/lotus/web/pages/query_editor_page.ex:1138
 #, elixir-autogen, elixir-format
 msgid "Optimization failed: %{error}"
 msgstr "Échec de l'optimisation : %{error}"
@@ -1984,7 +1984,7 @@ msgstr "Échec de l'optimisation : %{error}"
 msgid "Optimize query"
 msgstr "Optimiser la requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1749
+#: lib/lotus/web/pages/query_editor_page.ex:1775
 #, elixir-autogen, elixir-format
 msgid "Optimize this query"
 msgstr "Optimiser cette requête"
@@ -1994,7 +1994,7 @@ msgstr "Optimiser cette requête"
 msgid "Optional clauses"
 msgstr "Clauses optionnelles"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1145
+#: lib/lotus/web/pages/query_editor_page.ex:1154
 #, elixir-autogen, elixir-format
 msgid "Query optimization timed out or crashed"
 msgstr "L'optimisation de la requête a expiré ou a échoué"
@@ -2019,12 +2019,12 @@ msgstr "Analyser votre requête et suggérer des améliorations de performance"
 msgid "Explain query"
 msgstr "Expliquer la requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1779
+#: lib/lotus/web/pages/query_editor_page.ex:1805
 #, elixir-autogen, elixir-format
 msgid "Explain this query"
 msgstr "Expliquer cette requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1181
+#: lib/lotus/web/pages/query_editor_page.ex:1190
 #, elixir-autogen, elixir-format
 msgid "Explanation failed: %{error}"
 msgstr "Échec de l'explication : %{error}"
@@ -2039,7 +2039,7 @@ msgstr "Obtenir une explication en langage courant de votre requête"
 msgid "Query Explanation"
 msgstr "Explication de la requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1197
+#: lib/lotus/web/pages/query_editor_page.ex:1206
 #, elixir-autogen, elixir-format
 msgid "Query explanation timed out or crashed"
 msgstr "L'explication de la requête a expiré ou s'est interrompue"
@@ -2075,7 +2075,7 @@ msgstr "L'IA réfléchit..."
 msgid "Clear all sorts"
 msgstr "Effacer tous les tris"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1811
+#: lib/lotus/web/pages/query_editor_page.ex:1837
 #, elixir-autogen, elixir-format
 msgid "Explain this fragment: `%{fragment}`"
 msgstr "Expliquer ce fragment : `%{fragment}`"
@@ -2117,12 +2117,12 @@ msgstr "Saisissez une requête à exécuter"
 msgid "From query"
 msgstr "Depuis une requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1015
+#: lib/lotus/web/pages/query_editor_page.ex:1024
 #, elixir-autogen, elixir-format
 msgid "Here's your query:"
 msgstr "Voici votre requête :"
 
-#: lib/lotus/web/pages/query_editor_page.ex:813
+#: lib/lotus/web/pages/query_editor_page.ex:822
 #, elixir-autogen, elixir-format
 msgid "Please enter a statement"
 msgstr "Veuillez saisir une instruction"
@@ -2137,13 +2137,13 @@ msgstr "Veuillez d'abord tester votre requête et vérifier qu'elle renvoie des 
 msgid "Query cannot be empty"
 msgstr "La requête ne peut pas être vide"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1773
-#: lib/lotus/web/pages/query_editor_page.ex:1803
+#: lib/lotus/web/pages/query_editor_page.ex:1799
+#: lib/lotus/web/pages/query_editor_page.ex:1829
 #, elixir-autogen, elixir-format
 msgid "Write a query first before explaining"
 msgstr "Écrivez d'abord une requête avant de l'expliquer"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1743
+#: lib/lotus/web/pages/query_editor_page.ex:1769
 #, elixir-autogen, elixir-format
 msgid "Write a query first before optimizing"
 msgstr "Écrivez d'abord une requête avant d'optimiser"
@@ -2153,7 +2153,7 @@ msgstr "Écrivez d'abord une requête avant d'optimiser"
 msgid "Write a query that returns value and label columns (or just a value column)."
 msgstr "Écrivez une requête qui renvoie les colonnes valeur et libellé (ou uniquement une colonne valeur)."
 
-#: lib/lotus/web/pages/query_editor_page.ex:784
+#: lib/lotus/web/pages/query_editor_page.ex:793
 #, elixir-autogen, elixir-format
 msgid "Could not format query: %{error}"
 msgstr "Impossible de mettre en forme la requête : %{error}"
@@ -2212,3 +2212,13 @@ msgstr "Vous n'avez pas l'autorisation de partager des tableaux de bord"
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to share queries"
 msgstr "Vous n'avez pas l'autorisation de partager des requêtes"
+
+#: lib/lotus/web/helpers.ex:90
+#, elixir-autogen, elixir-format
+msgid "The change was refused"
+msgstr "La modification a été refusée"
+
+#: lib/lotus/web/helpers.ex:88
+#, elixir-autogen, elixir-format
+msgid "The change was refused: %{reason}"
+msgstr "La modification a été refusée : %{reason}"

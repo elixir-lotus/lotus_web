@@ -843,61 +843,42 @@ defmodule Lotus.Web.DashboardEditorPage do
   # Private Helpers
 
   defp do_enable_sharing(socket) do
-    token = generate_public_token()
-    dashboard = %{socket.assigns.dashboard | public_token: token}
-
     with %{mode: :edit, id: id} <- socket.assigns.page,
          %{} = existing <- Lotus.get_dashboard(id),
-         {:ok, _saved} <- Lotus.update_dashboard(existing, %{"public_token" => token}) do
-      send(self(), {:put_flash, [:info, gettext("Public sharing enabled")]})
-
-      send_update(SettingsDrawer,
-        id: "settings-drawer",
-        dashboard: dashboard,
-        visible: true
-      )
-
-      {:noreply, assign(socket, dashboard: dashboard)}
+         {:ok, saved} <- Lotus.enable_public_sharing(existing, Actor.opts(socket.assigns)) do
+      sharing_changed(socket, saved.public_token, gettext("Public sharing enabled"))
     else
-      nil ->
-        {:noreply, put_flash(socket, :error, gettext("Dashboard not found"))}
-
-      {:error, _} ->
-        send(self(), {:put_flash, [:error, gettext("Failed to enable sharing")]})
-        {:noreply, socket}
-
-      _ ->
-        {:noreply, assign(socket, dashboard: dashboard)}
+      error -> sharing_failed(socket, error, gettext("Failed to enable sharing"))
     end
   end
 
   defp do_disable_sharing(socket) do
-    dashboard = %{socket.assigns.dashboard | public_token: nil}
-
     with %{mode: :edit, id: id} <- socket.assigns.page,
          %{} = existing <- Lotus.get_dashboard(id),
-         {:ok, _saved} <- Lotus.update_dashboard(existing, %{"public_token" => nil}) do
-      send(self(), {:put_flash, [:info, gettext("Public sharing disabled")]})
-
-      send_update(SettingsDrawer,
-        id: "settings-drawer",
-        dashboard: dashboard,
-        visible: true
-      )
-
-      {:noreply, assign(socket, dashboard: dashboard)}
+         {:ok, saved} <- Lotus.disable_public_sharing(existing, Actor.opts(socket.assigns)) do
+      sharing_changed(socket, saved.public_token, gettext("Public sharing disabled"))
     else
-      nil ->
-        {:noreply, put_flash(socket, :error, gettext("Dashboard not found"))}
-
-      {:error, _} ->
-        send(self(), {:put_flash, [:error, gettext("Failed to disable sharing")]})
-        {:noreply, socket}
-
-      _ ->
-        {:noreply, assign(socket, dashboard: dashboard)}
+      error -> sharing_failed(socket, error, gettext("Failed to disable sharing"))
     end
   end
+
+  defp sharing_changed(socket, token, message) do
+    dashboard = %{socket.assigns.dashboard | public_token: token}
+    send(self(), {:put_flash, [:info, message]})
+    send_update(SettingsDrawer, id: "settings-drawer", dashboard: dashboard, visible: true)
+    {:noreply, assign(socket, dashboard: dashboard)}
+  end
+
+  defp sharing_failed(socket, nil, _message),
+    do: {:noreply, put_flash(socket, :error, gettext("Dashboard not found"))}
+
+  defp sharing_failed(socket, {:error, {:halted, reason}}, _message),
+    do: {:noreply, deny(socket, refused_message(reason))}
+
+  defp sharing_failed(socket, {:error, _reason}, message), do: {:noreply, deny(socket, message)}
+
+  # A dashboard that is not saved yet has no link to change.
+  defp sharing_failed(socket, _unsaved, _message), do: {:noreply, socket}
 
   defp do_save_dashboard(socket, params) do
     dashboard = socket.assigns.dashboard
@@ -911,7 +892,7 @@ defmodule Lotus.Web.DashboardEditorPage do
       "auto_refresh_seconds" => dashboard.auto_refresh_seconds
     }
 
-    result = perform_save_dashboard(socket.assigns.page, attrs, dashboard)
+    result = perform_save_dashboard(socket, attrs, dashboard)
 
     case result do
       {:ok, saved_dashboard} ->
@@ -921,10 +902,14 @@ defmodule Lotus.Web.DashboardEditorPage do
          |> assign(save_modal_open: false)
          |> push_patch(to: lotus_path(["dashboards", saved_dashboard.id]), replace: true)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
+      {:error, %Ecto.Changeset{data: %Lotus.Storage.Dashboard{}} = changeset} ->
         form = to_form(changeset, as: "dashboard")
         send(self(), {:put_flash, [:error, gettext("Failed to save dashboard")]})
         {:noreply, assign(socket, dashboard_form: form)}
+
+      {:error, {:halted, reason}} ->
+        send(self(), {:put_flash, [:error, refused_message(reason)]})
+        {:noreply, socket}
 
       {:error, _reason} ->
         send(self(), {:put_flash, [:error, gettext("Failed to save dashboard")]})
@@ -932,32 +917,43 @@ defmodule Lotus.Web.DashboardEditorPage do
     end
   end
 
-  defp perform_save_dashboard(%{mode: :new}, attrs, dashboard) do
-    with {:ok, saved} <- Lotus.create_dashboard(attrs),
-         :ok <- sync_cards(saved, dashboard.cards),
-         :ok <- sync_filters(saved, dashboard.filters),
-         :ok <- sync_card_filter_mappings(saved, dashboard.cards) do
-      {:ok, saved}
-    end
+  # The dashboard, its cards, filters and filter mappings save in one
+  # transaction, so a refused or failed write part way leaves nothing saved.
+  defp perform_save_dashboard(socket, attrs, dashboard) do
+    opts = Actor.opts(socket.assigns)
+
+    Lotus.repo().transaction(fn ->
+      case write_dashboard(socket.assigns.page, attrs, dashboard, opts) do
+        {:ok, saved} -> saved
+        {:error, reason} -> Lotus.repo().rollback(reason)
+      end
+    end)
   end
 
-  defp perform_save_dashboard(%{mode: :edit, id: id}, attrs, dashboard) do
-    with %{} = existing <- Lotus.get_dashboard(id),
-         {:ok, saved} <- Lotus.update_dashboard(existing, attrs),
-         :ok <- sync_cards(saved, dashboard.cards),
-         :ok <- sync_filters(saved, dashboard.filters),
-         :ok <- sync_card_filter_mappings(saved, dashboard.cards) do
-      {:ok, saved}
-    else
-      nil -> {:error, "Dashboard not found"}
-      error -> error
+  defp write_dashboard(%{mode: :new}, attrs, dashboard, opts) do
+    with {:ok, saved} <- Lotus.create_dashboard(attrs, opts),
+         :ok <- sync_contents(saved, dashboard, opts),
+         do: {:ok, saved}
+  end
+
+  defp write_dashboard(%{mode: :edit, id: id}, attrs, dashboard, opts) do
+    with %{} = existing <- Lotus.get_dashboard(id) || {:error, :not_found},
+         {:ok, saved} <- Lotus.update_dashboard(existing, attrs, opts),
+         :ok <- sync_contents(saved, dashboard, opts),
+         do: {:ok, saved}
+  end
+
+  defp sync_contents(saved, dashboard, opts) do
+    with :ok <- sync_cards(saved, dashboard.cards, opts),
+         :ok <- sync_filters(saved, dashboard.filters, opts) do
+      sync_card_filter_mappings(saved, dashboard.cards, opts)
     end
   end
 
   defp do_delete_dashboard(socket) do
     with %{mode: :edit, id: id} <- socket.assigns.page,
          %{} = dashboard <- Lotus.get_dashboard(id),
-         {:ok, _} <- Lotus.delete_dashboard(dashboard) do
+         {:ok, _} <- Lotus.delete_dashboard(dashboard, Actor.opts(socket.assigns)) do
       {:noreply,
        socket
        |> put_flash(:info, gettext("Dashboard deleted successfully"))
@@ -968,6 +964,10 @@ defmodule Lotus.Web.DashboardEditorPage do
          socket
          |> put_flash(:error, gettext("Dashboard not found"))
          |> push_navigate(to: lotus_path("", %{tab: "dashboards"}))}
+
+      {:error, {:halted, reason}} ->
+        send(self(), {:put_flash, [:error, refused_message(reason)]})
+        {:noreply, assign(socket, delete_modal_open: false)}
 
       {:error, _} ->
         send(self(), {:put_flash, [:error, gettext("Failed to delete dashboard")]})
@@ -1475,10 +1475,6 @@ defmodule Lotus.Web.DashboardEditorPage do
     :erlang.unique_integer([:positive])
   end
 
-  defp generate_public_token do
-    :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
-  end
-
   defp parse_id(id) when is_integer(id), do: id
   defp parse_id(id) when is_binary(id), do: String.to_integer(id)
 
@@ -1492,8 +1488,19 @@ defmodule Lotus.Web.DashboardEditorPage do
   defp parse_int(val, _default) when is_integer(val), do: val
   defp parse_int(_, default), do: default
 
+  # Runs each write in turn and stops at the first error, so the save can roll
+  # back and report it. A write returns `{:ok, _}`, `:ok` or `{:error, _}`.
+  defp each_write(items, write) do
+    Enum.reduce_while(items, :ok, fn item, :ok ->
+      case write.(item) do
+        {:error, _reason} = error -> {:halt, error}
+        _written -> {:cont, :ok}
+      end
+    end)
+  end
+
   # Sync cards: delete removed, update existing, create new
-  defp sync_cards(saved_dashboard, cards) do
+  defp sync_cards(saved_dashboard, cards, opts) do
     existing_cards = Lotus.list_dashboard_cards(saved_dashboard.id)
     existing_ids = MapSet.new(existing_cards, & &1.id)
 
@@ -1504,42 +1511,24 @@ defmodule Lotus.Web.DashboardEditorPage do
       end)
 
     current_ids = MapSet.new(existing_card_updates, & &1.id)
-
-    # Delete cards that are no longer present
     cards_to_delete = Enum.reject(existing_cards, &MapSet.member?(current_ids, &1.id))
 
-    Enum.each(cards_to_delete, fn card ->
-      Lotus.delete_dashboard_card(card)
-    end)
-
-    # Update existing cards
-    update_results =
-      Enum.map(existing_card_updates, fn card ->
-        existing_card = Enum.find(existing_cards, &(&1.id == card.id))
-
-        if existing_card do
-          Lotus.update_dashboard_card(existing_card, card_to_attrs(card))
-        else
-          {:ok, nil}
-        end
+    with :ok <- each_write(cards_to_delete, &Lotus.delete_dashboard_card(&1, opts)),
+         :ok <- each_write(existing_card_updates, &write_stored_card(&1, existing_cards, opts)) do
+      each_write(new_cards, fn card ->
+        Lotus.create_dashboard_card(saved_dashboard.id, card_to_attrs(card), opts)
       end)
-
-    # Create new cards
-    create_results =
-      Enum.map(new_cards, fn card ->
-        Lotus.create_dashboard_card(saved_dashboard.id, card_to_attrs(card))
-      end)
-
-    # Check for errors
-    all_results = update_results ++ create_results
-
-    case Enum.find(all_results, &match?({:error, _}, &1)) do
-      {:error, changeset} -> {:error, changeset}
-      nil -> :ok
     end
   end
 
-  defp sync_filters(saved_dashboard, filters) do
+  defp write_stored_card(card, existing_cards, opts) do
+    case Enum.find(existing_cards, &(&1.id == card.id)) do
+      nil -> :ok
+      existing_card -> Lotus.update_dashboard_card(existing_card, card_to_attrs(card), opts)
+    end
+  end
+
+  defp sync_filters(saved_dashboard, filters, opts) do
     existing_filters = Lotus.list_dashboard_filters(saved_dashboard.id)
     existing_ids = MapSet.new(existing_filters, & &1.id)
 
@@ -1549,60 +1538,57 @@ defmodule Lotus.Web.DashboardEditorPage do
       end)
 
     current_ids = MapSet.new(existing_filter_updates, & &1.id)
-
-    # Delete filters that are no longer present
     filters_to_delete = Enum.reject(existing_filters, &MapSet.member?(current_ids, &1.id))
 
-    Enum.each(filters_to_delete, fn filter ->
-      Lotus.delete_dashboard_filter(filter)
-    end)
-
-    # Update existing filters
-    Enum.each(existing_filter_updates, fn filter ->
-      existing_filter = Enum.find(existing_filters, &(&1.id == filter.id))
-
-      if existing_filter do
-        Lotus.update_dashboard_filter(existing_filter, filter_to_attrs(filter))
-      end
-    end)
-
-    # Create new filters
-    Enum.each(new_filters, fn filter ->
-      Lotus.create_dashboard_filter(saved_dashboard, filter_to_attrs(filter))
-    end)
-
-    :ok
+    with :ok <- each_write(filters_to_delete, &Lotus.delete_dashboard_filter(&1, opts)),
+         :ok <- each_write(existing_filter_updates, &update_filter(&1, existing_filters, opts)) do
+      each_write(new_filters, fn filter ->
+        Lotus.create_dashboard_filter(saved_dashboard, filter_to_attrs(filter), opts)
+      end)
+    end
   end
 
-  defp sync_card_filter_mappings(saved_dashboard, cards) do
+  defp update_filter(filter, existing_filters, opts) do
+    case Enum.find(existing_filters, &(&1.id == filter.id)) do
+      nil -> :ok
+      existing -> Lotus.update_dashboard_filter(existing, filter_to_attrs(filter), opts)
+    end
+  end
+
+  defp sync_card_filter_mappings(saved_dashboard, cards, opts) do
     saved_cards = Lotus.list_dashboard_cards(saved_dashboard.id)
     saved_filters = Lotus.list_dashboard_filters(saved_dashboard.id)
     filter_by_name = Map.new(saved_filters, &{&1.name, &1})
 
     cards
     |> Enum.filter(&is_map(&1.filter_mappings))
-    |> Enum.each(&sync_single_card_mappings(&1, saved_cards, filter_by_name))
-
-    :ok
+    |> each_write(&sync_single_card_mappings(&1, saved_cards, filter_by_name, opts))
   end
 
-  defp sync_single_card_mappings(card, saved_cards, filter_by_name) do
-    saved_card = Enum.find(saved_cards, &match_card?(&1, card))
-    if saved_card, do: replace_card_mappings(saved_card, card.filter_mappings, filter_by_name)
+  defp sync_single_card_mappings(card, saved_cards, filter_by_name, opts) do
+    case Enum.find(saved_cards, &match_card?(&1, card)) do
+      nil -> :ok
+      saved_card -> replace_card_mappings(saved_card, card.filter_mappings, filter_by_name, opts)
+    end
   end
 
-  defp replace_card_mappings(saved_card, mappings, filter_by_name) do
+  defp replace_card_mappings(saved_card, mappings, filter_by_name, opts) do
     existing_mappings = Lotus.list_card_filter_mappings(saved_card.id)
-    Enum.each(existing_mappings, &Lotus.delete_filter_mapping/1)
 
-    Enum.each(mappings, fn {filter_name, variable_name} ->
-      filter = Map.get(filter_by_name, filter_name)
-
-      if filter && variable_name && variable_name != "" do
-        Lotus.create_filter_mapping(saved_card.id, filter.id, variable_name)
-      end
-    end)
+    with :ok <- each_write(existing_mappings, &Lotus.delete_filter_mapping(&1, opts)) do
+      each_write(mappings, fn {filter_name, variable_name} ->
+        create_mapping(saved_card, Map.get(filter_by_name, filter_name), variable_name, opts)
+      end)
+    end
   end
+
+  defp create_mapping(_card, nil, _variable_name, _opts), do: :ok
+
+  defp create_mapping(_card, _filter, variable_name, _opts) when variable_name in [nil, ""],
+    do: :ok
+
+  defp create_mapping(card, filter, variable_name, opts),
+    do: Lotus.create_filter_mapping(card.id, filter.id, variable_name, opts)
 
   defp match_card?(saved_card, card) do
     if is_integer(card.id),

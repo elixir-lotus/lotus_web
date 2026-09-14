@@ -463,9 +463,6 @@ defmodule Lotus.Web.QueryEditorPage do
 
     case perform_save_operation(socket, query_attrs) do
       {:ok, query} ->
-        # Save visualization config if present
-        save_visualization(query, socket.assigns.visualization_config)
-
         {:noreply,
          socket
          |> put_flash(:info, gettext("Query saved successfully!"))
@@ -473,7 +470,7 @@ defmodule Lotus.Web.QueryEditorPage do
          |> assign(query: query)
          |> assign_query_changeset(query)}
 
-      {:error, %Ecto.Changeset{} = cs} ->
+      {:error, %Ecto.Changeset{data: %Query{}} = cs} ->
         {:noreply,
          socket
          |> show_toast(:error, gettext("Failed to save query"))
@@ -490,6 +487,18 @@ defmodule Lotus.Web.QueryEditorPage do
          socket
          |> put_flash(:error, gettext("Query not found"))
          |> push_navigate(to: lotus_path(:queries), replace: true)}
+
+      {:error, {:halted, reason}} ->
+        {:noreply,
+         socket
+         |> show_toast(:error, refused_message(reason))
+         |> push_event("close-modal", %{id: "save-query-modal"})}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> show_toast(:error, gettext("Failed to save query"))
+         |> push_event("close-modal", %{id: "save-query-modal"})}
     end
   end
 
@@ -1633,26 +1642,43 @@ defmodule Lotus.Web.QueryEditorPage do
 
   defp dynamic_options?(_data_source), do: false
 
+  # The query and its chart settings save together: a refused or failed write of
+  # either leaves neither saved.
   defp perform_save_operation(socket, query_attrs) do
-    case socket.assigns.page do
-      %{mode: :edit, id: id} ->
-        update_saved_query(socket, id, query_attrs)
+    with {:ok, stored} <- authorize_save(socket) do
+      opts = Actor.opts(socket.assigns)
+      config = socket.assigns.visualization_config
 
-      %{mode: :new} ->
-        with :allow <- Authorization.authorize(socket.assigns, :create_query) do
-          Lotus.create_query(query_attrs)
-        end
+      Lotus.repo().transaction(fn -> save_query_and_chart(stored, query_attrs, config, opts) end)
+    end
+  end
+
+  # Runs inside the transaction: returns the query, or rolls back with the error.
+  defp save_query_and_chart(stored, query_attrs, config, opts) do
+    with {:ok, query} <- write_query(stored, query_attrs, opts),
+         {:ok, _visualization} <- save_visualization(query, config, opts) do
+      query
+    else
+      {:error, reason} -> Lotus.repo().rollback(reason)
     end
   end
 
   # Authorizes against the stored query, not the one in the editor, which
-  # carries the user's unsaved changes.
-  defp update_saved_query(socket, id, query_attrs) do
+  # carries the user's unsaved changes. Returns the stored query, or nil for a
+  # new one.
+  defp authorize_save(%{assigns: %{page: %{mode: :edit, id: id}}} = socket) do
     with %Query{} = query <- Lotus.get_query(id) || {:error, :not_found},
          :allow <- Authorization.authorize(socket.assigns, :update_query, query) do
-      Lotus.update_query(query, query_attrs)
+      {:ok, query}
     end
   end
+
+  defp authorize_save(socket) do
+    with :allow <- Authorization.authorize(socket.assigns, :create_query), do: {:ok, nil}
+  end
+
+  defp write_query(nil, attrs, opts), do: Lotus.create_query(attrs, opts)
+  defp write_query(%Query{} = query, attrs, opts), do: Lotus.update_query(query, attrs, opts)
 
   # Saving on an existing query's page updates it; anything else creates one.
   defp save_permission(%{page: %{mode: :edit}, query: %Query{} = query}),
@@ -2018,7 +2044,7 @@ defmodule Lotus.Web.QueryEditorPage do
 
       query ->
         with :allow <- Authorization.authorize(socket.assigns, :delete_query, query),
-             {:ok, _} <- Lotus.delete_query(query) do
+             {:ok, _} <- Lotus.delete_query(query, Actor.opts(socket.assigns)) do
           {:noreply,
            socket
            |> put_flash(:info, gettext("Query deleted successfully"))
@@ -2028,6 +2054,12 @@ defmodule Lotus.Web.QueryEditorPage do
             {:noreply,
              socket
              |> deny(reason)
+             |> push_event("close-modal", %{id: "delete-query-modal"})}
+
+          {:error, {:halted, reason}} ->
+            {:noreply,
+             socket
+             |> show_toast(:error, refused_message(reason))
              |> push_event("close-modal", %{id: "delete-query-modal"})}
 
           {:error, _} ->
@@ -2043,22 +2075,20 @@ defmodule Lotus.Web.QueryEditorPage do
 
   # Visualization persistence
 
-  defp save_visualization(_query, nil), do: :ok
-  defp save_visualization(_query, config) when config == %{}, do: :ok
+  defp save_visualization(_query, nil, _opts), do: {:ok, nil}
+  defp save_visualization(_query, config, _opts) when config == %{}, do: {:ok, nil}
 
-  defp save_visualization(query, config) when is_map(config) do
+  defp save_visualization(query, config, opts) when is_map(config) do
     case Lotus.list_visualizations(query.id) do
       [] ->
-        # Create new visualization
-        Lotus.create_visualization(query.id, %{
-          name: "Default",
-          position: 0,
-          config: config
-        })
+        Lotus.create_visualization(
+          query.id,
+          %{name: "Default", position: 0, config: config},
+          opts
+        )
 
       [existing | _] ->
-        # Update existing visualization
-        Lotus.update_visualization(existing, %{config: config})
+        Lotus.update_visualization(existing, %{config: config}, opts)
     end
   end
 

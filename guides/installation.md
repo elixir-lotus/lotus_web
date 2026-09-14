@@ -196,6 +196,12 @@ it lists and every table it describes carries them into Lotus core as the
 `nil` for everything a user does in the browser, even though the same plug
 sees a real actor for calls the host app makes itself.
 
+Every query, chart, dashboard, card, filter and filter mapping the dashboard
+creates, updates or deletes carries `:context` too, so a
+`:before_content_change` plug knows who made the change. When such a plug
+halts, the dashboard shows that the change was refused, with the plug's reason
+when it is a string, and writes nothing. A dashboard save is one transaction.
+
 Every callback is optional. A dashboard with no resolver, or one that
 implements only `resolve_user/1`, calls core with no actor at all — the same
 middleware payloads and the same cache keys as before.
