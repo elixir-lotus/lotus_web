@@ -47,8 +47,8 @@ behaviour it had.
 
 - **With `strict_actor: true`, authorization raises for assigns that lack
   `:resolver` or `:access`**, the same as `Lotus.Web.Actor.opts/1` does for a
-  missing actor. Without the option, the decision still falls back to full
-  access.
+  missing actor. Without the option, the error is logged and the decision
+  derives from `:read_only` access, not full access.
 
 - **Running a query, the AI assistant, the new dashboard page and opening a
   dashboard ask the resolver.** A denied run shows the reason in place of the

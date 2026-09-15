@@ -99,8 +99,9 @@ defmodule Lotus.Web.Authorization do
   derives from `:read_only` access.
 
   Assigns with no `:resolver` or `:access` key mean the dashboard never handed
-  them down, and the decision falls back to full access. Under
-  `config :lotus_web, strict_actor: true` that raises instead, the same as
+  them down. The error is logged and the decision derives from `:read_only`
+  access, so the mistake fails closed. Under
+  `config :lotus_web, strict_actor: true` it raises instead, the same as
   `Lotus.Web.Actor.opts/1` does for a missing actor.
   """
   @spec authorize(map(), Resolver.action(), term()) :: decision()
@@ -110,15 +111,7 @@ defmodule Lotus.Web.Authorization do
     do: default_decision(:read_only, action)
 
   def authorize(%{} = assigns, action, resource) do
-    check_wiring!(assigns)
-
-    decide(
-      assigns[:resolver],
-      assigns[:user],
-      Map.get(assigns, :access, :all),
-      action,
-      resource
-    )
+    decide(assigns[:resolver], assigns[:user], access(assigns), action, resource)
   end
 
   @doc """
@@ -204,22 +197,21 @@ defmodule Lotus.Web.Authorization do
   def reason(:manage_source), do: gettext("You don't have permission to manage data sources")
   def reason(:manage_cache), do: gettext("You don't have permission to manage the cache")
 
-  # Assigns without these keys did not come from the dashboard mount, so a
-  # component was never handed them. Falling back to full access hides that
-  # mistake; under strict_actor it fails loudly, as a missing actor does.
-  defp check_wiring!(assigns) do
-    if Actor.strict?() and
-         not (Map.has_key?(assigns, :resolver) and Map.has_key?(assigns, :access)) do
-      raise ArgumentError, """
-      Lotus.Web.Authorization got assigns with no :resolver or :access key.
+  defp access(%{resolver: _resolver, access: access}), do: access
 
-      A LiveComponent holds only what its parent passes, so this usually means
-      the dashboard assigns were never handed down. Pass them from the page, or
-      call Lotus.Web.Authorization.decide/5 with explicit values.
-      """
-    end
+  defp access(_assigns) do
+    message = """
+    Lotus.Web.Authorization got assigns with no :resolver or :access key.
 
-    :ok
+    A LiveComponent holds only what its parent passes, so this usually means
+    the dashboard assigns were never handed down. Pass them from the page, or
+    call Lotus.Web.Authorization.decide/5 with explicit values.
+    """
+
+    if Actor.strict?(), do: raise(ArgumentError, message)
+
+    Logger.error(message <> "\nDeciding with :read_only access.")
+    :read_only
   end
 
   # A host callback that returns something other than a decision is a bug in
