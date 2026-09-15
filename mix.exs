@@ -80,9 +80,11 @@ defmodule Lotus.Web.MixProject do
     [
       "assets.build": ["tailwind default", "esbuild default"],
       dev: "run --no-halt dev.exs",
+      # hex.publish runs in its own VM: after a dependency compiles in this one,
+      # Mix no longer finds the tasks of the Hex archive (Elixir 1.20, Hex 2.5).
       release: [
         "assets.build",
-        "hex.publish --yes",
+        "cmd mix hex.publish --yes",
         "cmd git tag v#{@version} -f",
         "cmd git push",
         "cmd git push --tags"
