@@ -6,6 +6,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
 
   use Lotus.Web, :live_component
 
+  alias Lotus.Web.CellFormatter
   alias Lotus.Web.VegaSpecBuilder
 
   @impl Phoenix.LiveComponent
@@ -215,13 +216,10 @@ defmodule Lotus.Web.Dashboards.CardComponent do
     """
   end
 
+  # The same formatter as the query editor's results table, so a Decimal, a
+  # map from jsonb or a time renders as a value and never as its inspect form.
   defp format_cell(nil), do: "-"
-  defp format_cell(value) when is_binary(value), do: value
-  defp format_cell(value) when is_number(value), do: to_string(value)
-  defp format_cell(%Date{} = date), do: Calendar.strftime(date, "%Y-%m-%d")
-  defp format_cell(%DateTime{} = dt), do: Calendar.strftime(dt, "%Y-%m-%d %H:%M")
-  defp format_cell(%NaiveDateTime{} = ndt), do: Calendar.strftime(ndt, "%Y-%m-%d %H:%M")
-  defp format_cell(value), do: inspect(value)
+  defp format_cell(value), do: CellFormatter.format(value)
 
   defp text_content(assigns) do
     text = get_content_text(assigns.content)
