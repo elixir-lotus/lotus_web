@@ -247,9 +247,9 @@ end
 | `:update_query` | the stored `%Lotus.Storage.Query{}` |
 | `:delete_query` | the `%Lotus.Storage.Query{}` |
 | `:share_query` | the `%Lotus.Storage.Query{}` (no dashboard control asks it yet) |
-| `:share_dashboard` | the `%Lotus.Dashboards.Dashboard{}` whose public link changes |
-| `:view_dashboard` | the `%Lotus.Dashboards.Dashboard{}` |
-| `:manage_dashboard` | `nil` for a new dashboard, else the `%Lotus.Dashboards.Dashboard{}` |
+| `:share_dashboard` | the `%Lotus.Storage.Dashboard{}` whose public link changes |
+| `:view_dashboard` | the `%Lotus.Storage.Dashboard{}` |
+| `:manage_dashboard` | `nil` for a new dashboard, else the `%Lotus.Storage.Dashboard{}` |
 | `:manage_source` | `nil` |
 | `:manage_cache` | `nil` |
 
