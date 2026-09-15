@@ -16,7 +16,7 @@
 
 **A LiveView-powered BI interface that mounts directly in your Phoenix app — query editor, dashboards, charts, and AI-powered query generation in plain English. No separate deployment needed.**
 
-[Try the live demo](https://lotus.typhoon.works/)
+[Try the live demo](https://demo.lotusbi.com/lotus)
 
 <!-- TODO: Replace with a 30-second demo GIF showing: mount in router → open browser → write a query → see chart → save to dashboard -->
 
