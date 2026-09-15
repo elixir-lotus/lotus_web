@@ -8,7 +8,7 @@ defmodule Lotus.Web.DashboardLive do
   def mount(params, session, socket) do
     %{"prefix" => prefix} = session
     %{"live_path" => live_path, "live_transport" => live_transport} = session
-    %{"csp_nonces" => csp_nonces} = session
+    %{"csp_nonces" => csp_nonces, "card_concurrency" => card_concurrency} = session
 
     page = resolve_page(params)
     {resolver, user, access, features, page_title} = mount_defaults(page, session)
@@ -36,6 +36,7 @@ defmodule Lotus.Web.DashboardLive do
       |> assign(:scope, scope)
       |> assign(:actor, actor)
       |> assign(:features, features)
+      |> assign(:card_concurrency, card_concurrency)
       |> assign(:public_view, page.name == :public_dashboard)
       |> assign_permissions()
       |> page.comp.handle_mount()

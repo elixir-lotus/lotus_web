@@ -136,6 +136,7 @@ end
 | `:resolver` | `Lotus.Web.Resolver` | Module implementing `Lotus.Web.Resolver` for authentication, access control and the actor. See below. |
 | `:csp_nonce_assign_key` | `nil` | Assign key (or a `%{script: key, style: key}` map) holding the CSP nonce. See [Content Security Policy](#content-security-policy-csp). |
 | `:features` | `[]` | Optional feature flags. See below. |
+| `:card_concurrency` | `4` | Maximum number of query cards a dashboard runs at the same time, per page load, in the dashboard view and the public view. The other cards wait and start as results arrive. |
 
 The macro mounts more than the main LiveViews: it also adds the two asset
 routes, the CSV export route, and a second live session for public dashboards

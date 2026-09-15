@@ -22,7 +22,8 @@ defmodule Lotus.Web.Router do
     transport: "websocket",
     csp_nonce_assign_key: nil,
     resolver: Lotus.Web.Resolver,
-    features: []
+    features: [],
+    card_concurrency: 4
   ]
 
   @transport_values ~w(longpoll websocket)
@@ -51,6 +52,10 @@ defmodule Lotus.Web.Router do
   * `:features` — a list of optional feature flags to enable. Defaults to `[]`.
     Supported features:
     * `:timeout_options` — shows a per-query timeout selector in the query editor toolbar.
+
+  * `:card_concurrency` — the maximum number of query cards a dashboard runs at the same time,
+    per page load, in the dashboard view and the public view. The other cards wait in a queue
+    and start as results arrive. A positive integer, defaults to `4`.
 
   ## Examples
 
@@ -161,7 +166,8 @@ defmodule Lotus.Web.Router do
       opts[:transport],
       opts[:csp_nonce_assign_key],
       opts[:resolver],
-      opts[:features]
+      opts[:features],
+      opts[:card_concurrency]
     ]
 
     session_opts = [
@@ -175,7 +181,8 @@ defmodule Lotus.Web.Router do
       prefix,
       opts[:socket_path],
       opts[:transport],
-      opts[:csp_nonce_assign_key]
+      opts[:csp_nonce_assign_key],
+      opts[:card_concurrency]
     ]
 
     public_session_opts = [
@@ -192,7 +199,16 @@ defmodule Lotus.Web.Router do
   end
 
   @doc false
-  def __session__(conn, prefix, live_path, live_transport, csp_key, resolver, features) do
+  def __session__(
+        conn,
+        prefix,
+        live_path,
+        live_transport,
+        csp_key,
+        resolver,
+        features,
+        card_concurrency
+      ) do
     csp_keys = expand_csp_nonce_keys(csp_key)
 
     user = Lotus.Web.Resolver.call_with_fallback(resolver, :resolve_user, [conn])
@@ -206,6 +222,7 @@ defmodule Lotus.Web.Router do
       "user" => user,
       "access" => access,
       "features" => features || [],
+      "card_concurrency" => card_concurrency,
       "csp_nonces" => %{
         style: conn.assigns[csp_keys[:style]],
         script: conn.assigns[csp_keys[:script]]
@@ -214,13 +231,14 @@ defmodule Lotus.Web.Router do
   end
 
   @doc false
-  def __public_session__(conn, prefix, live_path, live_transport, csp_key) do
+  def __public_session__(conn, prefix, live_path, live_transport, csp_key, card_concurrency) do
     csp_keys = expand_csp_nonce_keys(csp_key)
 
     %{
       "prefix" => prefix,
       "live_path" => live_path,
       "live_transport" => live_transport,
+      "card_concurrency" => card_concurrency,
       "csp_nonces" => %{
         style: conn.assigns[csp_keys[:style]],
         script: conn.assigns[csp_keys[:script]]
@@ -245,5 +263,9 @@ defmodule Lotus.Web.Router do
   defp valid_opt?({:csp_nonce_assign_key, _}), do: true
   defp valid_opt?({:resolver, value}) when is_atom(value) or is_nil(value), do: true
   defp valid_opt?({:features, value}) when is_list(value), do: true
+
+  defp valid_opt?({:card_concurrency, value}) when is_integer(value) and value > 0,
+    do: true
+
   defp valid_opt?(_), do: false
 end

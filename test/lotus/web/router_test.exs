@@ -43,6 +43,27 @@ defmodule Lotus.Web.RouterTest do
                options_to_session(features: [:timeout_options])
     end
 
+    test "passing card concurrency to both sessions" do
+      assert %{"card_concurrency" => 4} = options_to_session([])
+      assert %{"card_concurrency" => 2} = options_to_session(card_concurrency: 2)
+
+      {_name, _session_opts, public_session_opts, _route_opts, _export_opts} =
+        Router.__options__("/lotus", card_concurrency: 2)
+
+      {Router, :__public_session__, args} = public_session_opts[:session]
+
+      assert %{"card_concurrency" => 2} =
+               apply(Router, :__public_session__, [conn(:get, "/lotus") | args])
+    end
+
+    test "validating card concurrency values" do
+      for value <- [0, -1, "4", nil] do
+        assert_raise ArgumentError, ~r/invalid option for lotus_dashboard/, fn ->
+          Router.__options__("/lotus", card_concurrency: value)
+        end
+      end
+    end
+
     test "validating transport values" do
       assert_raise ArgumentError, ~r/invalid option for lotus_dashboard/, fn ->
         Router.__options__("/lotus", transport: "webpoll")

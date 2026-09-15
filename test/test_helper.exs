@@ -139,6 +139,8 @@ defmodule Lotus.Web.Test.Router do
       as: :author_dashboard,
       resolver: Lotus.Web.Test.AuthorResolver
     )
+
+    lotus_dashboard("/serial", as: :serial_dashboard, card_concurrency: 1)
   end
 end
 
