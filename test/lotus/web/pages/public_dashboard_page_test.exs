@@ -220,12 +220,12 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
       {:ok, live, _html} =
         live(build_conn(), "/lotus/public/#{dashboard.public_token}?user_name=Alice")
 
-      html = render_async(live)
+      render_async(live)
 
       # Should show filtered results
-      assert html =~ "Alice"
-      refute html =~ "Bob"
-      refute html =~ "Charlie"
+      assert has_element?(live, "td", "Alice")
+      refute has_element?(live, "td", "Bob")
+      refute has_element?(live, "td", "Charlie")
     end
 
     test "shows filter bar when dashboard has filters", %{dashboard: dashboard} do
@@ -258,11 +258,11 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
           "/lotus/public/#{dashboard.public_token}?unknown_param=foo&user_name=Alice"
         )
 
-      html = render_async(live)
+      render_async(live)
 
       # Unrecognized param is ignored; the filter still uses the matched user_name param
-      assert html =~ "Alice"
-      refute html =~ "Bob"
+      assert has_element?(live, "td", "Alice")
+      refute has_element?(live, "td", "Bob")
     end
 
     test "filter widgets reflect pre-filled values", %{dashboard: dashboard} do
@@ -306,22 +306,22 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
     test "applies filter default value when URL has no param", %{dashboard: dashboard} do
       {:ok, live, _html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
 
-      html = render_async(live)
+      render_async(live)
 
-      assert html =~ "Alice"
-      refute html =~ "Bob"
-      refute html =~ "Charlie"
+      assert has_element?(live, "td", "Alice")
+      refute has_element?(live, "td", "Bob")
+      refute has_element?(live, "td", "Charlie")
     end
 
     test "URL param overrides filter default value", %{dashboard: dashboard} do
       {:ok, live, _html} =
         live(build_conn(), "/lotus/public/#{dashboard.public_token}?user_name=Bob")
 
-      html = render_async(live)
+      render_async(live)
 
-      assert html =~ "Bob"
-      refute html =~ "Alice"
-      refute html =~ "Charlie"
+      assert has_element?(live, "td", "Bob")
+      refute has_element?(live, "td", "Alice")
+      refute has_element?(live, "td", "Charlie")
     end
   end
 

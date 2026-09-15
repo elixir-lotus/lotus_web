@@ -1,10 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [1.2.0] - 2026-09-15
 
 A resolver can now decide per action and per resource, not only once per
 session. A resolver that does not implement the new callback keeps the
-behaviour it had.
+behaviour it had. Dashboards gained cascading filters, relative dates and
+bounded card concurrency, and every content change carries the actor. This
+release needs Lotus 1.1.0.
 
 ### Added
 

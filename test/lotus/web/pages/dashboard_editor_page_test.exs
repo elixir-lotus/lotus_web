@@ -184,22 +184,22 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
     test "applies filter default value when URL has no param", %{dashboard: dashboard} do
       {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
 
-      html = render_async(live)
+      render_async(live)
 
-      assert html =~ "Alice"
-      refute html =~ "Bob"
-      refute html =~ "Charlie"
+      assert has_element?(live, "td", "Alice")
+      refute has_element?(live, "td", "Bob")
+      refute has_element?(live, "td", "Charlie")
     end
 
     test "URL param overrides filter default value", %{dashboard: dashboard} do
       {:ok, live, _html} =
         live(build_conn(), "/lotus/dashboards/#{dashboard.id}?user_name=Bob")
 
-      html = render_async(live)
+      render_async(live)
 
-      assert html =~ "Bob"
-      refute html =~ "Alice"
-      refute html =~ "Charlie"
+      assert has_element?(live, "td", "Bob")
+      refute has_element?(live, "td", "Alice")
+      refute has_element?(live, "td", "Charlie")
     end
   end
 
