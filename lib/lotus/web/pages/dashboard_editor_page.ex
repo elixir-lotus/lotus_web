@@ -1499,7 +1499,6 @@ defmodule Lotus.Web.DashboardEditorPage do
   defp widgets_for_type(:date), do: [:date_picker, :input]
   defp widgets_for_type(:date_range), do: [:date_range_picker]
   defp widgets_for_type(:select), do: [:select]
-  defp widgets_for_type(_filter_type), do: [:input]
 
   # The checks core runs when the dashboard saves, run here on the filters not
   # saved yet, so the filter editor shows the error next to the field.
