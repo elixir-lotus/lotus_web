@@ -269,9 +269,9 @@ The dashboard calls `authorize/3` on every render. Do not do I/O in each call:
 load the policy once and cache it. A public dashboard never calls it, because
 it has no user.
 
-With `strict_actor: true` (see below), a component that asks without the
-dashboard's `:resolver` and `:access` assigns raises instead of falling back
-to full access.
+A component that asks without the dashboard's `:resolver` and `:access`
+assigns gets a decision from `:read_only` access, and the error is logged.
+With `strict_actor: true` (see below), it raises instead.
 
 #### Catching an actor that never arrived
 

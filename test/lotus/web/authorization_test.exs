@@ -120,6 +120,10 @@ defmodule Lotus.Web.AuthorizationTest do
       assert_raise ArgumentError, fn ->
         Authorization.authorize(%{resolver: nil}, :query, "reporting")
       end
+
+      assert_raise ArgumentError, ~r/no :resolver or :access key/, fn ->
+        Authorization.allowed?(%{}, :manage_cache)
+      end
     end
 
     test "never asks the host for a public dashboard" do
