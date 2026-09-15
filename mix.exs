@@ -80,11 +80,13 @@ defmodule Lotus.Web.MixProject do
     [
       "assets.build": ["tailwind default", "esbuild default"],
       dev: "run --no-halt dev.exs",
-      # hex.publish runs in its own VM: after a dependency compiles in this one,
-      # Mix no longer finds the tasks of the Hex archive (Elixir 1.20, Hex 2.5).
+      # The compile and the asset build run in a child VM: once anything
+      # compiles in this VM, Mix no longer finds the tasks of the Hex archive
+      # (Elixir 1.20, Hex 2.5). hex.publish stays in this VM so that it can
+      # read the two-factor code from the terminal.
       release: [
-        "assets.build",
-        "cmd mix hex.publish --yes",
+        "cmd mix assets.build",
+        "hex.publish --yes",
         "cmd git tag v#{@version} -f",
         "cmd git push",
         "cmd git push --tags"
