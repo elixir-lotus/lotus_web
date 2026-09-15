@@ -25,6 +25,20 @@ behaviour it had.
   render only when the resolver allows them. The handlers ask again, so a
   crafted event is refused too.
 
+- **Cascading dashboard filters.** In the filter editor, a select filter can
+  get its options from a saved query and depend on another filter of the same
+  dashboard. The value of that filter goes to the query as the variable named
+  after it, so a `city` dropdown lists only the cities of the selected
+  `country`. The dashboard view and the public view get the options from
+  `Lotus.list_dashboard_filter_options/2` and get them again down the whole
+  chain when a filter value changes. A dependent value that is not in the new
+  options is cleared. A dependent filter is disabled while its parent has no
+  value, and a failing source query shows its error under the dropdown. The
+  filter editor shows the dependency errors next to the fields. The editor runs
+  a source query with the `:context` and `:scope` of the user and asks for
+  `:query` on its source. The public view runs it with neither, like its cards.
+  Needs the Lotus release with cascading filters (Postgres migration v6).
+
 ### Changed
 
 - **The CSV export route asks for `:query` and `:export` on the source and

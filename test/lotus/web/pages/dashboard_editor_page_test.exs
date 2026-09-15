@@ -237,4 +237,251 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
       assert html =~ "<ul>"
     end
   end
+
+  describe "cascading filters" do
+    setup do
+      create_test_users()
+      create_test_posts()
+
+      dashboard = dashboard_fixture(%{name: "Cascading Dashboard"})
+
+      titles =
+        query_fixture(%{
+          name: "Post Titles",
+          statement: """
+          SELECT p.title FROM test_posts p
+          JOIN test_users u ON u.id = p.user_id
+          WHERE u.name = {{user_name}}
+          ORDER BY p.title
+          """
+        })
+
+      {:ok, user_name} =
+        Lotus.create_dashboard_filter(dashboard, %{
+          name: "user_name",
+          label: "User",
+          filter_type: :select,
+          widget: :select,
+          config: %{"options" => ["Alice", "Bob"]},
+          position: 0
+        })
+
+      {:ok, post_title} =
+        Lotus.create_dashboard_filter(dashboard, %{
+          name: "post_title",
+          label: "Post",
+          filter_type: :select,
+          widget: :select,
+          source_query_id: titles.id,
+          depends_on_filter_id: user_name.id,
+          position: 1
+        })
+
+      {:ok, dashboard: dashboard, titles: titles, user_name: user_name, post_title: post_title}
+    end
+
+    test "lists the options of a dependent filter for the parent value", %{dashboard: dashboard} do
+      {:ok, live, _html} =
+        live(build_conn(), "/lotus/dashboards/#{dashboard.id}?user_name=Alice")
+
+      assert has_element?(live, "select[name='filter[post_title]'] option", "First Post")
+      assert has_element?(live, "select[name='filter[post_title]'] option", "Draft Post")
+      refute has_element?(live, "select[name='filter[post_title]'] option", "Another Post")
+    end
+
+    test "disables the dependent filter while the parent has no value", %{dashboard: dashboard} do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+
+      assert has_element?(live, "select[name='filter[post_title]'][disabled]")
+      refute has_element?(live, "select[name='filter[user_name]'][disabled]")
+    end
+
+    test "a parent change lists the new options and clears the child value", %{
+      dashboard: dashboard
+    } do
+      {:ok, live, _html} =
+        live(
+          build_conn(),
+          "/lotus/dashboards/#{dashboard.id}?user_name=Alice&post_title=First+Post"
+        )
+
+      assert has_element?(
+               live,
+               "select[name='filter[post_title]'] option[selected]",
+               "First Post"
+             )
+
+      live
+      |> element("#filter-bar form")
+      |> render_change(%{"filter" => %{"user_name" => "Bob", "post_title" => "First Post"}})
+
+      assert has_element?(live, "select[name='filter[post_title]'] option", "Another Post")
+      refute has_element?(live, "select[name='filter[post_title]'] option[selected]")
+      assert_push_event(live, "update-query-params", %{params: %{"user_name" => "Bob"}})
+    end
+
+    test "shows the error of a failing source query", %{dashboard: dashboard, post_title: filter} do
+      broken = query_fixture(%{statement: "SELECT missing_column FROM test_users"})
+      {:ok, _filter} = Lotus.update_dashboard_filter(filter, %{source_query_id: broken.id})
+
+      {:ok, live, _html} =
+        live(build_conn(), "/lotus/dashboards/#{dashboard.id}?user_name=Alice")
+
+      assert has_element?(live, "#filter-post_title-error")
+      assert render(live) =~ "Cascading Dashboard"
+    end
+
+    test "the filter editor shows the source query and the parent filter", %{
+      dashboard: dashboard,
+      post_title: filter,
+      user_name: parent,
+      titles: titles
+    } do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+      open_filter_editor(live, filter)
+
+      assert has_element?(
+               live,
+               "select[name='filter[source_query_id]'] option[value='#{titles.id}'][selected]"
+             )
+
+      assert has_element?(
+               live,
+               "select[name='filter[depends_on_filter_id]'] option[value='#{parent.id}'][selected]"
+             )
+
+      refute has_element?(
+               live,
+               "select[name='filter[depends_on_filter_id]'] option[value='#{filter.id}']"
+             )
+    end
+
+    test "the filter editor shows the dependency errors", %{
+      dashboard: dashboard,
+      post_title: child,
+      user_name: parent,
+      titles: titles
+    } do
+      other_dashboard = dashboard_fixture()
+
+      {:ok, other_filter} =
+        Lotus.create_dashboard_filter(other_dashboard, %{
+          name: "other",
+          label: "Other",
+          filter_type: :text,
+          widget: :input,
+          position: 0
+        })
+
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+
+      cases = [
+        {parent, %{"widget" => "input", "filter_type" => "text", "source_query_id" => titles.id},
+         "needs the select widget"},
+        {parent, %{"depends_on_filter_id" => child.id}, "needs a source query"},
+        {child, %{"depends_on_filter_id" => child.id}, "cannot be the filter itself"},
+        {child, %{"depends_on_filter_id" => other_filter.id},
+         "must be a filter of the same dashboard"},
+        {parent, %{"source_query_id" => titles.id, "depends_on_filter_id" => child.id},
+         "would create a dependency cycle"}
+      ]
+
+      for {filter, params, message} <- cases do
+        open_filter_editor(live, filter)
+        html = submit_filter(live, filter, params)
+
+        assert html =~ message
+        assert has_element?(live, "#filter-modal")
+        live |> element("#filter-modal button", "Cancel") |> render_click()
+      end
+    end
+
+    test "saves a dependency on a filter added in the same edit", %{
+      dashboard: dashboard,
+      titles: titles
+    } do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+
+      live |> element("#filter-bar button", "Add Filter") |> render_click()
+
+      live
+      |> element("#filter-modal form")
+      |> render_submit(%{
+        "filter" => %{
+          "label" => "Author",
+          "name" => "author",
+          "filter_type" => "select",
+          "widget" => "select",
+          "options" => "Alice\nBob"
+        }
+      })
+
+      live |> element("#filter-bar button", "Add Filter") |> render_click()
+
+      [_match, author_id] =
+        Regex.run(~r/<option value="(new_\d+)"[^>]*>\s*Author/, render(live))
+
+      live
+      |> element("#filter-modal form")
+      |> render_submit(%{
+        "filter" => %{
+          "label" => "Title",
+          "name" => "title",
+          "filter_type" => "select",
+          "widget" => "select",
+          "source_query_id" => to_string(titles.id),
+          "depends_on_filter_id" => author_id
+        }
+      })
+
+      live |> element("button", "Save") |> render_click()
+
+      live
+      |> element("#save-dashboard-modal form")
+      |> render_submit(%{"dashboard" => %{"name" => "Cascading Dashboard"}})
+
+      filters = Map.new(Lotus.list_dashboard_filters(dashboard.id), &{&1.name, &1})
+
+      assert filters["title"].source_query_id == titles.id
+      assert filters["title"].depends_on_filter_id == filters["author"].id
+    end
+
+    test "deleting the parent filter removes the dependency", %{
+      dashboard: dashboard,
+      user_name: parent
+    } do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+
+      assert has_element?(live, "select[name='filter[post_title]'][disabled]")
+
+      live
+      |> element("button[phx-click='delete_filter'][phx-value-filter-id='#{parent.id}']")
+      |> render_click()
+
+      refute has_element?(live, "select[name='filter[post_title]'][disabled]")
+    end
+  end
+
+  defp open_filter_editor(live, filter) do
+    live
+    |> element("button[phx-click='edit_filter'][phx-value-filter-id='#{filter.id}']")
+    |> render_click()
+  end
+
+  defp submit_filter(live, filter, params) do
+    base = %{
+      "label" => filter.label,
+      "name" => filter.name,
+      "filter_type" => to_string(filter.filter_type),
+      "widget" => to_string(filter.widget),
+      "source_query_id" => to_string(filter.source_query_id || ""),
+      "depends_on_filter_id" => to_string(filter.depends_on_filter_id || "")
+    }
+
+    params = Map.new(params, fn {key, value} -> {key, to_string(value)} end)
+
+    live
+    |> element("#filter-modal form")
+    |> render_submit(%{"filter" => Map.merge(base, params)})
+  end
 end

@@ -7,9 +7,10 @@ defmodule Lotus.Web.PublicDashboardPage do
 
   use Lotus.Web, :live_component
 
-  alias Lotus.Web.Dashboards.FilterValues
   alias Lotus.Web.Dashboards.CardGridComponent
   alias Lotus.Web.Dashboards.FilterBarComponent
+  alias Lotus.Web.Dashboards.FilterOptions
+  alias Lotus.Web.Dashboards.FilterValues
   alias Lotus.Web.Page
 
   @impl Phoenix.LiveComponent
@@ -37,6 +38,7 @@ defmodule Lotus.Web.PublicDashboardPage do
             id="filter-bar"
             filters={@dashboard.filters}
             filter_values={@filter_values}
+            filter_options={@filter_options}
             parent={@myself}
             public={true}
           />
@@ -81,6 +83,7 @@ defmodule Lotus.Web.PublicDashboardPage do
     |> assign(
       dashboard: nil,
       filter_values: %{},
+      filter_options: %{},
       card_results: %{},
       card_errors: %{},
       running_cards: MapSet.new()
@@ -107,6 +110,7 @@ defmodule Lotus.Web.PublicDashboardPage do
             {:noreply,
              socket
              |> assign(dashboard: dashboard, filter_values: filter_values)
+             |> assign_filter_options()
              |> run_all_cards()}
         end
 
@@ -133,11 +137,15 @@ defmodule Lotus.Web.PublicDashboardPage do
   def handle_event("filter_changed", %{"filter" => filter_values}, socket) do
     filter_values = FilterValues.normalize(filter_values)
 
+    socket =
+      socket
+      |> assign(filter_values: filter_values)
+      |> assign_filter_options()
+
     {:noreply,
      socket
-     |> assign(filter_values: filter_values)
      |> run_all_cards()
-     |> push_filter_params_to_url(filter_values)}
+     |> push_filter_params_to_url(socket.assigns.filter_values)}
   end
 
   @impl Page
@@ -225,6 +233,15 @@ defmodule Lotus.Web.PublicDashboardPage do
     Enum.reduce(query_cards, socket, fn card, acc ->
       run_card(acc, card.id)
     end)
+  end
+
+  # A public dashboard has no actor, so the source queries run like its cards:
+  # with no :context or :scope.
+  defp assign_filter_options(socket) do
+    {filter_options, filter_values} =
+      FilterOptions.resolve(socket.assigns.dashboard.filters, socket.assigns.filter_values)
+
+    assign(socket, filter_options: filter_options, filter_values: filter_values)
   end
 
   defp push_filter_params_to_url(socket, filter_values) do
