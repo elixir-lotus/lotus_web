@@ -11,6 +11,7 @@ defmodule Lotus.Web.DashboardEditorPage do
   alias Lotus.Web.Authorization
   alias Lotus.Web.Dashboards.AddCardModal
   alias Lotus.Web.Dashboards.CardGridComponent
+  alias Lotus.Web.Dashboards.CardRunner
   alias Lotus.Web.Dashboards.CardSettingsDrawer
   alias Lotus.Web.Dashboards.FilterBarComponent
   alias Lotus.Web.Dashboards.FilterOptions
@@ -503,6 +504,7 @@ defmodule Lotus.Web.DashboardEditorPage do
       card_results: %{},
       card_errors: %{},
       running_cards: MapSet.new(),
+      card_runner: CardRunner.new(socket.assigns.card_concurrency),
       settings_visible: false,
       card_settings_visible: false,
       selected_card: nil,
@@ -824,53 +826,11 @@ defmodule Lotus.Web.DashboardEditorPage do
   def handle_info(_msg, socket), do: {:noreply, socket}
 
   @impl Phoenix.LiveComponent
-  def handle_async({:run_card, card_id}, {:ok, {:ok, result}}, socket) do
-    running_cards = MapSet.delete(socket.assigns.running_cards, card_id)
-    card_results = Map.put(socket.assigns.card_results, card_id, result)
-    card_errors = Map.delete(socket.assigns.card_errors, card_id)
-
-    # Update selected card columns if this is the selected card
-    socket =
-      if socket.assigns.selected_card && socket.assigns.selected_card.id == card_id do
-        columns = Map.get(result, :columns, [])
-        assign(socket, selected_card_columns: columns)
-      else
-        socket
-      end
-
-    {:noreply,
-     assign(socket,
-       running_cards: running_cards,
-       card_results: card_results,
-       card_errors: card_errors
-     )}
-  end
-
-  def handle_async({:run_card, card_id}, {:ok, {:error, error}}, socket) do
-    running_cards = MapSet.delete(socket.assigns.running_cards, card_id)
-    card_errors = Map.put(socket.assigns.card_errors, card_id, to_string(error))
-    card_results = Map.delete(socket.assigns.card_results, card_id)
-
-    {:noreply,
-     assign(socket,
-       running_cards: running_cards,
-       card_results: card_results,
-       card_errors: card_errors
-     )}
-  end
-
-  def handle_async({:run_card, card_id}, {:exit, reason}, socket) do
-    running_cards = MapSet.delete(socket.assigns.running_cards, card_id)
-    error_msg = gettext("Query execution failed: %{reason}", reason: inspect(reason))
-    card_errors = Map.put(socket.assigns.card_errors, card_id, error_msg)
-    card_results = Map.delete(socket.assigns.card_results, card_id)
-
-    {:noreply,
-     assign(socket,
-       running_cards: running_cards,
-       card_results: card_results,
-       card_errors: card_errors
-     )}
+  def handle_async({:run_card, card_id}, result, socket) do
+    case CardRunner.finish(socket, card_id, &prepare_card/2) do
+      {:ok, socket} -> {:noreply, put_card_result(socket, card_id, result)}
+      :stale -> {:noreply, socket}
+    end
   end
 
   @impl Phoenix.LiveComponent
@@ -1062,34 +1022,64 @@ defmodule Lotus.Web.DashboardEditorPage do
     card && card.card_type == :query && card.query
   end
 
-  # Every card run goes through here: the first load, refresh, auto-refresh and
-  # a filter change. Viewing a dashboard does not grant running its queries.
-  defp execute_card_query(socket, card_id, card) do
+  # Every card run goes through here when the runner has a free slot: the first
+  # load, refresh, auto-refresh and a filter change. Viewing a dashboard does
+  # not grant running its queries.
+  defp prepare_card(socket, card_id) do
+    card = Enum.find(socket.assigns.dashboard.cards, &(&1.id == card_id))
+
+    if should_run_card?(card) do
+      authorize_card_query(socket, card_id, card)
+    else
+      {:skip, socket}
+    end
+  end
+
+  defp authorize_card_query(socket, card_id, card) do
     source = card.query.data_source || elem(Lotus.default_data_source(), 0)
 
     case Authorization.authorize(socket.assigns, :query, source) do
       :allow ->
-        start_card_query(socket, card_id, card)
+        query = card.query
+        opts = Actor.merge([vars: build_card_variables(socket, card)], socket.assigns)
+        {:run, fn -> Lotus.run_query(query, opts) end}
 
       {:deny, reason} ->
-        assign(socket,
-          card_errors: Map.put(socket.assigns.card_errors, card_id, reason),
-          card_results: Map.delete(socket.assigns.card_results, card_id)
-        )
+        {:skip, put_card_error(socket, card_id, reason)}
     end
   end
 
-  defp start_card_query(socket, card_id, card) do
-    query = card.query
-    vars = build_card_variables(socket, card)
-    running_cards = MapSet.put(socket.assigns.running_cards, card_id)
-    opts = Actor.merge([vars: vars], socket.assigns)
+  defp put_card_result(socket, card_id, {:ok, {:ok, result}}) do
+    socket =
+      if socket.assigns.selected_card && socket.assigns.selected_card.id == card_id do
+        assign(socket, selected_card_columns: Map.get(result, :columns, []))
+      else
+        socket
+      end
 
-    socket
-    |> assign(running_cards: running_cards)
-    |> start_async({:run_card, card_id}, fn ->
-      Lotus.run_query(query, opts)
-    end)
+    assign(socket,
+      card_results: Map.put(socket.assigns.card_results, card_id, result),
+      card_errors: Map.delete(socket.assigns.card_errors, card_id)
+    )
+  end
+
+  defp put_card_result(socket, card_id, {:ok, {:error, error}}) do
+    put_card_error(socket, card_id, to_string(error))
+  end
+
+  defp put_card_result(socket, card_id, {:exit, reason}) do
+    put_card_error(
+      socket,
+      card_id,
+      gettext("Query execution failed: %{reason}", reason: inspect(reason))
+    )
+  end
+
+  defp put_card_error(socket, card_id, message) do
+    assign(socket,
+      card_errors: Map.put(socket.assigns.card_errors, card_id, message),
+      card_results: Map.delete(socket.assigns.card_results, card_id)
+    )
   end
 
   defp build_card_variables(socket, card) do
@@ -1630,24 +1620,15 @@ defmodule Lotus.Web.DashboardEditorPage do
     end
   end
 
-  defp run_card(socket, card_id) do
-    card = Enum.find(socket.assigns.dashboard.cards, &(&1.id == card_id))
-
-    if should_run_card?(card) do
-      execute_card_query(socket, card_id, card)
-    else
-      socket
-    end
-  end
+  defp run_card(socket, card_id), do: CardRunner.run(socket, card_id, &prepare_card/2)
 
   defp run_all_cards(socket) do
-    query_cards =
-      socket.assigns.dashboard.cards
-      |> Enum.filter(&(&1.card_type == :query && &1.query_id))
+    card_ids =
+      for card <- socket.assigns.dashboard.cards,
+          card.card_type == :query && card.query_id,
+          do: card.id
 
-    Enum.reduce(query_cards, socket, fn card, acc ->
-      run_card(acc, card.id)
-    end)
+    CardRunner.run_all(socket, card_ids, &prepare_card/2)
   end
 
   defp generate_temp_id do

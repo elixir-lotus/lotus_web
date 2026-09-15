@@ -193,6 +193,7 @@ lotus_dashboard "/lotus",
 | `:resolver` | Module implementing `Lotus.Web.Resolver` |
 | `:csp_nonce_assign_key` | Assign key (or `%{style:, script:}` map) holding your CSP nonces |
 | `:features` | Optional feature flags, defaults to `[]` |
+| `:card_concurrency` | Maximum query cards a dashboard runs at the same time, defaults to `4` |
 
 | Feature | Description |
 |---------|-------------|

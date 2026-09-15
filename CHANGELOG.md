@@ -8,6 +8,13 @@ behaviour it had.
 
 ### Added
 
+- **Dashboard cards run with bounded concurrency.** The dashboard view and
+  the public view run at most `:card_concurrency` query cards at the same time
+  per page load (default `4`), set on the router with
+  `lotus_dashboard "/lotus", card_concurrency: 2`. The other cards wait in a
+  queue and render as their results arrive. A filter change or a refresh
+  cancels the cards of the previous run before the next run starts.
+
 - **`c:Lotus.Web.Resolver.authorize/3` decides what a user may do.** The
   dashboard asks `authorize(user, action, resource)` and gets `:allow` or
   `{:deny, reason}`. The actions are `:query`, `:export`, `:discover`,
