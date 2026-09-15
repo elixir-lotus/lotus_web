@@ -105,17 +105,24 @@ defmodule Lotus.Web.Dashboards.FilterOptions do
   # The parent goes in already loaded, so core does not read it from the
   # database: an unsaved parent has no row, and a saved one may have unsaved
   # edits. Its default is left out, because the values already carry it.
+  #
+  # The structs carry only the fields core reads. An unsaved filter has no
+  # position or timestamps, so they are built with struct!/2.
   defp list_options(filter, parent, parent_values, run_opts) do
-    core_filter = %DashboardFilter{
-      id: filter.id,
-      name: filter.name,
-      filter_type: filter.filter_type,
-      widget: filter.widget,
-      config: filter.config || %{},
-      source_query_id: filter.source_query_id,
-      depends_on_filter_id: parent && parent.id,
-      depends_on_filter: parent && core_parent(parent)
-    }
+    {parent_id, core_parent} =
+      if parent, do: {parent.id, core_parent(parent)}, else: {nil, nil}
+
+    core_filter =
+      struct!(DashboardFilter, %{
+        id: filter.id,
+        name: filter.name,
+        filter_type: filter.filter_type,
+        widget: filter.widget,
+        config: filter.config || %{},
+        source_query_id: filter.source_query_id,
+        depends_on_filter_id: parent_id,
+        depends_on_filter: core_parent
+      })
 
     Lotus.list_dashboard_filter_options(
       core_filter,
@@ -126,7 +133,7 @@ defmodule Lotus.Web.Dashboards.FilterOptions do
   end
 
   defp core_parent(parent) do
-    %DashboardFilter{id: parent.id, name: parent.name, filter_type: parent.filter_type}
+    struct!(DashboardFilter, %{id: parent.id, name: parent.name, filter_type: parent.filter_type})
   end
 
   defp clear_value(values, _filter, nil, _state), do: values
