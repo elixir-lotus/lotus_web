@@ -9,18 +9,19 @@ defmodule Lotus.Web.Dashboards.FilterBarComponent do
 
   @impl Phoenix.LiveComponent
   def mount(socket) do
-    {:ok, assign(socket, filters: [], filter_values: %{}, public: false)}
+    {:ok, assign(socket, filters: [], filter_values: %{}, filter_options: %{}, public: false)}
   end
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
     ~H"""
-    <div class="px-4 sm:px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+    <div id="filter-bar" class="px-4 sm:px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
       <form phx-change="filter_changed" phx-submit="filter_changed" phx-target={@parent} class="flex flex-wrap items-end gap-4">
         <%= for filter <- Enum.sort_by(@filters, & &1.position) do %>
           <.filter_widget
             filter={filter}
             value={Map.get(@filter_values, filter.name, filter.default_value)}
+            options_state={Map.get(@filter_options, filter.name)}
             public={@public}
             parent={@parent}
           />
@@ -82,17 +83,7 @@ defmodule Lotus.Web.Dashboards.FilterBarComponent do
             class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
           />
         <% :select -> %>
-          <select
-            name={"filter[#{@filter.name}]"}
-            class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
-          >
-            <option value=""><%= gettext("All") %></option>
-            <%= for opt <- (@filter.config["options"] || []) do %>
-              <option value={option_value(opt)} selected={@value == option_value(opt)}>
-                <%= option_label(opt) %>
-              </option>
-            <% end %>
-          </select>
+          <.select_widget filter={@filter} value={@value} state={@options_state} />
         <% :date_picker -> %>
           <input
             type="date"
@@ -115,6 +106,49 @@ defmodule Lotus.Web.Dashboards.FilterBarComponent do
     </div>
     """
   end
+
+  # `state` comes from `Lotus.Web.Dashboards.FilterOptions`. With no state the
+  # select lists its static options.
+  defp select_widget(assigns) do
+    assigns =
+      assign(assigns,
+        options: select_options(assigns.state, assigns.filter),
+        waiting: assigns.state == :waiting,
+        error: select_error(assigns.state)
+      )
+
+    ~H"""
+    <select
+      name={"filter[#{@filter.name}]"}
+      disabled={@waiting}
+      title={if @waiting, do: gettext("Choose a value in the filter this one depends on")}
+      class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <option value=""><%= gettext("All") %></option>
+      <%= for opt <- @options do %>
+        <option value={option_value(opt)} selected={to_string(@value) == option_value(opt)}>
+          <%= option_label(opt) %>
+        </option>
+      <% end %>
+    </select>
+    <p
+      :if={@error}
+      id={"filter-#{@filter.name}-error"}
+      title={@error}
+      class="mt-1 max-w-xs truncate text-xs text-red-600 dark:text-red-400"
+    >
+      <%= @error %>
+    </p>
+    """
+  end
+
+  defp select_options({:ok, options}, _filter), do: options
+  defp select_options(nil, filter), do: filter.config["options"] || []
+  defp select_options(_state, _filter), do: []
+
+  defp select_error({:error, reason}) when is_binary(reason), do: reason
+  defp select_error({:error, reason}), do: inspect(reason)
+  defp select_error(_state), do: nil
 
   defp date_range_picker(assigns) do
     {start_value, end_value} = parse_date_range(assigns.value)
@@ -146,15 +180,16 @@ defmodule Lotus.Web.Dashboards.FilterBarComponent do
   defp input_type(:datetime), do: "datetime-local"
   defp input_type(_), do: "text"
 
-  defp option_value(%{"value" => value}), do: value
-  defp option_value(%{value: value}), do: value
-  defp option_value(value) when is_binary(value), do: value
+  # Options from a source query keep the column types, and a filter value is a
+  # string, so both sides compare as strings.
+  defp option_value(%{"value" => value}), do: to_string(value)
+  defp option_value(%{value: value}), do: to_string(value)
   defp option_value(value), do: to_string(value)
 
-  defp option_label(%{"label" => label}), do: label
-  defp option_label(%{label: label}), do: label
-  defp option_label(%{"value" => value}), do: value
-  defp option_label(%{value: value}), do: value
+  defp option_label(%{"label" => label}), do: to_string(label)
+  defp option_label(%{label: label}), do: to_string(label)
+  defp option_label(%{"value" => value}), do: to_string(value)
+  defp option_label(%{value: value}), do: to_string(value)
   defp option_label(value), do: to_string(value)
 
   defp parse_date_range(value), do: FilterValues.split_date_range(value)

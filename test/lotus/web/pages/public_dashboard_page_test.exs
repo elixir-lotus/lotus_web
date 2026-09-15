@@ -47,6 +47,79 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
     end
   end
 
+  describe "cascading filters" do
+    setup do
+      create_test_users()
+      create_test_posts()
+
+      dashboard = public_dashboard_fixture(%{name: "Public Cascading"})
+
+      titles =
+        query_fixture(%{
+          statement: """
+          SELECT p.title FROM test_posts p
+          JOIN test_users u ON u.id = p.user_id
+          WHERE u.name = {{user_name}}
+          ORDER BY p.title
+          """
+        })
+
+      {:ok, user_name} =
+        Lotus.create_dashboard_filter(dashboard, %{
+          name: "user_name",
+          label: "User",
+          filter_type: :select,
+          widget: :select,
+          config: %{"options" => ["Alice", "Bob"]},
+          position: 0
+        })
+
+      {:ok, _post_title} =
+        Lotus.create_dashboard_filter(dashboard, %{
+          name: "post_title",
+          label: "Post",
+          filter_type: :select,
+          widget: :select,
+          source_query_id: titles.id,
+          depends_on_filter_id: user_name.id,
+          position: 1
+        })
+
+      {:ok, dashboard: dashboard}
+    end
+
+    test "disables the dependent filter while the parent has no value", %{dashboard: dashboard} do
+      {:ok, live, _html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
+
+      assert has_element?(live, "select[name='filter[user_name]'] option", "Alice")
+      assert has_element?(live, "select[name='filter[post_title]'][disabled]")
+    end
+
+    test "a parent change lists the new options and clears the child value", %{
+      dashboard: dashboard
+    } do
+      {:ok, live, _html} =
+        live(
+          build_conn(),
+          "/lotus/public/#{dashboard.public_token}?user_name=Alice&post_title=First+Post"
+        )
+
+      assert has_element?(
+               live,
+               "select[name='filter[post_title]'] option[selected]",
+               "First Post"
+             )
+
+      live
+      |> element("#filter-bar form")
+      |> render_change(%{"filter" => %{"user_name" => "Bob", "post_title" => "First Post"}})
+
+      assert has_element?(live, "select[name='filter[post_title]'] option", "Another Post")
+      refute has_element?(live, "select[name='filter[post_title]'] option[selected]")
+      assert_push_event(live, "update-query-params", %{params: %{"user_name" => "Bob"}})
+    end
+  end
+
   describe "empty dashboard" do
     setup do
       dashboard = public_dashboard_fixture(%{name: "Empty Dashboard"})

@@ -7,13 +7,14 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   use Lotus.Web, :live_component
 
-  alias Lotus.Web.Dashboards.FilterValues
   alias Lotus.Web.Actor
   alias Lotus.Web.Authorization
   alias Lotus.Web.Dashboards.AddCardModal
   alias Lotus.Web.Dashboards.CardGridComponent
   alias Lotus.Web.Dashboards.CardSettingsDrawer
   alias Lotus.Web.Dashboards.FilterBarComponent
+  alias Lotus.Web.Dashboards.FilterOptions
+  alias Lotus.Web.Dashboards.FilterValues
   alias Lotus.Web.Dashboards.SettingsDrawer
   alias Lotus.Web.Page
   alias Lotus.Web.VegaSpecBuilder
@@ -48,6 +49,7 @@ defmodule Lotus.Web.DashboardEditorPage do
             id="filter-bar"
             filters={@dashboard.filters}
             filter_values={@filter_values}
+            filter_options={@filter_options}
             public={not @can_manage}
             parent={@myself}
           />
@@ -149,6 +151,9 @@ defmodule Lotus.Web.DashboardEditorPage do
       <.filter_modal
         :if={@filter_modal_open}
         filter={@editing_filter}
+        filters={@dashboard.filters}
+        queries={@available_queries}
+        errors={@filter_errors}
         parent={@myself}
       />
 
@@ -318,7 +323,10 @@ defmodule Lotus.Web.DashboardEditorPage do
         is_new: is_new,
         filter_type: to_string(assigns.filter.filter_type),
         widget: to_string(assigns.filter.widget),
-        options_text: format_options(assigns.filter.config)
+        options_text: format_options(assigns.filter.config),
+        source_query_id: Map.get(assigns.filter, :source_query_id),
+        depends_on_filter_id: Map.get(assigns.filter, :depends_on_filter_id),
+        parent_choices: Enum.reject(assigns.filters, &(&1.id == assigns.filter.id))
       )
 
     ~H"""
@@ -415,6 +423,45 @@ defmodule Lotus.Web.DashboardEditorPage do
               class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500 font-mono text-sm"
             ><%= @options_text %></textarea>
           </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <%= gettext("Source Query") %>
+              </label>
+              <select
+                name="filter[source_query_id]"
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
+              >
+                <option value=""><%= gettext("None (use the options above)") %></option>
+                <%= for query <- @queries do %>
+                  <option value={query.id} selected={query.id == @source_query_id}>
+                    <%= query.name %>
+                  </option>
+                <% end %>
+              </select>
+              <.filter_field_error errors={@errors} field={:source_query_id} />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <%= gettext("Depends On") %>
+              </label>
+              <select
+                name="filter[depends_on_filter_id]"
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
+              >
+                <option value=""><%= gettext("None") %></option>
+                <%= for parent <- @parent_choices do %>
+                  <option value={parent.id} selected={parent.id == @depends_on_filter_id}>
+                    <%= parent.label || parent.name %>
+                  </option>
+                <% end %>
+              </select>
+              <.filter_field_error errors={@errors} field={:depends_on_filter_id} />
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            <%= gettext("For select widgets. The source query lists the options: the first column is the value and the second is the label. The value of the filter it depends on goes to the query as the variable with that filter's name.") %>
+          </p>
         </div>
         <div class="mt-6 flex justify-end gap-3">
           <.button
@@ -434,6 +481,14 @@ defmodule Lotus.Web.DashboardEditorPage do
     """
   end
 
+  defp filter_field_error(assigns) do
+    ~H"""
+    <p :if={@errors[@field]} class="mt-1 text-xs text-red-600 dark:text-red-400">
+      <%= @errors[@field] %>
+    </p>
+    """
+  end
+
   # Page Callbacks
 
   @impl Page
@@ -443,6 +498,8 @@ defmodule Lotus.Web.DashboardEditorPage do
       dashboard: new_dashboard(),
       dashboard_form: nil,
       filter_values: %{},
+      filter_options: %{},
+      filter_errors: %{},
       card_results: %{},
       card_errors: %{},
       running_cards: MapSet.new(),
@@ -481,6 +538,7 @@ defmodule Lotus.Web.DashboardEditorPage do
            socket
            |> assign_dashboard(dashboard)
            |> assign(filter_values: filter_values)
+           |> assign_filter_options()
            |> run_all_cards()}
         else
           nil -> {:noreply, leave(socket, gettext("Dashboard not found"))}
@@ -612,10 +670,12 @@ defmodule Lotus.Web.DashboardEditorPage do
     socket =
       socket
       |> assign(filter_values: filter_values)
-      |> run_all_cards()
-      |> push_filter_params_to_url(filter_values)
+      |> assign_filter_options()
 
-    {:noreply, socket}
+    {:noreply,
+     socket
+     |> run_all_cards()
+     |> push_filter_params_to_url(socket.assigns.filter_values)}
   end
 
   @impl Phoenix.LiveComponent
@@ -630,7 +690,7 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("close_filter_modal", _params, socket) do
-    {:noreply, assign(socket, filter_modal_open: false, editing_filter: nil)}
+    {:noreply, assign(socket, filter_modal_open: false, editing_filter: nil, filter_errors: %{})}
   end
 
   @impl Phoenix.LiveComponent
@@ -907,6 +967,10 @@ defmodule Lotus.Web.DashboardEditorPage do
         send(self(), {:put_flash, [:error, gettext("Failed to save dashboard")]})
         {:noreply, assign(socket, dashboard_form: form)}
 
+      {:error, %Ecto.Changeset{data: %Lotus.Storage.DashboardFilter{}} = changeset} ->
+        send(self(), {:put_flash, [:error, filter_save_error(changeset)]})
+        {:noreply, socket}
+
       {:error, {:halted, reason}} ->
         send(self(), {:put_flash, [:error, refused_message(reason)]})
         {:noreply, socket}
@@ -915,6 +979,22 @@ defmodule Lotus.Web.DashboardEditorPage do
         send(self(), {:put_flash, [:error, gettext("Failed to save dashboard")]})
         {:noreply, socket}
     end
+  end
+
+  defp filter_save_error(changeset) do
+    errors =
+      changeset
+      |> Ecto.Changeset.traverse_errors(fn {message, opts} ->
+        Enum.reduce(opts, message, fn {key, value}, acc ->
+          String.replace(acc, "%{#{key}}", to_string(value))
+        end)
+      end)
+      |> Enum.map_join("; ", fn {field, messages} ->
+        "#{field} #{Enum.join(messages, ", ")}"
+      end)
+
+    name = Ecto.Changeset.get_field(changeset, :name)
+    gettext("Failed to save filter %{name}: %{errors}", name: name, errors: errors)
   end
 
   # The dashboard, its cards, filters and filter mappings save in one
@@ -1203,18 +1283,25 @@ defmodule Lotus.Web.DashboardEditorPage do
       widget: :input,
       default_value: nil,
       config: %{},
-      position: next_position
+      position: next_position,
+      source_query_id: nil,
+      depends_on_filter_id: nil
     }
 
-    {:noreply, assign(socket, filter_modal_open: true, editing_filter: new_filter)}
+    {:noreply,
+     assign(socket, filter_modal_open: true, editing_filter: new_filter, filter_errors: %{})}
   end
 
   defp do_edit_filter(socket, filter_id) do
     filter_id = maybe_parse_id(filter_id)
 
     case Enum.find(socket.assigns.dashboard.filters, &(&1.id == filter_id)) do
-      nil -> {:noreply, socket}
-      filter -> {:noreply, assign(socket, filter_modal_open: true, editing_filter: filter)}
+      nil ->
+        {:noreply, socket}
+
+      filter ->
+        {:noreply,
+         assign(socket, filter_modal_open: true, editing_filter: filter, filter_errors: %{})}
     end
   end
 
@@ -1232,20 +1319,111 @@ defmodule Lotus.Web.DashboardEditorPage do
         config: build_filter_config(filter_params)
     }
 
-    filters = upsert_filter(dashboard.filters, filter)
+    filter =
+      Map.merge(filter, %{
+        source_query_id: parse_optional_id(filter_params["source_query_id"]),
+        depends_on_filter_id: parse_optional_id(filter_params["depends_on_filter_id"])
+      })
 
-    dashboard = %{dashboard | filters: filters}
+    case filter_dependency_errors(filter, dashboard.filters) do
+      errors when errors == %{} ->
+        dashboard = %{dashboard | filters: upsert_filter(dashboard.filters, filter)}
 
-    {:noreply,
-     socket
-     |> assign(dashboard: dashboard, filter_modal_open: false, editing_filter: nil)
-     |> run_all_cards()}
+        {:noreply,
+         socket
+         |> assign(dashboard: dashboard, filter_modal_open: false, editing_filter: nil)
+         |> assign_filter_options()
+         |> run_all_cards()}
+
+      errors ->
+        {:noreply, assign(socket, editing_filter: filter, filter_errors: errors)}
+    end
+  end
+
+  # The checks core runs when the dashboard saves, run here on the filters not
+  # saved yet, so the filter editor shows the error next to the field.
+  defp filter_dependency_errors(filter, filters) do
+    parent_id = filter.depends_on_filter_id
+
+    cond do
+      filter.source_query_id != nil and filter.widget != :select ->
+        %{source_query_id: gettext("needs the select widget")}
+
+      parent_id == nil ->
+        %{}
+
+      filter.source_query_id == nil ->
+        %{depends_on_filter_id: gettext("needs a source query")}
+
+      parent_id == filter.id ->
+        %{depends_on_filter_id: gettext("cannot be the filter itself")}
+
+      not Enum.any?(filters, &(&1.id == parent_id)) ->
+        %{depends_on_filter_id: gettext("must be a filter of the same dashboard")}
+
+      dependency_reaches?(parent_id, filter.id, filters, length(filters)) ->
+        %{depends_on_filter_id: gettext("would create a dependency cycle")}
+
+      true ->
+        %{}
+    end
+  end
+
+  defp dependency_reaches?(nil, _target_id, _filters, _steps_left), do: false
+  defp dependency_reaches?(target_id, target_id, _filters, _steps_left), do: true
+  defp dependency_reaches?(_id, _target_id, _filters, 0), do: false
+
+  defp dependency_reaches?(id, target_id, filters, steps_left) do
+    parent_id =
+      Enum.find_value(filters, fn filter ->
+        if filter.id == id, do: Map.get(filter, :depends_on_filter_id)
+      end)
+
+    dependency_reaches?(parent_id, target_id, filters, steps_left - 1)
+  end
+
+  defp parse_optional_id(id) when id in [nil, ""], do: nil
+  defp parse_optional_id(id), do: maybe_parse_id(id)
+
+  defp assign_filter_options(socket) do
+    {filter_options, filter_values} =
+      FilterOptions.resolve(socket.assigns.dashboard.filters, socket.assigns.filter_values,
+        run_opts: Actor.opts(socket.assigns),
+        authorize: &authorize_source_query(socket, &1)
+      )
+
+    assign(socket, filter_options: filter_options, filter_values: filter_values)
+  end
+
+  # A source query runs like a card query, so it needs :query on its source.
+  defp authorize_source_query(socket, query_id) do
+    query =
+      Enum.find(socket.assigns.available_queries, &(&1.id == query_id)) ||
+        Lotus.get_query(query_id)
+
+    case query do
+      nil ->
+        {:deny, gettext("Source query not found")}
+
+      query ->
+        source = query.data_source || elem(Lotus.default_data_source(), 0)
+        Authorization.authorize(socket.assigns, :query, source)
+    end
   end
 
   defp do_delete_filter(socket, filter_id) do
     filter_id = maybe_parse_id(filter_id)
     dashboard = socket.assigns.dashboard
-    filters = Enum.reject(dashboard.filters, &(&1.id == filter_id))
+
+    # Core sets the dependency to nil when the parent is deleted, so the
+    # filters not saved yet do the same.
+    filters =
+      for filter <- dashboard.filters, filter.id != filter_id do
+        if Map.get(filter, :depends_on_filter_id) == filter_id,
+          do: Map.put(filter, :depends_on_filter_id, nil),
+          else: filter
+      end
+
     dashboard = %{dashboard | filters: filters}
 
     filter_name =
@@ -1258,6 +1436,7 @@ defmodule Lotus.Web.DashboardEditorPage do
     {:noreply,
      socket
      |> assign(dashboard: dashboard, filter_values: filter_values)
+     |> assign_filter_options()
      |> run_all_cards()}
   end
 
@@ -1541,18 +1720,54 @@ defmodule Lotus.Web.DashboardEditorPage do
     filters_to_delete = Enum.reject(existing_filters, &MapSet.member?(current_ids, &1.id))
 
     with :ok <- each_write(filters_to_delete, &Lotus.delete_dashboard_filter(&1, opts)),
-         :ok <- each_write(existing_filter_updates, &update_filter(&1, existing_filters, opts)) do
-      each_write(new_filters, fn filter ->
-        Lotus.create_dashboard_filter(saved_dashboard, filter_to_attrs(filter), opts)
-      end)
+         :ok <- each_write(existing_filter_updates, &update_filter(&1, existing_filters, opts)),
+         {:ok, saved_ids} <- create_filters(saved_dashboard, new_filters, opts) do
+      link_filter_dependencies(saved_dashboard, filters, saved_ids, opts)
     end
   end
 
+  # A new or changed dependency is written in a second pass: the parent can be
+  # a filter created in this save, and two filters can swap their dependency.
   defp update_filter(filter, existing_filters, opts) do
     case Enum.find(existing_filters, &(&1.id == filter.id)) do
-      nil -> :ok
-      existing -> Lotus.update_dashboard_filter(existing, filter_to_attrs(filter), opts)
+      nil ->
+        :ok
+
+      existing ->
+        attrs = filter_to_attrs(filter)
+
+        attrs =
+          if filter.depends_on_filter_id == existing.depends_on_filter_id,
+            do: attrs,
+            else: %{attrs | depends_on_filter_id: nil}
+
+        Lotus.update_dashboard_filter(existing, attrs, opts)
     end
+  end
+
+  defp create_filters(saved_dashboard, new_filters, opts) do
+    Enum.reduce_while(new_filters, {:ok, %{}}, fn filter, {:ok, saved_ids} ->
+      attrs = %{filter_to_attrs(filter) | depends_on_filter_id: nil}
+
+      case Lotus.create_dashboard_filter(saved_dashboard, attrs, opts) do
+        {:ok, saved} -> {:cont, {:ok, Map.put(saved_ids, filter.id, saved.id)}}
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp link_filter_dependencies(saved_dashboard, filters, saved_ids, opts) do
+    saved_filters = Map.new(Lotus.list_dashboard_filters(saved_dashboard.id), &{&1.id, &1})
+
+    each_write(filters, fn filter ->
+      saved = Map.get(saved_filters, Map.get(saved_ids, filter.id, filter.id))
+      parent_id = filter.depends_on_filter_id
+      parent_id = Map.get(saved_ids, parent_id, parent_id)
+
+      if saved == nil or saved.depends_on_filter_id == parent_id,
+        do: :ok,
+        else: Lotus.update_dashboard_filter(saved, %{depends_on_filter_id: parent_id}, opts)
+    end)
   end
 
   defp sync_card_filter_mappings(saved_dashboard, cards, opts) do
@@ -1680,7 +1895,9 @@ defmodule Lotus.Web.DashboardEditorPage do
       widget: filter.widget,
       default_value: filter.default_value,
       position: filter.position,
-      config: filter.config
+      config: filter.config,
+      source_query_id: Map.get(filter, :source_query_id),
+      depends_on_filter_id: Map.get(filter, :depends_on_filter_id)
     }
   end
 end

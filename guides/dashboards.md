@@ -179,6 +179,8 @@ Values are passed to the query as variables, so each adapter substitutes them th
    - **Widget** — Input, Select, Date Picker, or Date Range Picker
    - **Default value** — optional pre-filled value
    - **Options** — for select widgets, one value per line (e.g. `us`, `eu`, `apac` on three lines)
+   - **Source Query** — for select widgets, a saved query that lists the options instead (see [Cascading Filters](#cascading-filters))
+   - **Depends On** — another filter of the dashboard whose value goes to the source query
 3. Click **"Save Filter"**
 
 Filter names must be unique within a dashboard.
@@ -218,6 +220,27 @@ Each filter maps to at most one variable per card. A query that needs two bounds
 | **Date Range Picker** | Start/end date pairs | Two calendar inputs, sent as `start` and `end` |
 
 Typing in a text or number filter no longer re-runs every card on each keystroke: those inputs are debounced by 500 ms, so the cards run once you stop typing. Select, date, and date-range widgets change one time per user action and fire immediately.
+
+### Cascading Filters
+
+A select filter can get its options from a saved query, and can depend on another filter of the same dashboard. A `city` filter that depends on a `country` filter uses a source query such as:
+
+```sql
+SELECT DISTINCT city FROM locations WHERE country = {{country}} ORDER BY city
+```
+
+- The first column of each row is the option value and the second is the label. A one-column query uses that column for both.
+- The value of the filter it depends on goes to the source query as the variable named after that filter (`country` above).
+- When a filter value changes, the options of the filters that depend on it load again, down the whole chain (`country` → `city` → `district`).
+- A dependent value that is not in the new options is cleared.
+- While the parent has no value, the dependent dropdown is disabled and the source query does not run.
+- When the source query fails, the error shows under the dropdown.
+
+The filter editor rejects a source query on a filter without the select widget, a dependency without a source query, a dependency on the filter itself, and a dependency that makes a cycle.
+
+In the dashboard editor, a source query runs with the `:context` and `:scope` of the user and needs `:query` on its data source, like a card query. On a public dashboard, it runs with no `:context` and no `:scope`, like the cards of that dashboard.
+
+Deleting the source query makes the filter use its static options again. Deleting the parent filter removes the dependency.
 
 ### Shareable Filter URLs
 
