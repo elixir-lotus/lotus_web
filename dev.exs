@@ -129,6 +129,19 @@ defmodule WebDev.Migration4 do
   end
 end
 
+defmodule WebDev.Migration5 do
+  use Ecto.Migration
+
+  def up do
+    # Re-run Lotus migrations to pick up V5 (query language) and V6 (cascading filters)
+    Lotus.Migrations.up()
+  end
+
+  def down do
+    Lotus.Migrations.down()
+  end
+end
+
 defmodule WebDev.MySQLMigration do
   use Ecto.Migration
 
@@ -342,7 +355,9 @@ Task.async(fn ->
       # Lotus.Migrations.up() - V2 (visualizations)
       {3, WebDev.Migration3},
       # Lotus.Migrations.up() - V3 (dashboards)
-      {4, WebDev.Migration4}
+      {4, WebDev.Migration4},
+      # Lotus.Migrations.up() - V5 (query language), V6 (cascading filters)
+      {5, WebDev.Migration5}
     ],
     :up,
     all: true

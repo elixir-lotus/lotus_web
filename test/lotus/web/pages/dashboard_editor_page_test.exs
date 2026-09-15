@@ -3,6 +3,9 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
 
   import Phoenix.LiveViewTest
 
+  alias Lotus.Dashboards.DateToken
+  alias Lotus.Web.Dashboards.DateTokens
+
   describe "new dashboard" do
     test "shows empty state with Add Card button" do
       {:ok, _live, html} = live(build_conn(), "/lotus/dashboards/new")
@@ -460,6 +463,250 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
 
       refute has_element?(live, "select[name='filter[post_title]'][disabled]")
     end
+  end
+
+  describe "relative date tokens" do
+    setup do
+      dashboard = dashboard_fixture(%{name: "Token Dashboard"})
+      dashboard |> token_filters_fixture() |> Map.put(:dashboard, dashboard)
+    end
+
+    test "cards get the dates a token default covers, split by the transforms", %{
+      dashboard: dashboard
+    } do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+      html = render_async(live)
+      [first, last] = "last_30_days" |> resolve(:date_range) |> String.split(",")
+
+      assert html =~ first
+      assert html =~ last
+      assert html =~ resolve("yesterday", :date)
+      refute html =~ "Invalid date"
+    end
+
+    test "the filter editor offers the tokens by label and the dates they cover", %{
+      dashboard: dashboard,
+      period: period
+    } do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+      open_filter_editor(live, period)
+
+      assert has_element?(
+               live,
+               "#filter-default-mode option[value=last_30_days][selected]",
+               "Last 30 days"
+             )
+
+      assert has_element?(live, "#filter-default-mode option[value=this_quarter]", "This quarter")
+      assert has_element?(live, "#filter-default-mode option[value=fixed]", "A fixed date range")
+
+      assert has_element?(
+               live,
+               "#filter-default-covers",
+               DateTokens.describe("last_30_days", Date.utc_today())
+             )
+    end
+
+    test "a date filter offers only the single-day tokens", %{dashboard: dashboard, day: day} do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+      open_filter_editor(live, day)
+
+      assert has_element?(live, "#filter-default-mode option[value=yesterday][selected]")
+      assert has_element?(live, "#filter-default-mode option[value=today]")
+      refute has_element?(live, "#filter-default-mode option[value=last_7_days]")
+      assert has_element?(live, "#filter-default-mode option[value=fixed]", "A fixed date")
+    end
+
+    test "a range token on a date filter shows the error and does not save", %{
+      dashboard: dashboard,
+      period: period
+    } do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+      open_filter_editor(live, period)
+
+      params = %{
+        "filter_type" => "date",
+        "widget" => "date_picker",
+        "default_mode" => "last_30_days"
+      }
+
+      assert change_filter(live, period, params) =~
+               "Last 30 days is a date range. A Date filter takes Today, Yesterday or a fixed date."
+
+      submit_filter(live, period, params)
+
+      assert has_element?(live, "#filter-modal")
+    end
+
+    test "a fixed range default shows the date fields and saves the range", %{
+      dashboard: dashboard,
+      period: period
+    } do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+      open_filter_editor(live, period)
+
+      change_filter(live, period, %{"default_mode" => "fixed"})
+      assert has_element?(live, "input[name='filter[default_start]']")
+      refute has_element?(live, "#filter-default-covers")
+
+      submit_filter(live, period, %{
+        "default_mode" => "fixed",
+        "default_start" => "2026-02-01",
+        "default_end" => "2026-02-28"
+      })
+
+      open_filter_editor(live, period)
+      assert has_element?(live, "#filter-default-mode option[value=fixed][selected]")
+      assert has_element?(live, "input[name='filter[default_start]'][value='2026-02-01']")
+      assert has_element?(live, "input[name='filter[default_end]'][value='2026-02-28']")
+    end
+  end
+
+  describe "filter type and widget" do
+    setup do
+      dashboard = dashboard_fixture(%{name: "Token Dashboard"})
+      dashboard |> token_filters_fixture() |> Map.put(:dashboard, dashboard)
+    end
+
+    test "a new type picks a widget the type accepts", %{dashboard: dashboard, day: day} do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+      open_filter_editor(live, day)
+
+      change_filter(live, day, %{"filter_type" => "date_range", "widget" => "date_picker"})
+
+      assert has_element?(
+               live,
+               "#filter-modal select[name='filter[widget]'] option[value=date_range_picker][selected]"
+             )
+    end
+
+    test "a widget the new type accepts stays", %{dashboard: dashboard, day: day} do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+      open_filter_editor(live, day)
+
+      change_filter(live, day, %{"filter_type" => "text", "widget" => "input"})
+
+      assert has_element?(
+               live,
+               "#filter-modal select[name='filter[widget]'] option[value=input][selected]"
+             )
+    end
+  end
+
+  describe "mapping transforms" do
+    setup do
+      dashboard = dashboard_fixture(%{name: "Token Dashboard"})
+      dashboard |> token_filters_fixture() |> Map.put(:dashboard, dashboard)
+    end
+
+    test "a save keeps the transforms of a card whose other mapping changed", %{
+      dashboard: dashboard,
+      period_card: period_card
+    } do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+      editor = with_target(live, "#dashboard-editor")
+
+      render_click(editor, "update_filter_mapping", %{
+        "card-id" => to_string(period_card.id),
+        "filter-name" => "day",
+        "filter_mapping" => %{"day" => ""}
+      })
+
+      render_submit(editor, "save_dashboard", %{"dashboard" => %{"name" => "Token Dashboard"}})
+
+      mappings =
+        period_card.id
+        |> Lotus.list_card_filter_mappings()
+        |> Enum.map(&{&1.variable_name, &1.transform})
+        |> Enum.sort()
+
+      assert mappings == [
+               {"range_end", %{"type" => "date_range_end"}},
+               {"range_start", %{"type" => "date_range_start"}}
+             ]
+    end
+
+    test "cards of a changed card still get the split dates", %{
+      dashboard: dashboard,
+      period_card: period_card
+    } do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+      editor = with_target(live, "#dashboard-editor")
+
+      render_click(editor, "update_filter_mapping", %{
+        "card-id" => to_string(period_card.id),
+        "filter-name" => "day",
+        "filter_mapping" => %{"day" => ""}
+      })
+
+      [first, last] = "last_30_days" |> resolve(:date_range) |> String.split(",")
+      html = render_async(live)
+
+      assert html =~ first
+      assert html =~ last
+    end
+  end
+
+  defp token_filters_fixture(dashboard) do
+    period_query =
+      query_fixture(%{
+        statement:
+          "SELECT CAST({{range_start}} AS text) AS first_day, CAST({{range_end}} AS text) AS last_day"
+      })
+
+    day_query = query_fixture(%{statement: "SELECT CAST({{day}} AS text) AS picked_day"})
+
+    period_card = query_card_fixture(dashboard, period_query, %{title: "Period Card"})
+    day_card = query_card_fixture(dashboard, day_query, %{title: "Day Card", position: 1})
+
+    {:ok, period} =
+      Lotus.create_dashboard_filter(dashboard, %{
+        name: "period",
+        label: "Period",
+        filter_type: :date_range,
+        widget: :date_range_picker,
+        default_value: "last_30_days",
+        position: 0
+      })
+
+    {:ok, day} =
+      Lotus.create_dashboard_filter(dashboard, %{
+        name: "day",
+        label: "Day",
+        filter_type: :date,
+        widget: :date_picker,
+        default_value: "yesterday",
+        position: 1
+      })
+
+    {:ok, _} =
+      Lotus.create_filter_mapping(period_card, period, "range_start",
+        transform: %{type: "date_range_start"}
+      )
+
+    {:ok, _} =
+      Lotus.create_filter_mapping(period_card, period, "range_end",
+        transform: %{type: "date_range_end"}
+      )
+
+    {:ok, _} = Lotus.create_filter_mapping(day_card, day, "day")
+
+    %{period: period, day: day, period_card: period_card}
+  end
+
+  defp resolve(token, filter_type), do: DateToken.resolve(token, filter_type, Date.utc_today())
+
+  defp change_filter(live, filter, params) do
+    base = %{
+      "label" => filter.label,
+      "name" => filter.name,
+      "filter_type" => to_string(filter.filter_type),
+      "widget" => to_string(filter.widget)
+    }
+
+    live
+    |> element("#filter-modal form")
+    |> render_change(%{"filter" => Map.merge(base, params)})
   end
 
   defp open_filter_editor(live, filter) do
