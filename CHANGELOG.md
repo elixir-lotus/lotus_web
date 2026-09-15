@@ -46,6 +46,17 @@ behaviour it had.
   `:query` on its source. The public view runs it with neither, like its cards.
   Needs the Lotus release with cascading filters (Postgres migration v6).
 
+- **Relative dates on date filters.** In the filter editor, the default value
+  of a date range filter offers the relative dates of core by label ("Last 30
+  days", "This quarter") next to a fixed date range, and shows the dates the
+  choice covers today. A date filter offers Today and Yesterday next to a
+  fixed date. On the dashboard view and the public view, the date and date
+  range pickers open a list of the same presets with their dates. The bar
+  shows the chosen preset and the dates it covers, and **Custom range** goes
+  back to calendar inputs. A preset stays a token such as `last_30_days` in
+  the filter value and the URL, so a shared link stays relative. The labels
+  and month names are translated, French included.
+
 ### Changed
 
 - **The CSV export route asks for `:query` and `:export` on the source and
@@ -114,6 +125,23 @@ behaviour it had.
 
 - **A query and its chart settings save together.** A failed chart settings
   write no longer leaves the query saved while the page reports success.
+
+- **Dashboard cards get the variables core would give them.** The dashboard
+  view and the public view passed each filter value to its card as it was.
+  A relative date default such as `last_30_days` reached the query as the
+  word, and a date range mapped through the `date_range_start` and
+  `date_range_end` transforms gave `"start,end"` to both variables. The pages
+  now build the variables with `Lotus.card_variables/4`, the rule of
+  `Lotus.Dashboards.run_dashboard_card/2`: the default value, the relative
+  date resolved against one day per run, and the transform of each mapping.
+  Needs the Lotus release with `Lotus.card_variables/4`.
+
+- **A dashboard save keeps the transforms of filter mappings.** The editor
+  kept one variable per filter while a card changed, and the save wrote the
+  mappings again without transforms. A date range split into a start and an
+  end variable lost a variable and both transforms. The editor now keeps
+  every mapping of a filter with its transform, and the card settings drawer
+  shows the split.
 
 ## [1.1.0] - 2026-09-12
 

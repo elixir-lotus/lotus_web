@@ -9,6 +9,7 @@ defmodule Lotus.Web.PublicDashboardPage do
 
   alias Lotus.Web.Dashboards.CardGridComponent
   alias Lotus.Web.Dashboards.CardRunner
+  alias Lotus.Web.Dashboards.CardVariables
   alias Lotus.Web.Dashboards.FilterBarComponent
   alias Lotus.Web.Dashboards.FilterOptions
   alias Lotus.Web.Dashboards.FilterValues
@@ -137,17 +138,16 @@ defmodule Lotus.Web.PublicDashboardPage do
   end
 
   def handle_event("filter_changed", %{"filter" => filter_values}, socket) do
-    filter_values = FilterValues.normalize(filter_values)
+    {:noreply, apply_filter_values(socket, FilterValues.normalize(filter_values))}
+  end
 
-    socket =
-      socket
-      |> assign(filter_values: filter_values)
-      |> assign_filter_options()
-
-    {:noreply,
-     socket
-     |> run_all_cards()
-     |> push_filter_params_to_url(socket.assigns.filter_values)}
+  def handle_event("filter_preset", %{"name" => name, "value" => value}, socket) do
+    if Enum.any?(socket.assigns.dashboard.filters, &(&1.name == name)) do
+      filter_values = Map.put(socket.assigns.filter_values, name, value)
+      {:noreply, apply_filter_values(socket, filter_values)}
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl Page
@@ -200,7 +200,24 @@ defmodule Lotus.Web.PublicDashboardPage do
     )
   end
 
-  defp run_card(socket, card_id), do: CardRunner.run(socket, card_id, &prepare_card/2)
+  defp apply_filter_values(socket, filter_values) do
+    socket =
+      socket
+      |> assign(filter_values: filter_values)
+      |> assign_filter_options()
+
+    socket
+    |> run_all_cards()
+    |> push_filter_params_to_url(socket.assigns.filter_values)
+  end
+
+  # Each run takes today once, so every card of the run resolves a relative
+  # date token against the same day.
+  defp run_card(socket, card_id) do
+    socket
+    |> assign(:run_date, Date.utc_today())
+    |> CardRunner.run(card_id, &prepare_card/2)
+  end
 
   defp run_all_cards(socket) do
     card_ids =
@@ -208,7 +225,9 @@ defmodule Lotus.Web.PublicDashboardPage do
           card.card_type == :query && card.query_id,
           do: card.id
 
-    CardRunner.run_all(socket, card_ids, &prepare_card/2)
+    socket
+    |> assign(:run_date, Date.utc_today())
+    |> CardRunner.run_all(card_ids, &prepare_card/2)
   end
 
   defp prepare_card(socket, card_id) do
@@ -239,23 +258,12 @@ defmodule Lotus.Web.PublicDashboardPage do
   defp extract_filter_values(params, filters), do: FilterValues.from_params(params, filters)
 
   defp build_card_variables(socket, card) do
-    filter_values = socket.assigns.filter_values
-    dashboard_filters = socket.assigns.dashboard.filters || []
-
-    Enum.reduce(card.filter_mappings || [], %{}, fn mapping, acc ->
-      add_filter_variable(acc, mapping, dashboard_filters, filter_values)
-    end)
-  end
-
-  defp add_filter_variable(acc, mapping, dashboard_filters, filter_values) do
-    filter = Enum.find(dashboard_filters, &(&1.id == mapping.filter_id))
-
-    if filter && mapping.variable_name && mapping.variable_name != "" do
-      value = Map.get(filter_values, filter.name)
-      if value, do: Map.put(acc, mapping.variable_name, value), else: acc
-    else
-      acc
-    end
+    CardVariables.build(
+      card.filter_mappings,
+      socket.assigns.dashboard.filters || [],
+      socket.assigns.filter_values,
+      socket.assigns.run_date
+    )
   end
 
   defp parse_id(id) when is_integer(id), do: id

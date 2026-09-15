@@ -13,6 +13,8 @@ defmodule Lotus.Web.DashboardEditorPage do
   alias Lotus.Web.Dashboards.CardGridComponent
   alias Lotus.Web.Dashboards.CardRunner
   alias Lotus.Web.Dashboards.CardSettingsDrawer
+  alias Lotus.Web.Dashboards.CardVariables
+  alias Lotus.Web.Dashboards.DateTokens
   alias Lotus.Web.Dashboards.FilterBarComponent
   alias Lotus.Web.Dashboards.FilterOptions
   alias Lotus.Web.Dashboards.FilterValues
@@ -155,6 +157,7 @@ defmodule Lotus.Web.DashboardEditorPage do
         filters={@dashboard.filters}
         queries={@available_queries}
         errors={@filter_errors}
+        default_mode={@filter_default_mode}
         parent={@myself}
       />
 
@@ -327,6 +330,10 @@ defmodule Lotus.Web.DashboardEditorPage do
         options_text: format_options(assigns.filter.config),
         source_query_id: Map.get(assigns.filter, :source_query_id),
         depends_on_filter_id: Map.get(assigns.filter, :depends_on_filter_id),
+        token_options: default_token_options(assigns.filter),
+        default_mode: default_mode(assigns.filter, assigns.default_mode),
+        default_range: FilterValues.split_date_range(assigns.filter.default_value),
+        today: Date.utc_today(),
         parent_choices: Enum.reject(assigns.filters, &(&1.id == assigns.filter.id))
       )
 
@@ -336,7 +343,7 @@ defmodule Lotus.Web.DashboardEditorPage do
         <%= if @is_new, do: gettext("Add Filter"), else: gettext("Edit Filter") %>
       </h3>
 
-      <form phx-submit="save_filter" phx-target={@parent}>
+      <form phx-change="filter_form_changed" phx-submit="save_filter" phx-target={@parent}>
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -404,13 +411,74 @@ defmodule Lotus.Web.DashboardEditorPage do
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               <%= gettext("Default Value") %>
             </label>
-            <input
-              type="text"
-              name="filter[default_value]"
-              value={@filter.default_value || ""}
-              placeholder={gettext("Optional")}
-              class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
-            />
+            <%= if @token_options == [] do %>
+              <input
+                type="text"
+                name="filter[default_value]"
+                value={@filter.default_value || ""}
+                placeholder={gettext("Optional")}
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
+              />
+            <% else %>
+              <select
+                id="filter-default-mode"
+                name="filter[default_mode]"
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
+              >
+                <option value="" selected={@default_mode == ""}><%= gettext("No default") %></option>
+                <optgroup label={gettext("Relative")}>
+                  <option :for={token <- @token_options} value={token} selected={@default_mode == token}>
+                    <%= DateTokens.label(token) %>
+                  </option>
+                </optgroup>
+                <optgroup label={gettext("Fixed")}>
+                  <option value="fixed" selected={@default_mode == "fixed"}>
+                    <%= if @filter.filter_type == :date,
+                      do: gettext("A fixed date"),
+                      else: gettext("A fixed date range") %>
+                  </option>
+                </optgroup>
+              </select>
+              <p
+                :if={DateTokens.token?(@default_mode)}
+                id="filter-default-covers"
+                class="mt-1.5 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"
+              >
+                <Icons.calendar class="h-3.5 w-3.5 shrink-0" />
+                <%= gettext("Today it covers") %>
+                <span class="font-medium text-gray-700 dark:text-gray-300 tabular-nums">
+                  <%= DateTokens.describe(@default_mode, @today) %>
+                </span>
+              </p>
+              <input
+                :if={@default_mode == "fixed" and @filter.filter_type == :date}
+                type="date"
+                name="filter[default_date]"
+                value={if DateTokens.token?(@filter.default_value), do: "", else: @filter.default_value}
+                class="mt-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
+              />
+              <div
+                :if={@default_mode == "fixed" and @filter.filter_type != :date}
+                class="mt-2 flex items-center gap-2"
+              >
+                <input
+                  type="date"
+                  name="filter[default_start]"
+                  value={elem(@default_range, 0)}
+                  aria-label={gettext("Start date")}
+                  class="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
+                />
+                <span class="text-gray-400">-</span>
+                <input
+                  type="date"
+                  name="filter[default_end]"
+                  value={elem(@default_range, 1)}
+                  aria-label={gettext("End date")}
+                  class="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
+                />
+              </div>
+            <% end %>
+            <.filter_field_error errors={@errors} field={:default_value} />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -501,6 +569,8 @@ defmodule Lotus.Web.DashboardEditorPage do
       filter_values: %{},
       filter_options: %{},
       filter_errors: %{},
+      filter_default_mode: nil,
+      run_date: Date.utc_today(),
       card_results: %{},
       card_errors: %{},
       running_cards: MapSet.new(),
@@ -667,17 +737,17 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("filter_changed", %{"filter" => filter_values}, socket) do
-    filter_values = FilterValues.normalize(filter_values)
+    {:noreply, apply_filter_values(socket, FilterValues.normalize(filter_values))}
+  end
 
-    socket =
-      socket
-      |> assign(filter_values: filter_values)
-      |> assign_filter_options()
-
-    {:noreply,
-     socket
-     |> run_all_cards()
-     |> push_filter_params_to_url(socket.assigns.filter_values)}
+  @impl Phoenix.LiveComponent
+  def handle_event("filter_preset", %{"name" => name, "value" => value}, socket) do
+    if Enum.any?(socket.assigns.dashboard.filters, &(&1.name == name)) do
+      filter_values = Map.put(socket.assigns.filter_values, name, value)
+      {:noreply, apply_filter_values(socket, filter_values)}
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl Phoenix.LiveComponent
@@ -692,7 +762,18 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("close_filter_modal", _params, socket) do
-    {:noreply, assign(socket, filter_modal_open: false, editing_filter: nil, filter_errors: %{})}
+    {:noreply,
+     assign(socket,
+       filter_modal_open: false,
+       editing_filter: nil,
+       filter_errors: %{},
+       filter_default_mode: nil
+     )}
+  end
+
+  @impl Phoenix.LiveComponent
+  def handle_event("filter_form_changed", %{"filter" => filter_params}, socket) do
+    authorize_manage(socket, fn -> do_change_filter_form(socket, filter_params) end)
   end
 
   @impl Phoenix.LiveComponent
@@ -1083,39 +1164,13 @@ defmodule Lotus.Web.DashboardEditorPage do
   end
 
   defp build_card_variables(socket, card) do
-    filter_values = socket.assigns.filter_values
-    dashboard_filters = socket.assigns.dashboard.filters || []
-    mappings = card.filter_mappings
-
-    build_vars_from_mappings(mappings, dashboard_filters, filter_values)
+    CardVariables.build(
+      card.filter_mappings,
+      socket.assigns.dashboard.filters || [],
+      socket.assigns.filter_values,
+      socket.assigns.run_date
+    )
   end
-
-  # Map format: %{filter_name => variable_name} (in-memory after editing)
-  defp build_vars_from_mappings(mappings, _dashboard_filters, filter_values)
-       when is_map(mappings) do
-    Enum.reduce(mappings, %{}, fn {filter_name, variable_name}, acc ->
-      put_filter_var(acc, variable_name, Map.get(filter_values, filter_name))
-    end)
-  end
-
-  # List format: [%DashboardCardFilterMapping{}] (from DB preload)
-  defp build_vars_from_mappings(mappings, dashboard_filters, filter_values)
-       when is_list(mappings) do
-    Enum.reduce(mappings, %{}, fn mapping, acc ->
-      filter = Enum.find(dashboard_filters, &(&1.id == mapping.filter_id))
-      value = if filter, do: Map.get(filter_values, filter.name)
-      put_filter_var(acc, mapping.variable_name, value)
-    end)
-  end
-
-  defp build_vars_from_mappings(_, _, _), do: %{}
-
-  defp put_filter_var(acc, var_name, value)
-       when is_binary(var_name) and var_name != "" and not is_nil(value) do
-    Map.put(acc, var_name, value)
-  end
-
-  defp put_filter_var(acc, _, _), do: acc
 
   defp new_dashboard do
     %{
@@ -1255,7 +1310,7 @@ defmodule Lotus.Web.DashboardEditorPage do
     socket =
       update_card_and_selection(socket, parse_id(card_id), fn card ->
         mappings = normalize_mappings(card.filter_mappings, socket.assigns.dashboard.filters)
-        updated_mappings = Map.put(mappings, filter_name, variable_name)
+        updated_mappings = Map.put(mappings, filter_name, mapping_entries(variable_name))
         %{card | filter_mappings: updated_mappings}
       end)
 
@@ -1279,7 +1334,12 @@ defmodule Lotus.Web.DashboardEditorPage do
     }
 
     {:noreply,
-     assign(socket, filter_modal_open: true, editing_filter: new_filter, filter_errors: %{})}
+     assign(socket,
+       filter_modal_open: true,
+       editing_filter: new_filter,
+       filter_errors: %{},
+       filter_default_mode: nil
+     )}
   end
 
   defp do_edit_filter(socket, filter_id) do
@@ -1291,44 +1351,155 @@ defmodule Lotus.Web.DashboardEditorPage do
 
       filter ->
         {:noreply,
-         assign(socket, filter_modal_open: true, editing_filter: filter, filter_errors: %{})}
+         assign(socket,
+           filter_modal_open: true,
+           editing_filter: filter,
+           filter_errors: %{},
+           filter_default_mode: nil
+         )}
     end
   end
 
-  defp do_save_filter(socket, filter_params) do
+  # The filter editor renders again as its fields change, so a new type shows
+  # the default value control of that type.
+  defp do_change_filter_form(socket, filter_params) do
     editing = socket.assigns.editing_filter
+    filter = editing |> build_editing_filter(filter_params) |> fit_widget(editing)
+
+    errors =
+      socket.assigns.filter_errors
+      |> Map.delete(:default_value)
+      |> Map.merge(default_value_errors(filter))
+
+    {:noreply,
+     assign(socket,
+       editing_filter: filter,
+       filter_errors: errors,
+       filter_default_mode: filter_params["default_mode"]
+     )}
+  end
+
+  defp do_save_filter(socket, filter_params) do
     dashboard = socket.assigns.dashboard
+    filter = build_editing_filter(socket.assigns.editing_filter, filter_params)
 
-    filter = %{
-      editing
-      | name: filter_params["name"] || "",
-        label: filter_params["label"] || "",
-        filter_type: parse_filter_type(filter_params["filter_type"]),
-        widget: parse_filter_widget(filter_params["widget"]),
-        default_value: nullify(filter_params["default_value"]),
-        config: build_filter_config(filter_params)
-    }
+    errors =
+      Map.merge(filter_dependency_errors(filter, dashboard.filters), default_value_errors(filter))
 
-    filter =
-      Map.merge(filter, %{
-        source_query_id: parse_optional_id(filter_params["source_query_id"]),
-        depends_on_filter_id: parse_optional_id(filter_params["depends_on_filter_id"])
-      })
-
-    case filter_dependency_errors(filter, dashboard.filters) do
+    case errors do
       errors when errors == %{} ->
         dashboard = %{dashboard | filters: upsert_filter(dashboard.filters, filter)}
 
         {:noreply,
          socket
-         |> assign(dashboard: dashboard, filter_modal_open: false, editing_filter: nil)
+         |> assign(
+           dashboard: dashboard,
+           filter_modal_open: false,
+           editing_filter: nil,
+           filter_default_mode: nil
+         )
          |> assign_filter_options()
          |> run_all_cards()}
 
       errors ->
-        {:noreply, assign(socket, editing_filter: filter, filter_errors: errors)}
+        {:noreply,
+         assign(socket,
+           editing_filter: filter,
+           filter_errors: errors,
+           filter_default_mode: filter_params["default_mode"]
+         )}
     end
   end
+
+  defp build_editing_filter(editing, filter_params) do
+    filter_type = parse_filter_type(filter_params["filter_type"])
+
+    filter = %{
+      editing
+      | name: filter_params["name"] || "",
+        label: filter_params["label"] || "",
+        filter_type: filter_type,
+        widget: parse_filter_widget(filter_params["widget"]),
+        default_value: default_value_param(filter_params, filter_type),
+        config: build_filter_config(filter_params)
+    }
+
+    Map.merge(filter, %{
+      source_query_id: parse_optional_id(filter_params["source_query_id"]),
+      depends_on_filter_id: parse_optional_id(filter_params["depends_on_filter_id"])
+    })
+  end
+
+  # A date or date range filter posts its default as a mode, a token or
+  # "fixed", with the fixed dates in their own fields. Other filters post the
+  # default as text.
+  defp default_value_param(%{"default_mode" => "fixed"} = params, :date),
+    do: nullify(params["default_date"])
+
+  defp default_value_param(%{"default_mode" => "fixed"} = params, _filter_type) do
+    range = %{"start" => params["default_start"], "end" => params["default_end"]}
+    FilterValues.normalize(%{"default" => range})["default"] |> nullify()
+  end
+
+  defp default_value_param(%{"default_mode" => mode}, _filter_type), do: nullify(mode)
+  defp default_value_param(params, _filter_type), do: nullify(params["default_value"])
+
+  # The tokens the default value offers. A range token the type does not accept
+  # stays in the list, so the editor shows it with its error.
+  defp default_token_options(filter) do
+    tokens = DateTokens.tokens(filter.filter_type)
+    value = filter.default_value
+
+    if tokens != [] and DateTokens.token?(value) and value not in tokens,
+      do: tokens ++ [value],
+      else: tokens
+  end
+
+  defp default_mode(filter, posted_mode) do
+    cond do
+      DateTokens.token?(filter.default_value) -> filter.default_value
+      filter.default_value not in [nil, ""] -> "fixed"
+      posted_mode == "fixed" -> "fixed"
+      true -> ""
+    end
+  end
+
+  # The check core runs when the dashboard saves, run here so the filter
+  # editor shows the error next to the field.
+  defp default_value_errors(%{filter_type: :date, default_value: value}) do
+    if DateTokens.token?(value) and value not in DateTokens.tokens(:date) do
+      %{
+        default_value:
+          gettext(
+            "%{label} is a date range. A Date filter takes Today, Yesterday or a fixed date.",
+            label: DateTokens.label(value)
+          )
+      }
+    else
+      %{}
+    end
+  end
+
+  defp default_value_errors(_filter), do: %{}
+
+  # A new type picks the first widget it accepts when the current widget does
+  # not fit, so a Date Range filter gets the picker with its presets.
+  defp fit_widget(%{filter_type: type} = filter, %{filter_type: type}), do: filter
+
+  defp fit_widget(filter, _previous) do
+    widgets = widgets_for_type(filter.filter_type)
+
+    if filter.widget in widgets,
+      do: filter,
+      else: %{filter | widget: hd(widgets)}
+  end
+
+  defp widgets_for_type(:text), do: [:input, :select]
+  defp widgets_for_type(:number), do: [:input, :select]
+  defp widgets_for_type(:date), do: [:date_picker, :input]
+  defp widgets_for_type(:date_range), do: [:date_range_picker]
+  defp widgets_for_type(:select), do: [:select]
+  defp widgets_for_type(_filter_type), do: [:input]
 
   # The checks core runs when the dashboard saves, run here on the filters not
   # saved yet, so the filter editor shows the error next to the field.
@@ -1620,7 +1791,24 @@ defmodule Lotus.Web.DashboardEditorPage do
     end
   end
 
-  defp run_card(socket, card_id), do: CardRunner.run(socket, card_id, &prepare_card/2)
+  defp apply_filter_values(socket, filter_values) do
+    socket =
+      socket
+      |> assign(filter_values: filter_values)
+      |> assign_filter_options()
+
+    socket
+    |> run_all_cards()
+    |> push_filter_params_to_url(socket.assigns.filter_values)
+  end
+
+  # Each run takes today once, so every card of the run resolves a relative
+  # date token against the same day.
+  defp run_card(socket, card_id) do
+    socket
+    |> assign(:run_date, Date.utc_today())
+    |> CardRunner.run(card_id, &prepare_card/2)
+  end
 
   defp run_all_cards(socket) do
     card_ids =
@@ -1628,7 +1816,9 @@ defmodule Lotus.Web.DashboardEditorPage do
           card.card_type == :query && card.query_id,
           do: card.id
 
-    CardRunner.run_all(socket, card_ids, &prepare_card/2)
+    socket
+    |> assign(:run_date, Date.utc_today())
+    |> CardRunner.run_all(card_ids, &prepare_card/2)
   end
 
   defp generate_temp_id do
@@ -1771,20 +1961,28 @@ defmodule Lotus.Web.DashboardEditorPage do
   defp replace_card_mappings(saved_card, mappings, filter_by_name, opts) do
     existing_mappings = Lotus.list_card_filter_mappings(saved_card.id)
 
+    entries =
+      for {filter_name, filter_entries} <- mappings,
+          entry <- filter_entries,
+          do: {Map.get(filter_by_name, filter_name), entry}
+
     with :ok <- each_write(existing_mappings, &Lotus.delete_filter_mapping(&1, opts)) do
-      each_write(mappings, fn {filter_name, variable_name} ->
-        create_mapping(saved_card, Map.get(filter_by_name, filter_name), variable_name, opts)
+      each_write(entries, fn {filter, entry} ->
+        create_mapping(saved_card, filter, entry, opts)
       end)
     end
   end
 
-  defp create_mapping(_card, nil, _variable_name, _opts), do: :ok
+  defp create_mapping(_card, nil, _entry, _opts), do: :ok
 
-  defp create_mapping(_card, _filter, variable_name, _opts) when variable_name in [nil, ""],
-    do: :ok
+  defp create_mapping(_card, _filter, %{variable_name: variable_name}, _opts)
+       when variable_name in [nil, ""],
+       do: :ok
 
-  defp create_mapping(card, filter, variable_name, opts),
-    do: Lotus.create_filter_mapping(card.id, filter.id, variable_name, opts)
+  defp create_mapping(card, filter, entry, opts) do
+    opts = Keyword.put(opts, :transform, entry.transform)
+    Lotus.create_filter_mapping(card.id, filter.id, entry.variable_name, opts)
+  end
 
   defp match_card?(saved_card, card) do
     if is_integer(card.id),
@@ -1807,18 +2005,27 @@ defmodule Lotus.Web.DashboardEditorPage do
   defp layout_to_map(nil), do: nil
   defp layout_to_map(%{x: x, y: y, w: w, h: h}), do: %{x: x, y: y, w: w, h: h}
 
+  # The editor keeps a changed card's mappings as
+  # %{filter_name => [%{variable_name: _, transform: _}]}. A filter can map to
+  # more than one variable, a date range split by the date_range_start and
+  # date_range_end transforms, so each filter keeps a list and every transform.
   defp normalize_mappings(mappings, _filters) when is_map(mappings), do: mappings
 
   defp normalize_mappings(mappings, filters) when is_list(mappings) do
-    filter_by_id = Map.new(filters, fn f -> {f.id, f.name} end)
+    filter_name_by_id = Map.new(filters, &{&1.id, &1.name})
 
-    Map.new(mappings, fn mapping ->
-      filter_name = Map.get(filter_by_id, mapping.filter_id, "unknown")
-      {filter_name, mapping.variable_name}
-    end)
+    mappings
+    |> Enum.filter(&Map.has_key?(filter_name_by_id, &1.filter_id))
+    |> Enum.group_by(
+      &Map.fetch!(filter_name_by_id, &1.filter_id),
+      &%{variable_name: &1.variable_name, transform: &1.transform}
+    )
   end
 
   defp normalize_mappings(_, _), do: %{}
+
+  defp mapping_entries(variable_name) when variable_name in [nil, ""], do: []
+  defp mapping_entries(variable_name), do: [%{variable_name: variable_name, transform: nil}]
 
   defp push_filter_params_to_url(socket, filter_values) do
     push_event(socket, "update-query-params", %{params: FilterValues.to_params(filter_values)})

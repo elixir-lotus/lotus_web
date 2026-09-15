@@ -177,7 +177,7 @@ Values are passed to the query as variables, so each adapter substitutes them th
    - **Label** — display label shown to users
    - **Type** — Text, Number, Date, Date Range, or Select
    - **Widget** — Input, Select, Date Picker, or Date Range Picker
-   - **Default value** — optional pre-filled value
+   - **Default value** — optional pre-filled value. A Date or Date Range filter offers relative dates such as "Last 30 days" next to a fixed date (see [Relative Dates](#relative-dates))
    - **Options** — for select widgets, one value per line (e.g. `us`, `eu`, `apac` on three lines)
    - **Source Query** — for select widgets, a saved query that lists the options instead (see [Cascading Filters](#cascading-filters))
    - **Depends On** — another filter of the dashboard whose value goes to the source query
@@ -208,7 +208,7 @@ Each query card maps dashboard filters to its own query variables:
 3. Choose which query variable the filter maps to (the list comes from the query's `{{variable}}` placeholders)
 4. Different cards can map the same filter to different variable names
 
-Each filter maps to at most one variable per card. A query that needs two bounds — a start and an end — takes two dashboard filters, one per variable.
+In the drawer, each filter maps to one variable per card. To feed a query's start and end variables from one date-range filter, create two mappings with transforms from code (see [Value Transforms](#value-transforms)). The drawer shows such a split, and a save of the dashboard keeps it. A new choice in the drawer replaces the split.
 
 ### Filter Widgets
 
@@ -216,10 +216,27 @@ Each filter maps to at most one variable per card. A query that needs two bounds
 |--------|----------|-------|
 | **Input** | Free-form text and numbers | Text field (a number field for Number filters), debounced |
 | **Select** | Predefined choices | Dropdown with the configured options, plus an "All" entry that clears the filter |
-| **Date Picker** | Single date values | Calendar input |
-| **Date Range Picker** | Start/end date pairs | Two calendar inputs, sent as `start` and `end` |
+| **Date Picker** | Single date values | Today, Yesterday, or a calendar input |
+| **Date Range Picker** | Start/end date pairs | Relative date presets, or two calendar inputs sent as `start` and `end` |
 
 Typing in a text or number filter no longer re-runs every card on each keystroke: those inputs are debounced by 500 ms, so the cards run once you stop typing. Select, date, and date-range widgets change one time per user action and fire immediately.
+
+### Relative Dates
+
+A Date Range filter can hold a relative date in place of fixed dates, so the dashboard shows current data every day:
+
+| Group | Presets |
+|-------|---------|
+| Days | Today, Yesterday, Last 7 days, Last 30 days, Last 90 days |
+| This period | This week, This month, This quarter, This year |
+| Previous period | Last week, Last month, Last quarter, Last year |
+
+A Date filter takes only Today and Yesterday.
+
+- **In the filter editor**, the default value of a Date or Date Range filter is a list of these presets and a fixed date. The editor shows the dates the preset covers today.
+- **On the dashboard**, the picker opens a list of the presets with the dates each covers. The bar shows the chosen preset and its dates. **Custom range** (or **Fixed date**) goes back to calendar inputs, starting from the dates the preset covers.
+
+Each preset is stored and sent as its token, for example `last_30_days`. The token resolves to dates each time the cards run, and all cards of one run use the same day. The `last_N_days` presets include today. The week, month, quarter and year presets cover the full calendar period, and weeks start on Monday. See `Lotus.Dashboards.DateToken` for the rules.
 
 ### Cascading Filters
 
@@ -255,7 +272,7 @@ Filter values are reflected in the URL as query parameters. For example:
 - Sharing the URL pre-fills the filters for the recipient
 - Works on both the dashboard editor and public shared dashboards
 
-On load, a filter takes its value from the URL parameter if present, and falls back to its configured default value otherwise. A date-range filter carries both dates in one parameter as a comma-separated `start,end` string, so a shared link restores the window the sender had. An open end keeps its comma, so `2026-01-01,` is a start with no end.
+On load, a filter takes its value from the URL parameter if present, and falls back to its configured default value otherwise. A date-range filter carries both dates in one parameter as a comma-separated `start,end` string, so a shared link restores the window the sender had. An open end keeps its comma, so `2026-01-01,` is a start with no end. A relative date stays a token in the URL, for example `?period=last_30_days`, so a shared link stays relative.
 
 ### Filters on Public Dashboards
 
@@ -383,7 +400,7 @@ A filter mapping can carry an optional transform, which splits one filter value 
 Lotus.run_dashboard(dashboard, filter_values: %{"window" => "2026-01-01,2026-03-31"})
 ```
 
-A value with no comma is passed through unchanged to both variables. A date-range filter produces exactly this shape, so a single date-range filter can feed a query's start and end variables through two mappings. The editor does not expose transforms yet, so set them from code.
+A value with no comma is passed through unchanged to both variables. A date-range filter produces exactly this shape, and a relative date resolves to it before the transform, so a single date-range filter can feed a query's start and end variables through two mappings. The dashboard view and the public view apply the transforms too. The editor does not create transforms, so set them from code. The editor keeps them when it saves.
 
 ## Dashboard Workflow
 

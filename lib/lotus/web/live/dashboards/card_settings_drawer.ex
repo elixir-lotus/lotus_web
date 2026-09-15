@@ -438,14 +438,22 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
   defp filter_mapping_row(assigns) do
     query = assigns.card.query
     variables = if query, do: query.variables || [], else: []
-    current_mapping = find_mapping(assigns.card.filter_mappings, assigns.filter)
-    assigns = assign(assigns, variables: variables, current_mapping: current_mapping)
+    entries = mapping_entries(assigns.card.filter_mappings, assigns.filter)
+
+    assigns =
+      assign(assigns,
+        variables: variables,
+        current_mapping: Enum.find_value(entries, & &1.variable_name),
+        entries: entries,
+        split: Enum.any?(entries, & &1.transform)
+      )
 
     ~H"""
+    <div id={"filter-mapping-#{@filter.name}"} class="p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
     <form
       phx-change="update_filter_mapping"
       phx-target={@parent}
-      class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+      class="flex items-center gap-2"
     >
       <input type="hidden" name="card-id" value={@card.id} />
       <input type="hidden" name="filter-name" value={@filter.name} />
@@ -465,6 +473,12 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
         <% end %>
       </select>
     </form>
+    <p :if={@split} class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+      <%= gettext("Split into %{variables}. A new choice replaces the split.",
+        variables: split_description(@entries)
+      ) %>
+    </p>
+    </div>
     """
   end
 
@@ -551,19 +565,30 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
     """
   end
 
-  # filter_mappings can be a list of Ecto structs (from DB) or a map (from editor updates)
-  defp find_mapping(mappings, filter) when is_list(mappings) do
-    case Enum.find(mappings, &(&1.filter_id == filter.id)) do
-      nil -> nil
-      mapping -> mapping.variable_name
-    end
+  # filter_mappings can be a list of Ecto structs (from DB) or a map of
+  # %{filter_name => [%{variable_name: _, transform: _}]} (from editor updates)
+  defp mapping_entries(mappings, filter) when is_list(mappings) do
+    for mapping <- mappings,
+        mapping.filter_id == filter.id,
+        do: %{variable_name: mapping.variable_name, transform: mapping.transform}
   end
 
-  defp find_mapping(mappings, filter) when is_map(mappings) do
-    Map.get(mappings, filter.name)
+  defp mapping_entries(mappings, filter) when is_map(mappings),
+    do: Map.get(mappings, filter.name, [])
+
+  defp mapping_entries(_, _), do: []
+
+  defp split_description(entries) do
+    Enum.map_join(entries, ", ", fn entry ->
+      "#{entry.variable_name} (#{transform_label(entry.transform)})"
+    end)
   end
 
-  defp find_mapping(_, _), do: nil
+  defp transform_label(%{"type" => type}), do: transform_label(type)
+  defp transform_label(%{type: type}), do: transform_label(type)
+  defp transform_label("date_range_start"), do: gettext("range start")
+  defp transform_label("date_range_end"), do: gettext("range end")
+  defp transform_label(_transform), do: gettext("whole value")
 
   defp default_title(%{card_type: :query, query: query}) when not is_nil(query) do
     query.name || gettext("Query")
