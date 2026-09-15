@@ -3,12 +3,13 @@ defmodule Lotus.Web.Dashboards.CardComponentTest do
 
   import Phoenix.LiveViewTest
 
+  alias Lotus.Result
   alias Lotus.Web.Dashboards.CardComponent
 
   # A table card shows the first rows of a result. Every value must render the
   # way the editor renders it: a Decimal as a number, not as its inspect form.
   test "a table card formats a Decimal, a date and nil like the editor does" do
-    result = %Lotus.Result{
+    result = %Result{
       columns: ["city", "lifetime_value", "since", "notes"],
       rows: [["Chicago", Decimal.new("1250.50"), ~D[2026-09-15], nil]],
       num_rows: 1,
