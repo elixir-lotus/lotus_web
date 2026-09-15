@@ -13,8 +13,6 @@ defmodule Lotus.Web.AuthorizationIntegrationTest do
 
   alias Lotus.Web.ExportController
 
-  # Mounted with Lotus.Web.Test.RestrictedResolver, which allows only :query
-  # and :view_dashboard and denies the rest with "Restricted: <action>".
   describe "a resolver that implements authorize/3" do
     test "the navbar and the empty states offer nothing to create" do
       {:ok, live, html} = live(build_conn(), "/restricted")
@@ -219,8 +217,6 @@ defmodule Lotus.Web.AuthorizationIntegrationTest do
     end
   end
 
-  # Mounted with Lotus.Web.Test.EditorResolver, which allows everything except
-  # running queries on "reporting", where it allows only :discover.
   describe "a source the user may browse but not query" do
     test "the editor lists it" do
       {:ok, live, _html} = live(build_conn(), "/editor/queries/new")
@@ -270,8 +266,55 @@ defmodule Lotus.Web.AuthorizationIntegrationTest do
     end
   end
 
-  # Mounted with Lotus.Web.Test.ReadOnlyResolver, which implements only
-  # resolve_access/1 and returns :read_only.
+  describe "a user who may create but not edit, and manage but not share" do
+    test "saving a saved query asks :update_query, not :create_query" do
+      query = users_query()
+
+      {:ok, live, _html} = live(build_conn(), "/author/queries/#{query.id}")
+      render_async(live)
+
+      refute has_element?(live, ~s(button[phx-click*="save-query-modal"]))
+      assert has_element?(live, ~s(button[phx-click*="delete-query-modal"]))
+
+      live
+      |> with_target("#query-editor-page")
+      |> render_submit("save_query", %{"query" => %{"name" => "Renamed"}})
+
+      assert Lotus.get_query(query.id).name == "Users"
+      assert render(live) =~ "Author: update_query"
+    end
+
+    test "saving a new query asks :create_query" do
+      {:ok, live, _html} = live(build_conn(), "/author/queries/new")
+
+      live
+      |> element(~s(form[phx-submit="run_query"]))
+      |> render_change(%{"query" => %{"statement" => "SELECT 1"}})
+
+      live
+      |> with_target("#query-editor-page")
+      |> render_submit("save_query", %{"query" => %{"name" => "New one"}})
+
+      assert [%{name: "New one"}] = Lotus.list_queries()
+    end
+
+    test "the settings drawer asks :share_dashboard, not :manage_dashboard" do
+      dashboard = dashboard_fixture(%{name: "Sales"})
+
+      {:ok, live, _html} = live(build_conn(), "/author/dashboards/#{dashboard.id}")
+
+      live |> element(~s(button[phx-click="toggle_settings"])) |> render_click()
+
+      assert has_element?(live, ~s(select[name="auto_refresh_seconds"]))
+      refute has_element?(live, ~s(button[phx-click="enable_sharing"]))
+
+      live |> with_target("#dashboard-editor") |> render_click("enable_sharing", %{})
+
+      assert Lotus.get_dashboard(dashboard.id).public_token == nil
+      assert render(live) =~ "Author: share_dashboard"
+    end
+  end
+
   describe "a resolver that returns :read_only and has no authorize/3" do
     test "the query editor keeps export and hides save and delete" do
       query = users_query()
