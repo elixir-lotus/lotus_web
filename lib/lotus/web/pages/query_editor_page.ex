@@ -235,6 +235,7 @@ defmodule Lotus.Web.QueryEditorPage do
       <h3 class="text-lg font-semibold mb-4"><%= gettext("Save Query") %></h3>
 
       <.form for={@query_form}
+             id="save-query-form"
              phx-submit="save_query"
              phx-change="validate_save"
              phx-target={@target}>

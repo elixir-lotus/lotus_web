@@ -75,7 +75,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         <%= gettext("Card Title") %>
       </label>
-      <form phx-change="update_card_title" phx-target={@parent}>
+      <form id="card-title-form" phx-change="update_card_title" phx-target={@parent}>
         <input type="hidden" name="card_id" value={@card.id} />
         <input
           type="text"
@@ -133,7 +133,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         <%= gettext("Layout Position") %>
       </label>
-      <form phx-change="update_card_layout" phx-target={@parent}>
+      <form id="card-layout-form" phx-change="update_card_layout" phx-target={@parent}>
         <input type="hidden" name="card_id" value={@card.id} />
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -225,7 +225,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         <%= gettext("Visualization") %>
       </label>
-      <form phx-change="update_card_visualization" phx-target={@parent}>
+      <form id="card-visualization-form" phx-change="update_card_visualization" phx-target={@parent}>
         <input type="hidden" name="card_id" value={@card.id} />
 
         <div class="space-y-3">
@@ -451,6 +451,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
     ~H"""
     <div id={"filter-mapping-#{@filter.name}"} class="p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
     <form
+      id={"filter-mapping-form-#{@filter.name}"}
       phx-change="update_filter_mapping"
       phx-target={@parent}
       class="flex items-center gap-2"
@@ -491,7 +492,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         <%= content_label(@card.card_type) %>
       </label>
-      <form phx-change="update_card_content" phx-target={@parent}>
+      <form id="card-content-form" phx-change="update_card_content" phx-target={@parent}>
         <input type="hidden" name="card_id" value={@card.id} />
         <input type="hidden" name="card_type" value={@card.card_type} />
         <%= if @card.card_type == :link do %>

@@ -98,7 +98,7 @@ defmodule Lotus.Web.Queries.VariableSettingsComponent do
   defp variable_settings_form(assigns) do
     ~H"""
     <div class="flex-1 overflow-y-auto p-4 space-y-6">
-        <.form for={@form} phx-change="validate" phx-target={@parent}>
+        <.form for={@form} id="variable-settings-form" phx-change="validate" phx-target={@parent}>
           <.inputs_for :let={vf} field={@form[:variables]}>
             <% var_name = vf.source.data.name || vf[:name].value %>
             <% is_optional = MapSet.member?(@optional_variable_names, var_name) %>

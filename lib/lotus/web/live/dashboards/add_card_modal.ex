@@ -67,7 +67,7 @@ defmodule Lotus.Web.Dashboards.AddCardModal do
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             <%= gettext("Select Query") %>
           </label>
-          <form phx-change="select_query" phx-target={@myself}>
+          <form id="add-card-query-form" phx-change="select_query" phx-target={@myself}>
             <select
               name="query_id"
               class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"

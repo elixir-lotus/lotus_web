@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.3.0] - 2026-10-01
+
+Lotus Web now runs on Phoenix LiveView 1.2. LiveView 1.0 and 1.1 still work.
+
+### Changed
+
+- **Phoenix LiveView 1.2 is supported.** The requirement is now
+  `>= 1.0.0 and < 1.3.0`. An app on LiveView 1.2 can install Lotus Web
+  without an override.
+
+### Fixed
+
+- **Forms keep their values after a reconnect.** The query editor, the save
+  dialogs, the variable and visualization settings, the card settings drawer,
+  the add-card modal, the filter editor and the dashboard filter bar now each
+  have an `id`, so LiveView can recover them. LiveView 1.2 also stops warning
+  about them in tests.
+
 ## [1.2.0] - 2026-09-15
 
 A resolver can now decide per action and per resource, not only once per
