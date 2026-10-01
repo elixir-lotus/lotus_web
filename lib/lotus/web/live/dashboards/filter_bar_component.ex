@@ -17,7 +17,7 @@ defmodule Lotus.Web.Dashboards.FilterBarComponent do
   def render(assigns) do
     ~H"""
     <div id="filter-bar" class="px-4 sm:px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-      <form phx-change="filter_changed" phx-submit="filter_changed" phx-target={@parent} class="flex flex-wrap items-end gap-4">
+      <form id="dashboard-filter-bar" phx-change="filter_changed" phx-submit="filter_changed" phx-target={@parent} class="flex flex-wrap items-end gap-4">
         <%= for filter <- Enum.sort_by(@filters, & &1.position) do %>
           <.filter_widget
             filter={filter}

@@ -306,7 +306,7 @@ defmodule Lotus.Web.Queries.VisualizationSettingsComponent do
       <% end %>
 
       <%!-- Field selectors wrapped in form --%>
-      <form phx-change="update_visualization_config" phx-target={@parent}>
+      <form id="visualization-settings-form" phx-change="update_visualization_config" phx-target={@parent}>
         <div class="space-y-4">
           <%= case @chart_type do %>
             <% "kpi" -> %>

@@ -2,7 +2,7 @@ defmodule Lotus.Web.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/elixir-lotus/lotus_web"
-  @version "1.2.0"
+  @version "1.3.0"
 
   def project do
     [
@@ -41,7 +41,7 @@ defmodule Lotus.Web.MixProject do
   defp deps do
     [
       {:phoenix, "~> 1.7"},
-      {:phoenix_live_view, ">= 1.0.0 and < 1.2.0"},
+      {:phoenix_live_view, ">= 1.0.0 and < 1.3.0"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_ecto, "~> 4.5"},
       {:gettext, "~> 0.26 or ~> 1.0"},

@@ -248,6 +248,7 @@ defmodule Lotus.Web.DashboardEditorPage do
       </h3>
 
       <.form for={@dashboard_form}
+             id="save-dashboard-form"
              phx-submit="save_dashboard"
              phx-change="validate_save"
              phx-target={@parent}>
@@ -343,7 +344,12 @@ defmodule Lotus.Web.DashboardEditorPage do
         <%= if @is_new, do: gettext("Add Filter"), else: gettext("Edit Filter") %>
       </h3>
 
-      <form phx-change="filter_form_changed" phx-submit="save_filter" phx-target={@parent}>
+      <form
+        id="dashboard-filter-form"
+        phx-change="filter_form_changed"
+        phx-submit="save_filter"
+        phx-target={@parent}
+      >
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

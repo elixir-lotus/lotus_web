@@ -61,7 +61,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
       |> assign(:supports_formatting, supports_formatting)
 
     ~H"""
-    <.form for={@form} phx-submit="run_query" phx-target={@target} phx-change="validate">
+    <.form for={@form} id="query-editor-form" phx-submit="run_query" phx-target={@target} phx-change="validate">
       <div class="bg-editor-light dark:bg-editor-dark">
         <.render_toolbar
           form={@form}

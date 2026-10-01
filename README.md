@@ -333,6 +333,7 @@ config :lotus,
 
 | Lotus Web | Lotus | Elixir | Phoenix |
 |-----------|-------|--------|---------|
+| 1.3.x | 1.1.0 | 1.18+ | 1.7+ |
 | 1.2.x | 1.1.0 | 1.18+ | 1.7+ |
 | 1.1.x | 1.0.0 | 1.18+ | 1.7+ |
 | 1.0.0 | 1.0.0 | 1.18+ | 1.7+ |
@@ -342,7 +343,7 @@ config :lotus,
 | 0.11.x | 0.12.0+ | 1.17+ | 1.7+ |
 | 0.10.x | 0.11.0+ | 1.17+ | 1.7+ |
 
-Lotus Web 1.0 requires Phoenix LiveView 1.0 or 1.1 (`>= 1.0.0 and < 1.2.0`) and OTP 26+. CI runs Elixir 1.18, 1.19 and 1.20 on OTP 27 and 29.
+Lotus Web 1.3 requires Phoenix LiveView 1.0, 1.1 or 1.2 (`>= 1.0.0 and < 1.3.0`) and OTP 26+. CI runs Elixir 1.18, 1.19 and 1.20 on OTP 27 and 29.
 
 ## Development
 
