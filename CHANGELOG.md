@@ -14,6 +14,8 @@
 
 - **A new mark.** The header shows the new Lotus mark: two ink petals and a
   pink one (blade orange in Sumi).
+- **Made by Hattori AI.** The footer names Hattori AI after the versions,
+  behind a short rule in the colour of the mark's petal.
 
 ## [1.3.0] - 2026-10-01
 
