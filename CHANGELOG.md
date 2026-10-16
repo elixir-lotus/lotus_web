@@ -7,8 +7,10 @@
 - **Themes.** Lotus Web ships with two themes, each in light and dark:
   Lotus, the default, and Sumi, the design system of Hattori AI. Pick one
   with the `:theme` option of `lotus_dashboard/2`; people can switch in the
-  appearance menu, and their choice is kept in their browser. Override
-  single colours with `:theme_colors`. See the Theming guide.
+  appearance menu, and their choice is kept in their browser. Limit the
+  themes on offer with `:themes` (with one, the menu offers no theme
+  choice). Override single colours with `:theme_colors`. See the Theming
+  guide.
 
 ### Changed
 

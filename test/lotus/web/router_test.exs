@@ -89,6 +89,28 @@ defmodule Lotus.Web.RouterTest do
       end
     end
 
+    test "offering both themes by default, or only the ones given" do
+      assert %{"theme" => :lotus, "themes" => [:lotus, :sumi]} = options_to_session([])
+      assert %{"theme" => :lotus, "themes" => [:lotus]} = options_to_session(themes: [:lotus])
+
+      assert %{"theme" => :sumi, "themes" => [:sumi]} = options_to_session(themes: [:sumi])
+
+      assert %{"theme" => :sumi, "themes" => [:lotus, :sumi]} =
+               options_to_session(theme: :sumi)
+    end
+
+    test "validating the themes on offer" do
+      for value <- [[], [:dark], [:lotus, :lotus], :lotus] do
+        assert_raise ArgumentError, ~r/invalid option for lotus_dashboard/, fn ->
+          Router.__options__("/lotus", themes: value)
+        end
+      end
+
+      assert_raise ArgumentError, ~r/theme :sumi is not one of the available themes/, fn ->
+        Router.__options__("/lotus", theme: :sumi, themes: [:lotus])
+      end
+    end
+
     test "validating theme colors" do
       for value <- [
             %{"pink-600" => "blue"},

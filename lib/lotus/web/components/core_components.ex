@@ -481,6 +481,11 @@ defmodule Lotus.Web.CoreComponents do
   Renders the appearance menu: light, dark or system, and the theme (Lotus or
   Sumi). The trigger shows the icon of the chosen appearance.
   """
+  attr(:themes, :list,
+    default: [:lotus, :sumi],
+    doc: "the themes on offer; with one, the menu offers no theme choice"
+  )
+
   attr(:rest, :global)
 
   def theme_selector(assigns) do
@@ -530,17 +535,12 @@ defmodule Lotus.Web.CoreComponents do
             System
           </button>
         </div>
-        <div class="py-1 border-t border-gray-200 dark:border-gray-700">
+        <div :if={length(@themes) > 1} class="py-1 border-t border-gray-200 dark:border-gray-700">
           <p class="px-3 pt-1 pb-1 text-xs font-medium text-gray-500 dark:text-gray-400">
             Theme
           </p>
           <button
-            :for={
-              {palette, label, swatch} <- [
-                {"lotus", "Lotus", "bg-[#ff8086]"},
-                {"sumi", "Sumi", "bg-[#e84a1c]"}
-              ]
-            }
+            :for={{palette, label, swatch} <- theme_options(@themes)}
             type="button"
             class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 aria-pressed:text-pink-600 dark:aria-pressed:text-pink-400 transition-colors"
             data-palette-option={palette}
@@ -552,6 +552,13 @@ defmodule Lotus.Web.CoreComponents do
       </div>
     </div>
     """
+  end
+
+  defp theme_options(themes) do
+    Enum.filter(
+      [{:lotus, "Lotus", "bg-[#ff8086]"}, {:sumi, "Sumi", "bg-[#e84a1c]"}],
+      fn {theme, _label, _swatch} -> theme in themes end
+    )
   end
 
   def show(js \\ %JS{}, selector) do

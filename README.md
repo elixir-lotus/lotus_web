@@ -149,7 +149,7 @@ See the [AI assistant guide](guides/ai-assistant.md) for setup and configuration
 
 ### Themes
 
-Lotus Web ships with two themes, Lotus (the default) and Sumi, the design system of Hattori AI, each in light and dark. Pick one with `lotus_dashboard "/lotus", theme: :sumi`, let people switch in the appearance menu, or override single colours to match your brand with `:theme_colors`.
+Lotus Web ships with two themes, Lotus (the default) and Sumi, the design system of Hattori AI, each in light and dark. Pick one with `lotus_dashboard "/lotus", theme: :sumi`, let people switch in the appearance menu (or offer only one with `themes: [:lotus]`), or override single colours to match your brand with `:theme_colors`.
 
 See the [theming guide](guides/theming.md) for the colour tokens.
 

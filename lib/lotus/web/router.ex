@@ -25,6 +25,7 @@ defmodule Lotus.Web.Router do
     features: [],
     card_concurrency: 4,
     theme: :lotus,
+    themes: [:lotus, :sumi],
     theme_colors: %{}
   ]
 
@@ -58,6 +59,10 @@ defmodule Lotus.Web.Router do
   * `:theme` — the look of the dashboard: `:lotus` (the default) or `:sumi`, the design system
     of Hattori AI. A person can pick the other theme in the appearance menu; their choice is
     kept in their browser. See the Theming guide.
+
+  * `:themes` — the themes people can pick in the appearance menu. Defaults to
+    `[:lotus, :sumi]`. With one theme, the menu offers no theme choice. When `:theme` is not
+    given, the dashboard uses the first of these.
 
   * `:theme_colors` — a map of colours that override the theme, from a token name to a hex
     colour, for example `%{"pink-600" => "#0ea5e9"}`. See the Theming guide for the tokens.
@@ -162,9 +167,13 @@ defmodule Lotus.Web.Router do
 
   @doc false
   def __options__(prefix, opts) do
-    opts = Keyword.merge(@default_opts, opts)
+    opts =
+      @default_opts
+      |> Keyword.merge(opts)
+      |> default_theme(Keyword.has_key?(opts, :theme))
 
     Enum.each(opts, &validate_opt!/1)
+    validate_theme_choice!(opts[:theme], opts[:themes])
 
     on_mount =
       Keyword.get(opts, :on_mount, []) ++ [Lotus.Web.Locale, Lotus.Web.Authentication]
@@ -178,6 +187,7 @@ defmodule Lotus.Web.Router do
       opts[:features],
       opts[:card_concurrency],
       opts[:theme],
+      opts[:themes],
       opts[:theme_colors]
     ]
 
@@ -195,6 +205,7 @@ defmodule Lotus.Web.Router do
       opts[:csp_nonce_assign_key],
       opts[:card_concurrency],
       opts[:theme],
+      opts[:themes],
       opts[:theme_colors]
     ]
 
@@ -222,6 +233,7 @@ defmodule Lotus.Web.Router do
         features,
         card_concurrency,
         theme,
+        themes,
         theme_colors
       ) do
     csp_keys = expand_csp_nonce_keys(csp_key)
@@ -239,6 +251,7 @@ defmodule Lotus.Web.Router do
       "features" => features || [],
       "card_concurrency" => card_concurrency,
       "theme" => theme,
+      "themes" => themes,
       "theme_colors" => theme_colors,
       "csp_nonces" => %{
         style: conn.assigns[csp_keys[:style]],
@@ -256,6 +269,7 @@ defmodule Lotus.Web.Router do
         csp_key,
         card_concurrency,
         theme,
+        themes,
         theme_colors
       ) do
     csp_keys = expand_csp_nonce_keys(csp_key)
@@ -266,12 +280,31 @@ defmodule Lotus.Web.Router do
       "live_transport" => live_transport,
       "card_concurrency" => card_concurrency,
       "theme" => theme,
+      "themes" => themes,
       "theme_colors" => theme_colors,
       "csp_nonces" => %{
         style: conn.assigns[csp_keys[:style]],
         script: conn.assigns[csp_keys[:script]]
       }
     }
+  end
+
+  # Without an explicit :theme, the dashboard opens in the first available one.
+  defp default_theme(opts, true = _theme_given?), do: opts
+
+  defp default_theme(opts, false = _theme_given?) do
+    case opts[:themes] do
+      [first | _] -> Keyword.put(opts, :theme, first)
+      _ -> opts
+    end
+  end
+
+  defp validate_theme_choice!(theme, themes) do
+    if is_list(themes) and theme not in themes do
+      raise ArgumentError,
+            "invalid option for lotus_dashboard: theme #{inspect(theme)} is not one of " <>
+              "the available themes #{inspect(themes)}"
+    end
   end
 
   defp expand_csp_nonce_keys(nil), do: %{style: nil, script: nil}
@@ -296,6 +329,9 @@ defmodule Lotus.Web.Router do
     do: true
 
   defp valid_opt?({:theme, value}), do: value in Lotus.Web.Theme.names()
+
+  defp valid_opt?({:themes, [_ | _] = value}),
+    do: Enum.all?(value, &(&1 in Lotus.Web.Theme.names())) and Enum.uniq(value) == value
 
   defp valid_opt?({:theme_colors, value}) when is_map(value),
     do: Lotus.Web.Theme.valid_colors?(value)

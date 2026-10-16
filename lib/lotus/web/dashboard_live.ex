@@ -38,6 +38,7 @@ defmodule Lotus.Web.DashboardLive do
       |> assign(:features, features)
       |> assign(:card_concurrency, card_concurrency)
       |> assign(:theme, Map.get(session, "theme", :lotus))
+      |> assign(:themes, Map.get(session, "themes", Lotus.Web.Theme.names()))
       |> assign(:theme_colors, Map.get(session, "theme_colors", %{}))
       |> assign(:public_view, page.name == :public_dashboard)
       |> assign_permissions()

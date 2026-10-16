@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-lotus-theme={assigns[:theme] || :lotus}>
+<html
+  lang="en"
+  data-lotus-theme={assigns[:theme] || :lotus}
+  data-lotus-themes={Enum.join(assigns[:themes] || Lotus.Web.Theme.names(), " ")}
+>
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />

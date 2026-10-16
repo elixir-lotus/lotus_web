@@ -30,6 +30,19 @@ moon or screen icon in the header), under **Theme**. Their choice is kept in
 their browser, next to their light or dark choice, and wins over the
 `:theme` option. Someone who never picks one sees the theme you set.
 
+## Choosing the themes on offer
+
+Both themes are on offer by default. To offer fewer, pass `:themes`:
+
+```elixir
+lotus_dashboard "/lotus", themes: [:lotus]
+```
+
+With a single theme, the appearance menu has no **Theme** section, and a
+choice a browser kept from before is ignored. Without `:theme`, the dashboard
+opens in the first theme of the list, so `themes: [:sumi]` gives a Sumi-only
+dashboard. A `:theme` that is not in `:themes` fails the compile.
+
 ## Overriding colours
 
 To bring Lotus closer to your brand without writing a theme, override single
