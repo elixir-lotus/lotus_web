@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-lotus-theme={assigns[:theme] || :lotus}>
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -8,6 +8,9 @@
 
     <title>{assigns[:page_title] || "Lotus"}</title>
 
+    <style :if={Lotus.Web.Theme.css(assigns[:theme_colors])} nonce={@csp_nonces[:style]}>
+      <%= Lotus.Web.Theme.css(assigns[:theme_colors]) %>
+    </style>
     <link phx-track-static rel="stylesheet" nonce={@csp_nonces[:style]} href={asset_path(:css)} />
     <script phx-track-static nonce={@csp_nonces[:script]} src={asset_path(:js)} defer>
     </script>

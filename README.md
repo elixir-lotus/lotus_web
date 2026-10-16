@@ -147,6 +147,12 @@ Each source describes itself to the model through its adapter — its language, 
 
 See the [AI assistant guide](guides/ai-assistant.md) for setup and configuration.
 
+### Themes
+
+Lotus Web ships with two themes, Lotus (the default) and Sumi, the design system of Hattori AI, each in light and dark. Pick one with `lotus_dashboard "/lotus", theme: :sumi`, let people switch in the appearance menu, or override single colours to match your brand with `:theme_colors`.
+
+See the [theming guide](guides/theming.md) for the colour tokens.
+
 ### Multiple Data Sources
 
 Execute queries against every source in your `:data_sources` config and switch between them from the editor toolbar — useful for apps with separate analytics, reporting, or multi-tenant databases. Postgres, MySQL and SQLite are built in; ClickHouse and Elasticsearch are separate packages, [lotus_clickhouse](https://github.com/elixir-lotus/lotus_clickhouse) and [lotus_elasticsearch](https://github.com/elixir-lotus/lotus_elasticsearch).

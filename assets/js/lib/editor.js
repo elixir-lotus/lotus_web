@@ -3,7 +3,7 @@ import { placeholder, keymap } from "@codemirror/view";
 import { EditorState, Compartment, Prec } from "@codemirror/state";
 import { sql } from "@codemirror/lang-sql";
 import { json } from "@codemirror/lang-json";
-import { editorStyles, getCompletionStyles } from "./styles";
+import { editorStyles, getCompletionStyles, themeHighlight } from "./styles";
 import { lotusVariablesPlugin } from "./plugins/lotus_variables";
 import {
   getDialectConfig,
@@ -63,6 +63,7 @@ export function createEditor({
       EditorView.theme(getCompletionStyles(isDarkMode())),
     ),
     editorTheme,
+    themeHighlight,
     EditorView.lineWrapping,
     placeholder("SELECT * FROM table_name"),
   ];

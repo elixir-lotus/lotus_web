@@ -1,4 +1,5 @@
 import topbar from "topbar";
+import { applyPalette, tokenColor } from "./lib/palette";
 
 import AIMessageInput from "./hooks/ai_message_input";
 import AIPromptInput from "./hooks/ai_prompt_input";
@@ -36,6 +37,7 @@ function initializeTheme() {
   }
 }
 
+applyPalette();
 initializeTheme();
 initGlobalShortcuts();
 
@@ -75,10 +77,15 @@ window.addEventListener("phx:update-query-params", (event) => {
   history.replaceState(history.state, "", url.toString());
 });
 
-topbar.config({
-  barColors: { 0: "#FF8086" },
-  shadowColor: "rgba(0, 0, 0, .3)",
-});
+function configureTopbar() {
+  topbar.config({
+    barColors: { 0: tokenColor("logo-petal") || "#FF8086" },
+    shadowColor: "rgba(0, 0, 0, .3)",
+  });
+}
+
+configureTopbar();
+window.addEventListener("lotus:theme-changed", configureTopbar);
 
 const hooks = {
   AIMessageInput,

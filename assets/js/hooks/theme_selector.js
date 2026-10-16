@@ -1,4 +1,5 @@
 import { load, store } from "../lib/settings";
+import { applyPalette } from "../lib/palette";
 
 export default {
   applyTheme() {
@@ -16,6 +17,24 @@ export default {
     );
 
     this.updateTriggerIcon(theme);
+    this.updateSelection(theme, document.documentElement.dataset.lotusTheme);
+  },
+
+  // Marks the chosen appearance and theme in the menu.
+  updateSelection(theme, palette) {
+    this.el.querySelectorAll("[data-theme-option]").forEach((option) => {
+      option.setAttribute(
+        "aria-pressed",
+        String(option.getAttribute("data-theme-option") === theme),
+      );
+    });
+
+    this.el.querySelectorAll("[data-palette-option]").forEach((option) => {
+      option.setAttribute(
+        "aria-pressed",
+        String(option.getAttribute("data-palette-option") === palette),
+      );
+    });
   },
 
   updateTriggerIcon(theme) {
@@ -74,6 +93,18 @@ export default {
 
         const menu = this.el.querySelector("[data-dropdown-menu]");
         menu.classList.add("hidden");
+      });
+    });
+
+    this.el.querySelectorAll("[data-palette-option]").forEach((option) => {
+      option.addEventListener("click", () => {
+        const palette = option.getAttribute("data-palette-option");
+
+        store("palette", palette);
+        applyPalette(palette);
+        this.applyTheme();
+
+        this.el.querySelector("[data-dropdown-menu]").classList.add("hidden");
       });
     });
   },

@@ -478,8 +478,8 @@ defmodule Lotus.Web.CoreComponents do
   end
 
   @doc """
-  Renders a theme toggle button that switches between light and dark modes.
-  Shows sun icon in dark mode (to switch to light) and moon icon in light mode (to switch to dark).
+  Renders the appearance menu: light, dark or system, and the theme (Lotus or
+  Sumi). The trigger shows the icon of the chosen appearance.
   """
   attr(:rest, :global)
 
@@ -502,9 +502,12 @@ defmodule Lotus.Web.CoreComponents do
         data-dropdown-menu
       >
         <div class="py-1">
+          <p class="px-3 pt-1 pb-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+            Appearance
+          </p>
           <button
             type="button"
-            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 aria-pressed:text-pink-600 dark:aria-pressed:text-pink-400 transition-colors"
             data-theme-option="light"
           >
             <Icons.sun class="h-4 w-4 mr-3" />
@@ -512,7 +515,7 @@ defmodule Lotus.Web.CoreComponents do
           </button>
           <button
             type="button"
-            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 aria-pressed:text-pink-600 dark:aria-pressed:text-pink-400 transition-colors"
             data-theme-option="dark"
           >
             <Icons.moon class="h-4 w-4 mr-3" />
@@ -520,11 +523,30 @@ defmodule Lotus.Web.CoreComponents do
           </button>
           <button
             type="button"
-            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 aria-pressed:text-pink-600 dark:aria-pressed:text-pink-400 transition-colors"
             data-theme-option="system"
           >
             <Icons.monitor class="h-4 w-4 mr-3" />
             System
+          </button>
+        </div>
+        <div class="py-1 border-t border-gray-200 dark:border-gray-700">
+          <p class="px-3 pt-1 pb-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+            Theme
+          </p>
+          <button
+            :for={
+              {palette, label, swatch} <- [
+                {"lotus", "Lotus", "bg-[#ff8086]"},
+                {"sumi", "Sumi", "bg-[#e84a1c]"}
+              ]
+            }
+            type="button"
+            class="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 aria-pressed:text-pink-600 dark:aria-pressed:text-pink-400 transition-colors"
+            data-palette-option={palette}
+          >
+            <span class={["h-3 w-3 mr-3 rounded-full ring-1 ring-black/10", swatch]}></span>
+            {label}
           </button>
         </div>
       </div>

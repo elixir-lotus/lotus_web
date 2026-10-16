@@ -37,6 +37,8 @@ defmodule Lotus.Web.DashboardLive do
       |> assign(:actor, actor)
       |> assign(:features, features)
       |> assign(:card_concurrency, card_concurrency)
+      |> assign(:theme, Map.get(session, "theme", :lotus))
+      |> assign(:theme_colors, Map.get(session, "theme_colors", %{}))
       |> assign(:public_view, page.name == :public_dashboard)
       |> assign_permissions()
       |> page.comp.handle_mount()
