@@ -4,7 +4,7 @@ Lotus Web ships with two themes, each in light and dark:
 
 * **Lotus** (`:lotus`), the default: white surfaces on a soft pink page, pink
   accents and Inter.
-* **Sumi** (`:sumi`), the design system of [Hattori AI](https://github.com/hattoriai):
+* **Sumi** (`:sumi`), the design system of [Hattori AI](https://hattori.ai):
   ink on warm paper, one blade orange accent, Outfit for the interface and
   Cormorant Garamond for titles, hairlines instead of shadows and nearly
   square corners. Charts and the SQL editor's syntax colours follow it too.
