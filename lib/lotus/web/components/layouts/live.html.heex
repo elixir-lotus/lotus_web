@@ -1,7 +1,7 @@
 <meta name="live-transport" content={@live_transport} />
 <meta name="live-path" content={@live_path} />
 
-<div class="flex flex-col min-h-screen sm:h-screen sm:overflow-hidden bg-red-50 dark:bg-gray-900">
+<div class="flex flex-col min-h-screen sm:h-screen sm:overflow-hidden bg-canvas dark:bg-canvas-dark">
   <div id="platform-scout" phx-hook="PlatformScout" style="display: none;"></div>
   <nav class="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
     <div class="mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,9 +70,9 @@
             >
               <Icons.command class="h-5 w-5" />
             </button>
-            <.theme_selector />
+            <.theme_selector themes={@themes} />
           <% else %>
-            <.theme_selector />
+            <.theme_selector themes={@themes} />
           <% end %>
         </div>
       </div>

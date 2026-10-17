@@ -133,7 +133,8 @@ defmodule Lotus.Web.MixProject do
         "guides/ai-assistant.md",
         "guides/visualizations.md",
         "guides/dashboards.md",
-        "guides/variables-and-widgets.md"
+        "guides/variables-and-widgets.md",
+        "guides/theming.md"
       ]
     ]
   end

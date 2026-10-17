@@ -23,7 +23,7 @@ defmodule Lotus.Web.PublicDashboardPage do
         <div class="bg-white dark:bg-gray-800 shadow rounded-lg h-full flex flex-col overflow-hidden">
           <%!-- Header --%>
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 class="lotus-title text-2xl font-bold text-gray-900 dark:text-white">
               <%= @dashboard.name %>
             </h1>
             <%= if @dashboard.description do %>

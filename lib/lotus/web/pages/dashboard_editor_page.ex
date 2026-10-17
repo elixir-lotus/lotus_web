@@ -180,7 +180,7 @@ defmodule Lotus.Web.DashboardEditorPage do
         <.link navigate={lotus_path("", %{tab: "dashboards"})} class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
           <Icons.chevron_left class="h-5 w-5" />
         </.link>
-        <h2 class="text-xl font-semibold text-text-light dark:text-text-dark">
+        <h2 class="lotus-title text-xl font-semibold text-text-light dark:text-text-dark">
           <%= if @mode == :new do %>
             <%= gettext("New Dashboard") %>
           <% else %>

@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Themes.** Lotus Web ships with two themes, each in light and dark:
+  Lotus, the default, and Sumi, the design system of Hattori AI. Pick one
+  with the `:theme` option of `lotus_dashboard/2`; people can switch in the
+  appearance menu, and their choice is kept in their browser. Limit the
+  themes on offer with `:themes` (with one, the menu offers no theme
+  choice). Override single colours with `:theme_colors`. See the Theming
+  guide.
+
+### Changed
+
+- **A new mark.** The header shows the new Lotus mark: two ink petals and a
+  pink one (blade orange in Sumi).
+- **Made by Hattori AI.** The footer names Hattori AI after the versions,
+  behind a short rule in the colour of the mark's petal.
+
 ## [1.3.0] - 2026-10-01
 
 Lotus Web now runs on Phoenix LiveView 1.2. LiveView 1.0 and 1.1 still work.

@@ -64,6 +64,66 @@ defmodule Lotus.Web.RouterTest do
       end
     end
 
+    test "passing the theme and theme colors to both sessions" do
+      assert %{"theme" => :lotus, "theme_colors" => %{}} = options_to_session([])
+
+      colors = %{"pink-600" => "#0ea5e9"}
+
+      assert %{"theme" => :sumi, "theme_colors" => ^colors} =
+               options_to_session(theme: :sumi, theme_colors: colors)
+
+      {_name, _session_opts, public_session_opts, _route_opts, _export_opts} =
+        Router.__options__("/lotus", theme: :sumi, theme_colors: colors)
+
+      {Router, :__public_session__, args} = public_session_opts[:session]
+
+      assert %{"theme" => :sumi, "theme_colors" => ^colors} =
+               apply(Router, :__public_session__, [conn(:get, "/lotus") | args])
+    end
+
+    test "validating theme values" do
+      for value <- [:dark, "sumi", nil] do
+        assert_raise ArgumentError, ~r/invalid option for lotus_dashboard/, fn ->
+          Router.__options__("/lotus", theme: value)
+        end
+      end
+    end
+
+    test "offering both themes by default, or only the ones given" do
+      assert %{"theme" => :lotus, "themes" => [:lotus, :sumi]} = options_to_session([])
+      assert %{"theme" => :lotus, "themes" => [:lotus]} = options_to_session(themes: [:lotus])
+
+      assert %{"theme" => :sumi, "themes" => [:sumi]} = options_to_session(themes: [:sumi])
+
+      assert %{"theme" => :sumi, "themes" => [:lotus, :sumi]} =
+               options_to_session(theme: :sumi)
+    end
+
+    test "validating the themes on offer" do
+      for value <- [[], [:dark], [:lotus, :lotus], :lotus] do
+        assert_raise ArgumentError, ~r/invalid option for lotus_dashboard/, fn ->
+          Router.__options__("/lotus", themes: value)
+        end
+      end
+
+      assert_raise ArgumentError, ~r/theme :sumi is not one of the available themes/, fn ->
+        Router.__options__("/lotus", theme: :sumi, themes: [:lotus])
+      end
+    end
+
+    test "validating theme colors" do
+      for value <- [
+            %{"pink-600" => "blue"},
+            %{"pink-600" => "#0ea5e9; } body { display: none"},
+            %{"brand" => "#0ea5e9"},
+            [{"pink-600", "#0ea5e9"}]
+          ] do
+        assert_raise ArgumentError, ~r/invalid option for lotus_dashboard/, fn ->
+          Router.__options__("/lotus", theme_colors: value)
+        end
+      end
+    end
+
     test "validating transport values" do
       assert_raise ArgumentError, ~r/invalid option for lotus_dashboard/, fn ->
         Router.__options__("/lotus", transport: "webpoll")
