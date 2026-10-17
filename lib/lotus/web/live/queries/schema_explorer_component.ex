@@ -146,7 +146,7 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
         <% :tables -> %>
           <.tables_list sources_map={@sources_map} current_db={@current_db} current_db_info={@current_db_info} target={@myself} />
         <% :columns -> %>
-          <.columns_list columns={@columns} />
+          <.columns_list columns={@columns} schema={@current_schema} />
       <% end %>
     </div>
     """
@@ -206,11 +206,22 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
   defp columns_list(assigns) do
     ~H"""
     <div class="p-2">
-      <div :for={column <- @columns} class="flex items-center py-2 px-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+      <div
+        :for={column <- @columns}
+        class="flex items-center py-2 px-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer"
+        title={column[:comment]}
+      >
         <div class="flex-shrink-0 mr-3">
           <.column_icon column={column} />
         </div>
         <span class="text-blue-600 font-mono text-sm"><%= column.name %></span>
+        <span
+          :if={label = reference_label(column, @schema)}
+          class="ml-2 truncate font-mono text-xs text-gray-500 dark:text-gray-400"
+          data-references={label}
+        >
+          → <%= label %>
+        </span>
       </div>
     </div>
     """
@@ -390,9 +401,25 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
     end
   end
 
+  # A source that reports foreign keys (`:references`, `nil` for a column
+  # that is not one) is taken at its word. One that does not (ClickHouse,
+  # Elasticsearch) leaves the key out, and the column's name is the only hint.
+  defp foreign_key?(%{references: %{}}), do: true
+  defp foreign_key?(column) when is_map_key(column, :references), do: false
+
   defp foreign_key?(column) do
     String.contains?(column.name, "_id") and not column.primary_key
   end
+
+  # What a foreign key column references, as "table.column", with the schema
+  # only when it is not the table's own.
+  defp reference_label(%{references: %{table: table} = ref}, schema) do
+    [if(ref[:schema] not in [nil, schema], do: ref[:schema]), table, ref[:column]]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(".")
+  end
+
+  defp reference_label(_column, _schema), do: nil
 
   defp datetime_type?(type) do
     String.contains?(type, "timestamp") or String.contains?(type, "date")

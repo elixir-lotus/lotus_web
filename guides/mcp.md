@@ -120,6 +120,26 @@ end
 The resolver's decisions and the chart app come with the mount; tool
 names take the prefix (`lotus_show_chart`).
 
+### Prompts of your own
+
+Lotus ships no MCP prompts, since it doesn't know what your data means.
+Add your own, about your own saved queries and dashboards, to the server
+that mounts `Lotus.Web.MCP` (Claude Code lists them as slash commands):
+
+```elixir
+defmodule MyApp.MCP do
+  use Sake.Server, name: "my-app", version: "1.0.0"
+  mount Lotus.Web.MCP, prefix: "lotus"
+  prompts [MyApp.MCP.Prompts.WeeklyRevenue]
+end
+```
+
+The Lotus MCP guide has an example prompt. A prompt only writes the
+request: the model then calls the Lotus tools, which your resolver
+decides on as usual. Your resolver doesn't see the prompt itself, so
+give it a `scope:` (or middleware of your own) if not everyone should
+see it.
+
 ## Assets
 
 The chart app's script is built with the dashboard's own assets
