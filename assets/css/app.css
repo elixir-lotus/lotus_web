@@ -1,3 +1,8 @@
+/* The command palette (Jumon). Its Sumi mapping applies in the Sumi theme;
+   in the Lotus theme the rules below restyle it from the Lotus tokens. */
+@import "../../deps/jumon/priv/static/jumon.css";
+@import "../../deps/jumon/priv/static/jumon-sumi.css";
+
 @font-face {
     font-display: swap;
     font-family: "Inter var";
@@ -225,6 +230,97 @@
 
 [data-lotus-theme="sumi"] body {
     font-weight: 300;
+}
+
+/* ── The command palette ────────────────────────────────────
+   jumon-sumi.css maps the palette to Sumi on :root. In the Lotus theme the
+   palette and its button take every property from the Lotus tokens
+   instead, set on their own elements so that they win over what they
+   inherit (and follow :theme_colors). In the Sumi theme, the short --sumi-*
+   names give Jumon's Sumi mapping the light or dark of the dashboard, which
+   is the class "dark", not data-theme. */
+[data-lotus-theme="lotus"] :is(.jumon, .jumon-button) {
+    --jumon-font: var(--lotus-font-sans);
+    --jumon-font-size: 0.9375rem;
+    --jumon-input-size: 1.0625rem;
+    --jumon-small: 0.8125rem;
+    --jumon-text: rgb(var(--lotus-gray-900));
+    --jumon-muted: rgb(var(--lotus-gray-500));
+    --jumon-background: rgb(var(--lotus-white));
+    --jumon-surface: rgb(var(--lotus-gray-50));
+    --jumon-border: rgb(var(--lotus-gray-200));
+    --jumon-accent: rgb(var(--lotus-pink-600));
+    --jumon-accent-text: rgb(var(--lotus-white));
+    --jumon-active: rgb(var(--lotus-pink-50));
+    --jumon-active-text: rgb(var(--lotus-gray-900));
+    --jumon-active-bar: rgb(var(--lotus-pink-500));
+    --jumon-match: rgb(var(--lotus-pink-600));
+    --jumon-danger: #dc2626;
+    --jumon-key-background: rgb(var(--lotus-gray-100));
+    --jumon-key-border: rgb(var(--lotus-gray-200));
+    --jumon-key-text: rgb(var(--lotus-gray-600));
+    --jumon-focus-ring: 0 0 0 2px rgb(var(--lotus-white)), 0 0 0 4px rgb(var(--lotus-pink-500));
+    --jumon-radius: var(--lotus-radius-lg);
+    --jumon-inner-radius: var(--lotus-radius-md);
+    --jumon-shadow: 0 24px 64px -12px rgb(0 0 0 / 0.28), 0 0 0 1px rgb(0 0 0 / 0.06);
+    --jumon-backdrop: rgb(17 24 39 / 0.32);
+    --jumon-space: 0.5rem;
+    --jumon-icon-size: 16px;
+}
+
+[data-lotus-theme="lotus"].dark :is(.jumon, .jumon-button) {
+    --jumon-text: rgb(var(--lotus-gray-100));
+    --jumon-muted: rgb(var(--lotus-gray-400));
+    --jumon-background: rgb(var(--lotus-gray-800));
+    --jumon-surface: rgb(var(--lotus-editor-dark));
+    --jumon-border: rgb(var(--lotus-gray-700));
+    --jumon-accent-text: rgb(var(--lotus-white));
+    --jumon-active: rgb(var(--lotus-pink-500) / 0.15);
+    --jumon-active-text: rgb(var(--lotus-white));
+    --jumon-active-bar: rgb(var(--lotus-pink-400));
+    --jumon-match: rgb(var(--lotus-pink-400));
+    --jumon-danger: #f87171;
+    --jumon-key-background: rgb(var(--lotus-gray-700));
+    --jumon-key-border: rgb(var(--lotus-gray-600));
+    --jumon-key-text: rgb(var(--lotus-gray-300));
+    --jumon-focus-ring: 0 0 0 2px rgb(var(--lotus-gray-800)), 0 0 0 4px rgb(var(--lotus-pink-400));
+    --jumon-shadow: 0 24px 64px -12px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.08);
+    --jumon-backdrop: rgb(0 0 0 / 0.5);
+}
+
+/* @tailwindcss/forms styles every text input, and comes later than
+   jumon.css: give the palette's box back its own look. */
+.jumon .jumon-input,
+.jumon .jumon-input:focus {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
+    font-size: var(--jumon-input-size);
+    line-height: inherit;
+}
+
+[data-lotus-theme="sumi"] {
+    --sumi-font: "Outfit", system-ui, sans-serif;
+    --sumi-ink: rgb(var(--lotus-black));
+    --sumi-paper: rgb(var(--lotus-white));
+    --sumi-surface: rgb(var(--lotus-gray-100));
+    --sumi-line: rgb(var(--lotus-gray-200));
+    --sumi-muted: rgb(var(--lotus-black) / 0.62);
+    --sumi-accent: rgb(var(--lotus-pink-500));
+    --sumi-accent-ink: rgb(var(--lotus-black));
+    --sumi-radius: 0.25rem;
+    --color-error: oklch(55% 0.22 25);
+}
+
+[data-lotus-theme="sumi"].dark {
+    --sumi-ink: rgb(var(--lotus-white));
+    --sumi-paper: rgb(var(--lotus-gray-800));
+    --sumi-surface: rgb(var(--lotus-gray-700));
+    --sumi-line: rgb(var(--lotus-gray-700));
+    --sumi-muted: rgb(var(--lotus-white) / 0.55);
+    --color-error: oklch(62% 0.2 25);
 }
 
 /* Titles in Cormorant Garamond, light. */

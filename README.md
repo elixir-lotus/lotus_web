@@ -141,11 +141,15 @@ See the [variables and widgets guide](guides/variables-and-widgets.md) for advan
 
 ### AI Query Assistant
 
-Ask your data questions in plain English. The AI assistant discovers your schema, respects table visibility rules, and supports multi-turn conversations for iterative refinement — no other embeddable BI tool does this. Click "Explain query" for a plain-language breakdown of what your query does, or "Optimize query" for AI-powered performance suggestions based on query plan analysis. Highlight any portion of the query in the editor and click "Explain fragment" to get a focused explanation of just that selection. Bring your own API key for any provider supported by [ReqLLM](https://github.com/agentjido/req_llm). Open it with Cmd/Ctrl+K.
+Ask your data questions in plain English. The AI assistant discovers your schema, respects table visibility rules, and supports multi-turn conversations for iterative refinement — no other embeddable BI tool does this. Click "Explain query" for a plain-language breakdown of what your query does, or "Optimize query" for AI-powered performance suggestions based on query plan analysis. Highlight any portion of the query in the editor and click "Explain fragment" to get a focused explanation of just that selection. Bring your own API key for any provider supported by [ReqLLM](https://github.com/agentjido/req_llm). Open it with Cmd/Ctrl+J.
 
 Each source describes itself to the model through its adapter — its language, an example query, syntax notes — and an adapter can decline generation, optimization or explanation, or opt out of AI entirely.
 
 See the [AI assistant guide](guides/ai-assistant.md) for setup and configuration.
+
+### Command Palette
+
+Press Cmd/Ctrl+K anywhere in the dashboard to search saved queries and dashboards, jump between pages, create a query or a dashboard, switch the appearance and the theme, or run the actions of the page in view: run the query, open the schema explorer, the variables or the visualization settings, or ask the AI assistant. Built with [Jumon](https://hex.pm/packages/jumon); it remembers what each person ran, in their browser.
 
 ### Themes
 
@@ -349,7 +353,7 @@ config :lotus,
 | 0.11.x | 0.12.0+ | 1.17+ | 1.7+ |
 | 0.10.x | 0.11.0+ | 1.17+ | 1.7+ |
 
-Lotus Web 1.3 requires Phoenix LiveView 1.0, 1.1 or 1.2 (`>= 1.0.0 and < 1.3.0`) and OTP 26+. CI runs Elixir 1.18, 1.19 and 1.20 on OTP 27 and 29.
+Lotus Web requires Phoenix LiveView 1.1 or 1.2 (`>= 1.1.0 and < 1.3.0`; Lotus Web 1.3 also ran on 1.0) and OTP 26+. CI runs Elixir 1.18, 1.19 and 1.20 on OTP 27 and 29.
 
 ## Development
 

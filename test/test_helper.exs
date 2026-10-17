@@ -141,6 +141,8 @@ defmodule Lotus.Web.Test.Router do
     )
 
     lotus_dashboard("/serial", as: :serial_dashboard, card_concurrency: 1)
+
+    lotus_dashboard("/one_theme", as: :one_theme_dashboard, themes: [:lotus])
   end
 end
 

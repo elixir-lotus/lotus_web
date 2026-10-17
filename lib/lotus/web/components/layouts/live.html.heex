@@ -20,6 +20,11 @@
           </.link>
         </div>
         <div class="flex items-center space-x-2 sm:space-x-4">
+          <Jumon.Components.command_button
+            :if={assigns[:jumon]}
+            label={gettext("Search")}
+            class="lotus-command-button hidden sm:inline-flex"
+          />
           <%= if not Map.get(assigns, :public_view, false) do %>
             <%!-- New Button with Dropdown --%>
             <div
@@ -92,4 +97,13 @@
   <%= if not Map.get(assigns, :public_view, false) do %>
     <.shortcuts_modal />
   <% end %>
+
+  <Jumon.Components.command_palette
+    :if={assigns[:jumon]}
+    jumon={@jumon}
+    icons={Lotus.Web.Commands.icons()}
+    placeholder={gettext("Search queries and dashboards, or run a command…")}
+  >
+    <:icon :let={name}><.palette_icon name={name} /></:icon>
+  </Jumon.Components.command_palette>
 </div>

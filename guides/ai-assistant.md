@@ -70,7 +70,7 @@ The built-in Ecto adapter and its per-dialect wrappers are always trusted. For a
 
 ### 1. Opening the Assistant
 
-Click the **robot icon** in the query editor toolbar, or press **Cmd/Ctrl+K**. A conversational drawer slides in from the left with a chat interface. If this is your first time, you'll see example prompts to help you get started.
+Click the **robot icon** in the query editor toolbar, or press **Cmd/Ctrl+J**. A conversational drawer slides in from the left with a chat interface. If this is your first time, you'll see example prompts to help you get started.
 
 The icon appears only when AI is enabled and configured. Clicking it without configuration raises a flash message instead of opening the drawer.
 

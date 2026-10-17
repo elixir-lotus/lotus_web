@@ -44,6 +44,28 @@ defmodule Lotus.Web.Layouts do
     """
   end
 
+  attr(:name, :string, required: true)
+
+  # The icons of the command palette's actions, by the names that
+  # Lotus.Web.Commands gives them.
+  defp palette_icon(assigns) do
+    ~H"""
+    <Icons.terminal :if={@name == "terminal"} class="h-4 w-4" />
+    <Icons.blocks :if={@name == "blocks"} class="h-4 w-4" />
+    <Icons.plus :if={@name == "plus"} class="h-4 w-4" />
+    <Icons.play :if={@name == "play"} class="h-4 w-4" />
+    <Icons.database :if={@name == "database"} class="h-4 w-4" />
+    <Icons.variable :if={@name == "variable"} class="h-4 w-4" />
+    <Icons.chart_bar :if={@name == "chart_bar"} class="h-4 w-4" />
+    <Icons.clipboard_copy :if={@name == "clipboard_copy"} class="h-4 w-4" />
+    <Icons.sparkles :if={@name == "sparkles"} class="h-4 w-4" />
+    <Icons.sun :if={@name == "sun"} class="h-4 w-4" />
+    <Icons.moon :if={@name == "moon"} class="h-4 w-4" />
+    <Icons.monitor :if={@name == "monitor"} class="h-4 w-4" />
+    <Icons.layers :if={@name == "layers"} class="h-4 w-4" />
+    """
+  end
+
   attr(:rest, :global)
 
   def footer(assigns) do
@@ -96,6 +118,11 @@ defmodule Lotus.Web.Layouts do
                 keys={["⌘", "/"]}
                 alt_keys={["Ctrl", "/"]}
               />
+              <.shortcut_item
+                description={gettext("Search queries and dashboards, or run a command")}
+                keys={["⌘", "K"]}
+                alt_keys={["Ctrl", "K"]}
+              />
             </div>
           </div>
 
@@ -135,8 +162,8 @@ defmodule Lotus.Web.Layouts do
               <%= if ai_enabled?() do %>
                 <.shortcut_item
                   description={gettext("Toggle AI Assistant")}
-                  keys={["⌘", "K"]}
-                  alt_keys={["Ctrl", "K"]}
+                  keys={["⌘", "J"]}
+                  alt_keys={["Ctrl", "J"]}
                 />
               <% end %>
               <.shortcut_item
