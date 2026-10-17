@@ -47,6 +47,14 @@
 
 ### Changed
 
+- **The schema explorer marks real foreign keys.** For a source that
+  reports them (PostgreSQL, MySQL, SQLite, through Lotus's
+  `describe_table/3`), a foreign key column shows the column it references
+  ("→ users.id"), and a column whose name only ends in `_id` is no longer
+  marked as one. Hovering a column shows its database comment. Sources that
+  report no foreign keys (ClickHouse, Elasticsearch) keep the guess from
+  the name.
+
 - Text cards and dashboard descriptions render GitHub Flavored Markdown
   (strikethrough, tables, task lists, autolinks and footnotes).
 - The LOTUS wordmark shows next to the mark in the Lotus theme too, and
