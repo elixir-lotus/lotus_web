@@ -16,8 +16,8 @@ defmodule Lotus.Web.RichText do
 
   # The features that the text of a field keeps when it already has them, so
   # that editing it loses nothing: a card written in Markdown before may
-  # have a table, an image or a footnote.
-  @kept_when_used ~w(tables images footnotes)a
+  # have a table or a footnote. Not images, which Lotus Web doesn't render.
+  @kept_when_used ~w(tables footnotes)a
 
   @doc """
   Returns the features of the editor of `kind` (`:text_card` or

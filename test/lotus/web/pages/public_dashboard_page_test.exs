@@ -37,6 +37,17 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
       assert html =~ "See <strong>this</strong>"
     end
 
+    test "renders an image as a link, in cards and the description" do
+      pixel = "![pixel](https://tracker.example.com/p.gif?d=q3)"
+      dashboard = public_dashboard_fixture(%{name: "Notes", description: "See " <> pixel})
+      dashboard_card_fixture(dashboard, %{content: %{"text" => "Card " <> pixel}})
+
+      {:ok, _live, html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
+
+      refute html =~ "<img"
+      assert html =~ ~s(href="https://tracker.example.com/p.gif?d=q3")
+    end
+
     test "does not show edit controls (Save button)", %{dashboard: dashboard} do
       {:ok, live, _html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
 

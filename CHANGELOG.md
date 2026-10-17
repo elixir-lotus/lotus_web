@@ -80,6 +80,16 @@
 - **Made by Hattori AI.** The footer names Hattori AI after the versions,
   behind a short rule in the colour of the mark's petal.
 
+### Fixed
+
+- **Markdown images render as links**
+  ([#189](https://github.com/elixir-lotus/lotus_web/issues/189)). An image
+  in a text card, a dashboard description or an AI assistant reply (for
+  example one an MCP client wrote) loaded in every viewer's browser,
+  public dashboards included, so it could track who looked and carry data
+  out in its URL. Now it shows as a link to its URL, and the text card
+  editor doesn't keep images either.
+
 ## [1.3.0] - 2026-10-01
 
 Lotus Web now runs on Phoenix LiveView 1.2. LiveView 1.0 and 1.1 still work.
