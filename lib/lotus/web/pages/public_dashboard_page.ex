@@ -141,15 +141,6 @@ defmodule Lotus.Web.PublicDashboardPage do
     {:noreply, apply_filter_values(socket, FilterValues.normalize(filter_values))}
   end
 
-  def handle_event("filter_preset", %{"name" => name, "value" => value}, socket) do
-    if Enum.any?(socket.assigns.dashboard.filters, &(&1.name == name)) do
-      filter_values = Map.put(socket.assigns.filter_values, name, value)
-      {:noreply, apply_filter_values(socket, filter_values)}
-    else
-      {:noreply, socket}
-    end
-  end
-
   @impl Page
   def handle_info(_msg, socket), do: {:noreply, socket}
 

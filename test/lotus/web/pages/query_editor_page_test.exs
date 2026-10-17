@@ -73,6 +73,26 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
       refute html =~ "bob@test.com"
     end
 
+    test "a date variable is a date picker with its default" do
+      query =
+        query_fixture(%{
+          name: "Date Variable Query",
+          statement: "SELECT CAST({{since}} AS text) AS since",
+          variables: [%{name: "since", type: "date", widget: "input", default: "2026-01-15"}]
+        })
+
+      {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{query.id}")
+
+      assert has_element?(live, ~s(#variable_since[phx-hook=Koyomi][data-value='"2026-01-15"']))
+
+      assert has_element?(
+               live,
+               ~s(#variable_since input[name="variables[since]"][value="2026-01-15"])
+             )
+
+      assert render_async(live) =~ "2026-01-15"
+    end
+
     test "empty toolbar input does not override variable default on run" do
       create_test_users()
 

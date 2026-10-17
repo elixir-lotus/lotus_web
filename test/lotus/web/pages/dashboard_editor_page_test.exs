@@ -484,37 +484,23 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
       refute html =~ "Invalid date"
     end
 
-    test "the filter editor offers the tokens by label and the dates they cover", %{
+    test "the default is a relative picker with the tokens as presets", %{
       dashboard: dashboard,
       period: period
     } do
       {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
       open_filter_editor(live, period)
 
-      assert has_element?(
-               live,
-               "#filter-default-mode option[value=last_30_days][selected]",
-               "Last 30 days"
-             )
-
-      assert has_element?(live, "#filter-default-mode option[value=this_quarter]", "This quarter")
-      assert has_element?(live, "#filter-default-mode option[value=fixed]", "A fixed date range")
-
-      assert has_element?(
-               live,
-               "#filter-default-covers",
-               DateTokens.describe("last_30_days", Date.utc_today())
-             )
+      assert has_element?(live, ~s(#filter-default-range[data-value='"last_30_days"']))
+      assert preset_keys(live, "filter-default-range") == DateTokens.tokens(:date_range)
     end
 
     test "a date filter offers only the single-day tokens", %{dashboard: dashboard, day: day} do
       {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
       open_filter_editor(live, day)
 
-      assert has_element?(live, "#filter-default-mode option[value=yesterday][selected]")
-      assert has_element?(live, "#filter-default-mode option[value=today]")
-      refute has_element?(live, "#filter-default-mode option[value=last_7_days]")
-      assert has_element?(live, "#filter-default-mode option[value=fixed]", "A fixed date")
+      assert has_element?(live, ~s(#filter-default-date[data-value='"yesterday"']))
+      assert preset_keys(live, "filter-default-date") == DateTokens.tokens(:date)
     end
 
     test "a range token on a date filter shows the error and does not save", %{
@@ -527,7 +513,7 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
       params = %{
         "filter_type" => "date",
         "widget" => "date_picker",
-        "default_mode" => "last_30_days"
+        "default_value" => "last_30_days"
       }
 
       assert change_filter(live, period, params) =~
@@ -538,27 +524,21 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
       assert has_element?(live, "#filter-modal")
     end
 
-    test "a fixed range default shows the date fields and saves the range", %{
-      dashboard: dashboard,
-      period: period
-    } do
+    test "a fixed range default saves the range", %{dashboard: dashboard, period: period} do
       {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
       open_filter_editor(live, period)
 
-      change_filter(live, period, %{"default_mode" => "fixed"})
-      assert has_element?(live, "input[name='filter[default_start]']")
-      refute has_element?(live, "#filter-default-covers")
-
       submit_filter(live, period, %{
-        "default_mode" => "fixed",
-        "default_start" => "2026-02-01",
-        "default_end" => "2026-02-28"
+        "default_value" => %{"start" => "2026-02-01", "end" => "2026-02-28"}
       })
 
+      refute has_element?(live, "#filter-modal")
       open_filter_editor(live, period)
-      assert has_element?(live, "#filter-default-mode option[value=fixed][selected]")
-      assert has_element?(live, "input[name='filter[default_start]'][value='2026-02-01']")
-      assert has_element?(live, "input[name='filter[default_end]'][value='2026-02-28']")
+
+      assert has_element?(
+               live,
+               ~s(#filter-default-range[data-value*='2026-02-01'][data-value*='2026-02-28'])
+             )
     end
   end
 
@@ -709,6 +689,18 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
     |> render_change(%{"filter" => Map.merge(base, params)})
   end
 
+  defp preset_keys(live, picker_id) do
+    live
+    |> render()
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query_by_id(picker_id)
+    |> LazyHTML.attribute("data-config")
+    |> hd()
+    |> Jason.decode!()
+    |> Map.fetch!("presets")
+    |> Enum.map(& &1["key"])
+  end
+
   defp open_filter_editor(live, filter) do
     live
     |> element("button[phx-click='edit_filter'][phx-value-filter-id='#{filter.id}']")
@@ -725,7 +717,11 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
       "depends_on_filter_id" => to_string(filter.depends_on_filter_id || "")
     }
 
-    params = Map.new(params, fn {key, value} -> {key, to_string(value)} end)
+    params =
+      Map.new(params, fn
+        {key, %{} = value} -> {key, value}
+        {key, value} -> {key, to_string(value)}
+      end)
 
     live
     |> element("#filter-modal form")

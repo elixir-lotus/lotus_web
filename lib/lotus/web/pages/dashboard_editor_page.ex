@@ -157,7 +157,6 @@ defmodule Lotus.Web.DashboardEditorPage do
         filters={@dashboard.filters}
         queries={@available_queries}
         errors={@filter_errors}
-        default_mode={@filter_default_mode}
         parent={@myself}
       />
 
@@ -331,10 +330,8 @@ defmodule Lotus.Web.DashboardEditorPage do
         options_text: format_options(assigns.filter.config),
         source_query_id: Map.get(assigns.filter, :source_query_id),
         depends_on_filter_id: Map.get(assigns.filter, :depends_on_filter_id),
-        token_options: default_token_options(assigns.filter),
-        default_mode: default_mode(assigns.filter, assigns.default_mode),
-        default_range: FilterValues.split_date_range(assigns.filter.default_value),
-        today: Date.utc_today(),
+        default_value: FilterValues.range_value(assigns.filter.default_value),
+        locale: Gettext.get_locale(Lotus.Web.Gettext),
         parent_choices: Enum.reject(assigns.filters, &(&1.id == assigns.filter.id))
       )
 
@@ -414,75 +411,45 @@ defmodule Lotus.Web.DashboardEditorPage do
             </div>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              id="filter-default-label"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               <%= gettext("Default Value") %>
             </label>
-            <%= if @token_options == [] do %>
-              <input
-                type="text"
-                name="filter[default_value]"
-                value={@filter.default_value || ""}
-                placeholder={gettext("Optional")}
-                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
-              />
-            <% else %>
-              <select
-                id="filter-default-mode"
-                name="filter[default_mode]"
-                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
-              >
-                <option value="" selected={@default_mode == ""}><%= gettext("No default") %></option>
-                <optgroup label={gettext("Relative")}>
-                  <option :for={token <- @token_options} value={token} selected={@default_mode == token}>
-                    <%= DateTokens.label(token) %>
-                  </option>
-                </optgroup>
-                <optgroup label={gettext("Fixed")}>
-                  <option value="fixed" selected={@default_mode == "fixed"}>
-                    <%= if @filter.filter_type == :date,
-                      do: gettext("A fixed date"),
-                      else: gettext("A fixed date range") %>
-                  </option>
-                </optgroup>
-              </select>
-              <p
-                :if={DateTokens.token?(@default_mode)}
-                id="filter-default-covers"
-                class="mt-1.5 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"
-              >
-                <Icons.calendar class="h-3.5 w-3.5 shrink-0" />
-                <%= gettext("Today it covers") %>
-                <span class="font-medium text-gray-700 dark:text-gray-300 tabular-nums">
-                  <%= DateTokens.describe(@default_mode, @today) %>
-                </span>
-              </p>
-              <input
-                :if={@default_mode == "fixed" and @filter.filter_type == :date}
-                type="date"
-                name="filter[default_date]"
-                value={if DateTokens.token?(@filter.default_value), do: "", else: @filter.default_value}
-                class="mt-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
-              />
-              <div
-                :if={@default_mode == "fixed" and @filter.filter_type != :date}
-                class="mt-2 flex items-center gap-2"
-              >
-                <input
-                  type="date"
-                  name="filter[default_start]"
-                  value={elem(@default_range, 0)}
-                  aria-label={gettext("Start date")}
-                  class="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
+            <%= case @filter.filter_type do %>
+              <% :date -> %>
+                <Koyomi.Components.date_picker
+                  id="filter-default-date"
+                  name="filter[default_value]"
+                  value={@filter.default_value}
+                  label_id="filter-default-label"
+                  relative
+                  presets={DateTokens.presets(:date)}
+                  first_day={1}
+                  locale={@locale}
                 />
-                <span class="text-gray-400">-</span>
-                <input
-                  type="date"
-                  name="filter[default_end]"
-                  value={elem(@default_range, 1)}
-                  aria-label={gettext("End date")}
-                  class="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
+              <% :date_range -> %>
+                <Koyomi.Components.date_range_picker
+                  id="filter-default-range"
+                  name="filter[default_value]"
+                  value={@default_value}
+                  label_id="filter-default-label"
+                  keys={{"start", "end"}}
+                  relative
+                  presets={DateTokens.presets(:date_range)}
+                  first_day={1}
+                  locale={@locale}
                 />
-              </div>
+              <% _ -> %>
+                <input
+                  type="text"
+                  name="filter[default_value]"
+                  value={@filter.default_value || ""}
+                  placeholder={gettext("Optional")}
+                  aria-labelledby="filter-default-label"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
+                />
             <% end %>
             <.filter_field_error errors={@errors} field={:default_value} />
           </div>
@@ -575,7 +542,6 @@ defmodule Lotus.Web.DashboardEditorPage do
       filter_values: %{},
       filter_options: %{},
       filter_errors: %{},
-      filter_default_mode: nil,
       run_date: Date.utc_today(),
       card_results: %{},
       card_errors: %{},
@@ -747,16 +713,6 @@ defmodule Lotus.Web.DashboardEditorPage do
   end
 
   @impl Phoenix.LiveComponent
-  def handle_event("filter_preset", %{"name" => name, "value" => value}, socket) do
-    if Enum.any?(socket.assigns.dashboard.filters, &(&1.name == name)) do
-      filter_values = Map.put(socket.assigns.filter_values, name, value)
-      {:noreply, apply_filter_values(socket, filter_values)}
-    else
-      {:noreply, socket}
-    end
-  end
-
-  @impl Phoenix.LiveComponent
   def handle_event("add_filter", _params, socket) do
     authorize_manage(socket, fn -> do_add_filter(socket) end)
   end
@@ -772,8 +728,7 @@ defmodule Lotus.Web.DashboardEditorPage do
      assign(socket,
        filter_modal_open: false,
        editing_filter: nil,
-       filter_errors: %{},
-       filter_default_mode: nil
+       filter_errors: %{}
      )}
   end
 
@@ -1343,8 +1298,7 @@ defmodule Lotus.Web.DashboardEditorPage do
      assign(socket,
        filter_modal_open: true,
        editing_filter: new_filter,
-       filter_errors: %{},
-       filter_default_mode: nil
+       filter_errors: %{}
      )}
   end
 
@@ -1360,8 +1314,7 @@ defmodule Lotus.Web.DashboardEditorPage do
          assign(socket,
            filter_modal_open: true,
            editing_filter: filter,
-           filter_errors: %{},
-           filter_default_mode: nil
+           filter_errors: %{}
          )}
     end
   end
@@ -1380,8 +1333,7 @@ defmodule Lotus.Web.DashboardEditorPage do
     {:noreply,
      assign(socket,
        editing_filter: filter,
-       filter_errors: errors,
-       filter_default_mode: filter_params["default_mode"]
+       filter_errors: errors
      )}
   end
 
@@ -1401,8 +1353,7 @@ defmodule Lotus.Web.DashboardEditorPage do
          |> assign(
            dashboard: dashboard,
            filter_modal_open: false,
-           editing_filter: nil,
-           filter_default_mode: nil
+           editing_filter: nil
          )
          |> assign_filter_options()
          |> run_all_cards()}
@@ -1411,8 +1362,7 @@ defmodule Lotus.Web.DashboardEditorPage do
         {:noreply,
          assign(socket,
            editing_filter: filter,
-           filter_errors: errors,
-           filter_default_mode: filter_params["default_mode"]
+           filter_errors: errors
          )}
     end
   end
@@ -1436,37 +1386,12 @@ defmodule Lotus.Web.DashboardEditorPage do
     })
   end
 
-  # A date or date range filter posts its default as a mode, a token or
-  # "fixed", with the fixed dates in their own fields. Other filters post the
-  # default as text.
-  defp default_value_param(%{"default_mode" => "fixed"} = params, :date),
-    do: nullify(params["default_date"])
-
-  defp default_value_param(%{"default_mode" => "fixed"} = params, _filter_type) do
-    range = %{"start" => params["default_start"], "end" => params["default_end"]}
-    FilterValues.normalize(%{"default" => range})["default"] |> nullify()
-  end
-
-  defp default_value_param(%{"default_mode" => mode}, _filter_type), do: nullify(mode)
-  defp default_value_param(params, _filter_type), do: nullify(params["default_value"])
-
-  # The tokens the default value offers. A range token the type does not accept
-  # stays in the list, so the editor shows it with its error.
-  defp default_token_options(filter) do
-    tokens = DateTokens.tokens(filter.filter_type)
-    value = filter.default_value
-
-    if tokens != [] and DateTokens.token?(value) and value not in tokens,
-      do: tokens ++ [value],
-      else: tokens
-  end
-
-  defp default_mode(filter, posted_mode) do
-    cond do
-      DateTokens.token?(filter.default_value) -> filter.default_value
-      filter.default_value not in [nil, ""] -> "fixed"
-      posted_mode == "fixed" -> "fixed"
-      true -> ""
+  # A date range picker posts fixed dates as start and end, which
+  # FilterValues joins; a token, a date and text post as they are.
+  defp default_value_param(params, _filter_type) do
+    case params["default_value"] do
+      %{} = range -> FilterValues.normalize(%{"default" => range})["default"] |> nullify()
+      value -> nullify(value)
     end
   end
 

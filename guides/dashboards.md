@@ -177,7 +177,7 @@ Values are passed to the query as variables, so each adapter substitutes them th
    - **Label** — display label shown to users
    - **Type** — Text, Number, Date, Date Range, or Select
    - **Widget** — Input, Select, Date Picker, or Date Range Picker
-   - **Default value** — optional pre-filled value. A Date or Date Range filter offers relative dates such as "Last 30 days" next to a fixed date (see [Relative Dates](#relative-dates))
+   - **Default value** — optional pre-filled value. A Date or Date Range filter takes it in a date picker, with relative dates such as "Last 30 days" as presets (see [Relative Dates](#relative-dates))
    - **Options** — for select widgets, one value per line (e.g. `us`, `eu`, `apac` on three lines)
    - **Source Query** — for select widgets, a saved query that lists the options instead (see [Cascading Filters](#cascading-filters))
    - **Depends On** — another filter of the dashboard whose value goes to the source query
@@ -216,8 +216,10 @@ In the drawer, each filter maps to one variable per card. To feed a query's star
 |--------|----------|-------|
 | **Input** | Free-form text and numbers | Text field (a number field for Number filters), debounced |
 | **Select** | Predefined choices | Dropdown with the configured options, plus an "All" entry that clears the filter |
-| **Date Picker** | Single date values | Today, Yesterday, or a calendar input |
-| **Date Range Picker** | Start/end date pairs | Relative date presets, or two calendar inputs sent as `start` and `end` |
+| **Date Picker** | Single date values | A date field with a calendar, and Today and Yesterday as presets |
+| **Date Range Picker** | Start/end date pairs | A range field with a two-month calendar and the relative dates as presets; fixed dates are sent as `start` and `end` |
+
+The date pickers are [Koyomi](https://hexdocs.pm/koyomi) pickers. A date can be typed segment by segment, picked in the calendar, or typed in words in the calendar's box ("last friday", "1 march"). They follow the theme, and the language of the dashboard (`:lotus_locale`, see the README).
 
 Typing in a text or number filter no longer re-runs every card on each keystroke: those inputs are debounced by 500 ms, so the cards run once you stop typing. Select, date, and date-range widgets change one time per user action and fire immediately.
 
@@ -233,8 +235,8 @@ A Date Range filter can hold a relative date in place of fixed dates, so the das
 
 A Date filter takes only Today and Yesterday.
 
-- **In the filter editor**, the default value of a Date or Date Range filter is a list of these presets and a fixed date. The editor shows the dates the preset covers today.
-- **On the dashboard**, the picker opens a list of the presets with the dates each covers. The bar shows the chosen preset and its dates. **Custom range** (or **Fixed date**) goes back to calendar inputs, starting from the dates the preset covers.
+- **In the filter editor**, the default value of a Date or Date Range filter is a picker with these presets beside the calendar, and fixed dates in the calendar.
+- **On the dashboard**, the picker shows the chosen preset and the dates it covers today, "Last 30 days Sep 18 – Oct 17". Dates typed or picked in the calendar replace it with fixed dates, and words typed in the calendar's box that give the same dates as a preset ("last 7 days") choose that preset.
 
 Each preset is stored and sent as its token, for example `last_30_days`. The token resolves to dates each time the cards run, and all cards of one run use the same day. The `last_N_days` presets include today. The week, month, quarter and year presets cover the full calendar period, and weeks start on Monday. See `Lotus.Dashboards.DateToken` for the rules.
 

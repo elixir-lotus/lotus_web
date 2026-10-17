@@ -2,6 +2,7 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
   use Lotus.Web.Case
 
   import Phoenix.LiveViewTest
+  import Koyomi.Test, only: [pick: 3]
 
   alias Lotus.Dashboards.DateToken
   alias Lotus.Web.Dashboards.DateTokens
@@ -355,15 +356,17 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
       assert has_element?(live, "td", "2026-03-31")
     end
 
-    test "the bar shows the token label and the dates it covers", %{dashboard: dashboard} do
+    test "a token default stays a token in the picker", %{dashboard: dashboard} do
       {:ok, live, _html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
-
-      assert has_element?(live, "#filter-period-presets-button", "Last 30 days")
 
       assert has_element?(
                live,
-               "#filter-period-presets-button",
-               DateTokens.describe("last_30_days", Date.utc_today())
+               "#filter-period-picker input[data-part=preset][value=last_30_days]:not([disabled])"
+             )
+
+      assert has_element?(
+               live,
+               ~s(#filter-period-picker input[name="filter[period][start]"][disabled])
              )
     end
 
@@ -371,12 +374,9 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
       {:ok, live, _html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
       render_async(live)
 
-      live
-      |> element("#filter-period-presets [role=menuitemradio]", "This quarter")
-      |> render_click()
+      pick(live, "filter-period-picker", :this_quarter)
 
       assert_push_event(live, "update-query-params", %{params: %{"period" => "this_quarter"}})
-      assert has_element?(live, "input[type=hidden][name='filter[period]'][value=this_quarter]")
 
       {first, last} = resolved_range("this_quarter")
       html = render_async(live)
@@ -384,34 +384,50 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
       assert html =~ last
     end
 
+    test "fixed days post as a range", %{dashboard: dashboard} do
+      {:ok, live, _html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
+      render_async(live)
+
+      pick(live, "filter-period-picker", Date.range(~D[2026-02-01], ~D[2026-02-28]))
+
+      assert_push_event(live, "update-query-params", %{
+        params: %{"period" => "2026-02-01,2026-02-28"}
+      })
+
+      assert has_element?(live, "#filter-period-picker[data-value*='2026-02-01']")
+      render_async(live)
+      assert has_element?(live, "td", "2026-02-28")
+    end
+
     test "a token in the URL stays a token", %{dashboard: dashboard} do
       {:ok, live, _html} =
         live(build_conn(), "/lotus/public/#{dashboard.public_token}?period=last_year")
 
-      assert has_element?(live, "input[type=hidden][name='filter[period]'][value=last_year]")
-      assert has_element?(live, "#filter-period-presets-button", "Last year")
-    end
-
-    test "custom range starts from the dates the token covers", %{dashboard: dashboard} do
-      {:ok, live, _html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
-
-      live
-      |> element("#filter-period-presets [role=menuitemradio]", "Custom range")
-      |> render_click()
-
-      {first, last} = resolved_range("last_30_days")
-      assert has_element?(live, "input[name='filter[period][start]'][value='#{first}']")
-      assert has_element?(live, "input[name='filter[period][end]'][value='#{last}']")
-      refute has_element?(live, "input[type=hidden][name='filter[period]']")
+      # The picker's value is a preset key (its inputs follow in the browser).
+      assert has_element?(live, ~s(#filter-period-picker[data-value='"last_year"']))
     end
 
     test "a date filter offers only the single-day presets", %{dashboard: dashboard} do
       {:ok, live, _html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
 
-      assert has_element?(live, "#filter-day-presets [role=menuitemradio]", "Yesterday")
-      refute has_element?(live, "#filter-day-presets [role=menuitemradio]", "Last 7 days")
-      assert has_element?(live, "#filter-day-presets [role=menuitemradio]", "Fixed date")
+      keys = preset_keys(live, "filter-day-picker")
+      assert "yesterday" in keys
+      refute "last_7_days" in keys
+
+      assert preset_keys(live, "filter-period-picker") == DateTokens.tokens(:date_range)
     end
+  end
+
+  defp preset_keys(live, picker_id) do
+    live
+    |> render()
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query_by_id(picker_id)
+    |> LazyHTML.attribute("data-config")
+    |> hd()
+    |> Jason.decode!()
+    |> Map.fetch!("presets")
+    |> Enum.map(& &1["key"])
   end
 
   defp token_filters_fixture(dashboard) do

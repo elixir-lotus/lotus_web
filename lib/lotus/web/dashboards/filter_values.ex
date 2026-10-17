@@ -7,11 +7,13 @@ defmodule Lotus.Web.Dashboards.FilterValues do
   a filter's transform to a card's query variables.
 
   The one filter that does not arrive as a string is the date range. Its
-  picker is two `<input type="date">` elements posted under one filter name,
-  so Phoenix parses them into `%{"start" => _, "end" => _}`. `normalize/1`
+  picker posts fixed dates as a start and an end under one filter name, so
+  Phoenix parses them into `%{"start" => _, "end" => _}`. `normalize/1`
   flattens that to `"start,end"`, which is the shape the
   `date_range_start` and `date_range_end` transforms already parse.
   """
+
+  alias Lotus.Dashboards.DateToken
 
   @doc """
   Reduces posted filter params to their canonical string form.
@@ -70,6 +72,21 @@ defmodule Lotus.Web.Dashboards.FilterValues do
     do: {present(start_value), present(end_value)}
 
   def split_date_range(_value), do: {nil, nil}
+
+  @doc """
+  Returns a date-range value in the form a date range picker takes: a
+  relative date token as it is, and fixed dates as a map of `"start"` and
+  `"end"`.
+  """
+  @spec range_value(term()) :: String.t() | %{String.t() => String.t() | nil}
+  def range_value(value) do
+    if value in DateToken.tokens() do
+      value
+    else
+      {start_value, end_value} = split_date_range(value)
+      %{"start" => start_value, "end" => end_value}
+    end
+  end
 
   defp normalize_value(%{"start" => start_value, "end" => end_value}),
     do: join_date_range(start_value, end_value)

@@ -55,7 +55,7 @@ defmodule Lotus.Web.Queries.WidgetComponent do
             name={@name}
             label={@label}
             value={@value}
-            class="min-w-40 w-40"
+            class="min-w-48 w-48"
           />
 
         <% :multiselect -> %>
