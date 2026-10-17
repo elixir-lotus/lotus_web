@@ -13,6 +13,7 @@ defmodule Lotus.Web.PublicDashboardPage do
   alias Lotus.Web.Dashboards.FilterBarComponent
   alias Lotus.Web.Dashboards.FilterOptions
   alias Lotus.Web.Dashboards.FilterValues
+  alias Lotus.Web.Markdown
   alias Lotus.Web.Page
 
   @impl Phoenix.LiveComponent
@@ -27,9 +28,9 @@ defmodule Lotus.Web.PublicDashboardPage do
               <%= @dashboard.name %>
             </h1>
             <%= if @dashboard.description do %>
-              <p class="mt-1 text-gray-600 dark:text-gray-400">
-                <%= @dashboard.description %>
-              </p>
+              <div class="mt-1 prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-400">
+                <%= Markdown.to_safe_html(@dashboard.description) %>
+              </div>
             <% end %>
           </div>
 

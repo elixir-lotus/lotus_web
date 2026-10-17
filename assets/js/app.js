@@ -2,6 +2,7 @@ import topbar from "topbar";
 import { applyPalette, tokenColor } from "./lib/palette";
 import { Jumon } from "jumon";
 import { Koyomi } from "koyomi";
+import { Kotoba } from "kotoba";
 
 import AIMessageInput from "./hooks/ai_message_input";
 import AIPromptInput from "./hooks/ai_prompt_input";
@@ -116,6 +117,7 @@ const hooks = {
   ThemeSelector,
   Jumon,
   Koyomi,
+  Kotoba,
   Tippy,
   Toast,
   VegaChart,

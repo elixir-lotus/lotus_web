@@ -14,7 +14,8 @@ Query cards run saved queries, so a card works against any configured data sourc
 2. **Select "Dashboard"** from the dropdown
 3. **Enter Details**
    - **Name**: Give your dashboard a descriptive name
-   - **Description**: Optionally add context about what the dashboard shows
+   - **Description**: Optionally add context about what the dashboard shows,
+     with bold, italic, strikethrough, code and links
 4. **Click "Save"** to create your dashboard
 
 ## Adding Cards
@@ -95,7 +96,12 @@ Query cards display results from saved queries.
 
 ### Text Cards
 
-Add formatted text content using Markdown.
+Add formatted text. The card settings drawer has a rich text editor
+([Kotoba](https://hex.pm/packages/kotoba)) with a toolbar for formats,
+headings, quotes, lists, check lists, code blocks and rules. Markdown
+pasted into it is formatted as it pastes. The text is stored as Markdown,
+so a card created through the Lotus API with Markdown content opens in
+the editor as formatted text.
 
 **Use cases:**
 - Explain what the dashboard shows
@@ -103,11 +109,9 @@ Add formatted text content using Markdown.
 - Create documentation
 - Include analysis notes
 
-**Markdown support:**
-- Bold, italic, code formatting
-- Lists (bulleted and numbered)
-- Links
-- Basic formatting
+**Markdown support:** CommonMark and GitHub Flavored Markdown, with
+strikethrough, tables, task lists, autolinks and footnotes. A card that
+already has a table, an image or a footnote keeps it when edited.
 
 Markdown is rendered with raw HTML disabled, so `<script>` tags and inline event handlers in card content are dropped rather than executed.
 

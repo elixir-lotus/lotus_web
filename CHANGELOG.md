@@ -22,7 +22,18 @@
   header has a Search button that opens it. It follows the Lotus and Sumi
   themes, in light and dark. Public dashboards have no palette.
 
+- **Rich text, with [Kotoba](https://hex.pm/packages/kotoba).** Text cards
+  and the dashboard description are edited in a rich text editor instead of
+  a textarea. Both are still stored as Markdown. Markdown pasted into the
+  editor is formatted. The public dashboard renders the description as
+  Markdown, and lists and the command palette show it as plain text.
+
 ### Changed
+
+- Text cards and dashboard descriptions render GitHub Flavored Markdown
+  (strikethrough, tables, task lists, autolinks and footnotes).
+- The LOTUS wordmark shows next to the mark in the Lotus theme too, and
+  the footer reads "Made by Hattori AI".
 
 - **Date pickers, with [Koyomi](https://hex.pm/packages/koyomi).** The
   date and date range filters of a dashboard, the default value of such a

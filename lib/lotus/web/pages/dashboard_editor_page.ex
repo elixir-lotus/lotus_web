@@ -20,6 +20,7 @@ defmodule Lotus.Web.DashboardEditorPage do
   alias Lotus.Web.Dashboards.FilterValues
   alias Lotus.Web.Dashboards.SettingsDrawer
   alias Lotus.Web.Page
+  alias Lotus.Web.RichText
   alias Lotus.Web.VegaSpecBuilder
 
   @impl Phoenix.LiveComponent
@@ -259,13 +260,23 @@ defmodule Lotus.Web.DashboardEditorPage do
             placeholder={gettext("Enter dashboard name")}
             required
           />
-          <.input
-            field={@dashboard_form[:description]}
-            type="textarea"
-            label={gettext("Description")}
-            placeholder={gettext("Enter dashboard description (optional)")}
-            rows="3"
-          />
+          <div>
+            <label
+              id="dashboard-description-label"
+              class="block text-sm font-semibold leading-6 text-text-light dark:text-text-dark"
+            >
+              <%= gettext("Description") %>
+            </label>
+            <div class="mt-2">
+              <Kotoba.Components.kotoba
+                field={description_field(@dashboard_form[:description])}
+                id="dashboard-description-editor"
+                label_id="dashboard-description-label"
+                placeholder={gettext("Describe the dashboard (optional)")}
+                features={RichText.features(:description, nil)}
+              />
+            </div>
+          </div>
         </div>
         <div class="mt-6 flex justify-end gap-3">
           <.button
@@ -664,6 +675,17 @@ defmodule Lotus.Web.DashboardEditorPage do
     end)
   end
 
+  # The Kotoba editor of a text card pushes its document on each change; the
+  # card keeps its text as Markdown.
+  @impl Phoenix.LiveComponent
+  def handle_event("kotoba:change", %{"id" => "card-text-" <> card_id, "doc" => doc}, socket) do
+    authorize_manage(socket, fn ->
+      do_update_card_content(socket, card_id, RichText.to_markdown(doc), "text")
+    end)
+  end
+
+  def handle_event("kotoba:change", _params, socket), do: {:noreply, socket}
+
   @impl Phoenix.LiveComponent
   def handle_event("update_card_layout", %{"card_id" => card_id, "layout" => layout}, socket) do
     authorize_manage(socket, fn -> do_update_card_layout(socket, card_id, layout) end)
@@ -942,12 +964,19 @@ defmodule Lotus.Web.DashboardEditorPage do
   # A dashboard that is not saved yet has no link to change.
   defp sharing_failed(socket, _unsaved, _message), do: {:noreply, socket}
 
+  defp description_param(value) do
+    case RichText.to_markdown(value) do
+      "" -> nil
+      markdown -> markdown
+    end
+  end
+
   defp do_save_dashboard(socket, params) do
     dashboard = socket.assigns.dashboard
 
     attrs = %{
       "name" => params["name"],
-      "description" => params["description"],
+      "description" => description_param(params["description"]),
       # No "public_token": only the sharing handlers, which ask for
       # :share_dashboard, write it. A save from a page opened before the link was
       # turned off must not turn it back on.
@@ -1554,6 +1583,11 @@ defmodule Lotus.Web.DashboardEditorPage do
     form = to_form(changeset, as: "dashboard")
     assign(socket, dashboard: dashboard, dashboard_form: form)
   end
+
+  # The description is Markdown; its editor posts its document, which the
+  # save writes back as Markdown.
+  defp description_field(field),
+    do: %{field | value: RichText.editor_value(field.value, RichText.features(:description, nil))}
 
   defp build_dashboard_changeset(dashboard, params) do
     types = %{name: :string, description: :string}

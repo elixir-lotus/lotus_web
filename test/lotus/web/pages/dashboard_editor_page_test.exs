@@ -4,7 +4,9 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
   import Phoenix.LiveViewTest
 
   alias Lotus.Dashboards.DateToken
+  alias Kotoba.Content
   alias Lotus.Web.Dashboards.DateTokens
+  alias Lotus.Web.RichText
 
   describe "new dashboard" do
     test "shows empty state with Add Card button" do
@@ -25,6 +27,55 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
 
       assert html =~ "Save Dashboard"
       assert html =~ "Enter dashboard name"
+    end
+  end
+
+  describe "dashboard description" do
+    test "is edited in a rich text editor and saved as Markdown" do
+      dashboard = dashboard_fixture(%{name: "Sales", description: "Old **text**"})
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+
+      live |> element("button", "Save") |> render_click()
+
+      assert has_element?(live, "#dashboard-description-editor[phx-hook='Kotoba']")
+
+      [_all, value] =
+        Regex.run(
+          ~r/value="([^"]*)"/,
+          live |> element("input[name='dashboard[description]']") |> render()
+        )
+
+      assert value |> unescape() |> RichText.to_markdown() == "Old **text**"
+
+      doc =
+        "Revenue by *region*"
+        |> Content.from_markdown()
+        |> Map.fetch!(:doc)
+        |> Jason.encode!()
+
+      live
+      |> element("#save-dashboard-modal form")
+      |> render_submit(%{"dashboard" => %{"name" => "Sales", "description" => doc}})
+
+      assert Lotus.get_dashboard!(dashboard.id).description == "Revenue by *region*"
+    end
+
+    test "an empty description is saved as none" do
+      dashboard = dashboard_fixture(%{name: "Sales", description: "Old"})
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+
+      live |> element("button", "Save") |> render_click()
+
+      live
+      |> element("#save-dashboard-modal form")
+      |> render_submit(%{
+        "dashboard" => %{
+          "name" => "Sales",
+          "description" => Jason.encode!(Content.from_markdown("").doc)
+        }
+      })
+
+      assert Lotus.get_dashboard!(dashboard.id).description == nil
     end
   end
 
@@ -238,6 +289,32 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
       assert html =~ "item one"
       assert html =~ "item two"
       assert html =~ "<ul>"
+    end
+
+    test "edits the text in a rich text editor and saves it as Markdown", %{
+      dashboard: dashboard,
+      card: card
+    } do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+      editor = with_target(live, "#dashboard-editor")
+
+      render_click(editor, "open_card_settings", %{"card-id" => to_string(card.id)})
+
+      assert has_element?(live, "#card-text-#{card.id}[phx-hook='Kotoba']")
+      refute has_element?(live, "#card-content-form-#{card.id}")
+
+      doc = Content.from_markdown("**Hello** _world_\n\n- one\n- two").doc
+
+      render_hook(editor, "kotoba:change", %{
+        "v" => 1,
+        "id" => "card-text-#{card.id}",
+        "doc" => doc
+      })
+
+      render_submit(editor, "save_dashboard", %{"dashboard" => %{"name" => dashboard.name}})
+
+      [saved] = Lotus.list_dashboard_cards(dashboard.id)
+      assert saved.content["text"] == "**Hello** *world*\n\n- one\n- two"
     end
   end
 
@@ -700,6 +777,8 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
     |> Map.fetch!("presets")
     |> Enum.map(& &1["key"])
   end
+
+  defp unescape(html), do: html |> String.replace("&quot;", ~s(")) |> String.replace("&amp;", "&")
 
   defp open_filter_editor(live, filter) do
     live

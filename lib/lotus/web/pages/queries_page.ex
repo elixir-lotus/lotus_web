@@ -9,6 +9,7 @@ defmodule Lotus.Web.QueriesPage do
 
   alias Lotus.Web.Authorization
   alias Lotus.Web.Page
+  alias Lotus.Web.RichText
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
@@ -138,7 +139,7 @@ defmodule Lotus.Web.QueriesPage do
             </.link>
           </:col>
           <:col :let={dashboard} label={gettext("Description")}>
-            <%= dashboard.description || "-" %>
+            <%= RichText.plain_text(dashboard.description) || "-" %>
           </:col>
           <:col :let={dashboard} label={gettext("Cards")}>
             <%= length(dashboard.cards) %>

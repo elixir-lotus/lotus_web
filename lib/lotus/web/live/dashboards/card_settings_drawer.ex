@@ -6,6 +6,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
 
   use Lotus.Web, :live_component
 
+  alias Lotus.Web.RichText
   alias Lotus.Web.VegaSpecBuilder
 
   @impl Phoenix.LiveComponent
@@ -489,10 +490,19 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
 
     ~H"""
     <div>
-      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <label
+        id={"card-content-label-#{@card.id}"}
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+      >
         <%= content_label(@card.card_type) %>
       </label>
-      <form id="card-content-form" phx-change="update_card_content" phx-target={@parent}>
+      <.text_editor :if={@card.card_type == :text} card={@card} text={@content_value} parent={@parent} />
+      <form
+        :if={@card.card_type != :text}
+        id="card-content-form"
+        phx-change="update_card_content"
+        phx-target={@parent}
+      >
         <input type="hidden" name="card_id" value={@card.id} />
         <input type="hidden" name="card_type" value={@card.card_type} />
         <%= if @card.card_type == :link do %>
@@ -504,16 +514,47 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
             placeholder="https://example.com"
             class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
           />
-        <% else %>
+        <% end %>
+        <%= if @card.card_type == :heading do %>
           <textarea
             name="content"
             phx-debounce="150"
             rows="4"
-            placeholder={content_placeholder(@card.card_type)}
+            placeholder={content_placeholder(:heading)}
             class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
           ><%= @content_value %></textarea>
         <% end %>
       </form>
+    </div>
+    """
+  end
+
+  # The text of a text card, in a Kotoba editor: it loads the card's
+  # Markdown and pushes each change (`kotoba:change`), which the dashboard
+  # editor saves as Markdown.
+  defp text_editor(assigns) do
+    features = RichText.features(:text_card, assigns.text)
+
+    assigns =
+      assign(assigns,
+        id: "card-text-#{assigns.card.id}",
+        features: features,
+        field:
+          Phoenix.Component.to_form(%{"text" => RichText.content(assigns.text, features)})[:text]
+      )
+
+    ~H"""
+    <div class="lotus-card-text">
+      <Kotoba.Components.kotoba
+        field={@field}
+        id={@id}
+        label_id={"card-content-label-#{@card.id}"}
+        placeholder={content_placeholder(:text)}
+        features={@features}
+        change
+        debounce={300}
+        phx-target={@parent}
+      />
     </div>
     """
   end
@@ -545,9 +586,8 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
   defp content_label(:link), do: gettext("Link URL")
   defp content_label(_), do: gettext("Content")
 
-  defp content_placeholder(:text), do: gettext("Enter text or markdown content...")
+  defp content_placeholder(:text), do: gettext("Write the text of the card…")
   defp content_placeholder(:heading), do: gettext("Enter heading text...")
-  defp content_placeholder(_), do: ""
 
   defp danger_section(assigns) do
     ~H"""
