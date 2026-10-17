@@ -178,6 +178,14 @@ defmodule Lotus.Web.Router do
     on_mount =
       Keyword.get(opts, :on_mount, []) ++ [Lotus.Web.Locale, Lotus.Web.Authentication]
 
+    # How the dashboard looks and runs, the same in both sessions.
+    display = %{
+      "card_concurrency" => opts[:card_concurrency],
+      "theme" => opts[:theme],
+      "themes" => opts[:themes],
+      "theme_colors" => opts[:theme_colors]
+    }
+
     session_args = [
       prefix,
       opts[:socket_path],
@@ -185,10 +193,7 @@ defmodule Lotus.Web.Router do
       opts[:csp_nonce_assign_key],
       opts[:resolver],
       opts[:features],
-      opts[:card_concurrency],
-      opts[:theme],
-      opts[:themes],
-      opts[:theme_colors]
+      display
     ]
 
     session_opts = [
@@ -203,10 +208,7 @@ defmodule Lotus.Web.Router do
       opts[:socket_path],
       opts[:transport],
       opts[:csp_nonce_assign_key],
-      opts[:card_concurrency],
-      opts[:theme],
-      opts[:themes],
-      opts[:theme_colors]
+      display
     ]
 
     public_session_opts = [
@@ -223,19 +225,7 @@ defmodule Lotus.Web.Router do
   end
 
   @doc false
-  def __session__(
-        conn,
-        prefix,
-        live_path,
-        live_transport,
-        csp_key,
-        resolver,
-        features,
-        card_concurrency,
-        theme,
-        themes,
-        theme_colors
-      ) do
+  def __session__(conn, prefix, live_path, live_transport, csp_key, resolver, features, display) do
     csp_keys = expand_csp_nonce_keys(csp_key)
 
     user = Lotus.Web.Resolver.call_with_fallback(resolver, :resolve_user, [conn])
@@ -249,44 +239,28 @@ defmodule Lotus.Web.Router do
       "user" => user,
       "access" => access,
       "features" => features || [],
-      "card_concurrency" => card_concurrency,
-      "theme" => theme,
-      "themes" => themes,
-      "theme_colors" => theme_colors,
       "csp_nonces" => %{
         style: conn.assigns[csp_keys[:style]],
         script: conn.assigns[csp_keys[:script]]
       }
     }
+    |> Map.merge(display)
   end
 
   @doc false
-  def __public_session__(
-        conn,
-        prefix,
-        live_path,
-        live_transport,
-        csp_key,
-        card_concurrency,
-        theme,
-        themes,
-        theme_colors
-      ) do
+  def __public_session__(conn, prefix, live_path, live_transport, csp_key, display) do
     csp_keys = expand_csp_nonce_keys(csp_key)
 
     %{
       "prefix" => prefix,
       "live_path" => live_path,
       "live_transport" => live_transport,
-      "card_concurrency" => card_concurrency,
-      "theme" => theme,
-      "themes" => themes,
-      "theme_colors" => theme_colors,
       "csp_nonces" => %{
         style: conn.assigns[csp_keys[:style]],
         script: conn.assigns[csp_keys[:script]]
       }
     }
+    |> Map.merge(display)
   end
 
   # Without an explicit :theme, the dashboard opens in the first available one.
