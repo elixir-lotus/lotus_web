@@ -20,7 +20,7 @@ Serve `Lotus.Web.MCP` instead of `Lotus.MCP`; it has every Lotus tool.
 ## Setup
 
 Set up Sake's authorization first, as the Lotus MCP guide says: the
-`{:sake, "~> 0.3"}` dependency, a subject module, the `Sake` child and the
+`{:sake, "~> 0.4"}` dependency, a subject module, the `Sake` child and the
 OAuth routes. List `Lotus.Web.MCP` in the `Sake` child's `servers:`, then:
 
 ```elixir
