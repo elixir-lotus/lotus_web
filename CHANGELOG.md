@@ -11,8 +11,24 @@
   themes on offer with `:themes` (with one, the menu offers no theme
   choice). Override single colours with `:theme_colors`. See the Theming
   guide.
+- **A command palette on ⌘K** (Ctrl+K), with
+  [Jumon](https://hex.pm/packages/jumon). It finds saved queries and
+  dashboards as you type (a typo is forgiven; dashboards the user may not
+  view are left out), goes to the queries and dashboards pages, creates a
+  query or a dashboard where the user may, and switches the appearance
+  and the theme. The query editor adds its own actions (run, the schema
+  explorer, variables, visualization, copy, Ask AI), and a dashboard adds
+  "Add card". It remembers what each person ran, in their browser. The
+  header has a Search button that opens it. It follows the Lotus and Sumi
+  themes, in light and dark. Public dashboards have no palette.
 
 ### Changed
+
+- **The AI assistant opens with ⌘J** (Ctrl+J). ⌘K now opens the command
+  palette, which also has "Ask AI…" in the query editor.
+- **Phoenix LiveView 1.1 or later is required** (`>= 1.1.0 and < 1.3.0`;
+  1.0 was supported). Jumon needs it. LiveView 1.1 runs on Phoenix 1.7 and
+  1.8, so the Phoenix requirement is unchanged.
 
 - **A new mark.** The header shows the new Lotus mark: two ink petals and a
   pink one (blade orange in Sumi).

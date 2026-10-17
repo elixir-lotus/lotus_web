@@ -42,10 +42,30 @@ defmodule Lotus.Web.DashboardLive do
       |> assign(:theme_colors, Map.get(session, "theme_colors", %{}))
       |> assign(:public_view, page.name == :public_dashboard)
       |> assign_permissions()
+      |> mount_palette()
       |> page.comp.handle_mount()
 
     {:ok, socket}
   end
+
+  # The command palette (⌘K), for the signed-in dashboard only: a public
+  # dashboard has no actions to offer.
+  defp mount_palette(%{assigns: %{public_view: true}} = socket), do: socket
+  defp mount_palette(socket), do: Jumon.Live.mount(socket, Lotus.Web.Commands)
+
+  # The actions of the page in view leave with it.
+  defp put_page_actions(%{assigns: %{jumon: _}} = socket) do
+    page =
+      case socket.assigns.page.comp do
+        QueryEditorPage -> :query_editor
+        DashboardEditorPage -> :dashboard_editor
+        _other -> :other
+      end
+
+    Jumon.Live.put_actions(socket, Lotus.Web.Commands.page_actions(page, socket.assigns))
+  end
+
+  defp put_page_actions(socket), do: socket
 
   # The actions without a resource are decided once here, so templates can ask
   # on every render without calling the host each time.
@@ -83,7 +103,11 @@ defmodule Lotus.Web.DashboardLive do
   def handle_params(params, uri, socket) do
     page = resolve_page(params)
     socket = assign(socket, page: page)
-    socket.assigns.page.comp.handle_params(params, uri, socket)
+
+    case socket.assigns.page.comp.handle_params(params, uri, socket) do
+      {:noreply, socket} -> {:noreply, put_page_actions(socket)}
+      other -> other
+    end
   end
 
   @impl Phoenix.LiveView

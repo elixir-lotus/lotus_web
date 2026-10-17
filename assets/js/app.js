@@ -1,5 +1,6 @@
 import topbar from "topbar";
 import { applyPalette, tokenColor } from "./lib/palette";
+import { Jumon } from "jumon";
 
 import AIMessageInput from "./hooks/ai_message_input";
 import AIPromptInput from "./hooks/ai_prompt_input";
@@ -87,6 +88,14 @@ function configureTopbar() {
 configureTopbar();
 window.addEventListener("lotus:theme-changed", configureTopbar);
 
+// The command palette's actions that drive the page click its own buttons
+// (Lotus.Web.Commands): the action does what the button does, and nothing
+// when the page has no such button.
+window.addEventListener("lotus:click", (event) => {
+  const selector = event.detail && event.detail.to;
+  if (selector) document.querySelector(selector)?.click();
+});
+
 const hooks = {
   AIMessageInput,
   AIPromptInput,
@@ -104,6 +113,7 @@ const hooks = {
   TagInput,
   TagRemove,
   ThemeSelector,
+  Jumon,
   Tippy,
   Toast,
   VegaChart,

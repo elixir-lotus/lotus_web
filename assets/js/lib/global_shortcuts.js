@@ -6,7 +6,8 @@ export function initGlobalShortcuts() {
       event.preventDefault();
       toggleShortcutsModal();
     },
-    "$mod+k": (event) => {
+    // ⌘K opens the command palette (Jumon's own shortcut).
+    "$mod+j": (event) => {
       event.preventDefault();
       toggleAIAssistant();
     },
