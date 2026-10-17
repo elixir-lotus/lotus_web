@@ -67,7 +67,7 @@ jobs:
       - run: mix deps.get --only $MIX_ENV
 
       - name: Seed fake assets
-        run: mkdir -p priv/static/css && touch priv/static/css/app.css && touch priv/static/app.js
+        run: mkdir -p priv/static/css && touch priv/static/css/app.css && touch priv/static/app.js && touch priv/static/mcp_chart.js
 
       - run: mix format --check-formatted
 

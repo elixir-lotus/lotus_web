@@ -13,6 +13,19 @@ if config_env() == :dev do
       ),
       cd: Path.expand("../assets", __DIR__),
       env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+    ],
+    # The chart MCP App (Lotus.Web.MCP.ChartApp), inlined into its document.
+    mcp_chart: [
+      args: ~w(
+        js/mcp/chart_app.js
+        --bundle
+        --format=iife
+        --target=es2020
+        --minify
+        --outfile=../priv/static/mcp_chart.js
+      ),
+      cd: Path.expand("../assets", __DIR__),
+      env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
     ]
 
   config :tailwind,

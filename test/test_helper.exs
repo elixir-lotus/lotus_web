@@ -172,4 +172,6 @@ _ = Ecto.Migrator.run(Lotus.Web.TestRepo, migrations_path, :up, all: true, log: 
 Ecto.Adapters.SQL.Sandbox.mode(Lotus.Web.TestRepo, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Lotus.Web.ReportingTestRepo, :manual)
 
+Sake.Test.start()
+
 ExUnit.start(assert_receive_timeout: 500, refute_receive_timeout: 50, exclude: [:skip])
