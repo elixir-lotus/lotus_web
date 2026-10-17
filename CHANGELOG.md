@@ -4,6 +4,23 @@
 
 ### Added
 
+- **MCP, with `Lotus.Web.MCP`.** With `{:sake, "~> 0.3"}` in the host's
+  deps (an optional dependency), Lotus Web serves Lotus's MCP server
+  (`Lotus.MCP`, from Lotus `main` until Lotus releases it) with two
+  additions:
+  - **The dashboard's `Lotus.Web.Resolver` decides.** `resolve_access/1`
+    says who may use MCP at all; a resolver without it lets nobody in.
+    Each tool asks `authorize/3` about the action the dashboard would ask
+    about, and the list tools leave out what the person may not see.
+    `resolve_context/1` and `resolve_scope/1` are the actor.
+  - **`show_chart`** charts a saved query (with its own chart) or a
+    statement with Lotus Web's charts. Hosts that render MCP Apps (Claude
+    and others) draw the chart in the conversation, in light or dark. The
+    app is one self-contained document that needs no network access.
+
+  `mix assets.build` also builds the chart app (`esbuild mcp_chart`). See
+  the new MCP guide.
+
 - **Themes.** Lotus Web ships with two themes, each in light and dark:
   Lotus, the default, and Sumi, the design system of Hattori AI. Pick one
   with the `:theme` option of `lotus_dashboard/2`; people can switch in the

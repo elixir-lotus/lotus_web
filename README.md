@@ -157,6 +157,10 @@ Lotus Web ships with two themes, Lotus (the default) and Sumi, the design system
 
 See the [theming guide](guides/theming.md) for the colour tokens.
 
+### MCP: Lotus in Claude
+
+Serve `Lotus.Web.MCP` (with [Sake](https://hexdocs.pm/sake)) and Claude Code, Claude Desktop or any MCP client can sign in through your app's login, run your saved queries and dashboards, explore your schemas, run read-only queries, and save queries, charts and dashboards that then show up here. Your `Lotus.Web.Resolver` decides who may do what, as it does in the dashboard, and `show_chart` draws Lotus Web's charts right in the conversation, in hosts that render MCP Apps. See the [MCP guide](guides/mcp.md).
+
 ### Multiple Data Sources
 
 Execute queries against every source in your `:data_sources` config and switch between them from the editor toolbar — useful for apps with separate analytics, reporting, or multi-tenant databases. Postgres, MySQL and SQLite are built in; ClickHouse and Elasticsearch are separate packages, [lotus_clickhouse](https://github.com/elixir-lotus/lotus_clickhouse) and [lotus_elasticsearch](https://github.com/elixir-lotus/lotus_elasticsearch).
