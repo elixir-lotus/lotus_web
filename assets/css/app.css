@@ -1,10 +1,12 @@
-/* The command palette (Jumon) and the date pickers (Koyomi). Their Sumi
-   mappings apply in the Sumi theme; in the Lotus theme the rules below
-   restyle them from the Lotus tokens. */
+/* The command palette (Jumon), the date pickers (Koyomi) and the rich text
+   editor (Kotoba). Their Sumi mappings apply in the Sumi theme; in the
+   Lotus theme the rules below restyle them from the Lotus tokens. */
 @import "../../deps/jumon/priv/static/jumon.css";
 @import "../../deps/jumon/priv/static/jumon-sumi.css";
 @import "../../deps/koyomi/priv/static/koyomi.css";
 @import "../../deps/koyomi/priv/static/koyomi-sumi.css";
+@import "../../deps/kotoba/priv/static/kotoba.css";
+@import "../../deps/kotoba/priv/static/kotoba-sumi.css";
 
 @font-face {
     font-display: swap;
@@ -416,6 +418,54 @@
     --koyomi-backdrop: rgb(0 0 0 / 0.5);
 }
 
+/* ── The rich text editor ───────────────────────────────────
+   As the palette and the pickers: kotoba-sumi.css maps the editor to Sumi
+   on :root, and in the Lotus theme it takes the Lotus tokens, on its own
+   elements. */
+.kotoba-field {
+    --kotoba-font-size: 0.875rem;
+    --kotoba-min-height: 6rem;
+    --kotoba-padding: 0.625rem 0.75rem;
+}
+
+/* In the narrow card drawer the toolbar's buttons flow as one row that
+   wraps, rather than a row for each group. */
+.lotus-card-text .kotoba-toolbar {
+    gap: 2px;
+}
+
+.lotus-card-text .kotoba-toolbar-group:not([hidden]) {
+    display: contents;
+}
+
+[data-lotus-theme="lotus"] .kotoba-field {
+    --kotoba-font: var(--lotus-font-sans);
+    --kotoba-heading-font: var(--lotus-font-sans);
+    --kotoba-text: rgb(var(--lotus-gray-900));
+    --kotoba-muted: rgb(var(--lotus-gray-500));
+    --kotoba-background: rgb(var(--lotus-white));
+    --kotoba-surface: rgb(var(--lotus-gray-50));
+    --kotoba-border: rgb(var(--lotus-gray-300));
+    --kotoba-accent: rgb(var(--lotus-pink-600));
+    --kotoba-accent-text: rgb(var(--lotus-white));
+    --kotoba-selection: rgb(var(--lotus-pink-500) / 0.16);
+    --kotoba-focus-ring: 0 0 0 1px rgb(var(--lotus-pink-500));
+    --kotoba-radius: var(--lotus-radius-lg);
+    --kotoba-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+[data-lotus-theme="lotus"].dark .kotoba-field {
+    --kotoba-text: rgb(var(--lotus-gray-100));
+    --kotoba-muted: rgb(var(--lotus-gray-400));
+    --kotoba-background: rgb(var(--lotus-input-dark));
+    --kotoba-surface: rgb(var(--lotus-gray-900));
+    --kotoba-border: rgb(var(--lotus-gray-600));
+    --kotoba-accent: rgb(var(--lotus-pink-400));
+    --kotoba-selection: rgb(var(--lotus-pink-500) / 0.3);
+    --kotoba-focus-ring: 0 0 0 1px rgb(var(--lotus-pink-400));
+    --kotoba-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+
 [data-lotus-theme="sumi"] {
     --sumi-font: "Outfit", system-ui, sans-serif;
     --sumi-ink: rgb(var(--lotus-black));
@@ -457,22 +507,25 @@
     color: #b8401c;
 }
 
-/* The wordmark next to the mark, LO in ink and TUS in blade. */
+/* The wordmark next to the mark, LO in ink and TUS in the petal colour:
+   lotus pink in the Lotus theme, blade in Sumi. */
 .lotus-wordmark {
-    display: none;
+    font-family: var(--lotus-font-sans);
+    font-size: 1.25rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    line-height: 1;
+}
+
+.lotus-wordmark span {
+    color: rgb(var(--lotus-logo-petal));
 }
 
 [data-lotus-theme="sumi"] .lotus-wordmark {
-    display: inline;
     font-family: "Cormorant Garamond", Georgia, serif;
     font-size: 1.5rem;
     font-weight: 300;
     letter-spacing: 0.12em;
-    line-height: 1;
-}
-
-[data-lotus-theme="sumi"] .lotus-wordmark span {
-    color: rgb(var(--lotus-logo-petal));
 }
 
 .tippy-box[data-theme~="lotus"] {

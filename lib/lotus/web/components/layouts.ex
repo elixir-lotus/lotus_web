@@ -83,10 +83,10 @@ defmodule Lotus.Web.Layouts do
         href="https://hattori.ai"
         target="_blank"
         rel="noopener noreferrer"
-        class="flex items-center gap-3 mt-1 md:mt-0 md:ml-3 text-[0.65rem] font-medium uppercase tracking-[0.2em] text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+        class="flex items-center gap-2 font-medium text-gray-700 hover:text-gray-950 dark:text-gray-300 dark:hover:text-white transition-colors"
       >
-        <span class="h-px w-8 bg-[rgb(var(--lotus-logo-petal))]" aria-hidden="true"></span>
-        Hattori AI
+        <span class="h-px w-3 bg-[rgb(var(--lotus-logo-petal))]" aria-hidden="true"></span>
+        {gettext("Made by Hattori AI")}
       </a>
     </footer>
     """
