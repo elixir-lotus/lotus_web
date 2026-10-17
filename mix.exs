@@ -50,7 +50,9 @@ defmodule Lotus.Web.MixProject do
       {:mdex, "~> 0.13"},
 
       # Lotus
-      {:lotus, "~> 1.1"},
+      # Lotus.MCP is not released yet: back to "~> 1.3" once it is.
+      {:lotus, github: "elixir-lotus/lotus", branch: "main", override: true},
+      {:sake, "~> 0.3", optional: true},
       {:lotus_clickhouse,
        git: "git@github.com:elixir-lotus/lotus_clickhouse.git", branch: "main", only: :dev},
       {:lotus_elasticsearch,
@@ -80,7 +82,7 @@ defmodule Lotus.Web.MixProject do
 
   defp aliases do
     [
-      "assets.build": ["tailwind default", "esbuild default"],
+      "assets.build": ["tailwind default", "esbuild default", "esbuild mcp_chart"],
       dev: "run --no-halt dev.exs",
       # The compile and the asset build run in a child VM: once anything
       # compiles in this VM, Mix no longer finds the tasks of the Hex archive
@@ -136,7 +138,8 @@ defmodule Lotus.Web.MixProject do
         "guides/visualizations.md",
         "guides/dashboards.md",
         "guides/variables-and-widgets.md",
-        "guides/theming.md"
+        "guides/theming.md",
+        "guides/mcp.md"
       ]
     ]
   end
