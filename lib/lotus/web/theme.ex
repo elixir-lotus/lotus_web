@@ -22,8 +22,11 @@ defmodule Lotus.Web.Theme do
 
   @hex ~r/\A#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\z/
 
+  @typedoc "A built-in theme."
+  @type name :: :lotus | :sumi
+
   @doc "The names of the built-in themes."
-  @spec names() :: [atom()]
+  @spec names() :: [name(), ...]
   def names, do: @names
 
   @doc "The colour tokens that `:theme_colors` accepts."
