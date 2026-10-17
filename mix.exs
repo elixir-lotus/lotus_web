@@ -53,7 +53,7 @@ defmodule Lotus.Web.MixProject do
       # Lotus
       # Lotus.MCP is not released yet: back to "~> 1.3" once it is.
       {:lotus, github: "elixir-lotus/lotus", branch: "main", override: true},
-      {:sake, "~> 0.3", optional: true},
+      {:sake, "~> 0.4", optional: true},
       {:lotus_clickhouse,
        git: "git@github.com:elixir-lotus/lotus_clickhouse.git", branch: "main", only: :dev},
       {:lotus_elasticsearch,

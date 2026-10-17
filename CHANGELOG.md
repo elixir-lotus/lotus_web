@@ -4,7 +4,7 @@
 
 ### Added
 
-- **MCP, with `Lotus.Web.MCP`.** With `{:sake, "~> 0.3"}` in the host's
+- **MCP, with `Lotus.Web.MCP`.** With `{:sake, "~> 0.4"}` in the host's
   deps (an optional dependency), Lotus Web serves Lotus's MCP server
   (`Lotus.MCP`, from Lotus `main` until Lotus releases it) with two
   additions:
