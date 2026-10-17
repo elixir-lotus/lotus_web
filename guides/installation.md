@@ -5,10 +5,21 @@ This guide walks you through setting up LotusWeb in your Phoenix application.
 ## Requirements
 
 - **Elixir 1.18+** and **OTP 26+**
-- **Phoenix 1.7+** for LiveView compatibility
-- **[Lotus 1.0](https://hex.pm/packages/lotus)** configured in your application
+- **Phoenix 1.7+** and **Phoenix LiveView 1.1 or 1.2**
+- **[Lotus 1.3+](https://hex.pm/packages/lotus)** configured in your application
 
-> **Version Compatibility**: LotusWeb 1.0 requires Lotus 1.0. The v1 contract renamed several config keys (`:ecto_repo` → `:storage_repo`, `:data_repos` → `:data_sources`, `:default_repo` → `:default_source`). There is no compatibility shim — Lotus raises at boot if it finds an old key. See the Lotus [Upgrading to v1.0](https://hexdocs.pm/lotus/upgrading-to-v1.html) guide if you're coming from 0.x, and the lotus_web [Upgrading to v1.0](upgrading-to-v1.md) guide for what changes in the dashboard.
+### Version compatibility
+
+| Lotus Web    | Requires Lotus |
+|--------------|----------------|
+| 1.4.x        | 1.3+           |
+| 1.2.x, 1.3.x | 1.1+           |
+| 1.0.x, 1.1.x | 1.0+           |
+| 0.14.x       | 0.16.x         |
+
+Lotus Web's `mix.exs` requires the Lotus it needs, so `mix deps.get` picks a matching version.
+
+> **Upgrading from 0.x**: Lotus Web 1.0 requires Lotus 1.0. The v1 contract renamed several config keys (`:ecto_repo` → `:storage_repo`, `:data_repos` → `:data_sources`, `:default_repo` → `:default_source`). There is no compatibility shim — Lotus raises at boot if it finds an old key. See the Lotus [Upgrading to v1.0](https://hexdocs.pm/lotus/upgrading-to-v1.html) guide if you're coming from 0.x, and the lotus_web [Upgrading to v1.0](upgrading-to-v1.md) guide for what changes in the dashboard.
 
 ## Step 1: Add Dependency
 
@@ -17,8 +28,8 @@ Add `lotus` and `lotus_web` to your dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:lotus, "~> 1.0"},
-    {:lotus_web, "~> 1.0"}
+    {:lotus, "~> 1.3"},
+    {:lotus_web, "~> 1.4"}
   ]
 end
 ```

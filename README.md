@@ -36,8 +36,8 @@ Lotus Web 1.0 tracks the Lotus core v1 adapter contract, so a data source no lon
 # mix.exs
 def deps do
   [
-    {:lotus, "~> 1.0"},
-    {:lotus_web, "~> 1.0"}
+    {:lotus, "~> 1.3"},
+    {:lotus_web, "~> 1.4"}
   ]
 end
 ```
