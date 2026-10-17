@@ -113,7 +113,7 @@ the editor as formatted text.
 strikethrough, tables, task lists, autolinks and footnotes. A card that
 already has a table, an image or a footnote keeps it when edited.
 
-Markdown is rendered with raw HTML disabled, so `<script>` tags and inline event handlers in card content are dropped rather than executed.
+Markdown is rendered with raw HTML disabled, so `<script>` tags and inline event handlers in card content are dropped rather than executed. Images don't render either: an image in the Markdown shows as a link to it, since it would load in every viewer's browser, public dashboards included.
 
 ### Heading Cards
 

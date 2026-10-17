@@ -51,5 +51,13 @@ defmodule Lotus.Web.MarkdownTest do
     test "returns empty string for empty binary" do
       assert render("") == ""
     end
+
+    test "renders an image as a link to it" do
+      html = render("![pixel](https://tracker.example.com/p.gif?d=q3) and ![](/logo.png)")
+
+      refute html =~ "<img"
+      assert html =~ ~s(<a href="https://tracker.example.com/p.gif?d=q3">pixel</a>)
+      assert html =~ ~s(<a href="/logo.png">/logo.png</a>)
+    end
   end
 end
