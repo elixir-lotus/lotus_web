@@ -1,12 +1,19 @@
 # Changelog
 
-## Unreleased
+## [1.4.0] - 2026-10-17
+
+Lotus Web serves Lotus's new MCP server, with the dashboard's resolver
+deciding who may do what and `show_chart` drawing charts in the
+conversation. It also gets themes (Lotus and Sumi), a command palette on ⌘K,
+a rich text editor for text cards and descriptions, Koyomi date pickers, and
+real foreign keys in the schema explorer. It needs Lotus 1.3 and Phoenix
+LiveView 1.1 or later.
 
 ### Added
 
 - **MCP, with `Lotus.Web.MCP`.** With `{:sake, "~> 0.4"}` in the host's
   deps (an optional dependency), Lotus Web serves Lotus's MCP server
-  (`Lotus.MCP`, from Lotus `main` until Lotus releases it) with two
+  (`Lotus.MCP`, new in Lotus 1.3) with two
   additions:
   - **The dashboard's `Lotus.Web.Resolver` decides.** `resolve_access/1`
     says who may use MCP at all; a resolver without it lets nobody in.
@@ -47,6 +54,8 @@
 
 ### Changed
 
+- **Lotus 1.3 is required** (`~> 1.3`), for its MCP server and the
+  foreign keys and column comments `describe_table/3` now reports.
 - **The schema explorer marks real foreign keys.** For a source that
   reports them (PostgreSQL, MySQL, SQLite, through Lotus's
   `describe_table/3`), a foreign key column shows the column it references
