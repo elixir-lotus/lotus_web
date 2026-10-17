@@ -8,6 +8,11 @@ defmodule Lotus.Web.Markdown do
   HTML is dropped rather than emitted, so no separate sanitizer is needed.
   """
 
+  # GitHub Flavored Markdown, which the rich text editor writes.
+  @options [
+    extension: [strikethrough: true, table: true, autolink: true, tasklist: true, footnotes: true]
+  ]
+
   @doc """
   Renders a markdown string to safe HTML, wrapped in `Phoenix.HTML.raw/1`.
 
@@ -15,7 +20,7 @@ defmodule Lotus.Web.Markdown do
   fails to parse it.
   """
   def to_safe_html(text) when is_binary(text) do
-    case MDEx.to_html(text) do
+    case MDEx.to_html(text, @options) do
       {:ok, html} -> Phoenix.HTML.raw(html)
       {:error, _} -> text
     end

@@ -30,6 +30,13 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
       assert html =~ "Shared view"
     end
 
+    test "renders the description as Markdown" do
+      dashboard = public_dashboard_fixture(%{name: "Notes", description: "See **this**"})
+      {:ok, _live, html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
+
+      assert html =~ "See <strong>this</strong>"
+    end
+
     test "does not show edit controls (Save button)", %{dashboard: dashboard} do
       {:ok, live, _html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
 

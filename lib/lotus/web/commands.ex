@@ -18,6 +18,7 @@ defmodule Lotus.Web.Commands do
   import Lotus.Web.Helpers, only: [lotus_path: 1, lotus_path: 2]
 
   alias Lotus.Web.Authorization
+  alias Lotus.Web.RichText
   alias Phoenix.LiveView.JS
 
   @search_limit 20
@@ -206,7 +207,7 @@ defmodule Lotus.Web.Commands do
     |> Enum.filter(&Authorization.allowed?(assigns, :view_dashboard, &1))
     |> Enum.map(fn dashboard ->
       action("dashboard-#{dashboard.id}", dashboard.name,
-        subtitle: dashboard.description,
+        subtitle: RichText.plain_text(dashboard.description),
         icon: "blocks",
         navigate: lotus_path(["dashboards", dashboard.id])
       )
