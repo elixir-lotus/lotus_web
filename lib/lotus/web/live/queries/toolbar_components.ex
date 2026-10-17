@@ -133,25 +133,33 @@ defmodule Lotus.Web.Queries.ToolbarComponents do
     """
   end
 
+  # A Koyomi date picker in the toolbar's fieldset: the legend labels it.
   def input(%{type: "date"} = assigns) do
-    assigns = assign(assigns, :formatted_label, format_label(assigns[:label]))
+    assigns =
+      assign(assigns,
+        formatted_label: format_label(assigns[:label]),
+        locale: Gettext.get_locale(Lotus.Web.Gettext)
+      )
 
     ~H"""
-    <.live_component
-      module={Lotus.Web.DatePickerComponent}
-      id={@id || "#{@name}-date-picker-editor"}
-      name={@name}
-      label={@formatted_label}
-      floating_label={true}
-      value={@value}
-      placeholder={@rest[:placeholder] || gettext("Select date")}
-      disabled={@rest[:disabled]}
-      errors={@errors}
-      min={@rest[:min] || ~D[1900-01-01]}
-      max={@rest[:max] || ~D[2100-12-31]}
-      timezone={@rest[:timezone] || "UTC"}
-      {@rest}
-    />
+    <fieldset class={[
+      "lotus-date-field border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-input-dark focus-within:border-2 focus-within:border-pink-600",
+      @errors != [] && "border-rose-400 focus-within:border-rose-500",
+      @rest[:class]
+    ]}>
+      <legend :if={@label} id={@id <> "-label"} class="ml-1 px-1 text-xs font-medium text-gray-700 dark:text-gray-300">
+        {@formatted_label}
+      </legend>
+      <Koyomi.Components.date_picker
+        id={@id}
+        name={@name}
+        value={@value}
+        label_id={@label && @id <> "-label"}
+        disabled={@rest[:disabled] || false}
+        locale={@locale}
+      />
+      <.error :for={msg <- @errors}>{msg}</.error>
+    </fieldset>
     """
   end
 

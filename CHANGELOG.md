@@ -24,6 +24,15 @@
 
 ### Changed
 
+- **Date pickers, with [Koyomi](https://hex.pm/packages/koyomi).** The
+  date and date range filters of a dashboard, the default value of such a
+  filter, and the date variables of a query use Koyomi pickers: dates are
+  typed segment by segment or in words ("last friday"), a range shows two
+  months, and the relative dates (Today, Last 30 days, This quarter...)
+  are the presets beside the calendar. A relative date stays relative in
+  the URL, as before. The pickers follow the Lotus and Sumi themes, in
+  light and dark, and the language of the dashboard.
+
 - **The AI assistant opens with ⌘J** (Ctrl+J). ⌘K now opens the command
   palette, which also has "Ask AI…" in the query editor.
 - **Phoenix LiveView 1.1 or later is required** (`>= 1.1.0 and < 1.3.0`;

@@ -100,6 +100,19 @@ defmodule Lotus.Web.Dashboards.FilterValuesTest do
     end
   end
 
+  describe "range_value/1" do
+    test "keeps a token as it is" do
+      assert FilterValues.range_value("last_30_days") == "last_30_days"
+    end
+
+    test "gives fixed dates as start and end" do
+      assert FilterValues.range_value("2026-01-01,2026-03-31") ==
+               %{"start" => "2026-01-01", "end" => "2026-03-31"}
+
+      assert FilterValues.range_value(nil) == %{"start" => nil, "end" => nil}
+    end
+  end
+
   describe "core transforms" do
     test "the canonical form is what date_range_start and date_range_end parse" do
       %{"period" => value} =

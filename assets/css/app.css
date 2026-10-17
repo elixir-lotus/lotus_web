@@ -1,7 +1,10 @@
-/* The command palette (Jumon). Its Sumi mapping applies in the Sumi theme;
-   in the Lotus theme the rules below restyle it from the Lotus tokens. */
+/* The command palette (Jumon) and the date pickers (Koyomi). Their Sumi
+   mappings apply in the Sumi theme; in the Lotus theme the rules below
+   restyle them from the Lotus tokens. */
 @import "../../deps/jumon/priv/static/jumon.css";
 @import "../../deps/jumon/priv/static/jumon-sumi.css";
+@import "../../deps/koyomi/priv/static/koyomi.css";
+@import "../../deps/koyomi/priv/static/koyomi-sumi.css";
 
 @font-face {
     font-display: swap;
@@ -299,6 +302,118 @@
     box-shadow: none;
     font-size: var(--jumon-input-size);
     line-height: inherit;
+}
+
+/* ── The date pickers ───────────────────────────────────────
+   As the palette: koyomi-sumi.css maps the pickers to Sumi on :root, and
+   in the Lotus theme they take every property from the Lotus tokens, on
+   their own elements. The short --sumi-* names below serve both. The size
+   of the field is the size of the other inputs of the filter bar. */
+.koyomi {
+    --koyomi-font-size: 0.875rem;
+    --koyomi-small: 0.8125rem;
+    --koyomi-field-height: 2.375rem;
+    --koyomi-field-padding: 0 0.5rem 0 0.75rem;
+}
+
+/* Tailwind's preflight makes every button transparent, and comes later
+   than koyomi.css: give the Done button back its fill. */
+.koyomi .koyomi-done {
+    background-color: var(--koyomi-accent);
+}
+
+.koyomi .koyomi-done:hover {
+    background-color: color-mix(in oklab, var(--koyomi-accent) 88%, black);
+}
+
+/* In the query toolbar the fieldset is the field: the picker inside has no
+   frame of its own. */
+.lotus-date-field .koyomi-control {
+    --koyomi-field-height: 2rem;
+    width: 100%;
+    border-color: transparent;
+    background-color: transparent;
+    box-shadow: none;
+}
+
+/* @tailwindcss/forms styles every text input, as for the palette: give the
+   box for typing a date its own look. */
+.koyomi .koyomi-type,
+.koyomi .koyomi-type:focus {
+    padding: 0 0.625rem;
+    border-color: var(--koyomi-border);
+    border-radius: var(--koyomi-radius);
+    background-color: var(--koyomi-background);
+    box-shadow: none;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+.koyomi .koyomi-type:focus-visible {
+    border-color: var(--koyomi-accent);
+    box-shadow: var(--koyomi-focus-ring);
+}
+
+[data-lotus-theme="lotus"] .koyomi {
+    --koyomi-font: var(--lotus-font-sans);
+    --koyomi-line-height: 1.4;
+    --koyomi-text: rgb(var(--lotus-gray-900));
+    --koyomi-muted: rgb(var(--lotus-gray-500));
+    --koyomi-background: rgb(var(--lotus-white));
+    --koyomi-surface: rgb(var(--lotus-gray-50));
+    --koyomi-border: rgb(var(--lotus-gray-300));
+    --koyomi-accent: rgb(var(--lotus-pink-600));
+    --koyomi-accent-text: rgb(var(--lotus-white));
+    --koyomi-range: rgb(var(--lotus-pink-500) / 0.12);
+    --koyomi-range-preview: rgb(var(--lotus-pink-500) / 0.07);
+    --koyomi-today: rgb(var(--lotus-pink-600));
+    --koyomi-holiday: #b91c1c;
+    --koyomi-weekend: rgb(var(--lotus-gray-500));
+    --koyomi-disabled: rgb(var(--lotus-gray-400) / 0.7);
+    --koyomi-invalid: #b91c1c;
+    --koyomi-tone-accent: rgb(var(--lotus-pink-600));
+    --koyomi-tone-success: #15803d;
+    --koyomi-tone-warning: #b45309;
+    --koyomi-tone-danger: #b91c1c;
+    --koyomi-tone-muted: rgb(var(--lotus-gray-500));
+    --koyomi-focus-ring: 0 0 0 2px rgb(var(--lotus-white)), 0 0 0 4px rgb(var(--lotus-pink-500));
+    --koyomi-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --koyomi-floating-background: rgb(var(--lotus-white));
+    --koyomi-floating-text: rgb(var(--lotus-gray-900));
+    --koyomi-floating-border: rgb(var(--lotus-gray-200));
+    --koyomi-floating-shadow: var(--koyomi-shadow);
+    --koyomi-floating-radius: var(--lotus-radius-lg);
+    --koyomi-backdrop: rgb(17 24 39 / 0.32);
+    --koyomi-radius: var(--lotus-radius-lg);
+    --koyomi-space: 0.5rem;
+    --koyomi-icon-size: 16px;
+}
+
+[data-lotus-theme="lotus"].dark .koyomi {
+    --koyomi-text: rgb(var(--lotus-white));
+    --koyomi-muted: rgb(var(--lotus-gray-400));
+    --koyomi-background: rgb(var(--lotus-gray-700));
+    --koyomi-surface: rgb(var(--lotus-gray-700));
+    --koyomi-border: rgb(var(--lotus-gray-600));
+    --koyomi-accent: rgb(var(--lotus-pink-500));
+    --koyomi-range: rgb(var(--lotus-pink-500) / 0.2);
+    --koyomi-range-preview: rgb(var(--lotus-pink-500) / 0.12);
+    --koyomi-today: rgb(var(--lotus-pink-400));
+    --koyomi-holiday: #f87171;
+    --koyomi-weekend: rgb(var(--lotus-gray-400));
+    --koyomi-disabled: rgb(var(--lotus-gray-500) / 0.7);
+    --koyomi-invalid: #f87171;
+    --koyomi-tone-accent: rgb(var(--lotus-pink-400));
+    --koyomi-tone-success: #4ade80;
+    --koyomi-tone-warning: #fbbf24;
+    --koyomi-tone-danger: #f87171;
+    --koyomi-tone-muted: rgb(var(--lotus-gray-400));
+    --koyomi-focus-ring: 0 0 0 2px rgb(var(--lotus-gray-800)), 0 0 0 4px rgb(var(--lotus-pink-400));
+    --koyomi-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.06);
+    --koyomi-floating-background: rgb(var(--lotus-gray-800));
+    --koyomi-floating-text: rgb(var(--lotus-gray-100));
+    --koyomi-floating-border: rgb(var(--lotus-gray-700));
+    --koyomi-backdrop: rgb(0 0 0 / 0.5);
 }
 
 [data-lotus-theme="sumi"] {

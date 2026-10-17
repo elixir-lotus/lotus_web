@@ -43,6 +43,7 @@ defmodule Lotus.Web.MixProject do
       {:phoenix, "~> 1.7"},
       {:phoenix_live_view, ">= 1.1.0 and < 1.3.0"},
       {:jumon, "~> 0.2"},
+      {:koyomi, "~> 0.2"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_ecto, "~> 4.5"},
       {:gettext, "~> 0.26 or ~> 1.0"},
