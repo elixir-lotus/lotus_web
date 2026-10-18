@@ -769,7 +769,12 @@
     --masu-row-hover: transparent;
     --masu-cell-hover: rgb(var(--lotus-gray-100));
     --masu-cell-padding: 0 0.75rem;
-    --masu-accent: rgb(var(--lotus-pink-600));
+    /* Lotus's focus (its inputs' focus:ring-pink-500): the active cell's
+       line and the focus ring. */
+    --masu-accent: rgb(var(--lotus-pink-500));
+    --masu-active: rgb(var(--lotus-pink-500));
+    --masu-focus-ring: 0 0 0 1px rgb(var(--lotus-pink-500));
+    --masu-selection: rgb(var(--lotus-pink-500) / 0.08);
     --masu-radius: var(--lotus-radius-md);
 }
 
@@ -785,4 +790,5 @@
     --masu-header-hover: rgb(var(--lotus-gray-700));
     --masu-row-alt-background: rgb(var(--lotus-gray-700));
     --masu-cell-hover: rgb(var(--lotus-zinc-700));
+    --masu-selection: rgb(var(--lotus-pink-500) / 0.16);
 }

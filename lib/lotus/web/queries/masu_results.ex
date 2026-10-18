@@ -9,7 +9,11 @@ defmodule Lotus.Web.Queries.MasuResults do
 
   use Phoenix.Component
 
+  use Gettext, backend: Lotus.Web.Gettext
+
   import Masu.Components
+
+  alias Lotus.Web.Queries.MasuMessages
 
   alias Lotus.Query.Filter
   alias Lotus.Query.Sort
@@ -46,7 +50,9 @@ defmodule Lotus.Web.Queries.MasuResults do
       assign(assigns,
         rows: rows(assigns.result),
         columns: columns(assigns.result),
-        on_query: &Phoenix.LiveView.send_update(target, %{action: :masu_query, report: &1})
+        on_query: &Phoenix.LiveView.send_update(target, %{action: :masu_query, report: &1}),
+        messages: MasuMessages.messages(),
+        locale: Gettext.get_locale(Lotus.Web.Gettext)
       )
 
     ~H"""
@@ -61,11 +67,13 @@ defmodule Lotus.Web.Queries.MasuResults do
         multi_sort={false}
         row_height={52}
         cell_menu
-        label="Results"
+        messages={@messages}
+        locale={@locale}
+        label={gettext("Results")}
         class="lotus-results"
         height="100%"
       >
-        <:header_action :let={action} label="Column stats">
+        <:header_action :let={action} label={gettext("Column stats")}>
           <div
             id={"#{@id}-stats-#{action.column}"}
             phx-hook="MasuColumnStats"
@@ -79,9 +87,10 @@ defmodule Lotus.Web.Queries.MasuResults do
   end
 
   # The columns as Lotus names them, of the types of their values, with the
-  # filters Lotus runs.
+  # filters Lotus runs; their values as Lotus's table shows them (`raw`),
+  # not formatted for the locale.
   defp columns(%{columns: columns}),
-    do: for(name <- columns, do: %{key: name, label: name, filters: @masu_filters})
+    do: for(name <- columns, do: %{key: name, label: name, filters: @masu_filters, raw: true})
 
   # Each value as Masu reads it: numbers, decimals, dates and booleans as
   # they are, so that they sort, filter and align by their type; the rest

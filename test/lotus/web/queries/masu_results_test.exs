@@ -46,4 +46,37 @@ defmodule Lotus.Web.Queries.MasuResultsTest do
       assert MasuResults.lotus_query(query([], sorts)) == {[], [Sort.new("a", :desc)]}
     end
   end
+
+  describe "Masu's words" do
+    alias Lotus.Web.Queries.MasuMessages
+
+    # The same in French as in English.
+    @same ["CSV", "Condition", "Excel (XLSX)", "Page", "Pages", "Total"]
+
+    test "every word of Masu's grid, and only those" do
+      assert Enum.sort(Map.keys(MasuMessages.messages())) ==
+               Enum.sort(Map.keys(Masu.Messages.defaults()))
+    end
+
+    test "in French, none is left in English" do
+      english = Masu.Messages.defaults()
+
+      french = Gettext.with_locale(Lotus.Web.Gettext, "fr", &MasuMessages.messages/0)
+
+      left =
+        for {key, text} <- french, text == english[key], text not in @same, do: key
+
+      assert left == []
+    end
+
+    test "a translation keeps Masu's placeholders" do
+      french = Gettext.with_locale(Lotus.Web.Gettext, "fr", &MasuMessages.messages/0)
+
+      for {key, text} <- Masu.Messages.defaults() do
+        assert Regex.scan(~r/\{\w+\}/, french[key]) |> Enum.sort() ==
+                 Regex.scan(~r/\{\w+\}/, text) |> Enum.sort(),
+               "#{key}: #{french[key]}"
+      end
+    end
+  end
 end

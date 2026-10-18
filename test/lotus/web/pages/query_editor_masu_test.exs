@@ -52,5 +52,23 @@ defmodule Lotus.Web.Pages.QueryEditorMasuTest do
     assert names(live, grid) == ["Alice", "Bob", "Charlie"]
   end
 
+  test "the grid's words are in the dashboard's language" do
+    query = query_fixture(%{name: "Users FR", statement: "SELECT name FROM test_users"})
+
+    conn = Plug.Test.init_test_session(build_conn(), %{"lotus_locale" => "fr"})
+    {:ok, live, _html} = live(conn, "/lotus/queries/#{query.id}")
+    html = render_async(live)
+
+    [messages] =
+      html
+      |> LazyHTML.from_fragment()
+      |> LazyHTML.query(".masu")
+      |> LazyHTML.attribute("data-masu-messages")
+
+    messages = JSON.decode!(messages)
+    assert messages["apply"] == "Appliquer"
+    assert messages["op_contains"] == "contient"
+  end
+
   defp names(live, grid), do: live |> Masu.Test.rows(grid) |> Enum.map(& &1["name"])
 end
