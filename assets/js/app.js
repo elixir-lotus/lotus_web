@@ -3,7 +3,7 @@ import { applyPalette, tokenColor } from "./lib/palette";
 import { Jumon } from "jumon";
 import { Koyomi } from "koyomi";
 import { Kotoba } from "kotoba";
-import { Masu } from "../../deps/masu/assets/src/index.ts";
+import { Masu } from "masu";
 
 import AIMessageInput from "./hooks/ai_message_input";
 import AIPromptInput from "./hooks/ai_prompt_input";
