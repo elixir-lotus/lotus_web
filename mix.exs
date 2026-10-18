@@ -45,6 +45,9 @@ defmodule Lotus.Web.MixProject do
       {:jumon, "~> 0.2"},
       {:koyomi, "~> 0.2"},
       {:kotoba, "~> 0.3"},
+      # Trying Masu for the results table (`config :lotus_web, results_table: :masu`);
+      # from GitHub until it is on Hex.
+      {:masu, github: "hattoriai/masu", branch: "column-filters"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_ecto, "~> 4.5"},
       {:gettext, "~> 0.26 or ~> 1.0"},

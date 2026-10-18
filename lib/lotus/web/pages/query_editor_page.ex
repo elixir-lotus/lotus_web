@@ -16,6 +16,7 @@ defmodule Lotus.Web.QueryEditorPage do
   alias Lotus.Web.Page
   alias Lotus.Web.Queries.AiAssistantComponent
   alias Lotus.Web.Queries.DropdownOptionsModal
+  alias Lotus.Web.Queries.MasuResults
   alias Lotus.Web.Queries.SchemaExplorerComponent
   alias Lotus.Web.Queries.VariableSettingsComponent
   alias Lotus.Web.Queries.VisualizationSettingsComponent
@@ -160,6 +161,7 @@ defmodule Lotus.Web.QueryEditorPage do
                   is_saved_query={@page.mode == :edit}
                   filters={@filters}
                   sorts={@sorts}
+                  results_run={Map.get(assigns, :results_run, 0)}
                   visualization_config={@visualization_config}
                   visualization_view_mode={@visualization_view_mode}
                   visualization_visible={@left_drawer == :visualization}
@@ -831,6 +833,7 @@ defmodule Lotus.Web.QueryEditorPage do
         socket
         |> update_query_state(changeset, [])
         |> assign(page_index: 0, filters: [], sorts: [])
+        |> assign(results_run: Map.get(socket.assigns, :results_run, 0) + 1)
 
       {:noreply, execute_query(socket, query)}
     end
@@ -1278,6 +1281,17 @@ defmodule Lotus.Web.QueryEditorPage do
     {:ok, socket}
   end
 
+  # The person's sort or filters in the results table (Masu's): Lotus's
+  # own, and the query again, as the table's own menus do.
+  def update(%{action: :masu_query, report: report}, socket) do
+    {filters, sorts} = MasuResults.lotus_query(report.query)
+
+    {:ok,
+     socket
+     |> assign(filters: filters, sorts: sorts, page_index: 0)
+     |> execute_query(socket.assigns.query)}
+  end
+
   def update(assigns, socket) do
     {:ok, assign(socket, assigns)}
   end
@@ -1568,8 +1582,11 @@ defmodule Lotus.Web.QueryEditorPage do
 
     opts = Actor.merge(opts, socket.assigns)
 
+    # Masu's table keeps the rows it shows while the query runs.
+    result = if MasuResults.enabled?(), do: socket.assigns[:result], else: nil
+
     socket
-    |> assign(running: true, error: nil, result: nil)
+    |> assign(running: true, error: nil, result: result)
     |> start_async(:query_execution, fn ->
       Lotus.run_query(query, opts)
     end)

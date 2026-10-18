@@ -7,6 +7,8 @@
 @import "../../deps/koyomi/priv/static/koyomi-sumi.css";
 @import "../../deps/kotoba/priv/static/kotoba.css";
 @import "../../deps/kotoba/priv/static/kotoba-sumi.css";
+/* The results grid, when it is Masu's (config :lotus_web, results_table: :masu). */
+@import "../../deps/masu/assets/css/masu.css";
 
 @font-face {
     font-display: swap;
@@ -741,4 +743,47 @@
 }
 .dark .lotus-stats-hist-count {
     color: #a1a1aa;
+}
+
+/* Masu's results grid (a trial), in the look of the results table: its
+   tokens from the Lotus variables, so that the themes apply. */
+.lotus-results {
+    --masu-font: var(--lotus-font-sans);
+    --masu-font-size: 0.875rem;
+    --masu-line-height: 1.25rem;
+    --masu-row-height: 52px;
+    --masu-text: rgb(var(--lotus-text-light));
+    --masu-muted: rgb(var(--lotus-gray-500));
+    --masu-background: rgb(var(--lotus-white));
+    --masu-surface: rgb(var(--lotus-white));
+    --masu-border: rgb(var(--lotus-gray-200));
+    --masu-header-background: rgb(var(--lotus-white));
+    --masu-header-text: rgb(var(--lotus-text-light));
+    --masu-header-height: 48px;
+    --masu-header-border: none;
+    --masu-header-shadow: 0 1px 0 0 rgb(var(--lotus-gray-300));
+    --masu-header-hover: rgb(var(--lotus-gray-50));
+    --masu-grid-border: none;
+    --masu-grid-radius: 0;
+    --masu-row-border: none;
+    --masu-row-alt-background: rgb(var(--lotus-gray-50));
+    --masu-row-hover: transparent;
+    --masu-cell-hover: rgb(var(--lotus-gray-100));
+    --masu-cell-padding: 0 0.75rem;
+    --masu-accent: rgb(var(--lotus-pink-600));
+    --masu-radius: var(--lotus-radius-md);
+}
+
+.dark .lotus-results {
+    --masu-text: rgb(var(--lotus-text-dark));
+    --masu-muted: rgb(var(--lotus-gray-400));
+    --masu-background: rgb(var(--lotus-gray-800));
+    --masu-surface: rgb(var(--lotus-zinc-800));
+    --masu-border: rgb(var(--lotus-zinc-700));
+    --masu-header-background: rgb(var(--lotus-gray-800));
+    --masu-header-text: rgb(var(--lotus-text-dark));
+    --masu-header-shadow: 0 1px 0 0 rgb(var(--lotus-gray-600));
+    --masu-header-hover: rgb(var(--lotus-gray-700));
+    --masu-row-alt-background: rgb(var(--lotus-gray-700));
+    --masu-cell-hover: rgb(var(--lotus-zinc-700));
 }

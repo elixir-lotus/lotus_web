@@ -172,4 +172,25 @@ const ColumnStats = {
   },
 };
 
+// The stats of a column in a panel of Masu's results grid (its "Column
+// stats" header item): the same content, in the panel the grid opens.
+export const MasuColumnStats = {
+  mounted() {
+    this.render();
+  },
+
+  updated() {
+    this.render();
+  },
+
+  render() {
+    try {
+      const stats = JSON.parse(this.el.getAttribute("data-stats") || "{}");
+      this.el.innerHTML = Object.keys(stats).length ? buildContent(stats) : "";
+    } catch {
+      this.el.innerHTML = "";
+    }
+  },
+};
+
 export default ColumnStats;

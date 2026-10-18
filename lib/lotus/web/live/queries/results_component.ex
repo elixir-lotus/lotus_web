@@ -7,6 +7,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   alias Lotus.Query.Sort
   alias Lotus.Result.Statistics
   alias Lotus.Web.CellFormatter
+  alias Lotus.Web.Queries.MasuResults
   alias Lotus.Web.VegaSpecBuilder
 
   attr(:query_id, :string, default: "default")
@@ -25,12 +26,17 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   attr(:visualization_view_mode, :atom, default: :table)
   attr(:visualization_visible, :boolean, default: false)
   attr(:can_export, :boolean, default: true)
+  # Each run of the editor's query: a new results table (Masu's), with no
+  # sort or filter of the one before.
+  attr(:results_run, :integer, default: 0)
 
   def render_result(assigns) do
+    assigns = assign(assigns, :masu, MasuResults.enabled?())
+
     ~H"""
     <div id={"query-results-#{assigns[:query_id] || "default"}"} class="px-4 sm:px-6 lg:px-8 h-full flex flex-col">
       <%= cond do %>
-        <% @running == true -> %>
+        <% @running == true and not (@masu and @result != nil) -> %>
           <.loading_spinner />
 
         <% @result != nil -> %>
@@ -47,17 +53,27 @@ defmodule Lotus.Web.Queries.ResultsComponent do
           </div>
 
           <%!-- Quick filter chips --%>
-          <.filter_chips :if={@filters != []} filters={@filters} target={@target} />
+          <.filter_chips :if={@filters != [] and not @masu} filters={@filters} target={@target} />
 
-          <%!-- Sort chips --%>
-          <.sort_chips :if={@sorts != []} sorts={@sorts} target={@target} />
+          <%!-- Sort chips (Masu shows its own chips, and the sort in its header) --%>
+          <.sort_chips :if={@sorts != [] and not @masu} sorts={@sorts} target={@target} />
 
           <%!-- Content area: Table or Chart --%>
           <div class="flex-1 overflow-hidden">
             <%= if @visualization_view_mode == :chart && has_valid_config?(@visualization_config) do %>
               <.render_chart result={@result} config={@visualization_config} />
             <% else %>
-              <.render_table result={@result} target={@target} sorts={@sorts} />
+              <%= if @masu do %>
+                <MasuResults.grid
+                  id={"results-grid-#{@query_id}-#{@results_run}"}
+                  result={@result}
+                  running={@running}
+                  target={@target}
+                  stats={Statistics.compute_all(@result)}
+                />
+              <% else %>
+                <.render_table result={@result} target={@target} sorts={@sorts} />
+              <% end %>
             <% end %>
           </div>
 
