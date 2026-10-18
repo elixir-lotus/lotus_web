@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **A favicon.** The dashboard shows the Lotus logo in the browser tab, the
+  same icon as the Lotus site and Lotus Works. It is served under the mount
+  prefix with a content hash, like the CSS and JS.
+
 ## [1.4.0] - 2026-10-17
 
 Lotus Web serves Lotus's new MCP server, with the dashboard's resolver

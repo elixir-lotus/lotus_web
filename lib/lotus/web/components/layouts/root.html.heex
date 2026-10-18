@@ -11,6 +11,8 @@
     <meta name="csrf-token" content={get_csrf_token()} />
 
     <title>{assigns[:page_title] || "Lotus"}</title>
+    <link rel="icon" href={asset_path(:svg)} type="image/svg+xml" />
+    <link rel="icon" href={asset_path(:ico)} sizes="any" />
 
     <style :if={Lotus.Web.Theme.css(assigns[:theme_colors])} nonce={@csp_nonces[:style]}>
       <%= Lotus.Web.Theme.css(assigns[:theme_colors]) %>
