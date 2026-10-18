@@ -778,6 +778,12 @@
     --masu-radius: var(--lotus-radius-md);
 }
 
+/* The active cell shows where the focus is; no ring around the whole
+   grid as well. */
+.lotus-results > .masu-grid:focus-visible {
+    box-shadow: none;
+}
+
 .dark .lotus-results {
     --masu-text: rgb(var(--lotus-text-dark));
     --masu-muted: rgb(var(--lotus-gray-400));
