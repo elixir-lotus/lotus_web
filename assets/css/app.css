@@ -751,7 +751,6 @@
     --masu-font: var(--lotus-font-sans);
     --masu-font-size: 0.875rem;
     --masu-line-height: 1.25rem;
-    --masu-row-height: 52px;
     --masu-text: rgb(var(--lotus-text-light));
     --masu-muted: rgb(var(--lotus-gray-500));
     --masu-background: rgb(var(--lotus-white));

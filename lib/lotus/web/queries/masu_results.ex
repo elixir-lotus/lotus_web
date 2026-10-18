@@ -59,6 +59,7 @@ defmodule Lotus.Web.Queries.MasuResults do
         on_query={@on_query}
         loading={@running}
         multi_sort={false}
+        row_height={52}
         cell_menu
         label="Results"
         class="lotus-results"
