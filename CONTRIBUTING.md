@@ -55,7 +55,7 @@ A pull request with an issue says so: `Fixes #123` or `Closes #123`.
   the fix. A feature has tests of what it does, and of its errors. A
   change to who may do what has a test with a resolver that denies it.
 - **Docs.** A change a user can see updates the guide it belongs to
-  (under `guides/`) and [CHANGELOG.md](CHANGELOG.md). New text in the UI
+  (under `guides/`) and [CHANGELOG.md](https://github.com/elixir-lotus/lotus_web/blob/main/CHANGELOG.md). New text in the UI
   goes through Gettext.
 - **The checks pass.** CI runs them on Elixir 1.18, 1.19 and 1.20, with
   PostgreSQL on port 2346 (`docker compose up -d db`); run them first:
@@ -88,4 +88,4 @@ its guides are written. `mix format` and `mix credo` settle the rest.
 ## License
 
 By contributing, you agree that your contribution is released under the
-MIT License of the project (see [LICENSE](LICENSE)).
+MIT License of the project (see [LICENSE](https://github.com/elixir-lotus/lotus_web/blob/main/LICENSE)).
