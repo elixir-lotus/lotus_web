@@ -441,9 +441,9 @@ Once a release line is end-of-life, the branch can be deleted. Tags keep the com
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md): when a change needs an issue
+See [CONTRIBUTING.md](https://github.com/elixir-lotus/lotus_web/blob/main/CONTRIBUTING.md): when a change needs an issue
 first, and what a pull request needs. Report a security problem
-privately, as [SECURITY.md](SECURITY.md) says.
+privately, as [SECURITY.md](https://github.com/elixir-lotus/lotus_web/blob/main/SECURITY.md) says.
 
 ## Acknowledgments
 
