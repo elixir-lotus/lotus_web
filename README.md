@@ -441,7 +441,9 @@ Once a release line is end-of-life, the branch can be deleted. Tags keep the com
 
 ## Contributing
 
-We welcome contributions! When reporting bugs, please include your Elixir/OTP versions, dependency versions, and steps to reproduce.
+See [CONTRIBUTING.md](CONTRIBUTING.md): when a change needs an issue
+first, and what a pull request needs. Report a security problem
+privately, as [SECURITY.md](SECURITY.md) says.
 
 ## Acknowledgments
 
