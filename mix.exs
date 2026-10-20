@@ -62,6 +62,7 @@ defmodule Lotus.Web.MixProject do
       {:postgrex, "~> 0.20", only: [:dev, :test]},
       {:myxql, "~> 0.8", only: [:dev, :test]},
       {:ecto_ch, "~> 0.3", only: :dev},
+      {:ecto_sqlite3, "~> 0.21", only: :dev},
 
       # Tests
       {:floki, "~> 0.33", only: [:test, :dev]},
