@@ -140,7 +140,9 @@ defmodule Lotus.Web.MixProject do
         "guides/dashboards.md",
         "guides/variables-and-widgets.md",
         "guides/theming.md",
-        "guides/mcp.md"
+        "guides/mcp.md",
+        "CONTRIBUTING.md",
+        "SECURITY.md"
       ]
     ]
   end
