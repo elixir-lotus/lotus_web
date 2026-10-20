@@ -388,6 +388,7 @@ Valid names are `postgres`, `mysql`, `sqlite`, `clickhouse` and `elasticsearch`.
 
 ```bash
 mix test
+npm test --prefix assets   # the JavaScript tests (vitest)
 ```
 
 ### AI Assistant Setup (Optional)
