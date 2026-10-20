@@ -375,6 +375,15 @@ npm install --prefix assets
 mix dev
 ```
 
+`mix dev` connects to and seeds every backend from `docker-compose.yml`, plus a local SQLite file. To run only some, list them in `BACKENDS`:
+
+```bash
+BACKENDS=postgres mix dev
+BACKENDS=postgres,sqlite mix dev
+```
+
+Valid names are `postgres`, `mysql`, `sqlite`, `clickhouse` and `elasticsearch`. Postgres always runs because it stores Lotus' own queries and dashboards.
+
 ### Running Tests
 
 ```bash
