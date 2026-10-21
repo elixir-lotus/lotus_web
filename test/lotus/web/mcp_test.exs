@@ -72,6 +72,21 @@ defmodule Lotus.Web.MCPTest do
           do: assert(name in names)
     end
 
+    test "the resolver alone is enough: Lotus's authorize and actor default to it" do
+      Application.delete_env(:lotus, :mcp)
+      resolver(ActorResolver)
+      Lotus.Web.MCP.Setup.run()
+
+      Lotus.Middleware.compile(%{before_query: [{Recorder, self()}]})
+      on_exit(fn -> Lotus.Middleware.compile(%{}) end)
+
+      client = client(scope: %{id: 7})
+      assert "run_sql" in names(client)
+
+      call!(client, "run_sql", %{"data_source" => "public", "statement" => "SELECT 1"})
+      assert_receive {:before_query, %{user_id: 7}}
+    end
+
     test "the dashboard's actor reaches Lotus" do
       resolver(ActorResolver)
       Lotus.Middleware.compile(%{before_query: [{Recorder, self()}]})

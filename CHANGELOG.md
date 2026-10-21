@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- **`Lotus.Web.MCP` needs only its resolver.** With
+  `config :lotus_web, Lotus.Web.MCP, resolver: ...` set, Lotus Web defaults
+  `config :lotus, :mcp`'s `authorize:` to `{Lotus.Web.MCP, :authorize?}` and
+  its `actor:` to `{Lotus.Web.MCP, :actor}` when it starts, so the host no
+  longer names the resolver twice. What the host sets itself wins, and an
+  existing config keeps working as it is
+  ([lotus#332](https://github.com/elixir-lotus/lotus/issues/332)).
+- **A missing Sake is reported.** When `config :lotus, :mcp` or
+  `config :lotus_web, Lotus.Web.MCP` is set but Sake isn't a dependency,
+  Lotus Web logs a warning at start saying so, instead of `Lotus.MCP` and
+  `Lotus.Web.MCP` silently not existing.
+
 ## [1.4.0] - 2026-10-17
 
 Lotus Web serves Lotus's new MCP server, with the dashboard's resolver

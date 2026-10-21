@@ -16,9 +16,9 @@ if Code.ensure_loaded?(Sake.Server) do
         # config/config.exs
         config :lotus_web, Lotus.Web.MCP, resolver: MyApp.LotusResolver
 
-        config :lotus, :mcp,
-          authorize: {Lotus.Web.MCP, :authorize?},
-          actor: {Lotus.Web.MCP, :actor}
+    With a resolver set, Lotus Web defaults `config :lotus, :mcp`'s
+    `authorize:` to `{Lotus.Web.MCP, :authorize?}` and its `actor:` to
+    `{Lotus.Web.MCP, :actor}` when it starts; what the host sets wins.
 
     `authorize?/1` lets in whoever the resolver's `resolve_access/1` gives
     `:all` or `:read_only` access; `actor/1` gives Lotus the
