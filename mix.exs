@@ -51,7 +51,9 @@ defmodule Lotus.Web.MixProject do
       {:mdex, "~> 0.13"},
 
       # Lotus
-      {:lotus, "~> 1.3"},
+      # Temporarily on main, for Lotus.MCP.Host (elixir-lotus/lotus#343), until
+      # the next Lotus release. Hex refuses to publish a git dependency.
+      {:lotus, github: "elixir-lotus/lotus", branch: "main"},
       {:sake, "~> 0.4", optional: true},
       {:lotus_clickhouse,
        git: "git@github.com:elixir-lotus/lotus_clickhouse.git", branch: "main", only: :dev},
