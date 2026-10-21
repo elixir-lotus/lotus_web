@@ -6,81 +6,40 @@ defmodule Lotus.Web.MCP.SetupTest do
   alias Lotus.Web.MCP.Setup
 
   setup do
-    lotus = Application.fetch_env(:lotus, :mcp)
-    lotus_web = Application.fetch_env(:lotus_web, Lotus.Web.MCP)
-    Application.delete_env(:lotus, :mcp)
-    Application.delete_env(:lotus_web, Lotus.Web.MCP)
+    saved = Application.fetch_env(:lotus_web, Lotus.Web.MCP)
 
     on_exit(fn ->
-      restore(:lotus, :mcp, lotus)
-      restore(:lotus_web, Lotus.Web.MCP, lotus_web)
+      case saved do
+        {:ok, value} -> Application.put_env(:lotus_web, Lotus.Web.MCP, value)
+        :error -> Application.delete_env(:lotus_web, Lotus.Web.MCP)
+      end
     end)
   end
 
-  defp restore(app, key, {:ok, value}), do: Application.put_env(app, key, value)
-  defp restore(app, key, :error), do: Application.delete_env(app, key)
+  test "warns when Lotus.Web.MCP is configured but Sake is missing" do
+    Application.put_env(:lotus_web, Lotus.Web.MCP, resolver: SomeResolver)
 
-  describe "with Sake" do
-    test "a resolver for Lotus.Web.MCP defaults Lotus's authorize and actor to it" do
-      Application.put_env(:lotus_web, Lotus.Web.MCP, resolver: SomeResolver)
+    log = capture_log(fn -> assert :ok = Setup.run(false) end)
 
-      assert :ok = Setup.run(true)
-
-      assert Application.get_env(:lotus, :mcp) == [
-               authorize: {Lotus.Web.MCP, :authorize?},
-               actor: {Lotus.Web.MCP, :actor}
-             ]
-    end
-
-    test "keeps what the host set, and its other keys" do
-      Application.put_env(:lotus_web, Lotus.Web.MCP, resolver: SomeResolver)
-      Application.put_env(:lotus, :mcp, authorize: {MyApp, :mcp?}, data_sources: ["main"])
-
-      Setup.run(true)
-
-      mcp = Application.get_env(:lotus, :mcp)
-      assert mcp[:authorize] == {MyApp, :mcp?}
-      assert mcp[:actor] == {Lotus.Web.MCP, :actor}
-      assert mcp[:data_sources] == ["main"]
-    end
-
-    test "without a resolver, Lotus's config is left alone" do
-      Setup.run(true)
-      assert Application.fetch_env(:lotus, :mcp) == :error
-    end
-
-    test "says nothing" do
-      Application.put_env(:lotus_web, Lotus.Web.MCP, resolver: SomeResolver)
-      assert capture_log(fn -> Setup.run(true) end) == ""
-    end
+    assert log =~ "config :lotus_web, Lotus.Web.MCP is set, but Sake is not a dependency"
+    assert log =~ ~s(Add {:sake, "~> 0.4"})
   end
 
-  describe "without Sake" do
-    test "warns when MCP is configured" do
-      Application.put_env(:lotus_web, Lotus.Web.MCP, resolver: SomeResolver)
-      Application.put_env(:lotus, :mcp, authorize: {MyApp, :mcp?})
+  test "says nothing when it is not configured, or Sake is there" do
+    Application.delete_env(:lotus_web, Lotus.Web.MCP)
+    assert capture_log(fn -> Setup.run(false) end) == ""
 
-      log = capture_log(fn -> Setup.run(false) end)
+    Application.put_env(:lotus_web, Lotus.Web.MCP, resolver: SomeResolver)
+    assert capture_log(fn -> Setup.run(true) end) == ""
+  end
 
-      assert log =~ "config :lotus, :mcp and config :lotus_web, Lotus.Web.MCP are set"
-      assert log =~ ~s(Add {:sake, "~> 0.4"})
-    end
+  test "leaves Lotus's config alone" do
+    lotus = Application.fetch_env(:lotus, :mcp)
+    Application.put_env(:lotus_web, Lotus.Web.MCP, resolver: SomeResolver)
 
-    test "names the one setting that is configured" do
-      Application.put_env(:lotus, :mcp, authorize: {MyApp, :mcp?})
+    Setup.run(true)
+    capture_log(fn -> Setup.run(false) end)
 
-      assert capture_log(fn -> Setup.run(false) end) =~ "config :lotus, :mcp is set"
-    end
-
-    test "does not default Lotus's config" do
-      Application.put_env(:lotus_web, Lotus.Web.MCP, resolver: SomeResolver)
-      capture_log(fn -> Setup.run(false) end)
-
-      assert Application.fetch_env(:lotus, :mcp) == :error
-    end
-
-    test "says nothing when MCP is not configured" do
-      assert capture_log(fn -> Setup.run(false) end) == ""
-    end
+    assert Application.fetch_env(:lotus, :mcp) == lotus
   end
 end

@@ -27,10 +27,8 @@ defmodule Lotus.Web.MCPTest do
   setup do
     create_test_users()
 
-    Application.put_env(:lotus, :mcp,
-      authorize: {Lotus.Web.MCP, :authorize?},
-      actor: {Lotus.Web.MCP, :actor}
-    )
+    # No config :lotus, :mcp: Lotus.Web.MCP tells Lotus who may use it.
+    Application.delete_env(:lotus, :mcp)
 
     on_exit(fn ->
       Application.delete_env(:lotus, :mcp)
@@ -72,10 +70,8 @@ defmodule Lotus.Web.MCPTest do
           do: assert(name in names)
     end
 
-    test "the resolver alone is enough: Lotus's authorize and actor default to it" do
-      Application.delete_env(:lotus, :mcp)
+    test "the resolver alone is enough, without config :lotus, :mcp" do
       resolver(ActorResolver)
-      Lotus.Web.MCP.Setup.run()
 
       Lotus.Middleware.compile(%{before_query: [{Recorder, self()}]})
       on_exit(fn -> Lotus.Middleware.compile(%{}) end)
@@ -85,6 +81,13 @@ defmodule Lotus.Web.MCPTest do
 
       call!(client, "run_sql", %{"data_source" => "public", "statement" => "SELECT 1"})
       assert_receive {:before_query, %{user_id: 7}}
+    end
+
+    test "config :lotus, :mcp still wins where it sets authorize:" do
+      resolver(Lotus.Web.Test.EditorResolver)
+      Application.put_env(:lotus, :mcp, authorize: fn _ -> false end)
+
+      assert names(client()) == []
     end
 
     test "the dashboard's actor reaches Lotus" do

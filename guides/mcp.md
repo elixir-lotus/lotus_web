@@ -35,11 +35,11 @@ end
 config :lotus_web, Lotus.Web.MCP, resolver: MyApp.LotusResolver
 ```
 
-That's all Lotus needs to know: with a resolver set, Lotus Web sets
-`config :lotus, :mcp`'s `authorize:` to `{Lotus.Web.MCP, :authorize?}` and
-its `actor:` to `{Lotus.Web.MCP, :actor}` when it starts. Set either
-yourself to use your own; what you set wins, and the other keys of
-`config :lotus, :mcp` (such as `data_sources:`) are yours as before.
+That's all Lotus needs to know. `Lotus.Web.MCP` tells `Lotus.MCP` to ask
+your resolver who may use it and as which actor (with `Lotus.MCP.Host`),
+so `config :lotus, :mcp` needs neither `authorize:` nor `actor:`. Its other
+keys, such as `data_sources:` and `max_rows:`, work as before. If you do
+set `authorize:` or `actor:` there, yours wins.
 
 Without Sake in your deps, `Lotus.Web.MCP` isn't compiled; Lotus Web logs a
 warning at start if you configured it anyway.
