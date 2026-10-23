@@ -350,6 +350,7 @@ Under the fields, both the query editor's settings and a dashboard card's settin
 | Option | Chart types | What it does |
 |--------|-------------|--------------|
 | **Values' format** | All | How the numbers read, on the axis, in the tooltips and on the marks: *Automatic* (Fude's choice), *Exact* (1,234,567.8), *Whole* (1,234,568), *Compact* (1.2M), *Percent* (0.42 is 42%) or *Currency*, with its code (USD, EUR…). A KPI shows its exact number with *Exact*. |
+| **Decimals** | All | How many decimals the values write (0 to 3), with their format or alone: *Exact* with 0 decimals reads 6,893,914. |
 | **Line's format** | Combo | The format of the line, on the right axis. |
 | **Show values on the bars** | Bar, horizontal bar | Writes each bar's value at its end. On by default for horizontal bars. |
 | **Series** | Bar, horizontal bar, area (with a series field) | *Stacked*, *Side by side* (*Overlapping* for areas), or *Stacked to 100%*, each series as its share. |
@@ -358,6 +359,10 @@ Under the fields, both the query editor's settings and a dashboard card's settin
 | **Start the axis at zero** | Line, scatter, bubble, combo (each axis) | By default these axes fit the data, so that a change reads clearly; from zero, they show sizes against nothing. Bars and areas always start at zero. |
 | **Reference line** | Bar, horizontal bar, line, area, scatter, bubble, combo | A dashed line across the chart at a value, with a label: a goal, a limit, an average. |
 | **Small multiples** | Bar, horizontal bar, line, area, scatter, bubble | The chart once for each value of a field, side by side on the same scales, in as many columns as you choose. Clearer than one chart of many series. |
+| **Colors** | Bar, horizontal bar, line, area, scatter, bubble, pie, donut, histogram | The series' colors: Fude's own, or *Colorblind-safe* (Okabe–Ito), told apart with the common colour vision deficiencies. |
+| **Colors** | Heatmap, map | The value's colors: a ramp (blue, green, orange, purple, gray, viridis), or one that diverges from red to blue or red to green through a neutral at a value you choose (0 unless given), for changes and differences. |
+| **Stages** | Funnel | One color, a color for each stage, or each stage lighter than the one before; and the values beside the bars, in them, or none. |
+| **Sparkline** | Sparkline | A fill under the line, dots on the last value or on the last, lowest and highest, and the last value written at the end of the line. |
 | **Tooltip** | Bar, horizontal bar, line, area, scatter, bubble, pie, donut, heatmap, maps | More fields to show when a mark is hovered, beyond the chart's own. |
 | **Mark the highest / lowest value** | Bar, line, area, combo | A callout on the highest or the lowest value, with the value ("Highest: 463K"). Not on stacked series, whose marks are not at their values. |
 | **Shade a range** | Bar, line, area, combo, scatter, bubble | A shaded band across a range of the horizontal axis, with a label: a campaign, a holiday, an outage. Dates are written as `2026-03-01`, categories by name, numbers as numbers. |
