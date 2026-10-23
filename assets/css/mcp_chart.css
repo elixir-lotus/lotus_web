@@ -1,5 +1,3 @@
-/* The chart MCP App's styles: Fude's, from its sources while Lotus Web
-   takes Fude from its main branch (a git dependency has no prebuilt style
-   sheet). The app follows the host's theme with data-theme="dark", which
+/* The chart MCP App's styles: Fude's. The app follows the host's theme with data-theme="dark", which
    Fude's dark colors follow. */
-@import "../../deps/fude/assets/css/fude.css";
+@import "../../deps/fude/priv/static/fude.css";

@@ -46,10 +46,10 @@ defmodule Lotus.Web.MixProject do
       {:koyomi, "~> 0.2"},
       {:kotoba, "~> 0.3"},
       {:masu, "~> 0.5.2"},
-      # The charts. From Fude's main while Lotus Web moves to it, then from
-      # its next release. Lotus Web builds Fude's sources (assets/src) into
-      # its own bundle, as a git dependency has no prebuilt one.
-      {:fude, github: "hattoriai/fude", branch: "main"},
+      # The charts.
+      {:fude, "~> 0.2"},
+      # The schema diagram.
+      {:hakushi, "~> 0.5"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_ecto, "~> 4.5"},
       {:gettext, "~> 0.26 or ~> 1.0"},
@@ -98,7 +98,7 @@ defmodule Lotus.Web.MixProject do
 
     for name <- ~w(world us-states) do
       File.cp!(
-        Path.join(["deps", "fude", "assets", "maps", "#{name}.json"]),
+        Path.join(["deps", "fude", "priv", "static", "maps", "#{name}.json"]),
         Path.join(to, "#{name}.json")
       )
     end

@@ -4,6 +4,15 @@
 
 ### Added
 
+- **A schema diagram.** For a SQL source (PostgreSQL, MySQL, SQLite), the
+  schema explorer's **Diagram** opens the tables of the active schema and
+  their foreign keys on a canvas over the page: laid out before it shows,
+  at a zoom that reads, centred on the most joined table. People drag the
+  tables and tidy them up another way (in layers, spread out, in a grid),
+  and change nothing else; nothing is saved. A foreign key into another
+  schema points to a ghost of the table. The tables and references are
+  those the actor may see. Built with Hakushi 0.5.
+
 - **A favicon.** The dashboard shows the Lotus logo in the browser tab, the
   same icon as the Lotus site and Lotus Works. It is served under the mount
   prefix with a content hash, like the CSS and JS.
@@ -50,7 +59,7 @@
 ### Changed
 
 - **Single values fill and center their card.** KPI, trend, gauge and
-  progress cards draw large and centered, from Fude's main.
+  progress cards draw large and centered, from Fude 0.2.
 - **A refreshing card keeps its chart.** While a card's query runs again
   (a refresh, a filter), its chart stays, dimmed, and moves to the new
   values, instead of giving way to a spinner.

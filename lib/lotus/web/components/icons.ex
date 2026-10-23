@@ -120,6 +120,18 @@ defmodule Lotus.Web.Components.Icons do
 
   attr(:rest, :global)
 
+  def diagram(assigns) do
+    ~H"""
+    <.svg_outline {@rest}>
+      <rect width="7" height="7" x="3" y="3" rx="1" />
+      <rect width="7" height="7" x="14" y="14" rx="1" />
+      <path d="M10 6.5h3.5a1 1 0 0 1 1 1V14" />
+    </.svg_outline>
+    """
+  end
+
+  attr(:rest, :global)
+
   def table_view(assigns) do
     ~H"""
     <.svg_outline {@rest}>

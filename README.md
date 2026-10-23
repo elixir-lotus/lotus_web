@@ -117,6 +117,8 @@ See the [getting started guide](guides/getting-started.md) for more.
 
 Browse your tables, columns, and statistics interactively. Click to inspect table structures and understand your data before writing queries.
 
+For a SQL source, **Diagram** opens the tables of the active schema and their foreign keys as a diagram over the page, laid out before it shows and opened at a zoom you can read. Drag the tables, or tidy them up another way (in layers, spread out, in a grid); nothing is saved. A foreign key into another schema points to a ghost of the table it refers to. Built with [Hakushi](https://github.com/hattoriai/hakushi).
+
 ### Visualizations
 
 Toggle between table and chart views for any query result. 18 chart types available across four categories — standard charts (bar, horizontal bar, line, area, combo), distribution (scatter, bubble, histogram, heatmap), part-of-whole (pie, donut, funnel, waterfall), and single-value displays (KPI, trend, gauge, progress bar, sparkline). Configure axes, color grouping, and type-specific options, then save the visualization alongside the query.

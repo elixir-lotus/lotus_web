@@ -18,6 +18,7 @@ defmodule Lotus.Web.QueryEditorPage do
   alias Lotus.Web.Queries.AiAssistantComponent
   alias Lotus.Web.Queries.DropdownOptionsModal
   alias Lotus.Web.Queries.MasuResults
+  alias Lotus.Web.Queries.SchemaDiagramComponent
   alias Lotus.Web.Queries.SchemaExplorerComponent
   alias Lotus.Web.Queries.VariableSettingsComponent
   alias Lotus.Web.Queries.VisualizationSettingsComponent
@@ -175,6 +176,19 @@ defmodule Lotus.Web.QueryEditorPage do
 
       <.save_modal :if={@can_save} query_form={@query_form} target={@myself} />
       <.delete_modal :if={@page.mode == :edit and @can_delete} target={@myself} />
+
+      <%!-- On the body, over everything of the page and its layout. --%>
+      <.portal :if={@schema_diagram} id="schema-diagram-portal" target="body">
+        <.live_component
+          module={SchemaDiagramComponent}
+          id="schema-diagram"
+          database={@schema_diagram}
+          search_path={if @schema_diagram == current_source(assigns), do: @query.search_path}
+          source_names={@data_source_names}
+          actor={@actor}
+          parent={@myself}
+        />
+      </.portal>
 
       <%= if @modal == :dropdown_options do %>
         <.live_component
@@ -535,6 +549,14 @@ defmodule Lotus.Web.QueryEditorPage do
 
   def handle_event("close_schema_explorer", _params, socket) do
     {:noreply, assign(socket, right_drawer: nil)}
+  end
+
+  def handle_event("open_schema_diagram", %{"database" => database}, socket) do
+    {:noreply, assign(socket, schema_diagram: database)}
+  end
+
+  def handle_event("close_schema_diagram", _params, socket) do
+    {:noreply, assign(socket, schema_diagram: nil)}
   end
 
   def handle_event("toggle_variable_settings", _params, socket) do
@@ -1252,6 +1274,7 @@ defmodule Lotus.Web.QueryEditorPage do
       editor_minimized: false,
       left_drawer: nil,
       right_drawer: nil,
+      schema_diagram: nil,
       modal: nil,
       variable_settings_active_tab: nil,
       dropdown_options_variable_name: nil,
