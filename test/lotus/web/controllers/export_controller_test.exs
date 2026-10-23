@@ -140,6 +140,30 @@ defmodule Lotus.Web.Controllers.ExportControllerTest do
       refute conn.resp_body =~ "Bob"
     end
 
+    test "exports the rows as filtered and sorted in the results, every page", %{conn: conn} do
+      create_test_users()
+      query = query_fixture(%{name: "Users", statement: "SELECT name, age FROM test_users"})
+
+      params = %{
+        "query_id" => query.id,
+        "repo" => "public",
+        "vars" => %{},
+        "filters" => [Lotus.Query.Filter.new("age", :gte, 30)],
+        "sorts" => [Lotus.Query.Sort.new("name", :desc)]
+      }
+
+      token = ExportController.generate_token(Lotus.Web.Endpoint, params)
+      conn = get(conn, ~p"/lotus/export/csv?token=#{token}")
+
+      assert conn.status == 200
+
+      assert String.split(conn.resp_body, ~r/\r?\n/, trim: true) == [
+               "name,age",
+               "Charlie,35",
+               "Alice,30"
+             ]
+    end
+
     test "returns error message when query not found", %{conn: conn} do
       params = %{
         "query_id" => 9999,

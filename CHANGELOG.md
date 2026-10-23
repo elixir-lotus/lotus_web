@@ -24,6 +24,10 @@
   - While a query runs, the grid keeps its rows and shows that it is
     loading.
   - The grid's words follow the dashboard's language, in English and French.
+- **The CSV export is the results as you see them.** Export (.csv) in the
+  query editor applies the results' filters and sort, over every page, not
+  only the one on screen. It exported the query's rows as they came, so a
+  filtered and sorted view gave a file of other rows, in another order.
 - **`Lotus.Web.MCP` needs only its resolver.** It tells `Lotus.MCP` to ask
   the resolver who may use Lotus and as which actor, with Lotus's
   `Lotus.MCP.Host` middleware, so `config :lotus, :mcp` no longer needs
