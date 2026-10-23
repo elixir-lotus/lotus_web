@@ -6,6 +6,8 @@ defmodule Lotus.Web.ExportController do
   use Phoenix.Controller, formats: [:csv]
 
   alias Lotus.Export
+  alias Lotus.Query.Filter
+  alias Lotus.Query.Sort
   alias Lotus.Web.Actor
   alias Lotus.Web.Authorization
   alias Lotus.Web.Resolver
@@ -25,6 +27,8 @@ defmodule Lotus.Web.ExportController do
   - vars: variable values
   - search_path: optional search path
   - filename: suggested filename for download
+  - filters, sorts: optional `Lotus.Query.Filter`s and `Lotus.Query.Sort`s,
+    the results' as the person sees them
   """
   def csv(conn, %{"token" => token}) do
     endpoint = Phoenix.Controller.endpoint_module(conn)
@@ -144,7 +148,11 @@ defmodule Lotus.Web.ExportController do
         opts
       end
 
-    opts = Actor.merge(opts, actor)
+    opts =
+      opts
+      |> put_view(:filters, export_params["filters"], Filter)
+      |> put_view(:sorts, export_params["sorts"], Sort)
+      |> Actor.merge(actor)
 
     query
     |> Export.stream_csv(opts)
@@ -155,6 +163,14 @@ defmodule Lotus.Web.ExportController do
       end
     end)
   end
+
+  # The results' filters or sorts, when the token has them: Lotus runs them,
+  # and refuses an operator the source does not support.
+  defp put_view(opts, key, [_ | _] = items, struct) do
+    if Enum.all?(items, &is_struct(&1, struct)), do: Keyword.put(opts, key, items), else: opts
+  end
+
+  defp put_view(opts, _key, _items, _struct), do: opts
 
   @doc """
   Generates a signed token for export.

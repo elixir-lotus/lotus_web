@@ -2014,6 +2014,13 @@ defmodule Lotus.Web.QueryEditorPage do
         do: query.search_path,
         else: nil
 
+    # The rows as the person sees them: the results' filters and sort, over
+    # every page, not only the one on screen.
+    view = %{
+      "filters" => Map.get(socket.assigns, :filters, []),
+      "sorts" => Map.get(socket.assigns, :sorts, [])
+    }
+
     export_params =
       case socket.assigns.page do
         %{mode: :edit, id: id} ->
@@ -2039,7 +2046,7 @@ defmodule Lotus.Web.QueryEditorPage do
       end
 
     endpoint = socket.endpoint
-    token = ExportController.generate_token(endpoint, export_params)
+    token = ExportController.generate_token(endpoint, Map.merge(export_params, view))
 
     export_path = lotus_path([:export, :csv], %{token: URI.encode_www_form(token)})
     push_event(socket, "open-blank", %{location: export_path})
