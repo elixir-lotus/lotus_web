@@ -986,6 +986,14 @@ defmodule Lotus.Web.QueryEditorPage do
          |> assign(ai_generating: false)
          |> assign(ai_conversation: conversation)}
 
+      {:error, :dependency_missing} ->
+        conversation = add_error_message(conversation, missing_dependency_message())
+
+        {:noreply,
+         socket
+         |> assign(ai_generating: false)
+         |> assign(ai_conversation: conversation)}
+
       {:error, {:unable_to_generate, reason}} when is_binary(reason) ->
         conversation = add_error_message(conversation, reason)
 
@@ -1062,6 +1070,7 @@ defmodule Lotus.Web.QueryEditorPage do
           case error do
             :not_configured -> gettext("AI features are not configured")
             :api_key_not_configured -> gettext("API key is missing or invalid")
+            :dependency_missing -> missing_dependency_message()
             msg when is_binary(msg) -> msg
             {:ai_feature_unsupported, _feature, reason} -> reason
             other -> gettext("Optimization failed: %{error}", error: inspect(other))
@@ -1114,6 +1123,7 @@ defmodule Lotus.Web.QueryEditorPage do
           case error do
             :not_configured -> gettext("AI features are not configured")
             :api_key_not_configured -> gettext("API key is missing or invalid")
+            :dependency_missing -> missing_dependency_message()
             msg when is_binary(msg) -> msg
             {:ai_feature_unsupported, _feature, reason} -> reason
             other -> gettext("Explanation failed: %{error}", error: inspect(other))
@@ -1663,8 +1673,15 @@ defmodule Lotus.Web.QueryEditorPage do
     end
   end
 
+  defp missing_dependency_message do
+    gettext(
+      "The AI assistant needs the req_llm package. Add {:req_llm, \"~> 1.29\"} to your app's dependencies and restart it."
+    )
+  end
+
   defp ai_toggle_assistant(socket) do
-    if Lotus.AI.enabled?() do
+    # Open also when AI is configured but cannot run: the panel says why.
+    if Lotus.Web.AI.assistant?() do
       conversation =
         if socket.assigns.left_drawer == :ai_assistant do
           socket.assigns.ai_conversation

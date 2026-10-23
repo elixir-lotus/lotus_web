@@ -62,6 +62,8 @@ defmodule Lotus.Web.MixProject do
       # `~> 1.3` doesn't match.
       {:lotus, github: "elixir-lotus/lotus", branch: "main", override: true},
       {:sake, "~> 0.4", optional: true},
+      # The AI assistant. Optional, as in Lotus: a host that uses AI adds it.
+      {:req_llm, "~> 1.29", optional: true},
       {:lotus_clickhouse,
        git: "git@github.com:elixir-lotus/lotus_clickhouse.git", branch: "main", only: :dev},
       {:lotus_elasticsearch,

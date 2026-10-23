@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- **The AI assistant needs `req_llm` in your deps** (#182). Lotus made it
+  an optional dependency (elixir-lotus/lotus#298), and Lotus Web lists it
+  as optional too. A host that uses AI adds `{:req_llm, "~> 1.29"}`.
+  Without it, the AI controls are hidden and the assistant's panel says
+  which dependency to add, instead of failing on first use. Every AI
+  control follows `Lotus.AI.enabled?/0`, asked on each render.
+
 ### Added
 
 - **A schema diagram.** For a SQL source (PostgreSQL, MySQL, SQLite), the

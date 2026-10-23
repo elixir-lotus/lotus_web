@@ -9,10 +9,6 @@ defmodule Lotus.Web.Queries.EditorComponent do
   @left_drawer_values [nil, :visualization, :ai_assistant]
   @right_drawer_values [nil, :schema_explorer, :variable_settings]
 
-  defp ai_enabled? do
-    Lotus.AI.enabled?()
-  end
-
   attr(:minimized, :boolean, default: false)
   attr(:running, :boolean, default: false)
   attr(:statement_empty, :boolean, default: false)
@@ -84,7 +80,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
           can_ai={@can_ai}
         />
 
-        <div id="editor-context-menu-wrapper" phx-hook="EditorContextMenu" data-ai-enabled={to_string(@can_ai and ai_enabled?())} class={["relative pb-8", if(@minimized, do: "hidden", else: "")]}>
+        <div id="editor-context-menu-wrapper" phx-hook="EditorContextMenu" data-ai-enabled={to_string(@can_ai and Lotus.Web.AI.enabled?())} class={["relative pb-8", if(@minimized, do: "hidden", else: "")]}>
           <%!-- AI Generation Loading Overlay --%>
           <%= if assigns[:ai_generating] do %>
             <div class="absolute inset-0 bg-white/70 dark:bg-gray-900/70 z-30 flex items-center justify-center backdrop-blur-sm">
@@ -343,7 +339,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
       </button>
 
       <%!-- AI Assistant button --%>
-      <%= if @can_ai and ai_enabled?() do %>
+      <%= if @can_ai and Lotus.Web.AI.assistant?() do %>
         <button
           id="ai-assistant-btn"
           type="button"
