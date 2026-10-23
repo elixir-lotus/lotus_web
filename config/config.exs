@@ -11,6 +11,7 @@ if config_env() == :dev do
         --minify
         --outdir=../priv/static/
         --alias:fude=../deps/fude/assets/src/index.ts
+        --alias:hakushi=../deps/hakushi/assets/src/index.ts
       ),
       cd: Path.expand("../assets", __DIR__),
       env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}

@@ -114,6 +114,7 @@ For detailed chart configuration, best practices, and troubleshooting, see the [
 3. **Browse the hierarchy** - Sources that group their objects into namespaces show them; sources that do not show a flat list, labelled the way that source names its objects
 4. **View Column Details** - Click a table to see its column information
 5. **Go back** - Use the back arrow to step up a level
+6. **See the diagram** - For a SQL source, **Diagram** shows the tables of the query's schema (the first of its `search_path`, else the source's default) and their foreign keys. Pan and zoom, drag the tables, or tidy them up another way from the menu by the tidy up button; Escape closes it. What you move is yours, for this page: nothing is saved. A foreign key into another schema points to a faint, dashed stub of the table.
 
 The explorer builds on the connected mount only, so the first paint no longer waits on a listing for every configured source.
 

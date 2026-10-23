@@ -11,6 +11,13 @@ defmodule Lotus.Web.SourcesMap do
     @moduledoc false
 
     defstruct [:name, :source_type, :supports_schemas, schemas: []]
+
+    @type t :: %__MODULE__{
+            name: String.t(),
+            source_type: atom(),
+            supports_schemas: boolean(),
+            schemas: [struct()]
+          }
   end
 
   defmodule Schema do

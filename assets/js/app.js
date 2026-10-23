@@ -5,6 +5,7 @@ import { Koyomi } from "koyomi";
 import { Kotoba } from "kotoba";
 import { Masu } from "masu";
 import { Fude, registerMap } from "fude";
+import { Hakushi } from "hakushi";
 
 // Fude's maps, served by Lotus.Web.Assets: fetched when a map chart first draws.
 for (const name of ["world", "us-states"]) {
@@ -126,6 +127,7 @@ const hooks = {
   Kotoba,
   Masu,
   Fude,
+  Hakushi,
   ColumnStats,
   Tippy,
   Toast,

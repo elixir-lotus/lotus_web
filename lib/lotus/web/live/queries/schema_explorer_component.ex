@@ -5,6 +5,7 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
   use Lotus.Web, :live_component
 
   alias Lotus.Web.Actor
+  alias Lotus.Web.SchemaDiagram
   alias Lotus.Web.SourcesMap
 
   # Props:
@@ -111,6 +112,19 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
               <%= table_count = if(@current_db_info, do: SourcesMap.get_table_count(@current_db_info), else: 0) %>
               <%= ngettext("%{count} table", "%{count} tables", table_count, count: table_count) %>
             </div>
+            <button
+              :if={SchemaDiagram.supported?(@current_db_info)}
+              type="button"
+              id="open-schema-diagram"
+              phx-click="open_schema_diagram"
+              phx-value-database={@current_db}
+              phx-target={@parent}
+              title={gettext("The tables of the active schema and their foreign keys")}
+              class="ml-auto flex items-center rounded px-1.5 py-0.5 font-medium text-pink-600 dark:text-pink-400 hover:bg-pink-50 dark:hover:bg-gray-700"
+            >
+              <Icons.diagram class="h-3 w-3 mr-1" />
+              <%= gettext("Diagram") %>
+            </button>
           </div>
         <% end %>
       <% :columns -> %>

@@ -12,6 +12,9 @@
 /* The charts: Fude's style sheet, from its sources while Lotus Web takes
    Fude from its main branch (a git dependency has no prebuilt one). */
 @import "../../deps/fude/assets/css/fude.css";
+/* The schema diagram: Hakushi's style sheet, from its sources while Lotus
+   Web takes Hakushi from its main branch, as Fude. */
+@import "../../deps/hakushi/assets/css/hakushi.css";
 
 @font-face {
     font-display: swap;
@@ -784,6 +787,35 @@
     --fude-radius: var(--lotus-radius-md);
     --fude-tooltip-background: rgb(var(--lotus-white));
     --fude-shadow: var(--lotus-shadow-md);
+}
+
+/* ── The schema diagram (Hakushi) ──────────────────────────
+   From the Lotus tokens, as the charts, so that it follows the theme and
+   its light or dark. The accent is the theme's; the paper is a shade off
+   the surface, so that the tables stand on it. */
+.lotus-diagram {
+    --hakushi-font: var(--lotus-font-sans);
+    --hakushi-font-size: 0.8125rem;
+    --hakushi-text: rgb(var(--lotus-text-light));
+    --hakushi-muted: rgb(var(--lotus-gray-500));
+    --hakushi-background: rgb(var(--lotus-gray-50));
+    --hakushi-pattern: rgb(var(--lotus-gray-100));
+    --hakushi-pattern-strong: rgb(var(--lotus-gray-200));
+    --hakushi-surface: rgb(var(--lotus-white));
+    --hakushi-border: rgb(var(--lotus-gray-200));
+    --hakushi-accent: rgb(var(--lotus-pink-500));
+    --hakushi-edge: rgb(var(--lotus-gray-400));
+}
+
+.dark .lotus-diagram {
+    --hakushi-text: rgb(var(--lotus-text-dark));
+    --hakushi-muted: rgb(var(--lotus-gray-400));
+    --hakushi-background: rgb(var(--lotus-gray-900));
+    --hakushi-pattern: rgb(var(--lotus-zinc-900));
+    --hakushi-pattern-strong: rgb(var(--lotus-zinc-800));
+    --hakushi-surface: rgb(var(--lotus-gray-800));
+    --hakushi-border: rgb(var(--lotus-zinc-700));
+    --hakushi-edge: rgb(var(--lotus-gray-500));
 }
 
 /* A card saves its chart from its header: the chart's own buttons stay hidden. */

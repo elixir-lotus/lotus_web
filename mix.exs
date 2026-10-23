@@ -50,6 +50,9 @@ defmodule Lotus.Web.MixProject do
       # its next release. Lotus Web builds Fude's sources (assets/src) into
       # its own bundle, as a git dependency has no prebuilt one.
       {:fude, github: "hattoriai/fude", branch: "main"},
+      # The schema diagram. From Hakushi's main until its next release, built
+      # from its sources (assets/src) into Lotus Web's bundle, as Fude is.
+      {:hakushi, github: "hattoriai/hakushi", branch: "main"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_ecto, "~> 4.5"},
       {:gettext, "~> 0.26 or ~> 1.0"},
