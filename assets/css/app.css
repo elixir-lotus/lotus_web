@@ -9,12 +9,9 @@
 @import "../../deps/kotoba/priv/static/kotoba-sumi.css";
 /* The results grid. */
 @import "../../deps/masu/priv/static/masu.css";
-/* The charts: Fude's style sheet, from its sources while Lotus Web takes
-   Fude from its main branch (a git dependency has no prebuilt one). */
-@import "../../deps/fude/assets/css/fude.css";
-/* The schema diagram: Hakushi's style sheet, from its sources while Lotus
-   Web takes Hakushi from its main branch, as Fude. */
-@import "../../deps/hakushi/assets/css/hakushi.css";
+/* The charts (Fude) and the schema diagram (Hakushi). */
+@import "../../deps/fude/priv/static/fude.css";
+@import "../../deps/hakushi/priv/static/hakushi.css";
 
 @font-face {
     font-display: swap;

@@ -10,8 +10,6 @@ if config_env() == :dev do
         --target=es2016
         --minify
         --outdir=../priv/static/
-        --alias:fude=../deps/fude/assets/src/index.ts
-        --alias:hakushi=../deps/hakushi/assets/src/index.ts
       ),
       cd: Path.expand("../assets", __DIR__),
       env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
@@ -25,7 +23,6 @@ if config_env() == :dev do
         --target=es2020
         --minify
         --outfile=../priv/static/mcp_chart.js
-        --alias:fude=../deps/fude/assets/src/index.ts
       ),
       cd: Path.expand("../assets", __DIR__),
       env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
