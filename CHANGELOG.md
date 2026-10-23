@@ -17,7 +17,8 @@
     about a tenth of the old table's on a 1,000-row page.
   - Sorting and filtering are in the column headers. The filters are those
     Lotus runs: `=`, `≠`, `>`, `<`, `≥`, `≤`, between, contains, starts and
-    ends with (on text), empty and not empty.
+    ends with (on text: the text as written, `%` and `_` included, without
+    regard to case), empty and not empty. A source offers the ones it runs.
   - A cell's menu filters on its value, sorts, and copies, with or without
     headers. The column stats are in each column's header menu.
   - While a query runs, the grid keeps its rows and shows that it is
