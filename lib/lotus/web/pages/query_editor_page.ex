@@ -16,6 +16,7 @@ defmodule Lotus.Web.QueryEditorPage do
   alias Lotus.Web.Page
   alias Lotus.Web.Queries.AiAssistantComponent
   alias Lotus.Web.Queries.DropdownOptionsModal
+  alias Lotus.Web.Queries.MasuResults
   alias Lotus.Web.Queries.SchemaExplorerComponent
   alias Lotus.Web.Queries.VariableSettingsComponent
   alias Lotus.Web.Queries.VisualizationSettingsComponent
@@ -158,8 +159,8 @@ defmodule Lotus.Web.QueryEditorPage do
                   os={Map.get(assigns, :os, :unknown)}
                   target={@myself}
                   is_saved_query={@page.mode == :edit}
-                  filters={@filters}
-                  sorts={@sorts}
+                  results_run={Map.get(assigns, :results_run, 0)}
+                  filter_operators={Map.get(assigns, :filter_operators, [])}
                   visualization_config={@visualization_config}
                   visualization_view_mode={@visualization_view_mode}
                   visualization_visible={@left_drawer == :visualization}
@@ -831,101 +832,10 @@ defmodule Lotus.Web.QueryEditorPage do
         socket
         |> update_query_state(changeset, [])
         |> assign(page_index: 0, filters: [], sorts: [])
+        |> assign(results_run: Map.get(socket.assigns, :results_run, 0) + 1)
 
       {:noreply, execute_query(socket, query)}
     end
-  end
-
-  @impl Phoenix.LiveComponent
-  def handle_event("add_filter", params, socket) do
-    op = parse_filter_op(params["op"])
-    value = if op in [:is_null, :is_not_null], do: nil, else: params["value"]
-    filter = Lotus.Query.Filter.new(params["column"], op, value)
-
-    if filter in socket.assigns.filters do
-      {:noreply, socket}
-    else
-      filters = socket.assigns.filters ++ [filter]
-
-      socket =
-        socket
-        |> assign(filters: filters, page_index: 0)
-        |> execute_query(socket.assigns.query)
-
-      {:noreply, socket}
-    end
-  end
-
-  @impl Phoenix.LiveComponent
-  def handle_event("remove_filter", %{"index" => index}, socket) do
-    index = String.to_integer(index)
-    filters = List.delete_at(socket.assigns.filters, index)
-
-    socket =
-      socket
-      |> assign(filters: filters, page_index: 0)
-      |> execute_query(socket.assigns.query)
-
-    {:noreply, socket}
-  end
-
-  @impl Phoenix.LiveComponent
-  def handle_event("clear_filters", _params, socket) do
-    socket =
-      socket
-      |> assign(filters: [], page_index: 0)
-      |> execute_query(socket.assigns.query)
-
-    {:noreply, socket}
-  end
-
-  @impl Phoenix.LiveComponent
-  def handle_event("set_sort", %{"column" => col, "direction" => dir}, socket) do
-    direction =
-      case dir do
-        "asc" -> :asc
-        "desc" -> :desc
-        _ -> :asc
-      end
-
-    new_sort = Lotus.Query.Sort.new(col, direction)
-
-    sorts =
-      if new_sort in socket.assigns.sorts do
-        []
-      else
-        [new_sort]
-      end
-
-    socket =
-      socket
-      |> assign(sorts: sorts, page_index: 0)
-      |> execute_query(socket.assigns.query)
-
-    {:noreply, socket}
-  end
-
-  @impl Phoenix.LiveComponent
-  def handle_event("remove_sort", %{"index" => index}, socket) do
-    index = String.to_integer(index)
-    sorts = List.delete_at(socket.assigns.sorts, index)
-
-    socket =
-      socket
-      |> assign(sorts: sorts, page_index: 0)
-      |> execute_query(socket.assigns.query)
-
-    {:noreply, socket}
-  end
-
-  @impl Phoenix.LiveComponent
-  def handle_event("clear_sorts", _params, socket) do
-    socket =
-      socket
-      |> assign(sorts: [], page_index: 0)
-      |> execute_query(socket.assigns.query)
-
-    {:noreply, socket}
   end
 
   @impl Phoenix.LiveComponent
@@ -1278,6 +1188,17 @@ defmodule Lotus.Web.QueryEditorPage do
     {:ok, socket}
   end
 
+  # The person's sort or filters in the results grid: Lotus's own, and the
+  # query again.
+  def update(%{action: :masu_query, report: report}, socket) do
+    {filters, sorts} = MasuResults.lotus_query(report.query)
+
+    {:ok,
+     socket
+     |> assign(filters: filters, sorts: sorts, page_index: 0)
+     |> execute_query(socket.assigns.query)}
+  end
+
   def update(assigns, socket) do
     {:ok, assign(socket, assigns)}
   end
@@ -1568,8 +1489,13 @@ defmodule Lotus.Web.QueryEditorPage do
 
     opts = Actor.merge(opts, socket.assigns)
 
+    # The results grid keeps the rows it shows while the query runs.
+    result = socket.assigns[:result]
+
     socket
-    |> assign(running: true, error: nil, result: nil)
+    |> assign(running: true, error: nil, result: result)
+    # The filters the source runs, which the results grid offers.
+    |> assign(filter_operators: Lotus.Source.supported_filter_operators(repo))
     |> start_async(:query_execution, fn ->
       Lotus.run_query(query, opts)
     end)
@@ -2336,15 +2262,4 @@ defmodule Lotus.Web.QueryEditorPage do
         last_activity: DateTime.utc_now()
     }
   end
-
-  defp parse_filter_op("eq"), do: :eq
-  defp parse_filter_op("neq"), do: :neq
-  defp parse_filter_op("gt"), do: :gt
-  defp parse_filter_op("lt"), do: :lt
-  defp parse_filter_op("gte"), do: :gte
-  defp parse_filter_op("lte"), do: :lte
-  defp parse_filter_op("like"), do: :like
-  defp parse_filter_op("is_null"), do: :is_null
-  defp parse_filter_op("is_not_null"), do: :is_not_null
-  defp parse_filter_op(_), do: :eq
 end

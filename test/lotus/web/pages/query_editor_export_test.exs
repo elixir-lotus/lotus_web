@@ -13,14 +13,15 @@ defmodule Lotus.Web.Pages.QueryEditorExportTest do
     query = query_fixture(%{name: "Users", statement: "SELECT name, age FROM test_users"})
 
     {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{query.id}")
-    render_async(live)
-    page = with_target(live, "#query-editor-page")
+    html = render_async(live)
+    [grid] = Regex.run(~r/id="(results-grid-[^"]+)"/, html, capture: :all_but_first)
 
-    render_click(page, "add_filter", %{"column" => "name", "op" => "neq", "value" => "Bob"})
+    # The person's filter and sort, in the results grid.
+    Masu.Test.filter(live, grid, [{"name", :neq, "Bob"}])
     render_async(live)
-    render_click(page, "set_sort", %{"column" => "name", "direction" => "desc"})
+    Masu.Test.sort(live, grid, {"name", :desc})
     render_async(live)
-    render_click(page, "export_csv", %{})
+    live |> with_target("#query-editor-page") |> render_click("export_csv", %{})
 
     assert_receive {_ref, {:push_event, "open-blank", %{location: location}}}
     %{"token" => token} = location |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()

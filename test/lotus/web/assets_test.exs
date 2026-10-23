@@ -36,6 +36,33 @@ defmodule Lotus.Web.AssetsTest do
     end
   end
 
+  describe "GET /icon-:md5 and /ico-:md5" do
+    test "serves the SVG favicon with immutable caching" do
+      conn = get(build_conn(), "/lotus/icon-#{Assets.current_hash(:svg)}")
+
+      assert conn.status == 200
+      assert get_resp_header(conn, "content-type") == ["image/svg+xml"]
+      assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000, immutable"]
+      assert conn.resp_body =~ "<svg"
+    end
+
+    test "serves the ICO favicon uncompressed, even when the client accepts gzip" do
+      conn =
+        build_conn()
+        |> put_req_header("accept-encoding", "gzip")
+        |> get("/lotus/ico-#{Assets.current_hash(:ico)}")
+
+      assert conn.status == 200
+      assert get_resp_header(conn, "content-type") == ["image/x-icon"]
+      assert get_resp_header(conn, "content-encoding") == []
+    end
+
+    test "returns 404 for a stale hash" do
+      assert get(build_conn(), "/lotus/icon-deadbeef").status == 404
+      assert get(build_conn(), "/lotus/ico-deadbeef").status == 404
+    end
+  end
+
   describe "content negotiation" do
     test "serves the JS gzipped when the client accepts it, and varies on accept-encoding" do
       identity = get(build_conn(), "/lotus/js-#{Assets.current_hash(:js)}")
@@ -103,6 +130,11 @@ defmodule Lotus.Web.AssetsTest do
 
       assert ["/lotus/js-#{Assets.current_hash(:js)}"] ==
                doc |> Floki.find("script[defer]") |> Floki.attribute("src")
+
+      assert [
+               "/lotus/icon-#{Assets.current_hash(:svg)}",
+               "/lotus/ico-#{Assets.current_hash(:ico)}"
+             ] == doc |> Floki.find("link[rel=icon]") |> Floki.attribute("href")
     end
   end
 

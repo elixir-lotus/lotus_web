@@ -1,10 +1,10 @@
 defmodule Lotus.Web.Assets do
   @moduledoc """
-  Serves the dashboard's CSS and JavaScript bundle.
+  Serves the dashboard's CSS and JavaScript bundle, and its favicon.
 
   `Lotus.Web.Router.lotus_dashboard/2` mounts this plug at
-  `<prefix>/css-<hash>` and `<prefix>/js-<hash>`, where `<hash>` is the MD5 of
-  the compiled asset. A host never calls it: the URLs come from the layout
+  `<prefix>/css-<hash>`, `<prefix>/js-<hash>`, `<prefix>/icon-<hash>` (SVG)
+  and `<prefix>/ico-<hash>`, where `<hash>` is the MD5 of the asset. A host never calls it: the URLs come from the layout
   through `lotus_asset_path/3`.
 
   The bundle is read and gzipped at compile time, so a response costs no disk
@@ -37,10 +37,17 @@ defmodule Lotus.Web.Assets do
   #{File.read!(js_path)}
   """
 
+  @external_resource svg_path = Path.join(@static_path, "favicon.svg")
+  @external_resource ico_path = Path.join(@static_path, "favicon.ico")
+
+  @svg File.read!(svg_path)
+  @ico File.read!(ico_path)
+
   # Compressed once at compile time. Each literal is referenced from exactly
   # one function body below, so the .beam carries one copy of each variant.
   @css_gz :zlib.gzip(@css)
   @js_gz :zlib.gzip(@js)
+  @svg_gz :zlib.gzip(@svg)
 
   @impl Plug
   def init(asset), do: asset
@@ -57,6 +64,14 @@ defmodule Lotus.Web.Assets do
     conn
     |> put_private(:plug_skip_csrf_protection, true)
     |> serve_asset(:js, "text/javascript")
+  end
+
+  def call(conn, :svg) do
+    serve_asset(conn, :svg, "image/svg+xml")
+  end
+
+  def call(conn, :ico) do
+    serve_asset(conn, :ico, "image/x-icon")
   end
 
   @doc """
@@ -95,7 +110,7 @@ defmodule Lotus.Web.Assets do
   # rather than poisoning caches with the wrong bundle for a year.
   defp serve_asset(%{path_params: %{"md5" => md5}} = conn, asset, content_type) do
     if md5 == current_hash(asset) do
-      encoding = if gzip_accepted?(conn), do: :gzip, else: :identity
+      encoding = if asset != :ico and gzip_accepted?(conn), do: :gzip, else: :identity
 
       conn
       |> put_resp_header("content-type", content_type)
@@ -125,8 +140,11 @@ defmodule Lotus.Web.Assets do
   defp body(:css, :gzip), do: @css_gz
   defp body(:js, :identity), do: @js
   defp body(:js, :gzip), do: @js_gz
+  defp body(:svg, :identity), do: @svg
+  defp body(:svg, :gzip), do: @svg_gz
+  defp body(:ico, :identity), do: @ico
 
-  for {key, val} <- [css: @css, js: @js] do
+  for {key, val} <- [css: @css, js: @js, svg: @svg, ico: @ico] do
     md5 = Base.encode16(:crypto.hash(:md5, val), case: :lower)
 
     def current_hash(unquote(key)), do: unquote(md5)

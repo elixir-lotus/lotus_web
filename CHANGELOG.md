@@ -2,13 +2,32 @@
 
 ## [Unreleased]
 
+### Added
+
+- **A favicon.** The dashboard shows the Lotus logo in the browser tab, the
+  same icon as the Lotus site and Lotus Works. It is served under the mount
+  prefix with a content hash, like the CSS and JS.
+
 ### Changed
 
+- **The results table is Masu's grid.** The query editor draws its results
+  with [Masu](https://hex.pm/packages/masu); Lotus still runs the query, the
+  page, the sort and the filters.
+  - Rows arrive in blocks as the person scrolls, and the page's HTML is
+    about a tenth of the old table's on a 1,000-row page.
+  - Sorting and filtering are in the column headers. The filters are those
+    Lotus runs: `=`, `≠`, `>`, `<`, `≥`, `≤`, between, contains, starts and
+    ends with (on text: the text as written, `%` and `_` included, without
+    regard to case), empty and not empty. A source offers the ones it runs.
+  - A cell's menu filters on its value, sorts, and copies, with or without
+    headers. The column stats are in each column's header menu.
+  - While a query runs, the grid keeps its rows and shows that it is
+    loading.
+  - The grid's words follow the dashboard's language, in English and French.
 - **The CSV export is the results as you see them.** Export (.csv) in the
   query editor applies the results' filters and sort, over every page, not
   only the one on screen. It exported the query's rows as they came, so a
   filtered and sorted view gave a file of other rows, in another order.
-
 - **`Lotus.Web.MCP` needs only its resolver.** It tells `Lotus.MCP` to ask
   the resolver who may use Lotus and as which actor, with Lotus's
   `Lotus.MCP.Host` middleware, so `config :lotus, :mcp` no longer needs
@@ -19,6 +38,12 @@
 - **A missing Sake is reported.** When `config :lotus_web, Lotus.Web.MCP`
   is set but Sake isn't a dependency, Lotus Web logs a warning at start
   saying so, instead of `Lotus.Web.MCP` silently not existing.
+
+### Removed
+
+- The old results table, its right-click menu and its filter and sort chips.
+  "Contains" is no longer offered on number and date columns, where it
+  failed on PostgreSQL.
 
 ## [1.4.0] - 2026-10-17
 

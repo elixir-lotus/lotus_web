@@ -14,6 +14,9 @@ defmodule Lotus.Web.Layouts do
     lotus_path("#{asset}-#{Assets.current_hash(asset)}")
   end
 
+  defp asset_path(:svg), do: lotus_path("icon-#{Assets.current_hash(:svg)}")
+  defp asset_path(:ico), do: lotus_path("ico-#{Assets.current_hash(:ico)}")
+
   def logo(assigns) do
     ~H"""
     <a href={lotus_path("")} title="Lotus Web" class="flex items-center gap-3">

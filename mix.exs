@@ -45,6 +45,7 @@ defmodule Lotus.Web.MixProject do
       {:jumon, "~> 0.2"},
       {:koyomi, "~> 0.2"},
       {:kotoba, "~> 0.3"},
+      {:masu, "~> 0.5.2"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_ecto, "~> 4.5"},
       {:gettext, "~> 0.26 or ~> 1.0"},

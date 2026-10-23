@@ -7,6 +7,8 @@
 @import "../../deps/koyomi/priv/static/koyomi-sumi.css";
 @import "../../deps/kotoba/priv/static/kotoba.css";
 @import "../../deps/kotoba/priv/static/kotoba-sumi.css";
+/* The results grid, when it is Masu's (config :lotus_web, results_table: :masu). */
+@import "../../deps/masu/priv/static/masu.css";
 
 @font-face {
     font-display: swap;
@@ -561,29 +563,7 @@
   display: none;
 }
 
-/* Column Statistics Popover */
-.tippy-box[data-theme~="lotus-stats"] {
-    @apply pointer-events-auto z-[9999] rounded-lg text-xs shadow-lg;
-    @apply text-zinc-700 bg-white ring-1 ring-zinc-200;
-    @apply dark:text-zinc-300 dark:bg-zinc-800 dark:ring-zinc-700;
-    @apply transition duration-100 ease-out;
-}
-.tippy-box[data-theme~="lotus-stats"] .tippy-content {
-    @apply p-0;
-}
-.tippy-box[data-theme~="lotus-stats"][data-state="hidden"] {
-    @apply opacity-0 scale-95;
-}
-.tippy-box[data-theme~="lotus-stats"][data-state="visible"] {
-    @apply opacity-100 scale-100;
-}
-.tippy-box[data-theme~="lotus-stats"] .tippy-arrow {
-    color: white;
-}
-.dark .tippy-box[data-theme~="lotus-stats"] .tippy-arrow {
-    color: #27272a;
-}
-
+/* Column Statistics (the results grid's "Column stats" panel) */
 .lotus-stats-popover {
     padding: 12px;
     min-width: 220px;
@@ -741,4 +721,58 @@
 }
 .dark .lotus-stats-hist-count {
     color: #a1a1aa;
+}
+
+/* Masu's results grid (a trial), in the look of the results table: its
+   tokens from the Lotus variables, so that the themes apply. */
+.lotus-results {
+    --masu-font: var(--lotus-font-sans);
+    --masu-font-size: 0.875rem;
+    --masu-line-height: 1.25rem;
+    --masu-text: rgb(var(--lotus-text-light));
+    --masu-muted: rgb(var(--lotus-gray-500));
+    --masu-background: rgb(var(--lotus-white));
+    --masu-surface: rgb(var(--lotus-white));
+    --masu-border: rgb(var(--lotus-gray-200));
+    --masu-header-background: rgb(var(--lotus-white));
+    --masu-header-text: rgb(var(--lotus-text-light));
+    --masu-header-height: 48px;
+    --masu-header-border: none;
+    --masu-header-shadow: 0 1px 0 0 rgb(var(--lotus-gray-300));
+    --masu-header-hover: rgb(var(--lotus-gray-50));
+    --masu-grid-border: none;
+    --masu-grid-radius: 0;
+    --masu-row-border: none;
+    --masu-row-alt-background: rgb(var(--lotus-gray-50));
+    --masu-row-hover: transparent;
+    --masu-cell-hover: rgb(var(--lotus-gray-100));
+    --masu-cell-padding: 0 0.75rem;
+    /* Lotus's focus (its inputs' focus:ring-pink-500): the active cell's
+       line and the focus ring. */
+    --masu-accent: rgb(var(--lotus-pink-500));
+    --masu-active: rgb(var(--lotus-pink-500));
+    --masu-focus-ring: 0 0 0 1px rgb(var(--lotus-pink-500));
+    --masu-selection: rgb(var(--lotus-pink-500) / 0.08);
+    --masu-radius: var(--lotus-radius-md);
+}
+
+/* The active cell shows where the focus is; no ring around the whole
+   grid as well. */
+.lotus-results > .masu-grid:focus-visible {
+    box-shadow: none;
+}
+
+.dark .lotus-results {
+    --masu-text: rgb(var(--lotus-text-dark));
+    --masu-muted: rgb(var(--lotus-gray-400));
+    --masu-background: rgb(var(--lotus-gray-800));
+    --masu-surface: rgb(var(--lotus-zinc-800));
+    --masu-border: rgb(var(--lotus-zinc-700));
+    --masu-header-background: rgb(var(--lotus-gray-800));
+    --masu-header-text: rgb(var(--lotus-text-dark));
+    --masu-header-shadow: 0 1px 0 0 rgb(var(--lotus-gray-600));
+    --masu-header-hover: rgb(var(--lotus-gray-700));
+    --masu-row-alt-background: rgb(var(--lotus-gray-700));
+    --masu-cell-hover: rgb(var(--lotus-zinc-700));
+    --masu-selection: rgb(var(--lotus-pink-500) / 0.16);
 }

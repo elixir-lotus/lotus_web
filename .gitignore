@@ -27,6 +27,8 @@ assets/node_modules
 
 # Ignore compiled css/js
 priv/static/*
+!priv/static/favicon.svg
+!priv/static/favicon.ico
 
 # Ignore local .db files
 /priv/*.db*

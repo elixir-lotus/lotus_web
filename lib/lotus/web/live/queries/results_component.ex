@@ -3,10 +3,8 @@ defmodule Lotus.Web.Queries.ResultsComponent do
 
   use Lotus.Web, :html
 
-  alias Lotus.Query.Filter
-  alias Lotus.Query.Sort
   alias Lotus.Result.Statistics
-  alias Lotus.Web.CellFormatter
+  alias Lotus.Web.Queries.MasuResults
   alias Lotus.Web.VegaSpecBuilder
 
   attr(:query_id, :string, default: "default")
@@ -16,21 +14,23 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   attr(:os, :atom, default: :unknown)
   attr(:target, Phoenix.LiveComponent.CID, default: nil)
   attr(:is_saved_query, :boolean, default: true)
-  # Quick filter attrs
-  attr(:filters, :list, default: [])
-  # Sort attrs
-  attr(:sorts, :list, default: [])
   # Visualization attrs
   attr(:visualization_config, :map, default: nil)
   attr(:visualization_view_mode, :atom, default: :table)
   attr(:visualization_visible, :boolean, default: false)
   attr(:can_export, :boolean, default: true)
+  # Each run of the editor's query: a new results grid, with no sort or
+  # filter of the one before.
+  attr(:results_run, :integer, default: 0)
+  # The `Lotus.Query.Filter` operators the query's source runs.
+  attr(:filter_operators, :list, default: [])
 
   def render_result(assigns) do
     ~H"""
     <div id={"query-results-#{assigns[:query_id] || "default"}"} class="px-4 sm:px-6 lg:px-8 h-full flex flex-col">
       <%= cond do %>
-        <% @running == true -> %>
+        <%!-- While a query runs, the grid keeps its rows and shows it loads --%>
+        <% @running == true and @result == nil -> %>
           <.loading_spinner />
 
         <% @result != nil -> %>
@@ -46,19 +46,29 @@ defmodule Lotus.Web.Queries.ResultsComponent do
             </span>
           </div>
 
-          <%!-- Quick filter chips --%>
-          <.filter_chips :if={@filters != []} filters={@filters} target={@target} />
-
-          <%!-- Sort chips --%>
-          <.sort_chips :if={@sorts != []} sorts={@sorts} target={@target} />
-
           <%!-- Content area: Table or Chart --%>
           <div class="flex-1 overflow-hidden">
-            <%= if @visualization_view_mode == :chart && has_valid_config?(@visualization_config) do %>
-              <.render_chart result={@result} config={@visualization_config} />
-            <% else %>
-              <.render_table result={@result} target={@target} sorts={@sorts} />
-            <% end %>
+            <.render_chart
+              :if={@visualization_view_mode == :chart && has_valid_config?(@visualization_config)}
+              result={@result}
+              config={@visualization_config}
+            />
+            <%!-- Hidden, not gone, under a chart: the grid keeps the sort and
+            filters Lotus runs, and shows them again with the table --%>
+            <div class={[
+              "h-full",
+              @visualization_view_mode == :chart && has_valid_config?(@visualization_config) &&
+                "hidden"
+            ]}>
+              <MasuResults.grid
+                id={"results-grid-#{@query_id}-#{@results_run}"}
+                result={@result}
+                running={@running}
+                target={@target}
+                operators={@filter_operators}
+                stats={Statistics.compute_all(@result)}
+              />
+            </div>
           </div>
 
           <%!-- Bottom bar with controls --%>
@@ -87,151 +97,6 @@ defmodule Lotus.Web.Queries.ResultsComponent do
       <% end %>
     </div>
     """
-  end
-
-  defp render_table(assigns) do
-    stats = Statistics.compute_all(assigns.result)
-    assigns = assign(assigns, :column_stats, stats)
-
-    ~H"""
-    <div class="flow-root h-full" id="results-table-context" phx-hook="CellContextMenu">
-      <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8 overflow-y-auto h-full">
-        <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-          <table class="relative min-w-full">
-            <thead class="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow-[0_1px_0_0] shadow-gray-300 dark:shadow-gray-600">
-              <tr>
-                <th
-                  :for={{col, _index} <- Enum.with_index(@result.columns)}
-                  scope="col"
-                  data-column={col}
-                  data-stats={safe_json_encode_or_empty(encode_stats(@column_stats[col]))}
-                  class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-text-light dark:text-text-dark sm:pl-3 bg-white dark:bg-gray-800 select-none cursor-context-menu hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                >
-                  <span class="inline-flex items-center gap-1">
-                    {col}
-                    <%= if sort = find_sort(@sorts, col) do %>
-                      <%= if sort.direction == :asc do %>
-                        <Icons.chevron_up class="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
-                      <% else %>
-                        <Icons.chevron_down class="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
-                      <% end %>
-                    <% end %>
-                  </span>
-                </th>
-              </tr>
-            </thead>
-            <tbody id="query-results" class="bg-white dark:bg-gray-800">
-              <tr :for={row <- @result.rows} class="even:bg-gray-50 dark:even:bg-gray-700">
-                <td
-                  :for={{col, index} <- Enum.with_index(@result.columns)}
-                  class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-text-light dark:text-text-dark sm:pl-3 cursor-context-menu hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                  data-column={col}
-                  data-value={CellFormatter.format(Enum.at(row, index))}
-                  data-is-null={to_string(is_nil(Enum.at(row, index)))}
-                >
-                  {CellFormatter.format(Enum.at(row, index))}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    <%= if Enum.empty?(@result.rows) do %>
-      <div class="text-center py-12 text-gray-500 dark:text-gray-400">
-        <p class="text-base"><%= gettext("No results found") %></p>
-        <p class="text-sm mt-1"><%= gettext("Your query returned no rows") %></p>
-      </div>
-    <% end %>
-    """
-  end
-
-  defp filter_chips(assigns) do
-    ~H"""
-    <div class="flex flex-wrap items-center gap-2 pb-2 flex-shrink-0">
-      <span class="text-xs font-medium text-gray-500 dark:text-gray-400"><%= gettext("Filters:") %></span>
-      <span
-        :for={{filter, index} <- Enum.with_index(@filters)}
-        class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 rounded-full"
-      >
-        <span class="font-semibold">{filter.column}</span>
-        <span>{Filter.operator_label(filter.op)}</span>
-        <span :if={filter.op not in [:is_null, :is_not_null]}>{format_filter_value(filter.value)}</span>
-        <button
-          type="button"
-          phx-click="remove_filter"
-          phx-target={@target}
-          phx-value-index={index}
-          class="ml-0.5 hover:text-blue-900 dark:hover:text-blue-200"
-        >
-          <Icons.x_mark class="w-3 h-3" />
-        </button>
-      </span>
-      <button
-        type="button"
-        phx-click="clear_filters"
-        phx-target={@target}
-        class="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-        title={gettext("Clear all filters")}
-      >
-        <Icons.funnel_x class="w-3.5 h-3.5" />
-        <%= gettext("Clear all") %>
-      </button>
-    </div>
-    """
-  end
-
-  defp sort_chips(assigns) do
-    ~H"""
-    <div class="flex flex-wrap items-center gap-2 pb-2 flex-shrink-0">
-      <span class="text-xs font-medium text-gray-500 dark:text-gray-400"><%= gettext("Sort:") %></span>
-      <span
-        :for={{sort, index} <- Enum.with_index(@sorts)}
-        class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 rounded-full"
-      >
-        <span class="font-semibold">{sort.column}</span>
-        <span>{Sort.direction_label(sort.direction)}</span>
-        <button
-          type="button"
-          phx-click="remove_sort"
-          phx-target={@target}
-          phx-value-index={index}
-          class="ml-0.5 hover:text-purple-900 dark:hover:text-purple-200"
-        >
-          <Icons.x_mark class="w-3 h-3" />
-        </button>
-      </span>
-      <button
-        type="button"
-        phx-click="clear_sorts"
-        phx-target={@target}
-        class="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-        title={gettext("Clear all sorts")}
-      >
-        <Icons.x_mark class="w-3.5 h-3.5" />
-        <%= gettext("Clear all") %>
-      </button>
-    </div>
-    """
-  end
-
-  defp find_sort(sorts, column) do
-    Enum.find(sorts, &(&1.column == column))
-  end
-
-  defp format_filter_value(nil), do: "NULL"
-
-  defp format_filter_value(value) when is_binary(value) and byte_size(value) > 30 do
-    String.slice(value, 0, 30) <> "…"
-  end
-
-  defp format_filter_value(value) when is_binary(value), do: value
-  defp format_filter_value(value), do: to_string(value)
-
-  defp encode_stats(nil), do: %{}
-
-  defp encode_stats(stats) do
-    Map.new(stats, fn {k, v} -> {k, Lotus.Normalizer.normalize(v)} end)
   end
 
   defp render_chart(assigns) do
