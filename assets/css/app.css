@@ -7,8 +7,11 @@
 @import "../../deps/koyomi/priv/static/koyomi-sumi.css";
 @import "../../deps/kotoba/priv/static/kotoba.css";
 @import "../../deps/kotoba/priv/static/kotoba-sumi.css";
-/* The results grid, when it is Masu's (config :lotus_web, results_table: :masu). */
+/* The results grid. */
 @import "../../deps/masu/priv/static/masu.css";
+/* The charts: Fude's style sheet, from its sources while Lotus Web takes
+   Fude from its main branch (a git dependency has no prebuilt one). */
+@import "../../deps/fude/assets/css/fude.css";
 
 @font-face {
     font-display: swap;
@@ -760,6 +763,61 @@
    grid as well. */
 .lotus-results > .masu-grid:focus-visible {
     box-shadow: none;
+}
+
+/* ── The charts (Fude) ─────────────────────────────────────
+   From the Lotus tokens, which the Sumi theme redefines (its paper, ink and
+   blade), so that the charts follow the theme and its light or dark. The
+   series keep Fude's order, which is checked for colour vision
+   deficiencies; the Sumi theme takes Sumi's, the blade first. */
+.lotus-chart {
+    --fude-font: var(--lotus-font-sans);
+    --fude-font-size: 0.875rem;
+    --fude-text: rgb(var(--lotus-text-light));
+    --fude-secondary: rgb(var(--lotus-gray-600));
+    --fude-muted: rgb(var(--lotus-gray-500));
+    --fude-surface: rgb(var(--lotus-white));
+    --fude-grid: rgb(var(--lotus-gray-200));
+    --fude-baseline: rgb(var(--lotus-gray-300));
+    --fude-border: rgb(var(--lotus-gray-200));
+    --fude-accent: rgb(var(--lotus-pink-500));
+    --fude-radius: var(--lotus-radius-md);
+    --fude-tooltip-background: rgb(var(--lotus-white));
+    --fude-shadow: var(--lotus-shadow-md);
+}
+
+.dark .lotus-chart {
+    --fude-text: rgb(var(--lotus-text-dark));
+    --fude-secondary: rgb(var(--lotus-gray-300));
+    --fude-muted: rgb(var(--lotus-gray-400));
+    --fude-surface: rgb(var(--lotus-gray-800));
+    --fude-grid: rgb(var(--lotus-zinc-700));
+    --fude-baseline: rgb(var(--lotus-gray-600));
+    --fude-border: rgb(var(--lotus-zinc-700));
+    --fude-tooltip-background: rgb(var(--lotus-gray-800));
+}
+
+[data-lotus-theme="sumi"] .lotus-chart {
+    --fude-series-1: rgb(var(--lotus-pink-500));
+    --fude-series-2: #2a78d6;
+    --fude-series-3: #1baf7a;
+    --fude-series-4: #6250d6;
+    --fude-series-5: #eda100;
+    --fude-series-6: #e87ba4;
+    --fude-series-7: #008300;
+    --fude-series-8: #8a867e;
+    --fude-sequential: #fbdccf, #f6b296, #ee7a4c, #e84a1c, #c23a10, #962c0b, #6a1e06;
+}
+
+[data-lotus-theme="sumi"].dark .lotus-chart {
+    --fude-series-2: #3987e5;
+    --fude-series-3: #199e70;
+    --fude-series-4: #9085e9;
+    --fude-series-5: #c98500;
+    --fude-series-6: #d55181;
+    --fude-series-7: #008300;
+    --fude-series-8: #7d7a74;
+    --fude-sequential: #34160c, #5e2410, #8f3312, #c2410f, #e8582a, #f08a62, #f6b79c;
 }
 
 .dark .lotus-results {

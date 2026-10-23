@@ -10,6 +10,7 @@ if config_env() == :dev do
         --target=es2016
         --minify
         --outdir=../priv/static/
+        --alias:fude=../deps/fude/assets/src/index.ts
       ),
       cd: Path.expand("../assets", __DIR__),
       env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
@@ -23,9 +24,20 @@ if config_env() == :dev do
         --target=es2020
         --minify
         --outfile=../priv/static/mcp_chart.js
+        --alias:fude=../deps/fude/assets/src/index.ts
       ),
       cd: Path.expand("../assets", __DIR__),
       env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+    ],
+    # Fude's style sheet for the chart MCP App, inlined into its document.
+    mcp_chart_css: [
+      args: ~w(
+        css/mcp_chart.css
+        --bundle
+        --minify
+        --outfile=../priv/static/mcp_chart.css
+      ),
+      cd: Path.expand("../assets", __DIR__)
     ]
 
   config :tailwind,

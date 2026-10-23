@@ -5,7 +5,7 @@ defmodule Lotus.Web.Queries.VisualizationSettingsComponent do
   """
   use Lotus.Web, :live_component
 
-  alias Lotus.Web.VegaSpecBuilder
+  alias Lotus.Web.Charts
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
@@ -104,7 +104,7 @@ defmodule Lotus.Web.Queries.VisualizationSettingsComponent do
       <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
         <%= gettext("Choose a chart type to visualize your data.") %>
       </p>
-      <div :for={{group_label, types} <- VegaSpecBuilder.chart_type_groups()} class="mb-4">
+      <div :for={{group_label, types} <- Charts.chart_type_groups()} class="mb-4">
         <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
           <%= group_label %>
         </h4>
@@ -335,7 +335,7 @@ defmodule Lotus.Web.Queries.VisualizationSettingsComponent do
     """
   end
 
-  defp chart_type_label(type), do: VegaSpecBuilder.chart_type_label(type)
+  defp chart_type_label(type), do: Charts.chart_type_label(type)
 
   attr(:config, :map, required: true)
   attr(:columns, :list, required: true)
@@ -904,7 +904,7 @@ defmodule Lotus.Web.Queries.VisualizationSettingsComponent do
   attr(:chart_type, :string, default: nil)
 
   defp config_status(assigns) do
-    configured = VegaSpecBuilder.valid_config?(assigns.config)
+    configured = Charts.valid_config?(assigns.config)
     assigns = assign(assigns, :configured, configured)
 
     ~H"""

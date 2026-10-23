@@ -4,8 +4,8 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   use Lotus.Web, :html
 
   alias Lotus.Result.Statistics
+  alias Lotus.Web.Charts
   alias Lotus.Web.Queries.MasuResults
-  alias Lotus.Web.VegaSpecBuilder
 
   attr(:query_id, :string, default: "default")
   attr(:result, :any, default: nil)
@@ -100,34 +100,11 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   end
 
   defp render_chart(assigns) do
-    spec = VegaSpecBuilder.build(assigns.result, assigns.config)
-
-    case safe_json_encode(spec) do
-      {:ok, json} ->
-        assigns = assign(assigns, :spec_json, json)
-
-        ~H"""
-        <div
-          id="vega-chart-container"
-          phx-hook="VegaChart"
-          phx-update="ignore"
-          data-spec={@spec_json}
-          class="w-full h-full min-h-[250px] max-h-[500px] flex items-center justify-center"
-        >
-          <div class="text-gray-400">
-            <.spinner />
-          </div>
-        </div>
-        """
-
-      {:error, _reason} ->
-        ~H"""
-        <div class="flex items-center justify-center h-64 text-red-500 dark:text-red-400 text-sm">
-          <Icons.exclamation_circle class="h-5 w-5 mr-2 flex-shrink-0" />
-          <span><%= gettext("Chart could not be rendered: result contains values that cannot be displayed") %></span>
-        </div>
-        """
-    end
+    ~H"""
+    <div class="w-full h-full overflow-auto py-2">
+      <Charts.draw id="query-chart" result={@result} config={@config} height={360} />
+    </div>
+    """
   end
 
   attr(:result, :any, required: true)
@@ -281,7 +258,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
     """
   end
 
-  defp has_valid_config?(config), do: VegaSpecBuilder.valid_config?(config)
+  defp has_valid_config?(config), do: Charts.valid_config?(config)
 
   defp info_text(%{num_rows: n, duration_ms: ms, meta: meta}) do
     {range_text, total_text} =

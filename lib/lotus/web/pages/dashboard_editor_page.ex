@@ -9,6 +9,7 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   alias Lotus.Web.Actor
   alias Lotus.Web.Authorization
+  alias Lotus.Web.Charts
   alias Lotus.Web.Dashboards.AddCardModal
   alias Lotus.Web.Dashboards.CardGridComponent
   alias Lotus.Web.Dashboards.CardRunner
@@ -21,7 +22,6 @@ defmodule Lotus.Web.DashboardEditorPage do
   alias Lotus.Web.Dashboards.SettingsDrawer
   alias Lotus.Web.Page
   alias Lotus.Web.RichText
-  alias Lotus.Web.VegaSpecBuilder
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
@@ -1289,7 +1289,7 @@ defmodule Lotus.Web.DashboardEditorPage do
           (card.visualization_config || %{})
           |> Map.new(fn {k, v} -> {to_string(k), v} end)
 
-        config = VegaSpecBuilder.build_config(Map.merge(existing, viz))
+        config = Charts.build_config(Map.merge(existing, viz))
         %{card | visualization_config: config}
       end)
 

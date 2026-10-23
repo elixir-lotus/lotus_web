@@ -9,7 +9,10 @@ After running a query, you can switch between table and chart views to visualize
 - **18 chart types** across four categories — Charts, Distribution, Part of whole, and Single value
 - **Flexible configuration** - Configure axes, grouping fields, and type-specific options
 - **Dark mode support** - Charts automatically adapt to your theme
+- **Interactive** - Hover a mark for its values (a line or area shows every series at that point), hover a legend entry to bring its series forward, move through the marks with the arrow keys, and read the chart's data as a table
 - **Keyboard shortcuts** - Quick access to visualization features
+
+Charts are drawn by [Fude](https://github.com/hattoriai/fude) as SVG in the page: the server compiles the chart from the result, and the browser only lays it out and animates it.
 
 Charts are built from a result's columns and rows, so they work with any data source Lotus can run — the examples below are SQL because most sources are, but a JSON DSL source that returns tabular results charts the same way.
 
@@ -70,7 +73,7 @@ ORDER BY date;
 
 #### Combo Chart
 
-Dual-axis chart combining bars and a line with independent Y scales. Useful for overlaying two related metrics with different units.
+Dual-axis chart combining bars and a line with independent Y scales: the bars on the left axis, the line on the right, each axis titled in its series' colour. Useful for overlaying two related metrics with different units.
 
 **Config:** X-Axis Field, Y-Axis Field (bars), Y2 Field (line), optional Y2 Axis Title.
 
@@ -125,7 +128,7 @@ SELECT salary FROM employees;
 
 Color-encoded matrix showing the relationship between two categorical or ordinal fields.
 
-**Config:** Column Field (X), Row Field (Y), optional Value Field for the colour intensity. Leave the Value Field empty to colour by the row field itself.
+**Config:** Column Field (X), Row Field (Y), optional Value Field for the colour intensity. Leave the Value Field empty to colour each cell by its number of rows.
 
 ```sql
 SELECT day_of_week, hour_of_day, COUNT(*) as events
@@ -230,7 +233,7 @@ SELECT COUNT(*) as completed FROM tasks WHERE status = 'done';
 
 Compact inline line chart — useful in dashboards for showing trends without axis labels. Despite sitting in the Single value group, it plots a series: it takes X and Y fields like the cartesian charts.
 
-**Config:** X-Axis Field (typically a date), Y-Axis Field. The Color/Series selector is offered but the sparkline spec ignores it — a sparkline draws one series.
+**Config:** X-Axis Field (typically a date), Y-Axis Field. The Color/Series selector is offered but the sparkline ignores it — a sparkline draws one series.
 
 ```sql
 SELECT DATE(event_time) as date, COUNT(*) as events
@@ -360,7 +363,7 @@ For the best visualization results:
 4. **Include grouping columns** - To create multi-series charts, include a category column for the Color/Series field
 5. **Order your data** - For line and area charts, order by your date/time column in the query
 
-Decimals, dates, times and UUID binaries returned by the source are normalized to JSON-safe values before they reach Vega-Lite, so you do not have to cast them in the query.
+Decimals, dates, times and UUID binaries returned by the source are normalized to chartable values before they reach the chart, so you do not have to cast them in the query.
 
 ### Common Query Patterns
 

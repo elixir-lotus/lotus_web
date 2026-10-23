@@ -1,13 +1,14 @@
 // The Lotus chart app (an MCP App): the host renders this document in a
 // sandboxed frame next to a show_chart call, hands it the tool's result,
-// and the app draws result.structuredContent.spec, a Vega-Lite spec built
-// on the server by Lotus.Web.VegaSpecBuilder.
+// and the app draws result.structuredContent.html, the chart as the server
+// made it with Lotus.Web.Charts and Fude, which mountFude brings to life.
 //
 // It talks to the host with JSON-RPC over postMessage (the
 // io.modelcontextprotocol/ui extension, 2026-01-26): ui/initialize, then
 // the tool's result as a notification. It follows the host's light or dark
-// theme and reports its height so the host can size the frame.
-import vegaEmbed from "vega-embed";
+// theme (data-theme, which Fude's dark colors follow) and reports its
+// height so the host can size the frame.
+import { mountFude } from "fude";
 
 const PROTOCOL_VERSION = "2026-01-26";
 
@@ -34,32 +35,6 @@ function reportSize() {
   send({ method: "ui/notifications/size-changed", params: { height } });
 }
 
-function embedOptions() {
-  const dark = theme === "dark";
-
-  return {
-    actions: false,
-    renderer: "svg",
-    theme: dark ? "dark" : undefined,
-    config: {
-      background: "transparent",
-      view: { stroke: "transparent" },
-      ...(dark
-        ? {
-            axis: {
-              labelColor: "#9ca3af",
-              titleColor: "#d1d5db",
-              gridColor: "#374151",
-              domainColor: "#4b5563",
-            },
-            legend: { labelColor: "#9ca3af", titleColor: "#d1d5db" },
-            title: { color: "#d1d5db" },
-          }
-        : {}),
-    },
-  };
-}
-
 function showMessage(text) {
   root.textContent = "";
   note.textContent = text;
@@ -70,7 +45,7 @@ function render(result) {
   lastResult = result;
   document.documentElement.dataset.theme = theme;
 
-  if (!result || !result.spec) {
+  if (!result || !result.html) {
     showMessage("Nothing to chart.");
     return;
   }
@@ -80,16 +55,15 @@ function render(result) {
     ? `Showing the first ${result.num_rows} rows.`
     : "";
 
-  const spec = {
-    ...result.spec,
-    width: "container",
-    height: 320,
-    autosize: { type: "fit", contains: "padding", resize: true },
-  };
+  // The server's HTML of the chart, escaped by HEEx; drawn once, then
+  // again in the host's theme, which only the colors follow.
+  if (root.dataset.drawn !== "true") {
+    root.innerHTML = result.html;
+    root.dataset.drawn = "true";
+    mountFude(root);
+  }
 
-  vegaEmbed(root, spec, embedOptions())
-    .then(() => reportSize())
-    .catch((error) => showMessage(`The chart could not be drawn: ${error.message}`));
+  reportSize();
 }
 
 function applyHostContext(context) {

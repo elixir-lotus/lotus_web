@@ -177,7 +177,8 @@ defmodule Lotus.Web.MCPTest do
       assert %{
                structured: %{
                  "chart" => %{"chart_type" => "bar", "x_field" => "name", "y_field" => "age"},
-                 "spec" => %{"mark" => %{"type" => "bar"}, "data" => %{"values" => values}},
+                 "spec" => %{"fude" => 1, "kind" => "bar", "datasets" => %{"data" => values}},
+                 "html" => html,
                  "num_rows" => 3,
                  "has_more" => false
                }
@@ -191,6 +192,9 @@ defmodule Lotus.Web.MCPTest do
                })
 
       assert [%{"name" => "Alice", "age" => 30} | _] = values
+      # The chart the app mounts: Fude's, with its compiled marks.
+      assert html =~ ~s(phx-hook="Fude")
+      assert html =~ "fude-kind-bar"
     end
 
     test "draws a saved query with its own chart, and refuses one without" do
@@ -207,7 +211,7 @@ defmodule Lotus.Web.MCPTest do
           config: %{"chart_type" => "line", "x_field" => "name", "y_field" => "age"}
         })
 
-      assert %{structured: %{"title" => "Ages", "spec" => %{"mark" => %{"type" => "line"}}}} =
+      assert %{structured: %{"title" => "Ages", "spec" => %{"kind" => "line"}}} =
                call!(client, "show_chart", %{"query_id" => query.id})
     end
 

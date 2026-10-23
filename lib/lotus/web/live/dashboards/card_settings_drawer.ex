@@ -6,8 +6,8 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
 
   use Lotus.Web, :live_component
 
+  alias Lotus.Web.Charts
   alias Lotus.Web.RichText
-  alias Lotus.Web.VegaSpecBuilder
 
   @impl Phoenix.LiveComponent
   def mount(socket) do
@@ -239,7 +239,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
               class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
             >
               <option value=""><%= gettext("Table (default)") %></option>
-              <option :for={type <- VegaSpecBuilder.chart_type_ids()} value={type} selected={@chart_type == type}>
+              <option :for={type <- Charts.chart_type_ids()} value={type} selected={@chart_type == type}>
                 <%= chart_type_label(type) %>
               </option>
             </select>
@@ -648,7 +648,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
     end)
   end
 
-  defp chart_type_label(type), do: VegaSpecBuilder.chart_type_label(type)
+  defp chart_type_label(type), do: Charts.chart_type_label(type)
 
   @impl Phoenix.LiveComponent
   def update(params, socket) do

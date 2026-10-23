@@ -46,6 +46,10 @@ defmodule Lotus.Web.MixProject do
       {:koyomi, "~> 0.2"},
       {:kotoba, "~> 0.3"},
       {:masu, "~> 0.5.2"},
+      # The charts. From Fude's main while Lotus Web moves to it, then from
+      # its next release. Lotus Web builds Fude's sources (assets/src) into
+      # its own bundle, as a git dependency has no prebuilt one.
+      {:fude, github: "hattoriai/fude", branch: "main"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_ecto, "~> 4.5"},
       {:gettext, "~> 0.26 or ~> 1.0"},
@@ -88,7 +92,12 @@ defmodule Lotus.Web.MixProject do
 
   defp aliases do
     [
-      "assets.build": ["tailwind default", "esbuild default", "esbuild mcp_chart"],
+      "assets.build": [
+        "tailwind default",
+        "esbuild default",
+        "esbuild mcp_chart",
+        "esbuild mcp_chart_css"
+      ],
       dev: "run --no-halt dev.exs",
       # The compile and the asset build run in a child VM: once anything
       # compiles in this VM, Mix no longer finds the tasks of the Hex archive
