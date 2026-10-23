@@ -21,10 +21,25 @@
   - small multiples: the chart once for each value of a field;
   - a subtitle and a source line.
 - **Save a chart as SVG or PNG.** The query editor's chart has buttons
-  that save it, with its words and legend.
+  that save it, with its words and legend, and a dashboard card saves its
+  chart as PNG from its header.
+- **Maps.** Two chart types draw on a map of the world's countries or the
+  US states: a *Map* colors each region by a value, a *Bubble Map* puts a
+  circle sized by a value on each. A region is found by its ISO or postal
+  code, number or name. The maps are served by Lotus, under the mount
+  prefix with a content hash, and fetched only when a map draws.
+- **Tooltip fields.** More fields to show when a mark is hovered.
+- **Callouts and ranges.** A chart can mark its highest and lowest values
+  with their values, and shade a range of its horizontal axis with a
+  label.
 
 ### Changed
 
+- **Single values fill and center their card.** KPI, trend, gauge and
+  progress cards draw large and centered, from Fude's main.
+- **A refreshing card keeps its chart.** While a card's query runs again
+  (a refresh, a filter), its chart stays, dimmed, and moves to the new
+  values, instead of giving way to a spinner.
 - **Axis titles are the field's name in words.** An axis with no title of
   its own reads "Total revenue" for `total_revenue`. A title that was the
   field's name, as the settings used to fill in, reads the same way.

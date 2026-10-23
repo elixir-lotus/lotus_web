@@ -1,10 +1,13 @@
 defmodule Lotus.Web.Assets do
   @moduledoc """
-  Serves the dashboard's CSS and JavaScript bundle, and its favicon.
+  Serves the dashboard's CSS and JavaScript bundle, its favicon, and the
+  maps of its map charts.
 
   `Lotus.Web.Router.lotus_dashboard/2` mounts this plug at
-  `<prefix>/css-<hash>`, `<prefix>/js-<hash>`, `<prefix>/icon-<hash>` (SVG)
-  and `<prefix>/ico-<hash>`, where `<hash>` is the MD5 of the asset. A host never calls it: the URLs come from the layout
+  `<prefix>/css-<hash>`, `<prefix>/js-<hash>`, `<prefix>/icon-<hash>` (SVG),
+  `<prefix>/ico-<hash>`, `<prefix>/world-<hash>` and
+  `<prefix>/us-states-<hash>` (Fude's maps, JSON, fetched by the browser
+  only when a map chart draws), where `<hash>` is the MD5 of the asset. A host never calls it: the URLs come from the layout
   through `lotus_asset_path/3`.
 
   The bundle is read and gzipped at compile time, so a response costs no disk
@@ -43,11 +46,19 @@ defmodule Lotus.Web.Assets do
   @svg File.read!(svg_path)
   @ico File.read!(ico_path)
 
+  @external_resource world_path = Path.join(@static_path, "maps/world.json")
+  @external_resource us_states_path = Path.join(@static_path, "maps/us-states.json")
+
+  @world File.read!(world_path)
+  @us_states File.read!(us_states_path)
+
   # Compressed once at compile time. Each literal is referenced from exactly
   # one function body below, so the .beam carries one copy of each variant.
   @css_gz :zlib.gzip(@css)
   @js_gz :zlib.gzip(@js)
   @svg_gz :zlib.gzip(@svg)
+  @world_gz :zlib.gzip(@world)
+  @us_states_gz :zlib.gzip(@us_states)
 
   @impl Plug
   def init(asset), do: asset
@@ -72,6 +83,10 @@ defmodule Lotus.Web.Assets do
 
   def call(conn, :ico) do
     serve_asset(conn, :ico, "image/x-icon")
+  end
+
+  def call(conn, map) when map in [:world, :us_states] do
+    serve_asset(conn, map, "application/json")
   end
 
   @doc """
@@ -143,8 +158,19 @@ defmodule Lotus.Web.Assets do
   defp body(:svg, :identity), do: @svg
   defp body(:svg, :gzip), do: @svg_gz
   defp body(:ico, :identity), do: @ico
+  defp body(:world, :identity), do: @world
+  defp body(:world, :gzip), do: @world_gz
+  defp body(:us_states, :identity), do: @us_states
+  defp body(:us_states, :gzip), do: @us_states_gz
 
-  for {key, val} <- [css: @css, js: @js, svg: @svg, ico: @ico] do
+  for {key, val} <- [
+        css: @css,
+        js: @js,
+        svg: @svg,
+        ico: @ico,
+        world: @world,
+        us_states: @us_states
+      ] do
     md5 = Base.encode16(:crypto.hash(:md5, val), case: :lower)
 
     def current_hash(unquote(key)), do: unquote(md5)

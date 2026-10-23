@@ -100,13 +100,15 @@ defmodule Lotus.Web.Router do
         {session_name, session_opts, public_session_opts, route_opts, export_opts} =
           Lotus.Web.Router.__options__(prefix, opts)
 
-        # Compiled CSS and JS, and the favicon, served with immutable caching under a content
+        # Compiled CSS and JS, the favicon and Fude's maps, served with immutable caching under a content
         # hash. Named so hosts get `lotus_asset_path/3` rather than a generic
         # `assets_path` that could collide with their own routes.
         get("/css-:md5", Lotus.Web.Assets, :css, as: :lotus_asset)
         get("/js-:md5", Lotus.Web.Assets, :js, as: :lotus_asset)
         get("/icon-:md5", Lotus.Web.Assets, :svg, as: :lotus_asset)
         get("/ico-:md5", Lotus.Web.Assets, :ico, as: :lotus_asset)
+        get("/world-:md5", Lotus.Web.Assets, :world, as: :lotus_asset)
+        get("/us-states-:md5", Lotus.Web.Assets, :us_states, as: :lotus_asset)
 
         # Export endpoint - does not require LiveView session, so it carries the
         # resolver in the route's private data to resolve the actor itself.

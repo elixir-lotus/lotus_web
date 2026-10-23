@@ -16,6 +16,8 @@ defmodule Lotus.Web.Layouts do
 
   defp asset_path(:svg), do: lotus_path("icon-#{Assets.current_hash(:svg)}")
   defp asset_path(:ico), do: lotus_path("ico-#{Assets.current_hash(:ico)}")
+  defp asset_path(:world), do: lotus_path("world-#{Assets.current_hash(:world)}")
+  defp asset_path(:us_states), do: lotus_path("us-states-#{Assets.current_hash(:us_states)}")
 
   def logo(assigns) do
     ~H"""

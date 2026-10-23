@@ -6,7 +6,7 @@ LotusWeb includes built-in charting capabilities to visualize your query results
 
 After running a query, you can switch between table and chart views to visualize your data:
 
-- **18 chart types** across four categories — Charts, Distribution, Part of whole, and Single value
+- **20 chart types** across five categories — Charts, Distribution, Part of whole, Maps, and Single value
 - **Flexible configuration** - Configure axes, grouping fields, and type-specific options
 - **Dark mode support** - Charts automatically adapt to your theme
 - **Interactive** - Hover a mark for its values (a line or area shows every series at that point), hover a legend entry to bring its series forward, move through the marks with the arrow keys, and read the chart's data as a table
@@ -18,7 +18,7 @@ Charts are built from a result's columns and rows, so they work with any data so
 
 ## Chart Types
 
-Chart types are organized into four categories in the settings panel.
+Chart types are organized into five categories in the settings panel.
 
 ### Charts
 
@@ -180,6 +180,30 @@ FROM budget_changes
 ORDER BY display_order;
 ```
 
+### Maps
+
+#### Map
+
+Colors each region (a country, or a US state) by a value: where the users are, revenue by state.
+
+**Config:** Map (World or United States), Region Field, Value Field.
+
+The region field holds a country's ISO code (`PRT` or `PT`), its number or its name; or a state's postal code (`CA`), FIPS number (`06`) or name. Regions the map does not know are listed in the browser's console.
+
+```sql
+SELECT country_code AS country, COUNT(*) AS users
+FROM users
+GROUP BY country_code;
+```
+
+#### Bubble Map
+
+A circle at each region's center, sized by a value. Better than a map's colors when the value is a count or an amount: a large region with few stores stays small.
+
+**Config:** Map, Region Field, Value Field.
+
+The maps are loaded by the browser only when a map chart first draws.
+
 ### Single value
 
 Four of these chart types use a **Value Field** instead of X/Y axes, and all four accept an optional **Label** that replaces the column name under the number.
@@ -334,9 +358,14 @@ Under the fields, both the query editor's settings and a dashboard card's settin
 | **Start the axis at zero** | Line, scatter, bubble, combo (each axis) | By default these axes fit the data, so that a change reads clearly; from zero, they show sizes against nothing. Bars and areas always start at zero. |
 | **Reference line** | Bar, horizontal bar, line, area, scatter, bubble, combo | A dashed line across the chart at a value, with a label: a goal, a limit, an average. |
 | **Small multiples** | Bar, horizontal bar, line, area, scatter, bubble | The chart once for each value of a field, side by side on the same scales, in as many columns as you choose. Clearer than one chart of many series. |
+| **Tooltip** | Bar, horizontal bar, line, area, scatter, bubble, pie, donut, heatmap, maps | More fields to show when a mark is hovered, beyond the chart's own. |
+| **Mark the highest / lowest value** | Bar, line, area, combo | A callout on the highest or the lowest value, with the value ("Highest: 463K"). Not on stacked series, whose marks are not at their values. |
+| **Shade a range** | Bar, line, area, combo, scatter, bubble | A shaded band across a range of the horizontal axis, with a label: a campaign, a holiday, an outage. Dates are written as `2026-03-01`, categories by name, numbers as numbers. |
 | **Subtitle** and **Source** | All | Words above and below the chart: how it is measured, and where the data comes from. |
 
-The query editor's chart also has **SVG** and **PNG** buttons under it, which save it as a file with its words and legend.
+The query editor's chart also has **SVG** and **PNG** buttons under it, which save it as a file with its words and legend. A dashboard card saves its chart as PNG from the download button in its header.
+
+When a dashboard card refreshes, or a dashboard filter changes, its chart stays on screen, dimmed, and its marks move to the new values.
 
 ### Configuration Status
 

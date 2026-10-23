@@ -4,7 +4,13 @@ import { Jumon } from "jumon";
 import { Koyomi } from "koyomi";
 import { Kotoba } from "kotoba";
 import { Masu } from "masu";
-import { Fude } from "fude";
+import { Fude, registerMap } from "fude";
+
+// Fude's maps, served by Lotus.Web.Assets: fetched when a map chart first draws.
+for (const name of ["world", "us-states"]) {
+  const url = document.querySelector(`meta[name="lotus-map-${name}"]`)?.content;
+  if (url) registerMap(name, url);
+}
 
 import AIMessageInput from "./hooks/ai_message_input";
 import AIPromptInput from "./hooks/ai_prompt_input";
