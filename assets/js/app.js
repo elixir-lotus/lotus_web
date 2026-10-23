@@ -4,6 +4,7 @@ import { Jumon } from "jumon";
 import { Koyomi } from "koyomi";
 import { Kotoba } from "kotoba";
 import { Masu } from "masu";
+import { Fude } from "fude";
 
 import AIMessageInput from "./hooks/ai_message_input";
 import AIPromptInput from "./hooks/ai_prompt_input";
@@ -23,7 +24,6 @@ import TagRemove from "./hooks/tag_remove";
 import ThemeSelector from "./hooks/theme_selector";
 import Tippy from "./hooks/tippy";
 import Toast from "./hooks/toast";
-import VegaChart from "./hooks/vega_chart";
 import { load } from "./lib/settings";
 import { initGlobalShortcuts } from "./lib/global_shortcuts";
 
@@ -119,10 +119,10 @@ const hooks = {
   Koyomi,
   Kotoba,
   Masu,
+  Fude,
   ColumnStats,
   Tippy,
   Toast,
-  VegaChart,
 };
 
 const csrfToken = document

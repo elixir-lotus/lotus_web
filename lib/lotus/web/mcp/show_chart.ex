@@ -2,7 +2,8 @@ if Code.ensure_loaded?(Sake.Server) do
   defmodule Lotus.Web.MCP.ShowChart do
     @moduledoc false
     alias Lotus.MCP.{Chart, Support}
-    alias Lotus.Web.VegaSpecBuilder
+    alias Lotus.Web.Charts
+    alias Lotus.Web.MCP.ChartApp
 
     require Chart
 
@@ -12,7 +13,7 @@ if Code.ensure_loaded?(Sake.Server) do
       description:
         "Chart a saved query (with its own chart, or chart_type and fields) or a read-only " <>
           "statement on a data source. Hosts that render apps draw the chart in the " <>
-          "conversation; the result is the chart's Vega-Lite spec with its rows. Nothing " <>
+          "conversation; the result is the chart's Fude spec with its rows. Nothing " <>
           "is saved: save_chart keeps a chart with a saved query.",
       scope: "lotus:query",
       annotations: [read_only: true, idempotent: true, open_world: false],
@@ -49,7 +50,8 @@ if Code.ensure_loaded?(Sake.Server) do
          %{
            title: args[:title] || title,
            chart: config,
-           spec: VegaSpecBuilder.build(result, config),
+           spec: Charts.spec(result, config),
+           html: ChartApp.html(result, config),
            num_rows: shaped.num_rows,
            has_more: shaped.has_more
          }}
@@ -89,7 +91,7 @@ if Code.ensure_loaded?(Sake.Server) do
       do: Chart.config(args, columns)
 
     defp config(_args, %{} = saved, _columns) do
-      if VegaSpecBuilder.valid_config?(saved),
+      if Charts.valid_config?(saved),
         do: {:ok, saved},
         else: {:error, "The saved query's chart is incomplete: give chart_type and its fields"}
     end

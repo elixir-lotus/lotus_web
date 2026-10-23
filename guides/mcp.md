@@ -107,10 +107,10 @@ columns there are. It saves nothing; `save_chart` keeps a chart with a
 saved query, and `add_dashboard_card` puts it on a dashboard.
 
 The chart is an MCP App, `ui://lotus/chart`: one self-contained document
-(Vega-Lite, with no network access), drawn from the tool's result, in the
+(Fude, with no network access), drawn from the tool's result, in the
 host's light or dark theme. A host that does not render apps, such as
-Claude Code in a terminal, gets the result as data: the chart's Vega-Lite
-spec with its rows, at most 500.
+Claude Code in a terminal, gets the result as data: the chart's
+[Fude](https://github.com/hattoriai/fude) spec with its rows, at most 500.
 
 ## Mounting in your own server
 

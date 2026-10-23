@@ -24,6 +24,26 @@
   - While a query runs, the grid keeps its rows and shows that it is
     loading.
   - The grid's words follow the dashboard's language, in English and French.
+- **The charts are Fude's.** Every chart, in the query editor, on
+  dashboards and in the MCP chart app, is drawn by
+  [Fude](https://github.com/hattoriai/fude) instead of Vega-Lite. The saved
+  visualization configs are the same, so no chart needs to be saved again.
+  - Hovering a mark shows its values; a line or an area shows every series
+    at that point. Hovering a legend entry brings its series forward, the
+    arrow keys move through the marks, and the chart's data reads as a
+    table.
+  - Time axes are time axes (the combo chart's too), category order is the
+    query's, scatter and bubble scales fit the data instead of starting at
+    zero, and a heatmap without a value field counts its rows.
+  - The combo chart's line has its own right axis, titled in its colour.
+  - The charts follow the Lotus and Sumi themes, light and dark.
+  - The page's script is a third smaller (2.3 MB to 1.5 MB), and the MCP
+    chart app's from 807 KB to 62 KB.
+  - `show_chart` returns the chart's Fude spec, with its rows, instead of a
+    Vega-Lite spec.
+  - `Lotus.Web.VegaSpecBuilder` is now `Lotus.Web.Charts`; its config
+    helpers keep their names, and `build/2` is replaced by `chart/2` (a
+    `Fude.Chart`) and `spec/2` (its spec).
 - **The CSV export is the results as you see them.** Export (.csv) in the
   query editor applies the results' filters and sort, over every page, not
   only the one on screen. It exported the query's rows as they came, so a

@@ -7,7 +7,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   use Lotus.Web, :live_component
 
   alias Lotus.Web.CellFormatter
-  alias Lotus.Web.VegaSpecBuilder
+  alias Lotus.Web.Charts
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
@@ -103,6 +103,19 @@ defmodule Lotus.Web.Dashboards.CardComponent do
     "grid-column: #{x + 1} / span #{w}; grid-row: #{y + 1} / span #{h}; min-height: #{min_height}px;"
   end
 
+  # The plot's height: the card's (a row is 100px) less its header, its
+  # padding and the chart's title.
+  defp chart_height(layout) do
+    h =
+      case layout do
+        %{h: h} -> h
+        %{} = layout -> Map.get(layout, "h", 4)
+        _ -> 4
+      end
+
+    max(h * 100 - 96, 120)
+  end
+
   defp card_classes(selected, card_type, show_header, is_public) do
     base =
       "flex flex-col bg-white dark:bg-gray-700 rounded-lg shadow-sm border-2 transition-all overflow-hidden"
@@ -153,23 +166,13 @@ defmodule Lotus.Web.Dashboards.CardComponent do
           <span class="truncate"><%= @error %></span>
         </div>
 
-      <% @result && VegaSpecBuilder.valid_config?(@card.visualization_config) -> %>
-        <% chart_spec = VegaSpecBuilder.build(@result, @card.visualization_config) %>
-        <%= case safe_json_encode(chart_spec) do %>
-          <% {:ok, json} -> %>
-            <div
-              id={"chart-#{@card.id}"}
-              phx-hook="VegaChart"
-              phx-update="ignore"
-              data-spec={json}
-              class="w-full h-full min-h-[150px]"
-            />
-          <% {:error, _reason} -> %>
-            <div class="flex items-center justify-center h-full text-red-500 dark:text-red-400 text-sm p-4">
-              <Icons.exclamation_circle class="h-5 w-5 mr-2 flex-shrink-0" />
-              <span class="truncate"><%= gettext("Chart could not be rendered: result contains values that cannot be displayed") %></span>
-            </div>
-        <% end %>
+      <% @result && Charts.valid_config?(@card.visualization_config) -> %>
+        <Charts.draw
+          id={"chart-#{@card.id}"}
+          result={@result}
+          config={@card.visualization_config}
+          height={chart_height(@card.layout)}
+        />
 
       <% @result -> %>
         <.mini_table result={@result} />

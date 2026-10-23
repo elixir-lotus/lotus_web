@@ -11,6 +11,7 @@ defmodule Lotus.Web.QueryEditorPage do
   alias Lotus.Storage.Query
   alias Lotus.Web.Actor
   alias Lotus.Web.Authorization
+  alias Lotus.Web.Charts
   alias Lotus.Web.ExportController
   alias Lotus.Web.Formatters.VariableOptionsFormatter, as: OptionsFormatter
   alias Lotus.Web.Page
@@ -23,7 +24,6 @@ defmodule Lotus.Web.QueryEditorPage do
   alias Lotus.Web.QueryEditor.Variables
   alias Lotus.Web.SchemaBuilder
   alias Lotus.Web.SourcesMap
-  alias Lotus.Web.VegaSpecBuilder
 
   import Lotus.Web.Queries.EditorComponent
   import Lotus.Web.Queries.ResultsComponent
@@ -639,13 +639,12 @@ defmodule Lotus.Web.QueryEditorPage do
     # persist across chart type switches. build_config filters to only the
     # fields relevant for the new chart type.
     existing = socket.assigns[:visualization_config] || %{}
-    config = VegaSpecBuilder.build_config(Map.put(existing, "chart_type", chart_type))
+    config = Charts.build_config(Map.put(existing, "chart_type", chart_type))
 
     socket =
       socket
       |> assign(visualization_config: config)
       |> assign(visualization_drawer_tab: :config)
-      |> maybe_push_chart_update(config)
 
     {:noreply, socket}
   end
@@ -671,12 +670,7 @@ defmodule Lotus.Web.QueryEditorPage do
       |> put_or_remove_config("y2_axis_title", params["y2_axis_title"])
       |> maybe_put_axis_config(params)
 
-    socket =
-      socket
-      |> assign(visualization_config: updated)
-      |> maybe_push_chart_update(updated)
-
-    {:noreply, socket}
+    {:noreply, assign(socket, visualization_config: updated)}
   end
 
   @impl Phoenix.LiveComponent
@@ -2051,19 +2045,7 @@ defmodule Lotus.Web.QueryEditorPage do
     end
   end
 
-  defp maybe_push_chart_update(socket, config) do
-    # Only push update if in chart view mode and config is valid
-    if socket.assigns.visualization_view_mode == :chart &&
-         socket.assigns.result != nil &&
-         has_valid_config?(config) do
-      spec = VegaSpecBuilder.build(socket.assigns.result, config)
-      push_event(socket, "update-chart", %{spec: spec})
-    else
-      socket
-    end
-  end
-
-  defp has_valid_config?(config), do: VegaSpecBuilder.valid_config?(config)
+  defp has_valid_config?(config), do: Charts.valid_config?(config)
 
   defp maybe_put_config(map, _key, nil), do: map
   defp maybe_put_config(map, _key, ""), do: map
