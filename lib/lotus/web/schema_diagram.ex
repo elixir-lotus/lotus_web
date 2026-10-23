@@ -18,11 +18,14 @@ defmodule Lotus.Web.SchemaDiagram do
 
   @sql [:postgres, :mysql, :sqlite]
 
+  @typedoc "A data source, as the schema explorer lists it (`Lotus.Web.SourcesMap`)."
+  @type database :: struct()
+
   @typedoc "A table and its columns, as `Lotus.describe_table/3` gives them."
   @type table :: {String.t(), [map()]}
 
   @doc "Whether the source draws a schema diagram: a SQL source that says its keys."
-  @spec supported?(Database.t() | nil) :: boolean()
+  @spec supported?(database() | nil) :: boolean()
   def supported?(%Database{source_type: type}), do: type in @sql
   def supported?(_database), do: false
 
@@ -30,7 +33,7 @@ defmodule Lotus.Web.SchemaDiagram do
   The schema the diagram shows: the first of the query's `search_path` that
   the source has, else its default schema, else its first.
   """
-  @spec active_schema(Database.t(), String.t() | nil) :: String.t() | nil
+  @spec active_schema(database(), String.t() | nil) :: String.t() | nil
   def active_schema(%Database{schemas: schemas}, search_path) do
     names = Enum.map(schemas, & &1.name)
 
@@ -49,7 +52,7 @@ defmodule Lotus.Web.SchemaDiagram do
   `opts` are the actor's options (`:context`, `:scope`). A table that fails
   to describe is left out.
   """
-  @spec load(Database.t(), String.t() | nil, keyword()) ::
+  @spec load(database(), String.t() | nil, keyword()) ::
           {:ok, %{schema: String.t() | nil, tables: non_neg_integer(), graph: Graph.t()}}
           | {:error, :no_schema}
   def load(%Database{} = database, schema_name, opts \\ []) do
