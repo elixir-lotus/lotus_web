@@ -27,8 +27,23 @@ defmodule Lotus.Web.Charts do
         "value_field" => "column_name", "kpi_label" => "Label" (kpi, trend, gauge, progress),
         "comparison_field" => "column_name" (trend),
         "min_value" => number, "max_value" => number (gauge),
-        "goal_value" => number (progress)
+        "goal_value" => number (progress),
+
+        # How the chart looks (all optional; see option_keys/0):
+        "number_format" => "number" | "integer" | "compact" | "percent" | "currency",
+        "currency" => "USD" (with "currency"),
+        "y2_number_format" => ... (combo: the line's),
+        "y_axis_zero" => boolean, "y2_axis_zero" => boolean,
+        "show_values" => boolean (the values on the marks),
+        "stack" => "stacked" | "grouped" | "normalized" (bars and areas with a series),
+        "sort" => "query" | "value_desc" | "value_asc" | "label" (bars),
+        "smooth" => boolean (lines and areas),
+        "reference_value" => number, "reference_label" => "Goal",
+        "facet_field" => "column_name", "facet_columns" => integer (small multiples),
+        "subtitle" => "How it is measured", "source" => "Where the data comes from"
       }
+
+  Booleans arrive from forms as `"true"` and `"false"`; both forms are read.
   """
 
   use Phoenix.Component
@@ -120,14 +135,61 @@ defmodule Lotus.Web.Charts do
     end)
   end
 
-  defp config_fields("kpi"), do: ~w(value_field kpi_label)
-  defp config_fields("gauge"), do: ~w(value_field kpi_label min_value max_value)
-  defp config_fields("progress"), do: ~w(value_field kpi_label goal_value)
-  defp config_fields("trend"), do: ~w(value_field kpi_label comparison_field)
-  defp config_fields("histogram"), do: ~w(x_field bin_count series_field)
-  defp config_fields("bubble"), do: ~w(x_field y_field series_field size_field)
-  defp config_fields("combo"), do: ~w(x_field y_field y2_field series_field y2_axis_title)
-  defp config_fields(_), do: ~w(x_field y_field series_field)
+  defp config_fields(type), do: fields(type) ++ option_keys(type)
+
+  defp fields("kpi"), do: ~w(value_field kpi_label)
+  defp fields("gauge"), do: ~w(value_field kpi_label min_value max_value)
+  defp fields("progress"), do: ~w(value_field kpi_label goal_value)
+  defp fields("trend"), do: ~w(value_field kpi_label comparison_field)
+  defp fields("histogram"), do: ~w(x_field bin_count series_field)
+  defp fields("bubble"), do: ~w(x_field y_field series_field size_field)
+  defp fields("combo"), do: ~w(x_field y_field y2_field series_field y2_axis_title)
+  defp fields(_), do: ~w(x_field y_field series_field)
+
+  @words ~w(subtitle source)
+  @format ~w(number_format currency)
+  @reference ~w(reference_value reference_label)
+  @facet ~w(facet_field facet_columns)
+
+  @doc """
+  The keys of the options of a chart type: how it looks, beyond its fields.
+  The settings offer these, and `build_config/1` keeps them.
+
+      iex> Lotus.Web.Charts.option_keys("pie")
+      ["number_format", "currency", "subtitle", "source"]
+  """
+  @spec option_keys(String.t() | nil) :: [String.t()]
+  def option_keys(type) when type in ~w(bar horizontal_bar),
+    do: @format ++ ~w(show_values stack sort) ++ @reference ++ @facet ++ @words
+
+  def option_keys("line"),
+    do: @format ++ ~w(y_axis_zero smooth) ++ @reference ++ @facet ++ @words
+
+  # An area starts at zero: it is filled down to it.
+  def option_keys("area"), do: @format ++ ~w(stack smooth) ++ @reference ++ @facet ++ @words
+
+  def option_keys(type) when type in ~w(scatter bubble),
+    do: @format ++ ["y_axis_zero"] ++ @reference ++ @facet ++ @words
+
+  def option_keys("combo"),
+    do: @format ++ ~w(y2_number_format y_axis_zero y2_axis_zero smooth) ++ @reference ++ @words
+
+  def option_keys("sparkline"), do: @format ++ ["smooth"] ++ @words
+
+  def option_keys(type) when type in ~w(pie donut heatmap waterfall histogram funnel),
+    do: @format ++ @words
+
+  def option_keys(type) when type in ~w(kpi trend gauge progress), do: @format ++ @words
+  def option_keys(_type), do: []
+
+  @doc """
+  Whether a chart type writes its values on its marks unless told not to.
+  Horizontal bars do: their values sit at the ends of the bars, where a
+  reader looks, and the labels do not crowd them. (Fude writes the values
+  of bars only, so far.)
+  """
+  @spec show_values_default?(String.t() | nil) :: boolean()
+  def show_values_default?(type), do: type == "horizontal_bar"
 
   @doc """
   The `Fude.Chart` of a query result (`%{columns: [...], rows: [...]}`) and a
@@ -145,7 +207,10 @@ defmodule Lotus.Web.Charts do
   """
   @spec chart(Lotus.Result.t(), map()) :: Fude.Chart.t()
   def chart(result, %{"chart_type" => type} = config) do
-    build(type, data(result), config)
+    type
+    |> build(data(result), config)
+    |> reference(type, config)
+    |> facet(type, config)
   end
 
   @doc """
@@ -157,6 +222,7 @@ defmodule Lotus.Web.Charts do
   attr(:result, :map, required: true)
   attr(:config, :map, required: true)
   attr(:height, :integer, default: nil, doc: "the plot's height, in pixels")
+  attr(:export, :boolean, default: false, doc: "whether the chart has buttons that save it")
   attr(:class, :any, default: nil)
 
   def draw(assigns) do
@@ -174,6 +240,7 @@ defmodule Lotus.Web.Charts do
           chart={chart}
           height={@height}
           locale={@locale}
+          export={@export}
           class={["lotus-chart", @class]}
         />
       <% {:error, message} -> %>
@@ -205,24 +272,39 @@ defmodule Lotus.Web.Charts do
 
   # -- The kinds ---------------------------------------------------------------
 
-  defp build("bar", data, c), do: Fude.bar(data, cartesian(c))
-  defp build("horizontal_bar", data, c), do: Fude.bar(data, cartesian(c) ++ [horizontal: true])
-  defp build("line", data, c), do: Fude.line(data, cartesian(c) ++ [points: true])
-  defp build("area", data, c), do: Fude.area(data, cartesian(c))
-  defp build("scatter", data, c), do: Fude.scatter(data, cartesian(c) ++ size(c))
+  defp build("bar", data, c), do: Fude.bar(data, bars(c) ++ words(c))
+
+  defp build("horizontal_bar", data, c),
+    do: Fude.bar(data, bars(c) ++ [horizontal: true] ++ words(c))
+
+  # A dot at each value, but not in small multiples: their narrow panels
+  # would be all dots.
+  defp build("line", data, c) do
+    points = present(c["facet_field"]) == nil
+    Fude.line(data, cartesian(c) ++ [points: points] ++ curve(c) ++ words(c))
+  end
+
+  defp build("area", data, c) do
+    [x: x, y: y] ++ rest = cartesian(c)
+    Fude.area(data, [x: x, y: y ++ stack(c)] ++ rest ++ curve(c) ++ words(c))
+  end
+
+  defp build("scatter", data, c), do: Fude.scatter(data, cartesian(c) ++ size(c) ++ words(c))
 
   # A bubble without a size field is a scatter: the size is what makes it one.
   defp build("bubble", data, c) do
     case size(c) do
-      [] -> Fude.scatter(data, cartesian(c))
-      size -> Fude.bubble(data, cartesian(c) ++ size)
+      [] -> Fude.scatter(data, cartesian(c) ++ words(c))
+      size -> Fude.bubble(data, cartesian(c) ++ size ++ words(c))
     end
   end
 
   defp build("histogram", data, c) do
+    x = axis(c, "x_field", :x) ++ format(c, "number_format")
+
     Fude.histogram(
       data,
-      [x: axis(c, "x_field", :x), bins: bin_count(c["bin_count"])] ++ color(c["series_field"])
+      [x: x, bins: bin_count(c["bin_count"])] ++ color(c["series_field"]) ++ words(c)
     )
   end
 
@@ -232,21 +314,29 @@ defmodule Lotus.Web.Charts do
     color =
       case present(c["series_field"]) do
         nil -> {:count, c["x_field"]}
-        field -> field
+        field -> [field: field] ++ format(c, "number_format")
       end
 
-    Fude.heatmap(data, x: axis(c, "x_field", :x), y: axis(c, "y_field", :y), color: color)
+    Fude.heatmap(
+      data,
+      [x: axis(c, "x_field", :x), y: axis(c, "y_field", :y), color: color] ++ words(c)
+    )
   end
 
-  defp build("pie", data, c), do: Fude.pie(data, slices(c))
-  defp build("donut", data, c), do: Fude.donut(data, slices(c))
+  defp build("pie", data, c), do: Fude.pie(data, slices(c) ++ words(c))
+  defp build("donut", data, c), do: Fude.donut(data, slices(c) ++ words(c))
 
-  defp build("funnel", data, c), do: Fude.funnel(data, x: c["x_field"], y: c["y_field"])
+  defp build("funnel", data, c),
+    do: Fude.funnel(data, [x: c["x_field"], y: measure(c, c["y_field"])] ++ words(c))
 
-  defp build("waterfall", data, c),
-    do: Fude.waterfall(data, x: axis(c, "x_field", :x), y: axis(c, "y_field", :y))
+  defp build("waterfall", data, c) do
+    y = axis(c, "y_field", :y) ++ format(c, "number_format")
+    Fude.waterfall(data, [x: axis(c, "x_field", :x), y: y] ++ words(c))
+  end
 
-  defp build("sparkline", data, c), do: Fude.sparkline(data, x: c["x_field"], y: c["y_field"])
+  defp build("sparkline", data, c),
+    do:
+      Fude.sparkline(data, [x: c["x_field"], y: measure(c, c["y_field"])] ++ curve(c) ++ words(c))
 
   # Bars of y on the left axis; the line of y2, of its own units, on the right.
   defp build("combo", data, c) do
@@ -254,15 +344,23 @@ defmodule Lotus.Web.Charts do
 
     case present(c["y2_field"]) do
       nil ->
-        Fude.layers(data, [bars])
+        Fude.layers(data, [bars], words(c))
 
       y2 ->
-        line = [field: y2, axis: :right] ++ title(present(c["y2_axis_title"]))
-        Fude.layers(data, [bars, Fude.line(x: c["x_field"], y: line, points: true)])
+        line =
+          [field: y2, axis: :right] ++
+            title(present(c["y2_axis_title"])) ++
+            format(c, "y2_number_format") ++ zero(c, "y2_axis_zero")
+
+        Fude.layers(
+          data,
+          [bars, Fude.line([x: c["x_field"], y: line, points: true] ++ curve(c))],
+          words(c)
+        )
     end
   end
 
-  defp build("kpi", data, c), do: Fude.number(data, [value: c["value_field"]] ++ label(c))
+  defp build("kpi", data, c), do: Fude.number(data, single(c) ++ label(c) ++ words(c))
 
   # Compared with the comparison field of the first row, or, without one,
   # with the value of the second row.
@@ -273,51 +371,173 @@ defmodule Lotus.Web.Charts do
         field -> [compare: field]
       end
 
-    Fude.trend(data, [value: c["value_field"]] ++ compare ++ label(c))
+    Fude.trend(data, single(c) ++ compare ++ label(c) ++ words(c))
   end
 
   defp build("gauge", data, c) do
     Fude.gauge(
       data,
-      [
-        value: c["value_field"],
-        min: number(c["min_value"], 0),
-        max: number(c["max_value"], 100)
-      ] ++ label(c)
+      single(c) ++
+        [min: number(c["min_value"], 0), max: number(c["max_value"], 100)] ++
+        label(c) ++ words(c)
     )
   end
 
   defp build("progress", data, c) do
-    Fude.progress(data, [value: c["value_field"], goal: number(c["goal_value"], 100)] ++ label(c))
+    Fude.progress(
+      data,
+      single(c) ++ [goal: number(c["goal_value"], 100)] ++ label(c) ++ words(c)
+    )
   end
 
   defp build(_unknown, data, c), do: build("bar", data, c)
 
-  # -- Channels ----------------------------------------------------------------
+  # -- Options -----------------------------------------------------------------
 
-  # x, y and the series, with the axes' titles of the config.
-  defp cartesian(c) do
-    [x: axis(c, "x_field", :x), y: axis(c, "y_field", :y)] ++ color(c["series_field"])
+  # A line across the chart at a value of y, with its words: a goal, a limit.
+  @reference_types ~w(bar horizontal_bar line area scatter bubble combo)
+
+  defp reference(chart, type, c) when type in @reference_types do
+    case number(c["reference_value"], nil) do
+      nil -> chart
+      value -> Fude.annotate(chart, :line, y: value, text: present(c["reference_label"]))
+    end
   end
 
+  defp reference(chart, _type, _c), do: chart
+
+  # Small multiples: the chart once for each value of a field, on the same
+  # scales.
+  @facet_types ~w(bar horizontal_bar line area scatter bubble)
+
+  defp facet(chart, type, c) when type in @facet_types do
+    case present(c["facet_field"]) do
+      nil -> chart
+      field -> Fude.facet(chart, field, columns: columns(c["facet_columns"]))
+    end
+  end
+
+  defp facet(chart, _type, _c), do: chart
+
+  defp columns(value) do
+    case number(value, nil) do
+      n when is_number(n) and n >= 1 -> min(trunc(n), 6)
+      _ -> nil
+    end
+  end
+
+  # The chart's words around it: how it is measured, and where it comes from.
+  defp words(c) do
+    Enum.flat_map([subtitle: "subtitle", source: "source"], fn {key, name} ->
+      case present(c[name]) do
+        nil -> []
+        text -> [{key, text}]
+      end
+    end)
+  end
+
+  defp labels(c) do
+    [labels: on?(c["show_values"], show_values_default?(c["chart_type"]))]
+  end
+
+  defp curve(c), do: if(on?(c["smooth"], false), do: [curve: :monotone], else: [])
+
+  # The measure's format, from the config: Fude's own when there is none.
+  defp format(c, key) do
+    case present(c[key]) do
+      "number" ->
+        [format: :number]
+
+      "integer" ->
+        [format: :integer]
+
+      "compact" ->
+        [format: :compact]
+
+      "percent" ->
+        [format: :percent]
+
+      "currency" ->
+        currency(c["currency"])
+
+      _ ->
+        []
+    end
+  end
+
+  defp currency(code) when is_binary(code) do
+    code = code |> String.trim() |> String.upcase()
+    if code =~ ~r/^[A-Z]{3}$/, do: [format: {:currency, code}], else: []
+  end
+
+  defp currency(_code), do: []
+
+  defp zero(c, key), do: if(on?(c[key], false), do: [scale: [zero: true]], else: [])
+
+  defp on?(value, _default) when value in [true, "true"], do: true
+  defp on?(value, _default) when value in [false, "false"], do: false
+  defp on?(_value, default), do: default
+
+  # -- Channels ----------------------------------------------------------------
+
+  # x, y and the series, with the axes' titles and the measure's format.
+  defp cartesian(c) do
+    y = axis(c, "y_field", :y) ++ format(c, "number_format") ++ zero(c, "y_axis_zero")
+    [x: axis(c, "x_field", :x), y: y] ++ color(c["series_field"])
+  end
+
+  # Bars: sorted and stacked as the config says, their values on them or not.
+  defp bars(c) do
+    [x: x, y: y] ++ rest = cartesian(c)
+    [x: x ++ sort(c["sort"]), y: y ++ stack(c)] ++ rest ++ labels(c)
+  end
+
+  defp sort("value_desc"), do: [sort: :"-y"]
+  defp sort("value_asc"), do: [sort: :y]
+  defp sort("label"), do: [sort: :ascending]
+  defp sort(_query_order), do: []
+
+  # Bars and areas of several series: stacked (Fude's default), side by side
+  # (overlapping, for areas) or to 100%.
+  defp stack(%{"series_field" => series} = c) when series not in [nil, ""] do
+    case c["stack"] do
+      "grouped" -> [stack: false]
+      "normalized" -> [stack: :normalize]
+      _ -> []
+    end
+  end
+
+  defp stack(_c), do: []
+
   # A field on an axis: its own title, none when its label is hidden, else
-  # the field's name (as Lotus has always shown it, not in words).
+  # Fude's: the field's name in words ("total_revenue" is "Total revenue").
+  # A title that is the field's name, as the settings used to fill in, is
+  # the field's name too.
   defp axis(c, key, axis) do
     field = c[key]
 
-    title =
-      cond do
-        c["#{axis}_axis_show_label"] == false -> false
-        present(c["#{axis}_axis_title"]) -> c["#{axis}_axis_title"]
-        true -> field
-      end
+    cond do
+      c["#{axis}_axis_show_label"] in [false, "false"] ->
+        [field: field, title: false]
 
-    [field: field, title: title]
+      present(c["#{axis}_axis_title"]) not in [nil, field] ->
+        [field: field, title: c["#{axis}_axis_title"]]
+
+      true ->
+        [field: field]
+    end
   end
+
+  # A measure with no axis (a funnel's, a sparkline's): its format.
+  defp measure(c, field), do: [field: field] ++ format(c, "number_format")
+
+  defp single(c), do: [value: measure(c, c["value_field"])]
 
   # A slice of a pie or a donut for each category: the series field when
   # there is one, else the x field.
-  defp slices(c), do: [value: c["y_field"], color: present(c["series_field"]) || c["x_field"]]
+  defp slices(c) do
+    [value: measure(c, c["y_field"]), color: present(c["series_field"]) || c["x_field"]]
+  end
 
   defp color(field) do
     case present(field) do

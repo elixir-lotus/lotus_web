@@ -102,7 +102,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   defp render_chart(assigns) do
     ~H"""
     <div class="w-full h-full overflow-auto py-2">
-      <Charts.draw id="query-chart" result={@result} config={@config} height={360} />
+      <Charts.draw id="query-chart" result={@result} config={@config} height={360} export />
     </div>
     """
   end

@@ -7,6 +7,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
   use Lotus.Web, :live_component
 
   alias Lotus.Web.Charts
+  alias Lotus.Web.Queries.ChartOptions
   alias Lotus.Web.RichText
 
   @impl Phoenix.LiveComponent
@@ -205,6 +206,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
 
     assigns =
       assign(assigns,
+        config: config,
         chart_type: config["chart_type"],
         x_field: config["x_field"],
         y_field: config["y_field"],
@@ -409,6 +411,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
               </div>
             <% end %>
           <% end %>
+          <ChartOptions.options :if={@chart_type} config={@config} columns={@columns} prefix="visualization" />
         </div>
       </form>
     </div>

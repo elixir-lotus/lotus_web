@@ -315,7 +315,28 @@ Fine-tune your chart display. The Axis Display section appears for bar, horizont
 - **X-Axis Title** - Custom label for the horizontal axis
 - **Y-Axis Title** - Custom label for the vertical axis
 
+Without a title of its own, an axis is titled by its field's name in words: `total_revenue` is "Total revenue".
+
 Axis titles are a query-editor setting; the dashboard card settings drawer does not expose them.
+
+### Chart Options
+
+Under the fields, both the query editor's settings and a dashboard card's settings offer the options of the chart type: only those it has.
+
+| Option | Chart types | What it does |
+|--------|-------------|--------------|
+| **Values' format** | All | How the numbers read, on the axis, in the tooltips and on the marks: *Automatic* (Fude's choice), *Exact* (1,234,567.8), *Whole* (1,234,568), *Compact* (1.2M), *Percent* (0.42 is 42%) or *Currency*, with its code (USD, EUR…). A KPI shows its exact number with *Exact*. |
+| **Line's format** | Combo | The format of the line, on the right axis. |
+| **Show values on the bars** | Bar, horizontal bar | Writes each bar's value at its end. On by default for horizontal bars. |
+| **Series** | Bar, horizontal bar, area (with a series field) | *Stacked*, *Side by side* (*Overlapping* for areas), or *Stacked to 100%*, each series as its share. |
+| **Order** | Bar, horizontal bar | The bars as the query returns them, largest or smallest first, or by name. |
+| **Smooth lines** | Line, area, combo, sparkline | Curves through the points instead of straight segments. |
+| **Start the axis at zero** | Line, scatter, bubble, combo (each axis) | By default these axes fit the data, so that a change reads clearly; from zero, they show sizes against nothing. Bars and areas always start at zero. |
+| **Reference line** | Bar, horizontal bar, line, area, scatter, bubble, combo | A dashed line across the chart at a value, with a label: a goal, a limit, an average. |
+| **Small multiples** | Bar, horizontal bar, line, area, scatter, bubble | The chart once for each value of a field, side by side on the same scales, in as many columns as you choose. Clearer than one chart of many series. |
+| **Subtitle** and **Source** | All | Words above and below the chart: how it is measured, and where the data comes from. |
+
+The query editor's chart also has **SVG** and **PNG** buttons under it, which save it as a file with its words and legend.
 
 ### Configuration Status
 

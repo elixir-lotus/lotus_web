@@ -475,11 +475,19 @@ defmodule Lotus.Web.ChartsTest do
       refute Map.has_key?(wire["scales"]["y"], "title")
     end
 
-    test "an axis is titled by its field's name, as Lotus has always shown it" do
-      wire =
-        wire(simple_result(), %{"chart_type" => "bar", "x_field" => "name", "y_field" => "value"})
+    test "an axis is titled by its field's name in words, and by the name a config gives it" do
+      result = result(["order_month", "total_revenue"], [["Jan", 10], ["Feb", 20]])
+      config = %{"chart_type" => "bar", "x_field" => "order_month", "y_field" => "total_revenue"}
 
-      assert wire["scales"]["x"]["title"] == "name"
+      assert %{"x" => %{"title" => "Order month"}, "y" => %{"title" => "Total revenue"}} =
+               wire(result, config)["scales"]
+
+      # The settings used to fill in the field's name as the title: that is no title of its own.
+      assert wire(result, Map.put(config, "x_axis_title", "order_month"))["scales"]["x"]["title"] ==
+               "Order month"
+
+      assert wire(result, Map.put(config, "x_axis_title", "Month"))["scales"]["x"]["title"] ==
+               "Month"
     end
 
     test "decimals, dates and times are kept; other values are written as Lotus writes them" do
@@ -521,6 +529,161 @@ defmodule Lotus.Web.ChartsTest do
       assert %{"fude" => 1, "kind" => "bar", "datasets" => _} = spec
       assert {:ok, _chart} = Fude.Spec.load(spec)
       assert spec |> JSON.encode!() |> JSON.decode!() == spec
+    end
+  end
+
+  describe "chart/2: options" do
+    @bars %{
+      "chart_type" => "bar",
+      "x_field" => "region",
+      "y_field" => "revenue",
+      "series_field" => "channel"
+    }
+
+    test "the number format reaches the measure's scale" do
+      for {format, expected} <- [
+            {"number", "number"},
+            {"integer", "integer"},
+            {"compact", "compact"},
+            {"percent", "percent"}
+          ] do
+        assert wire(sales(), Map.put(@bars, "number_format", format))["scales"]["y"]["format"] ==
+                 expected
+      end
+
+      config = Map.merge(@bars, %{"number_format" => "currency", "currency" => "eur"})
+      assert wire(sales(), config)["scales"]["y"]["format"] == "currency:EUR"
+
+      # A currency that is not a code is no format, rather than a chart that breaks.
+      config = Map.merge(@bars, %{"number_format" => "currency", "currency" => "euros"})
+      refute wire(sales(), config)["scales"]["y"]["format"]
+
+      refute wire(sales(), @bars)["scales"]["y"]["format"]
+    end
+
+    test "a single value takes the format, as its exact number or compact" do
+      result = result(["total"], [[6_893_913.6]])
+      config = %{"chart_type" => "kpi", "value_field" => "total", "number_format" => "number"}
+      assert wire(result, config)["single"]["format"] == "number"
+    end
+
+    test "values on the bars: on for horizontal bars unless turned off, off for others unless on" do
+      labels = fn config -> hd(wire(sales(), config)["layers"])["options"]["labels"] end
+
+      refute labels.(@bars)
+      assert labels.(Map.put(@bars, "show_values", "true"))
+      assert labels.(Map.put(@bars, "chart_type", "horizontal_bar"))
+
+      refute labels.(
+               Map.merge(@bars, %{"chart_type" => "horizontal_bar", "show_values" => "false"})
+             )
+    end
+
+    test "series of areas stack, overlap, or stack to 100%" do
+      config = %{
+        "chart_type" => "area",
+        "x_field" => "region",
+        "y_field" => "revenue",
+        "series_field" => "channel"
+      }
+
+      stack = fn value ->
+        hd(wire(sales(), Map.put(config, "stack", value))["layers"])["stack"]
+      end
+
+      assert stack.("stacked") == "zero"
+      assert stack.("grouped") == nil
+      assert stack.("normalized") == "normalize"
+    end
+
+    test "a line has a dot at each value, but not in small multiples" do
+      config = %{"chart_type" => "line", "x_field" => "region", "y_field" => "revenue"}
+      points = fn config -> hd(wire(sales(), config)["layers"])["options"]["points"] end
+
+      assert points.(config)
+      refute points.(Map.put(config, "facet_field", "channel"))
+    end
+
+    test "series of bars stack, sit side by side, or stack to 100%" do
+      stack = fn value -> hd(wire(sales(), Map.put(@bars, "stack", value))["layers"])["stack"] end
+
+      assert stack.("stacked") == "zero"
+      assert stack.("grouped") == nil
+      assert stack.("normalized") == "normalize"
+    end
+
+    test "bars in the query's order, by value or by name" do
+      result = result(["region", "revenue"], [["North", 10], ["East", 30], ["South", 20]])
+      config = %{"chart_type" => "bar", "x_field" => "region", "y_field" => "revenue"}
+      domain = fn sort -> wire(result, Map.put(config, "sort", sort))["scales"]["x"]["domain"] end
+
+      assert domain.("query") == ["North", "East", "South"]
+      assert domain.("value_desc") == ["East", "South", "North"]
+      assert domain.("value_asc") == ["North", "South", "East"]
+      assert domain.("label") == ["East", "North", "South"]
+    end
+
+    test "smooth lines, and an axis from zero" do
+      config = %{"chart_type" => "line", "x_field" => "region", "y_field" => "revenue"}
+      result = result(["region", "revenue"], [["A", 100], ["B", 140]])
+
+      assert hd(wire(result, Map.put(config, "smooth", "true"))["layers"])["options"]["curve"] ==
+               "monotone"
+
+      assert [0 | _] =
+               wire(result, Map.put(config, "y_axis_zero", "true"))["scales"]["y"]["domain"]
+
+      assert [low | _] = wire(result, config)["scales"]["y"]["domain"]
+      assert low > 0
+    end
+
+    test "the combo's line has its own format and its own zero" do
+      result = result(["month", "orders", "revenue"], [["Jan", 10, 1500], ["Feb", 12, 1800]])
+
+      config = %{
+        "chart_type" => "combo",
+        "x_field" => "month",
+        "y_field" => "orders",
+        "y2_field" => "revenue",
+        "y2_number_format" => "compact",
+        "y2_axis_zero" => "true"
+      }
+
+      assert %{"format" => "compact", "domain" => [0 | _]} =
+               wire(result, config)["scales"]["yRight"]
+    end
+
+    test "a reference line, with its words" do
+      config = Map.merge(@bars, %{"reference_value" => "150", "reference_label" => "Goal"})
+
+      assert [%{"type" => "line", "y" => 150.0, "text" => "Goal"}] =
+               wire(sales(), config)["annotations"]
+
+      assert wire(sales(), Map.put(@bars, "reference_value", ""))["annotations"] == []
+    end
+
+    test "small multiples: a chart for each value of a field" do
+      config = %{
+        "chart_type" => "bar",
+        "x_field" => "region",
+        "y_field" => "revenue",
+        "facet_field" => "channel",
+        "facet_columns" => "2"
+      }
+
+      assert %{"columns" => 2, "panels" => [_, _]} = wire(sales(), config)["facet"]
+    end
+
+    test "a subtitle and a source" do
+      config = Map.merge(@bars, %{"subtitle" => "By channel", "source" => "Ledger"})
+      assert %{"subtitle" => "By channel", "source" => "Ledger"} = wire(sales(), config)
+    end
+
+    test "build_config/1 keeps a type's options and drops another's" do
+      viz = Map.merge(@bars, %{"stack" => "grouped", "smooth" => "true", "subtitle" => "S"})
+
+      assert %{"stack" => "grouped", "subtitle" => "S"} = config = Charts.build_config(viz)
+      refute Map.has_key?(config, "smooth")
     end
   end
 end

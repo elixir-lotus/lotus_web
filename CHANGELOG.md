@@ -7,9 +7,27 @@
 - **A favicon.** The dashboard shows the Lotus logo in the browser tab, the
   same icon as the Lotus site and Lotus Works. It is served under the mount
   prefix with a content hash, like the CSS and JS.
+- **Chart options.** The settings of a chart, in the query editor and on a
+  dashboard card, offer what Fude can do beyond the fields, each where it
+  applies:
+  - the format of the values: exact, whole, compact, percent or a
+    currency, so a KPI can show its exact number;
+  - the values on the bars, on by default for horizontal bars;
+  - bars and areas of several series stacked, side by side or to 100%;
+  - bars in the query's order, by value or by name;
+  - smooth lines;
+  - an axis that starts at zero (the combo chart's two axes each);
+  - a reference line with its label, for a goal or a limit;
+  - small multiples: the chart once for each value of a field;
+  - a subtitle and a source line.
+- **Save a chart as SVG or PNG.** The query editor's chart has buttons
+  that save it, with its words and legend.
 
 ### Changed
 
+- **Axis titles are the field's name in words.** An axis with no title of
+  its own reads "Total revenue" for `total_revenue`. A title that was the
+  field's name, as the settings used to fill in, reads the same way.
 - **The results table is Masu's grid.** The query editor draws its results
   with [Masu](https://hex.pm/packages/masu); Lotus still runs the query, the
   page, the sort and the filters.
