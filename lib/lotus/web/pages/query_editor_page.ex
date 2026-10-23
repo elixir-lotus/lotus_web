@@ -160,6 +160,7 @@ defmodule Lotus.Web.QueryEditorPage do
                   target={@myself}
                   is_saved_query={@page.mode == :edit}
                   results_run={Map.get(assigns, :results_run, 0)}
+                  filter_operators={Map.get(assigns, :filter_operators, [])}
                   visualization_config={@visualization_config}
                   visualization_view_mode={@visualization_view_mode}
                   visualization_visible={@left_drawer == :visualization}
@@ -1493,6 +1494,8 @@ defmodule Lotus.Web.QueryEditorPage do
 
     socket
     |> assign(running: true, error: nil, result: result)
+    # The filters the source runs, which the results grid offers.
+    |> assign(filter_operators: Lotus.Source.supported_filter_operators(repo))
     |> start_async(:query_execution, fn ->
       Lotus.run_query(query, opts)
     end)

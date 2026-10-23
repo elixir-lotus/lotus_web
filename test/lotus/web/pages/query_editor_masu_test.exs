@@ -48,6 +48,29 @@ defmodule Lotus.Web.Pages.QueryEditorMasuTest do
     assert names(live, grid) == ["Alice", "Bob", "Charlie"]
   end
 
+  test "the grid offers the filters of the query's source", %{live: live} do
+    [config] =
+      live
+      |> render()
+      |> LazyHTML.from_fragment()
+      |> LazyHTML.query(".masu")
+      |> LazyHTML.attribute("data-masu")
+
+    [name | _] = JSON.decode!(config)["columns"]
+    assert "contains" in name["filters"]
+    assert "not_nil" in name["filters"]
+  end
+
+  test "contains is of text as written, whatever its case", %{live: live, grid: grid} do
+    Masu.Test.filter(live, grid, [{"name", :contains, "ALI"}])
+    render_async(live)
+    assert names(live, grid) == ["Alice"]
+
+    Masu.Test.filter(live, grid, [{"name", :contains, "_"}])
+    render_async(live)
+    assert names(live, grid) == []
+  end
+
   test "the grid keeps its filters under a chart" do
     query =
       query_fixture(%{name: "Charted", statement: "SELECT name FROM test_users ORDER BY name"})
