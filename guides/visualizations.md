@@ -200,7 +200,7 @@ GROUP BY country_code;
 
 A circle at each region's center, sized by a value. Better than a map's colors when the value is a count or an amount: a large region with few stores stays small.
 
-**Config:** Map, Region Field, Value Field.
+**Config:** Map, Region Field, Value Field, optional Color/Series Field.
 
 The maps are loaded by the browser only when a map chart first draws.
 
@@ -364,6 +364,8 @@ Under the fields, both the query editor's settings and a dashboard card's settin
 | **Stages** | Funnel | One color, a color for each stage, or each stage lighter than the one before; and the values beside the bars, in them, or none. |
 | **Sparkline** | Sparkline | A fill under the line, dots on the last value or on the last, lowest and highest, and the last value written at the end of the line. |
 | **Tooltip** | Bar, horizontal bar, line, area, scatter, bubble, pie, donut, heatmap, maps | More fields to show when a mark is hovered, beyond the chart's own. |
+| **Tooltip: from the series** | Bar, horizontal bar, line, area | What the tooltip adds from the series: the change from the point before ("▲ 12.4% vs February 2026"), the share of the stack or of the total, the rank ("#2 of 14"), and a small history of the series. |
+| **Animate changes** | All but single values | On by default: when the data changes, the marks move to their new places, and bars that change order slide past each other. Off, the chart redraws in place. People who ask their system for reduced motion get none either way. |
 | **Mark the highest / lowest value** | Bar, line, area, combo | A callout on the highest or the lowest value, with the value ("Highest: 463K"). Not on stacked series, whose marks are not at their values. |
 | **Shade a range** | Bar, line, area, combo, scatter, bubble | A shaded band across a range of the horizontal axis, with a label: a campaign, a holiday, an outage. Dates are written as `2026-03-01`, categories by name, numbers as numbers. |
 | **Subtitle** and **Source** | All | Words above and below the chart: how it is measured, and where the data comes from. |

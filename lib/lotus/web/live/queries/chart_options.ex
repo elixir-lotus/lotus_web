@@ -143,7 +143,7 @@ defmodule Lotus.Web.Queries.ChartOptions do
         <.switch config={@config} prefix={@prefix} key="sparkline_value" label={gettext("Write the last value")} />
       </section>
 
-      <section :if={Enum.any?(~w(stack sort smooth y_axis_zero), &(&1 in @keys))} class="space-y-3">
+      <section :if={Enum.any?(~w(stack sort smooth y_axis_zero animate), &(&1 in @keys))} class="space-y-3">
         <.heading>{gettext("Layout")}</.heading>
         <.choice
           :if={"stack" in @keys and @series?}
@@ -169,6 +169,14 @@ defmodule Lotus.Web.Queries.ChartOptions do
           ]}
         />
         <.switch :if={"smooth" in @keys} config={@config} prefix={@prefix} key="smooth" label={gettext("Smooth lines")} />
+        <.switch
+          :if={"animate" in @keys}
+          config={@config}
+          prefix={@prefix}
+          key="animate"
+          default={true}
+          label={gettext("Animate changes")}
+        />
         <.switch
           :if={"y_axis_zero" in @keys}
           config={@config}
@@ -199,6 +207,23 @@ defmodule Lotus.Web.Queries.ChartOptions do
               class="rounded border-gray-300 dark:border-gray-600 text-pink-500 focus:ring-pink-500"
             />
             <span class="truncate">{col}</span>
+          </label>
+        </div>
+        <div :if={"tooltip_adds" in @keys} class="pt-2 space-y-1">
+          <p class="text-xs text-gray-500 dark:text-gray-400">{gettext("And from the series")}</p>
+          <input type="hidden" name={name(@prefix, "tooltip_adds") <> "[]"} value="" />
+          <label
+            :for={{value, label} <- tooltip_adds()}
+            class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+          >
+            <input
+              type="checkbox"
+              name={name(@prefix, "tooltip_adds") <> "[]"}
+              value={value}
+              checked={value in List.wrap(@config["tooltip_adds"])}
+              class="rounded border-gray-300 dark:border-gray-600 text-pink-500 focus:ring-pink-500"
+            />
+            <span>{label}</span>
           </label>
         </div>
       </section>
@@ -423,6 +448,15 @@ defmodule Lotus.Web.Queries.ChartOptions do
       {"compact", gettext("Compact (1.2M)")},
       {"percent", gettext("Percent (0.42 → 42%)")}
     ] ++ if(currency?, do: [{"currency", gettext("Currency")}], else: [])
+  end
+
+  defp tooltip_adds do
+    [
+      {"change", gettext("Change from the point before")},
+      {"share", gettext("Share of the stack or of the total")},
+      {"rank", gettext("Rank")},
+      {"history", gettext("A small history of the series")}
+    ]
   end
 
   defp diverging?(scheme), do: scheme in ~w(red_blue red_green)

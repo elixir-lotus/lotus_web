@@ -407,7 +407,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
                 </div>
               <% end %>
 
-              <div :if={@chart_type not in ~w(map bubble_map)}>
+              <div :if={@chart_type != "map"}>
                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
                   <%= gettext("Color/Series Field") %> <span class="text-gray-400">(<%= gettext("optional") %>)</span>
                 </label>
