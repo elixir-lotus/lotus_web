@@ -669,6 +669,7 @@ defmodule Lotus.Web.QueryEditorPage do
       |> put_or_remove_config("y2_field", params["y2_field"])
       |> put_or_remove_config("y2_axis_title", params["y2_axis_title"])
       |> maybe_put_axis_config(params)
+      |> put_chart_options(params)
 
     {:noreply, assign(socket, visualization_config: updated)}
   end
@@ -2055,6 +2056,15 @@ defmodule Lotus.Web.QueryEditorPage do
   defp put_or_remove_config(map, key, nil), do: Map.delete(map, key)
   defp put_or_remove_config(map, key, ""), do: Map.delete(map, key)
   defp put_or_remove_config(map, key, value), do: Map.put(map, key, value)
+
+  # The chart's options (Charts.option_keys/1) that the form sent: a cleared
+  # one is removed; an option the form does not show is left as it is.
+  defp put_chart_options(config, params) do
+    config["chart_type"]
+    |> Charts.option_keys()
+    |> Enum.filter(&Map.has_key?(params, &1))
+    |> Enum.reduce(config, &put_or_remove_config(&2, &1, params[&1]))
+  end
 
   # Handle axis display config (only for cartesian charts)
   # Check if axis title params exist to know if axis section was rendered

@@ -6,6 +6,7 @@ defmodule Lotus.Web.Queries.VisualizationSettingsComponent do
   use Lotus.Web, :live_component
 
   alias Lotus.Web.Charts
+  alias Lotus.Web.Queries.ChartOptions
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
@@ -326,6 +327,7 @@ defmodule Lotus.Web.Queries.VisualizationSettingsComponent do
             <% _ -> %>
               <.standard_fields config={@config} columns={@columns} chart_type={@chart_type} />
           <% end %>
+          <ChartOptions.options :if={@config} config={@config} columns={@columns} />
         </div>
       </form>
 
@@ -851,8 +853,8 @@ defmodule Lotus.Web.Queries.VisualizationSettingsComponent do
               type="text"
               name="x_axis_title"
               id="x_axis_title"
-              value={Map.get(@config, "x_axis_title", @config["x_field"] || "")}
-              placeholder={@config["x_field"] || gettext("Enter label...")}
+              value={axis_title(@config, "x")}
+              placeholder={words(@config["x_field"]) || gettext("Enter label...")}
               class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-pink-500 focus:border-pink-500"
             />
           </div>
@@ -889,8 +891,8 @@ defmodule Lotus.Web.Queries.VisualizationSettingsComponent do
               type="text"
               name="y_axis_title"
               id="y_axis_title"
-              value={Map.get(@config, "y_axis_title", @config["y_field"] || "")}
-              placeholder={@config["y_field"] || gettext("Enter label...")}
+              value={axis_title(@config, "y")}
+              placeholder={words(@config["y_field"]) || gettext("Enter label...")}
               class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-pink-500 focus:border-pink-500"
             />
           </div>
@@ -898,6 +900,26 @@ defmodule Lotus.Web.Queries.VisualizationSettingsComponent do
       </div>
     </div>
     """
+  end
+
+  # An axis's own title; none when it is the field's name, as the settings
+  # used to fill in: the chart then writes the field's name in words.
+  defp axis_title(config, axis) do
+    case config["#{axis}_axis_title"] do
+      title when title in [nil, ""] -> ""
+      title -> if title == config["#{axis}_field"], do: "", else: title
+    end
+  end
+
+  # A field's name in words, as the chart writes it: "total_revenue" is
+  # "Total revenue".
+  defp words(field) when field in [nil, ""], do: nil
+
+  defp words(field) do
+    case field |> String.replace("_", " ") |> String.trim() do
+      "" -> field
+      words -> String.upcase(String.first(words)) <> String.slice(words, 1..-1//1)
+    end
   end
 
   attr(:config, :map, required: true)
