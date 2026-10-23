@@ -3,12 +3,12 @@ msgstr ""
 "Language: fr\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/lotus/web/live/queries/results_component.ex:478
+#: lib/lotus/web/live/queries/results_component.ex:315
 #, elixir-autogen, elixir-format
 msgid " rows"
 msgstr " lignes"
 
-#: lib/lotus/web/live/queries/results_component.ex:456
+#: lib/lotus/web/live/queries/results_component.ex:293
 #, elixir-autogen, elixir-format
 msgid "%{stats} • %{duration}ms"
 msgstr "%{stats} • %{duration}ms"
@@ -18,7 +18,7 @@ msgstr "%{stats} • %{duration}ms"
 msgid "(or a single %{value} column)."
 msgstr "(ou une seule colonne %{value})."
 
-#: lib/lotus/web/pages/query_editor_page.ex:286
+#: lib/lotus/web/pages/query_editor_page.ex:284
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this query? This action cannot be undone."
 msgstr "Voulez-vous vraiment supprimer cette requête ? Cette action est irréversible."
@@ -32,15 +32,15 @@ msgstr "Explorer les tables"
 #: lib/lotus/web/pages/dashboard_editor_page.ex:288
 #: lib/lotus/web/pages/dashboard_editor_page.ex:318
 #: lib/lotus/web/pages/dashboard_editor_page.ex:526
-#: lib/lotus/web/pages/query_editor_page.ex:266
-#: lib/lotus/web/pages/query_editor_page.ex:294
-#: lib/lotus/web/queries/masu_messages.ex:19
+#: lib/lotus/web/pages/query_editor_page.ex:264
+#: lib/lotus/web/pages/query_editor_page.ex:292
+#: lib/lotus/web/queries/masu_messages.ex:22
 #, elixir-autogen, elixir-format
 msgid "Cancel"
 msgstr "Annuler"
 
 #: lib/lotus/web/commands.ex:84
-#: lib/lotus/web/components/layouts.ex:138
+#: lib/lotus/web/components/layouts.ex:141
 #: lib/lotus/web/live/queries/editor_component.ex:307
 #, elixir-autogen, elixir-format
 msgid "Copy query to clipboard"
@@ -82,14 +82,14 @@ msgstr "Valeur par défaut"
 
 #: lib/lotus/web/pages/dashboard_editor_page.ex:227
 #: lib/lotus/web/pages/dashboard_editor_page.ex:326
-#: lib/lotus/web/pages/query_editor_page.ex:217
-#: lib/lotus/web/pages/query_editor_page.ex:302
-#: lib/lotus/web/queries/masu_messages.ex:36
+#: lib/lotus/web/pages/query_editor_page.ex:215
+#: lib/lotus/web/pages/query_editor_page.ex:300
+#: lib/lotus/web/queries/masu_messages.ex:39
 #, elixir-autogen, elixir-format
 msgid "Delete"
 msgstr "Supprimer"
 
-#: lib/lotus/web/pages/query_editor_page.ex:284
+#: lib/lotus/web/pages/query_editor_page.ex:282
 #, elixir-autogen, elixir-format
 msgid "Delete query"
 msgstr "Supprimer la requête"
@@ -97,7 +97,7 @@ msgstr "Supprimer la requête"
 #: lib/lotus/web/pages/dashboard_editor_page.ex:268
 #: lib/lotus/web/pages/queries_page.ex:104
 #: lib/lotus/web/pages/queries_page.ex:141
-#: lib/lotus/web/pages/query_editor_page.ex:255
+#: lib/lotus/web/pages/query_editor_page.ex:253
 #, elixir-autogen, elixir-format
 msgid "Description"
 msgstr "Description"
@@ -138,12 +138,12 @@ msgstr "Saisissez une valeur par défaut..."
 msgid "Enter one value per line. Use \"value | label\" format to add display labels."
 msgstr "Entrez une valeur par ligne. Utilisez le format \"valeur | libellé\" pour ajouter un libellé d'affichage."
 
-#: lib/lotus/web/pages/query_editor_page.ex:256
+#: lib/lotus/web/pages/query_editor_page.ex:254
 #, elixir-autogen, elixir-format
 msgid "Enter query description (optional)"
 msgstr "Entrez la description de la requête (facultatif)"
 
-#: lib/lotus/web/pages/query_editor_page.ex:249
+#: lib/lotus/web/pages/query_editor_page.ex:247
 #, elixir-autogen, elixir-format
 msgid "Enter query name"
 msgstr "Entrez le nom de la requête"
@@ -154,40 +154,40 @@ msgstr "Entrez le nom de la requête"
 msgid "Enter value"
 msgstr "Saisissez une valeur"
 
-#: lib/lotus/web/live/queries/results_component.ex:96
+#: lib/lotus/web/live/queries/results_component.ex:78
 #: lib/lotus/web/live/queries/results_pill_component.ex:25
 #, elixir-autogen, elixir-format
 msgid "Error"
 msgstr "Erreur"
 
-#: lib/lotus/web/components/layouts.ex:170
+#: lib/lotus/web/components/layouts.ex:173
 #: lib/lotus/web/live/queries/editor_component.ex:409
 #, elixir-autogen, elixir-format
 msgid "Expand editor"
 msgstr "Agrandir l'éditeur"
 
-#: lib/lotus/web/live/queries/results_component.ex:324
+#: lib/lotus/web/live/queries/results_component.ex:161
 #, elixir-autogen, elixir-format
 msgid "Export (.csv)"
 msgstr "Exporter (.csv)"
 
-#: lib/lotus/web/live/queries/results_component.ex:320
+#: lib/lotus/web/live/queries/results_component.ex:157
 #, elixir-autogen, elixir-format
 msgid "Export query results to CSV"
 msgstr "Exporter les résultats de la requête en CSV"
 
-#: lib/lotus/web/pages/query_editor_page.ex:769
+#: lib/lotus/web/pages/query_editor_page.ex:767
 #, elixir-autogen, elixir-format
 msgid "Failed to copy to clipboard!"
 msgstr "Échec de la copie dans le presse-papiers !"
 
-#: lib/lotus/web/pages/query_editor_page.ex:2098
+#: lib/lotus/web/pages/query_editor_page.ex:2004
 #, elixir-autogen, elixir-format
 msgid "Failed to delete query"
 msgstr "Impossible de supprimer la requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:479
-#: lib/lotus/web/pages/query_editor_page.ex:503
+#: lib/lotus/web/pages/query_editor_page.ex:477
+#: lib/lotus/web/pages/query_editor_page.ex:501
 #, elixir-autogen, elixir-format
 msgid "Failed to save query"
 msgstr "Impossible d'enregistrer la requête"
@@ -197,7 +197,7 @@ msgstr "Impossible d'enregistrer la requête"
 msgid "Help"
 msgstr "Aide"
 
-#: lib/lotus/web/live/queries/results_component.ex:548
+#: lib/lotus/web/live/queries/results_component.ex:385
 #, elixir-autogen, elixir-format
 msgid "Here's where your results will appear"
 msgstr "Vos résultats s'afficheront ici"
@@ -238,7 +238,7 @@ msgstr "Libellés et valeurs par défaut"
 msgid "Min Age"
 msgstr "Âge min"
 
-#: lib/lotus/web/components/layouts.ex:175
+#: lib/lotus/web/components/layouts.ex:178
 #: lib/lotus/web/live/queries/editor_component.ex:410
 #, elixir-autogen, elixir-format
 msgid "Minimize editor"
@@ -248,32 +248,27 @@ msgstr "Réduire l'éditeur"
 #: lib/lotus/web/pages/dashboard_editor_page.ex:377
 #: lib/lotus/web/pages/queries_page.ex:96
 #: lib/lotus/web/pages/queries_page.ex:133
-#: lib/lotus/web/pages/query_editor_page.ex:248
+#: lib/lotus/web/pages/query_editor_page.ex:246
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr "Nom"
 
-#: lib/lotus/web/pages/query_editor_page.ex:203
+#: lib/lotus/web/pages/query_editor_page.ex:201
 #, elixir-autogen, elixir-format
 msgid "New Query"
 msgstr "Nouvelle requête"
 
-#: lib/lotus/web/live/queries/results_component.ex:312
-#: lib/lotus/web/queries/masu_messages.ex:85
+#: lib/lotus/web/live/queries/results_component.ex:149
+#: lib/lotus/web/queries/masu_messages.ex:107
 #, elixir-autogen, elixir-format
 msgid "Next"
 msgstr "Suivant"
 
-#: lib/lotus/web/pages/query_editor_page.ex:804
-#: lib/lotus/web/pages/query_editor_page.ex:807
+#: lib/lotus/web/pages/query_editor_page.ex:802
+#: lib/lotus/web/pages/query_editor_page.ex:805
 #, elixir-autogen, elixir-format
 msgid "No query results to export"
 msgstr "Aucun résultat de requête à exporter"
-
-#: lib/lotus/web/live/queries/results_component.ex:158
-#, elixir-autogen, elixir-format
-msgid "No results found"
-msgstr "Aucun résultat"
 
 #: lib/lotus/web/pages/queries_page.ex:84
 #, elixir-autogen, elixir-format
@@ -297,7 +292,7 @@ msgstr "Option 1\nOption 2\nOption 3"
 msgid "Please enter at least one option"
 msgstr "Veuillez saisir au moins une option"
 
-#: lib/lotus/web/live/queries/results_component.ex:304
+#: lib/lotus/web/live/queries/results_component.ex:141
 #, elixir-autogen, elixir-format
 msgid "Prev"
 msgstr "Précédent"
@@ -314,32 +309,32 @@ msgstr "Aperçu (3 premiers résultats) :"
 msgid "Queries"
 msgstr "Requêtes"
 
-#: lib/lotus/web/pages/query_editor_page.ex:764
+#: lib/lotus/web/pages/query_editor_page.ex:762
 #, elixir-autogen, elixir-format
 msgid "Query copied to clipboard!"
 msgstr "Requête copiée dans le presse-papiers !"
 
-#: lib/lotus/web/pages/query_editor_page.ex:2080
+#: lib/lotus/web/pages/query_editor_page.ex:1986
 #, elixir-autogen, elixir-format
 msgid "Query deleted successfully"
 msgstr "Requête supprimée avec succès"
 
 #: lib/lotus/web/pages/public_dashboard_page.ex:185
-#: lib/lotus/web/pages/query_editor_page.ex:1233
-#: lib/lotus/web/pages/query_editor_page.ex:1237
+#: lib/lotus/web/pages/query_editor_page.ex:1139
+#: lib/lotus/web/pages/query_editor_page.ex:1143
 #, elixir-autogen, elixir-format
 msgid "Query execution failed"
 msgstr "Échec de l'exécution de la requête"
 
 #: lib/lotus/web/pages/dashboard_editor_page.ex:1145
-#: lib/lotus/web/pages/query_editor_page.ex:1957
+#: lib/lotus/web/pages/query_editor_page.ex:1863
 #, elixir-autogen, elixir-format
 msgid "Query execution failed: %{reason}"
 msgstr "Échec de l'exécution de la requête : %{reason}"
 
-#: lib/lotus/web/pages/query_editor_page.ex:324
-#: lib/lotus/web/pages/query_editor_page.ex:491
-#: lib/lotus/web/pages/query_editor_page.ex:2072
+#: lib/lotus/web/pages/query_editor_page.ex:322
+#: lib/lotus/web/pages/query_editor_page.ex:489
+#: lib/lotus/web/pages/query_editor_page.ex:1978
 #, elixir-autogen, elixir-format
 msgid "Query not found"
 msgstr "Requête introuvable"
@@ -349,15 +344,15 @@ msgstr "Requête introuvable"
 msgid "Query running..."
 msgstr "Requête en cours..."
 
-#: lib/lotus/web/pages/query_editor_page.ex:471
+#: lib/lotus/web/pages/query_editor_page.ex:469
 #, elixir-autogen, elixir-format
 msgid "Query saved successfully!"
 msgstr "Requête enregistrée avec succès !"
 
-#: lib/lotus/web/live/queries/results_component.ex:45
-#: lib/lotus/web/live/queries/results_component.ex:93
-#: lib/lotus/web/live/queries/results_component.ex:557
-#: lib/lotus/web/queries/masu_results.ex:72
+#: lib/lotus/web/live/queries/results_component.ex:37
+#: lib/lotus/web/live/queries/results_component.ex:75
+#: lib/lotus/web/live/queries/results_component.ex:394
+#: lib/lotus/web/queries/masu_results.ex:68
 #, elixir-autogen, elixir-format
 msgid "Results"
 msgstr "Résultats"
@@ -368,7 +363,7 @@ msgid "Run Query"
 msgstr "Exécuter la requête"
 
 #: lib/lotus/web/commands.ex:65
-#: lib/lotus/web/components/layouts.ex:133
+#: lib/lotus/web/components/layouts.ex:136
 #: lib/lotus/web/live/queries/editor_component.ex:280
 #, elixir-autogen, elixir-format
 msgid "Run query"
@@ -380,13 +375,13 @@ msgid "SELECT value_column, label_column FROM table_name\n-- OR --\nSELECT value
 msgstr "SELECT value_column, label_column FROM table_name\n-- OU --\nSELECT value_column FROM table_name"
 
 #: lib/lotus/web/pages/dashboard_editor_page.ex:236
-#: lib/lotus/web/pages/query_editor_page.ex:227
+#: lib/lotus/web/pages/query_editor_page.ex:225
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr "Sauvegarder"
 
-#: lib/lotus/web/pages/query_editor_page.ex:237
-#: lib/lotus/web/pages/query_editor_page.ex:273
+#: lib/lotus/web/pages/query_editor_page.ex:235
+#: lib/lotus/web/pages/query_editor_page.ex:271
 #, elixir-autogen, elixir-format
 msgid "Save Query"
 msgstr "Enregistrer la requête"
@@ -405,7 +400,7 @@ msgstr "En-tête du schéma"
 
 #: lib/lotus/web/components/layouts/live.html.heex:25
 #: lib/lotus/web/live/queries/segmented_data_selector_component.ex:51
-#: lib/lotus/web/queries/masu_messages.ex:133
+#: lib/lotus/web/queries/masu_messages.ex:163
 #, elixir-autogen, elixir-format
 msgid "Search"
 msgstr "Rechercher"
@@ -434,12 +429,12 @@ msgstr "Sélectionner une valeur"
 msgid "Settings"
 msgstr "Paramètres"
 
-#: lib/lotus/web/live/queries/results_component.ex:469
+#: lib/lotus/web/live/queries/results_component.ex:306
 #, elixir-autogen, elixir-format
 msgid "Showing %{from}–%{to}"
 msgstr "Affichage de %{from}–%{to}"
 
-#: lib/lotus/web/live/queries/results_component.ex:471
+#: lib/lotus/web/live/queries/results_component.ex:308
 #, elixir-autogen, elixir-format
 msgid "Showing 0"
 msgstr "Affichage 0"
@@ -454,7 +449,7 @@ msgstr "Source"
 msgid "Static options"
 msgstr "Options statiques"
 
-#: lib/lotus/web/live/queries/results_component.ex:48
+#: lib/lotus/web/live/queries/results_component.ex:40
 #: lib/lotus/web/live/queries/results_pill_component.ex:31
 #, elixir-autogen, elixir-format
 msgid "Success"
@@ -485,7 +480,7 @@ msgstr "Test en cours..."
 msgid "Text"
 msgstr "Texte"
 
-#: lib/lotus/web/live/queries/results_component.ex:534
+#: lib/lotus/web/live/queries/results_component.ex:371
 #, elixir-autogen, elixir-format
 msgid "To run your query, click on the Run button or press"
 msgstr "Pour exécuter votre requête, cliquez sur le bouton Exécuter ou appuyez sur"
@@ -501,7 +496,7 @@ msgid "Types"
 msgstr "Types"
 
 #: lib/lotus/web/pages/dashboard_editor_page.ex:187
-#: lib/lotus/web/pages/query_editor_page.ex:205
+#: lib/lotus/web/pages/query_editor_page.ex:203
 #, elixir-autogen, elixir-format
 msgid "Untitled"
 msgstr "Sans titre"
@@ -556,11 +551,6 @@ msgstr "Vous n'avez pas l'autorisation de supprimer des requêtes"
 msgid "You don't have permission to save queries"
 msgstr "Vous n'avez pas l'autorisation d'enregistrer des requêtes"
 
-#: lib/lotus/web/live/queries/results_component.ex:159
-#, elixir-autogen, elixir-format
-msgid "Your query returned no rows"
-msgstr "Votre requête n'a retourné aucune ligne"
-
 #: lib/lotus/web/live/queries/variable_settings_component.ex:243
 #, elixir-autogen, elixir-format
 msgid "choose one:"
@@ -611,7 +601,7 @@ msgstr "retournez les colonnes comme"
 msgid "search_path:"
 msgstr "search_path :"
 
-#: lib/lotus/web/live/queries/results_component.ex:476
+#: lib/lotus/web/live/queries/results_component.ex:313
 #, elixir-autogen, elixir-format
 msgid " of %{count} row"
 msgid_plural " of %{count} rows"
@@ -625,7 +615,7 @@ msgid_plural "%{count} columns"
 msgstr[0] "%{count} colonne"
 msgstr[1] "%{count} colonnes"
 
-#: lib/lotus/web/live/queries/results_component.ex:485
+#: lib/lotus/web/live/queries/results_component.ex:322
 #: lib/lotus/web/live/queries/results_pill_component.ex:45
 #, elixir-autogen, elixir-format
 msgid "%{count} row"
@@ -647,18 +637,18 @@ msgid_plural "%{count} tables"
 msgstr[0] "%{count} table"
 msgstr[1] "%{count} tables"
 
-#: lib/lotus/web/components/layouts.ex:209
+#: lib/lotus/web/components/layouts.ex:212
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:90
 #, elixir-autogen, elixir-format
 msgid "Close"
 msgstr "Fermer"
 
-#: lib/lotus/web/components/layouts.ex:114
+#: lib/lotus/web/components/layouts.ex:117
 #, elixir-autogen, elixir-format
 msgid "General"
 msgstr "Général"
 
-#: lib/lotus/web/components/layouts.ex:110
+#: lib/lotus/web/components/layouts.ex:113
 #, elixir-autogen, elixir-format
 msgid "Keyboard Shortcuts"
 msgstr "Raccourcis clavier"
@@ -668,32 +658,32 @@ msgstr "Raccourcis clavier"
 msgid "Keyboard shortcuts"
 msgstr "Raccourcis clavier"
 
-#: lib/lotus/web/components/layouts.ex:200
+#: lib/lotus/web/components/layouts.ex:203
 #, elixir-autogen, elixir-format
 msgid "Note:"
 msgstr "Remarque :"
 
-#: lib/lotus/web/components/layouts.ex:130
+#: lib/lotus/web/components/layouts.ex:133
 #, elixir-autogen, elixir-format
 msgid "Query Editor"
 msgstr "Éditeur de requêtes"
 
-#: lib/lotus/web/components/layouts.ex:117
+#: lib/lotus/web/components/layouts.ex:120
 #, elixir-autogen, elixir-format
 msgid "Show keyboard shortcuts"
 msgstr "Afficher les raccourcis clavier"
 
-#: lib/lotus/web/components/layouts.ex:148
+#: lib/lotus/web/components/layouts.ex:151
 #, elixir-autogen, elixir-format
 msgid "Toggle Schema Explorer"
 msgstr "Afficher/Masquer l'explorateur de schémas"
 
-#: lib/lotus/web/components/layouts.ex:153
+#: lib/lotus/web/components/layouts.ex:156
 #, elixir-autogen, elixir-format
 msgid "Toggle Variable Settings"
 msgstr "Afficher/Masquer les paramètres des variables"
 
-#: lib/lotus/web/components/layouts.ex:200
+#: lib/lotus/web/components/layouts.ex:203
 #, elixir-autogen, elixir-format
 msgid "⌘ is the Command key on Mac"
 msgstr "⌘ correspond à la touche Command sur Mac"
@@ -729,8 +719,8 @@ msgstr "Graphique"
 msgid "Chart Type"
 msgstr "Type de graphique"
 
-#: lib/lotus/web/live/queries/results_component.ex:355
-#: lib/lotus/web/live/queries/results_component.ex:416
+#: lib/lotus/web/live/queries/results_component.ex:192
+#: lib/lotus/web/live/queries/results_component.ex:253
 #, elixir-autogen, elixir-format
 msgid "Chart view"
 msgstr "Vue graphique"
@@ -794,12 +784,12 @@ msgstr "Libellé"
 msgid "None"
 msgstr "Aucun"
 
-#: lib/lotus/web/components/layouts.ex:183
+#: lib/lotus/web/components/layouts.ex:186
 #, elixir-autogen, elixir-format
 msgid "Query Results"
 msgstr "Résultats de requête"
 
-#: lib/lotus/web/live/queries/results_component.ex:560
+#: lib/lotus/web/live/queries/results_component.ex:397
 #: lib/lotus/web/pages/dashboard_editor_page.ex:195
 #, elixir-autogen, elixir-format
 msgid "Running..."
@@ -834,18 +824,18 @@ msgstr "Sélectionner un champ..."
 msgid "Show label"
 msgstr "Afficher le libellé"
 
-#: lib/lotus/web/components/layouts.ex:191
+#: lib/lotus/web/components/layouts.ex:194
 #, elixir-autogen, elixir-format
 msgid "Switch to chart view"
 msgstr "Basculer vers la vue graphique"
 
-#: lib/lotus/web/components/layouts.ex:186
+#: lib/lotus/web/components/layouts.ex:189
 #, elixir-autogen, elixir-format
 msgid "Switch to table view"
 msgstr "Basculer vers la vue tableau"
 
-#: lib/lotus/web/live/queries/results_component.ex:338
-#: lib/lotus/web/live/queries/results_component.ex:399
+#: lib/lotus/web/live/queries/results_component.ex:175
+#: lib/lotus/web/live/queries/results_component.ex:236
 #, elixir-autogen, elixir-format
 msgid "Table view"
 msgstr "Vue tableau"
@@ -866,7 +856,7 @@ msgid "Use the chart icon in the bottom bar to view."
 msgstr "Utilisez l'icône graphique dans la barre inférieure pour afficher."
 
 #: lib/lotus/web/live/dashboards/card_settings_drawer.ex:227
-#: lib/lotus/web/live/queries/results_component.ex:387
+#: lib/lotus/web/live/queries/results_component.ex:224
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:45
 #, elixir-autogen, elixir-format
 msgid "Visualization"
@@ -1383,21 +1373,21 @@ msgstr "Vous n'avez pas l'autorisation de modifier des tableaux de bord"
 msgid "AI Assistant"
 msgstr "Assistant IA"
 
+#: lib/lotus/web/pages/query_editor_page.ex:950
 #: lib/lotus/web/pages/query_editor_page.ex:1044
-#: lib/lotus/web/pages/query_editor_page.ex:1138
-#: lib/lotus/web/pages/query_editor_page.ex:1190
+#: lib/lotus/web/pages/query_editor_page.ex:1096
 #, elixir-autogen, elixir-format
 msgid "AI features are not configured"
 msgstr "Les fonctionnalités IA ne sont pas configurées"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1755
+#: lib/lotus/web/pages/query_editor_page.ex:1661
 #, elixir-autogen, elixir-format
 msgid "AI features are not configured. Please add AI configuration."
 msgstr "Les fonctionnalités IA ne sont pas configurées. Veuillez ajouter la configuration IA."
 
-#: lib/lotus/web/pages/query_editor_page.ex:1056
-#: lib/lotus/web/pages/query_editor_page.ex:1139
-#: lib/lotus/web/pages/query_editor_page.ex:1191
+#: lib/lotus/web/pages/query_editor_page.ex:962
+#: lib/lotus/web/pages/query_editor_page.ex:1045
+#: lib/lotus/web/pages/query_editor_page.ex:1097
 #, elixir-autogen, elixir-format
 msgid "API key is missing or invalid"
 msgstr "La clé API est manquante ou invalide"
@@ -1407,7 +1397,7 @@ msgstr "La clé API est manquante ou invalide"
 msgid "Describe your query in plain English"
 msgstr "Décrivez votre requête en langage naturel"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1092
+#: lib/lotus/web/pages/query_editor_page.ex:998
 #, elixir-autogen, elixir-format
 msgid "Failed to generate query: %{error}"
 msgstr "Échec de la génération de la requête : %{error}"
@@ -1417,17 +1407,17 @@ msgstr "Échec de la génération de la requête : %{error}"
 msgid "Generate query with AI"
 msgstr "Générer la requête avec l'IA"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1767
+#: lib/lotus/web/pages/query_editor_page.ex:1673
 #, elixir-autogen, elixir-format
 msgid "Please select a data source first"
 msgstr "Veuillez d'abord sélectionner une source de données"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1106
+#: lib/lotus/web/pages/query_editor_page.ex:1012
 #, elixir-autogen, elixir-format
 msgid "Query generation timed out or crashed"
 msgstr "La génération de la requête a expiré ou s'est interrompue"
 
-#: lib/lotus/web/components/layouts.ex:164
+#: lib/lotus/web/components/layouts.ex:167
 #, elixir-autogen, elixir-format
 msgid "Toggle AI Assistant"
 msgstr "Activer/désactiver l'assistant IA"
@@ -1468,7 +1458,7 @@ msgstr "Exemples de requêtes :"
 msgid "Find top 10 products by revenue"
 msgstr "Trouver les 10 meilleurs produits par chiffre d'affaires"
 
-#: lib/lotus/web/pages/query_editor_page.ex:600
+#: lib/lotus/web/pages/query_editor_page.ex:598
 #, elixir-autogen, elixir-format
 msgid "Please fix the error and generate a corrected query"
 msgstr "Veuillez corriger l'erreur et générer une requête corrigée"
@@ -1478,8 +1468,8 @@ msgstr "Veuillez corriger l'erreur et générer une requête corrigée"
 msgid "Query Failed"
 msgstr "Échec de la requête"
 
+#: lib/lotus/web/pages/query_editor_page.ex:587
 #: lib/lotus/web/pages/query_editor_page.ex:589
-#: lib/lotus/web/pages/query_editor_page.ex:591
 #, elixir-autogen, elixir-format
 msgid "Query inserted into editor"
 msgstr "Requête insérée dans l'éditeur"
@@ -1702,7 +1692,7 @@ msgstr "Part du tout"
 msgid "Progress Bar"
 msgstr "Barre de progression"
 
-#: lib/lotus/web/pages/query_editor_page.ex:588
+#: lib/lotus/web/pages/query_editor_page.ex:586
 #, elixir-autogen, elixir-format
 msgid "Query and variable settings applied"
 msgstr "Paramètres de requête et de variable appliqués"
@@ -1798,7 +1788,7 @@ msgstr "Le champ numérique pour calculer la distribution de fréquence"
 msgid "The numeric field to display as a big number"
 msgstr "Le champ numérique à afficher en grand"
 
-#: lib/lotus/web/components/layouts.ex:158
+#: lib/lotus/web/components/layouts.ex:161
 #, elixir-autogen, elixir-format
 msgid "Toggle Visualization Settings"
 msgstr "Afficher/Masquer les paramètres de visualisation"
@@ -1824,7 +1814,7 @@ msgstr "Utiliser la ligne précédente"
 msgid "Value Field"
 msgstr "Champ de valeur"
 
-#: lib/lotus/web/pages/query_editor_page.ex:590
+#: lib/lotus/web/pages/query_editor_page.ex:588
 #, elixir-autogen, elixir-format
 msgid "Variable settings updated"
 msgstr "Paramètres de variable mis à jour"
@@ -1976,7 +1966,7 @@ msgid_plural "%{count} optimization suggestions:"
 msgstr[0] "%{count} suggestion d'optimisation :"
 msgstr[1] "%{count} suggestions d'optimisation :"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1142
+#: lib/lotus/web/pages/query_editor_page.ex:1048
 #, elixir-autogen, elixir-format
 msgid "Optimization failed: %{error}"
 msgstr "Échec de l'optimisation : %{error}"
@@ -1986,7 +1976,7 @@ msgstr "Échec de l'optimisation : %{error}"
 msgid "Optimize query"
 msgstr "Optimiser la requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1805
+#: lib/lotus/web/pages/query_editor_page.ex:1711
 #, elixir-autogen, elixir-format
 msgid "Optimize this query"
 msgstr "Optimiser cette requête"
@@ -1996,7 +1986,7 @@ msgstr "Optimiser cette requête"
 msgid "Optional clauses"
 msgstr "Clauses optionnelles"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1158
+#: lib/lotus/web/pages/query_editor_page.ex:1064
 #, elixir-autogen, elixir-format
 msgid "Query optimization timed out or crashed"
 msgstr "L'optimisation de la requête a expiré ou a échoué"
@@ -2021,12 +2011,12 @@ msgstr "Analyser votre requête et suggérer des améliorations de performance"
 msgid "Explain query"
 msgstr "Expliquer la requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1835
+#: lib/lotus/web/pages/query_editor_page.ex:1741
 #, elixir-autogen, elixir-format
 msgid "Explain this query"
 msgstr "Expliquer cette requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1194
+#: lib/lotus/web/pages/query_editor_page.ex:1100
 #, elixir-autogen, elixir-format
 msgid "Explanation failed: %{error}"
 msgstr "Échec de l'explication : %{error}"
@@ -2041,7 +2031,7 @@ msgstr "Obtenir une explication en langage courant de votre requête"
 msgid "Query Explanation"
 msgstr "Explication de la requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1210
+#: lib/lotus/web/pages/query_editor_page.ex:1116
 #, elixir-autogen, elixir-format
 msgid "Query explanation timed out or crashed"
 msgstr "L'explication de la requête a expiré ou s'est interrompue"
@@ -2051,45 +2041,23 @@ msgstr "L'explication de la requête a expiré ou s'est interrompue"
 msgid "or use AI on your current query"
 msgstr "ou utiliser l'IA sur votre requête actuelle"
 
-#: lib/lotus/web/live/queries/results_component.ex:194
-#: lib/lotus/web/live/queries/results_component.ex:228
-#: lib/lotus/web/queries/masu_messages.ex:25
+#: lib/lotus/web/queries/masu_messages.ex:28
 #, elixir-autogen, elixir-format
 msgid "Clear all"
 msgstr "Tout effacer"
-
-#: lib/lotus/web/live/queries/results_component.ex:191
-#, elixir-autogen, elixir-format
-msgid "Clear all filters"
-msgstr "Effacer tous les filtres"
-
-#: lib/lotus/web/live/queries/results_component.ex:168
-#, elixir-autogen, elixir-format
-msgid "Filters:"
-msgstr "Filtres :"
 
 #: lib/lotus/web/live/queries/editor_component.ex:97
 #, elixir-autogen, elixir-format
 msgid "AI is thinking..."
 msgstr "L'IA réfléchit..."
 
-#: lib/lotus/web/live/queries/results_component.ex:225
-#, elixir-autogen, elixir-format
-msgid "Clear all sorts"
-msgstr "Effacer tous les tris"
-
-#: lib/lotus/web/pages/query_editor_page.ex:1867
+#: lib/lotus/web/pages/query_editor_page.ex:1773
 #, elixir-autogen, elixir-format
 msgid "Explain this fragment: `%{fragment}`"
 msgstr "Expliquer ce fragment : `%{fragment}`"
 
-#: lib/lotus/web/live/queries/results_component.ex:203
-#, elixir-autogen, elixir-format
-msgid "Sort:"
-msgstr "Tri :"
-
 #: lib/lotus/web/live/dashboards/card_component.ex:170
-#: lib/lotus/web/live/queries/results_component.ex:278
+#: lib/lotus/web/live/queries/results_component.ex:115
 #, elixir-autogen, elixir-format
 msgid "Chart could not be rendered: result contains values that cannot be displayed"
 msgstr "Le graphique n'a pas pu être rendu : le résultat contient des valeurs qui ne peuvent pas être affichées"
@@ -2120,12 +2088,12 @@ msgstr "Saisissez une requête à exécuter"
 msgid "From query"
 msgstr "Depuis une requête"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1028
+#: lib/lotus/web/pages/query_editor_page.ex:934
 #, elixir-autogen, elixir-format
 msgid "Here's your query:"
 msgstr "Voici votre requête :"
 
-#: lib/lotus/web/pages/query_editor_page.ex:825
+#: lib/lotus/web/pages/query_editor_page.ex:823
 #, elixir-autogen, elixir-format
 msgid "Please enter a statement"
 msgstr "Veuillez saisir une instruction"
@@ -2140,13 +2108,13 @@ msgstr "Veuillez d'abord tester votre requête et vérifier qu'elle renvoie des 
 msgid "Query cannot be empty"
 msgstr "La requête ne peut pas être vide"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1829
-#: lib/lotus/web/pages/query_editor_page.ex:1859
+#: lib/lotus/web/pages/query_editor_page.ex:1735
+#: lib/lotus/web/pages/query_editor_page.ex:1765
 #, elixir-autogen, elixir-format
 msgid "Write a query first before explaining"
 msgstr "Écrivez d'abord une requête avant de l'expliquer"
 
-#: lib/lotus/web/pages/query_editor_page.ex:1799
+#: lib/lotus/web/pages/query_editor_page.ex:1705
 #, elixir-autogen, elixir-format
 msgid "Write a query first before optimizing"
 msgstr "Écrivez d'abord une requête avant d'optimiser"
@@ -2156,7 +2124,7 @@ msgstr "Écrivez d'abord une requête avant d'optimiser"
 msgid "Write a query that returns value and label columns (or just a value column)."
 msgstr "Écrivez une requête qui renvoie les colonnes valeur et libellé (ou uniquement une colonne valeur)."
 
-#: lib/lotus/web/pages/query_editor_page.ex:796
+#: lib/lotus/web/pages/query_editor_page.ex:794
 #, elixir-autogen, elixir-format
 msgid "Could not format query: %{error}"
 msgstr "Impossible de mettre en forme la requête : %{error}"
@@ -2166,7 +2134,7 @@ msgstr "Impossible de mettre en forme la requête : %{error}"
 msgid "Pretty-print query"
 msgstr "Mettre en forme la requête"
 
-#: lib/lotus/web/components/layouts.ex:143
+#: lib/lotus/web/components/layouts.ex:146
 #, elixir-autogen, elixir-format
 msgid "Pretty-print the query (JSON sources)"
 msgstr "Mettre en forme la requête (sources JSON)"
@@ -2381,47 +2349,47 @@ msgstr "début de plage"
 msgid "whole value"
 msgstr "valeur entière"
 
-#: lib/lotus/web/queries/masu_messages.ex:46
+#: lib/lotus/web/queries/masu_messages.ex:50
 #, elixir-autogen, elixir-format
 msgid "(empty)"
 msgstr "(vide)"
 
-#: lib/lotus/web/queries/masu_messages.ex:80
+#: lib/lotus/web/queries/masu_messages.ex:102
 #, elixir-autogen, elixir-format
 msgid "({count} more)"
 msgstr "({count} de plus)"
 
-#: lib/lotus/web/queries/masu_messages.ex:32
+#: lib/lotus/web/queries/masu_messages.ex:35
 #, elixir-autogen, elixir-format
 msgid "1 row copied"
 msgstr "1 ligne copiée"
 
 #: lib/lotus/web/commands.ex:94
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Add card"
 msgstr "Ajouter une carte"
 
-#: lib/lotus/web/queries/masu_messages.ex:15
+#: lib/lotus/web/queries/masu_messages.ex:18
 #, elixir-autogen, elixir-format
 msgid "Add rows"
 msgstr "Ajouter des lignes"
 
-#: lib/lotus/web/queries/masu_messages.ex:111
+#: lib/lotus/web/queries/masu_messages.ex:138
 #, elixir-autogen, elixir-format
 msgid "Add {count} new rows for the rest of the paste?"
 msgstr "Ajouter {count} nouvelles lignes pour le reste du collage ?"
 
-#: lib/lotus/web/queries/masu_messages.ex:22
+#: lib/lotus/web/queries/masu_messages.ex:25
 #, elixir-autogen, elixir-format
 msgid "All {count} selected"
 msgstr "Les {count} sélectionnées"
 
-#: lib/lotus/web/queries/masu_messages.ex:23
+#: lib/lotus/web/queries/masu_messages.ex:26
 #, elixir-autogen, elixir-format
 msgid "All {count}+ selected"
 msgstr "Les {count}+ sélectionnées"
 
-#: lib/lotus/web/queries/masu_messages.ex:114
+#: lib/lotus/web/queries/masu_messages.ex:141
 #, elixir-autogen, elixir-format
 msgid "Also here"
 msgstr "Également ici"
@@ -2431,7 +2399,7 @@ msgstr "Également ici"
 msgid "Appearance"
 msgstr ""
 
-#: lib/lotus/web/queries/masu_messages.ex:17
+#: lib/lotus/web/queries/masu_messages.ex:20
 #, elixir-autogen, elixir-format
 msgid "Apply"
 msgstr "Appliquer"
@@ -2441,63 +2409,63 @@ msgstr "Appliquer"
 msgid "Ask AI…"
 msgstr ""
 
-#: lib/lotus/web/queries/masu_messages.ex:18
+#: lib/lotus/web/queries/masu_messages.ex:21
 #, elixir-autogen, elixir-format
 msgid "Back to your view"
 msgstr "Revenir à votre vue"
 
-#: lib/lotus/web/queries/masu_messages.ex:48
+#: lib/lotus/web/queries/masu_messages.ex:52
 #, elixir-autogen, elixir-format
 msgid "CSV"
 msgstr "CSV"
 
-#: lib/lotus/web/queries/masu_messages.ex:24
-#: lib/lotus/web/queries/masu_messages.ex:26
+#: lib/lotus/web/queries/masu_messages.ex:27
+#: lib/lotus/web/queries/masu_messages.ex:29
 #, elixir-autogen, elixir-format
 msgid "Clear"
 msgstr "Effacer"
 
-#: lib/lotus/web/queries/masu_messages.ex:28
+#: lib/lotus/web/queries/masu_messages.ex:31
 #, elixir-autogen, elixir-format
 msgid "Columns"
 msgstr "Colonnes"
 
-#: lib/lotus/web/queries/masu_messages.ex:30
+#: lib/lotus/web/queries/masu_messages.ex:33
 #, elixir-autogen, elixir-format
 msgid "Condition"
 msgstr "Condition"
 
-#: lib/lotus/web/queries/masu_messages.ex:33
+#: lib/lotus/web/queries/masu_messages.ex:36
 #, elixir-autogen, elixir-format
 msgid "Copy"
 msgstr "Copier"
 
-#: lib/lotus/web/queries/masu_messages.ex:35
+#: lib/lotus/web/queries/masu_messages.ex:38
 #, elixir-autogen, elixir-format
 msgid "Copy with headers"
 msgstr "Copier avec les en-têtes"
 
 #: lib/lotus/web/commands.ex:109
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Create"
-msgstr "Créée"
+msgstr "Créer"
 
 #: lib/lotus/web/commands.ex:152
 #, elixir-autogen, elixir-format
 msgid "Dark"
 msgstr ""
 
-#: lib/lotus/web/queries/masu_messages.ex:37
+#: lib/lotus/web/queries/masu_messages.ex:40
 #, elixir-autogen, elixir-format
 msgid "Delete this row?"
 msgstr "Supprimer cette ligne ?"
 
-#: lib/lotus/web/queries/masu_messages.ex:38
+#: lib/lotus/web/queries/masu_messages.ex:41
 #, elixir-autogen, elixir-format
 msgid "Delete {count} rows?"
 msgstr "Supprimer {count} lignes ?"
 
-#: lib/lotus/web/queries/masu_messages.ex:149
+#: lib/lotus/web/queries/masu_messages.ex:179
 #, elixir-autogen, elixir-format
 msgid "Delete {label}"
 msgstr "Supprimer {label}"
@@ -2507,72 +2475,72 @@ msgstr "Supprimer {label}"
 msgid "Describe the dashboard (optional)"
 msgstr ""
 
-#: lib/lotus/web/queries/masu_messages.ex:41
+#: lib/lotus/web/queries/masu_messages.ex:45
 #, elixir-autogen, elixir-format
 msgid "Details"
 msgstr "Détails"
 
-#: lib/lotus/web/queries/masu_messages.ex:42
+#: lib/lotus/web/queries/masu_messages.ex:46
 #, elixir-autogen, elixir-format
 msgid "Details hidden"
 msgstr "Détails masqués"
 
-#: lib/lotus/web/queries/masu_messages.ex:43
+#: lib/lotus/web/queries/masu_messages.ex:47
 #, elixir-autogen, elixir-format
 msgid "Details shown"
 msgstr "Détails affichés"
 
-#: lib/lotus/web/queries/masu_messages.ex:52
+#: lib/lotus/web/queries/masu_messages.ex:56
 #, elixir-autogen, elixir-format
 msgid "Excel (XLSX)"
 msgstr "Excel (XLSX)"
 
-#: lib/lotus/web/queries/masu_messages.ex:47
+#: lib/lotus/web/queries/masu_messages.ex:51
 #, elixir-autogen, elixir-format
 msgid "Exclude {label}"
 msgstr "Exclure {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:50
+#: lib/lotus/web/queries/masu_messages.ex:54
 #, elixir-autogen, elixir-format
 msgid "Export"
 msgstr "Exporter"
 
-#: lib/lotus/web/queries/masu_messages.ex:55
+#: lib/lotus/web/queries/masu_messages.ex:60
 #, elixir-autogen, elixir-format
 msgid "Filter by empty"
 msgstr "Filtrer sur vide"
 
-#: lib/lotus/web/queries/masu_messages.ex:56
+#: lib/lotus/web/queries/masu_messages.ex:70
 #, elixir-autogen, elixir-format
 msgid "Filter by not empty"
 msgstr "Filtrer sur non vide"
 
-#: lib/lotus/web/queries/masu_messages.ex:66
+#: lib/lotus/web/queries/masu_messages.ex:72
 #, elixir-autogen, elixir-format
 msgid "Filter by {label}"
 msgstr "Filtrer sur {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:54
+#: lib/lotus/web/queries/masu_messages.ex:58
 #, elixir-autogen, elixir-format
 msgid "Filter {label}"
 msgstr "Filtrer {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:29
+#: lib/lotus/web/queries/masu_messages.ex:32
 #, elixir-autogen, elixir-format
 msgid "Find a column"
 msgstr "Trouver une colonne"
 
-#: lib/lotus/web/queries/masu_messages.ex:67
+#: lib/lotus/web/queries/masu_messages.ex:73
 #, elixir-autogen, elixir-format
 msgid "Follow {label}"
 msgstr "Suivre {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:69
+#: lib/lotus/web/queries/masu_messages.ex:75
 #, elixir-autogen, elixir-format
 msgid "Following {label}"
 msgstr "Vous suivez {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:70
+#: lib/lotus/web/queries/masu_messages.ex:76
 #, elixir-autogen, elixir-format
 msgid "From"
 msgstr "De"
@@ -2583,197 +2551,199 @@ msgstr "De"
 msgid "Go to"
 msgstr ""
 
-#: lib/lotus/web/queries/masu_messages.ex:71
+#: lib/lotus/web/queries/masu_messages.ex:77
 #, elixir-autogen, elixir-format
 msgid "Group by {label}"
 msgstr "Grouper par {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:72
+#: lib/lotus/web/queries/masu_messages.ex:78
 #, elixir-autogen, elixir-format
 msgid "Grouped by {label}"
 msgstr "Groupé par {label}"
 
 #: lib/lotus/web/commands.ex:151
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Light"
-msgstr "Hauteur"
+msgstr "Clair"
 
-#: lib/lotus/web/queries/masu_messages.ex:79
+#: lib/lotus/web/queries/masu_messages.ex:101
 #, elixir-autogen, elixir-format
 msgid "Loading"
 msgstr "Chargement"
 
-#: lib/lotus/web/components/layouts.ex:89
+#: lib/lotus/web/components/layouts.ex:92
 #, elixir-autogen, elixir-format
 msgid "Made by Hattori AI"
 msgstr ""
 
-#: lib/lotus/web/queries/masu_messages.ex:81
+#: lib/lotus/web/queries/masu_messages.ex:103
 #, elixir-autogen, elixir-format
 msgid "Move {label} down"
 msgstr "Déplacer {label} vers le bas"
 
-#: lib/lotus/web/queries/masu_messages.ex:82
+#: lib/lotus/web/queries/masu_messages.ex:104
 #, elixir-autogen, elixir-format
 msgid "Move {label} up"
 msgstr "Déplacer {label} vers le haut"
 
-#: lib/lotus/web/queries/masu_messages.ex:151
+#: lib/lotus/web/queries/masu_messages.ex:181
 #, elixir-autogen, elixir-format
 msgid "Name this view"
 msgstr "Nommer cette vue"
 
 #: lib/lotus/web/commands.ex:119
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "New dashboard"
 msgstr "Nouveau tableau de bord"
 
 #: lib/lotus/web/commands.ex:113
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "New query"
 msgstr "Nouvelle requête"
 
-#: lib/lotus/web/queries/masu_messages.ex:84
+#: lib/lotus/web/queries/masu_messages.ex:106
 #, elixir-autogen, elixir-format
 msgid "New row"
 msgstr "Nouvelle ligne"
 
-#: lib/lotus/web/queries/masu_messages.ex:44
+#: lib/lotus/web/queries/masu_messages.ex:48
 #, elixir-autogen, elixir-format
 msgid "New row discarded"
 msgstr "Nouvelle ligne abandonnée"
 
-#: lib/lotus/web/queries/masu_messages.ex:86
+#: lib/lotus/web/queries/masu_messages.ex:108
 #, elixir-autogen, elixir-format
 msgid "No"
 msgstr "Non"
 
-#: lib/lotus/web/queries/masu_messages.ex:45
+#: lib/lotus/web/queries/masu_messages.ex:49
 #, elixir-autogen, elixir-format
 msgid "No rows"
 msgstr "Aucune ligne"
 
-#: lib/lotus/web/queries/masu_messages.ex:87
+#: lib/lotus/web/queries/masu_messages.ex:109
 #, elixir-autogen, elixir-format
 msgid "No values"
 msgstr "Aucune valeur"
 
-#: lib/lotus/web/queries/masu_messages.ex:73
+#: lib/lotus/web/queries/masu_messages.ex:95
 #, elixir-autogen, elixir-format
 msgid "Not a date"
 msgstr "Pas une date"
 
-#: lib/lotus/web/queries/masu_messages.ex:74
+#: lib/lotus/web/queries/masu_messages.ex:96
 #, elixir-autogen, elixir-format
 msgid "Not a date and time"
 msgstr "Pas une date et heure"
 
-#: lib/lotus/web/queries/masu_messages.ex:76
+#: lib/lotus/web/queries/masu_messages.ex:98
 #, elixir-autogen, elixir-format
 msgid "Not a number"
 msgstr "Pas un nombre"
 
-#: lib/lotus/web/queries/masu_messages.ex:77
+#: lib/lotus/web/queries/masu_messages.ex:99
 #, elixir-autogen, elixir-format
 msgid "Not a time"
 msgstr "Pas une heure"
 
-#: lib/lotus/web/queries/masu_messages.ex:75
+#: lib/lotus/web/queries/masu_messages.ex:97
 #, elixir-autogen, elixir-format
 msgid "Not a whole number"
 msgstr "Pas un nombre entier"
 
-#: lib/lotus/web/queries/masu_messages.ex:78
+#: lib/lotus/web/queries/masu_messages.ex:100
 #, elixir-autogen, elixir-format
 msgid "Not one of the values"
 msgstr "Pas une des valeurs"
 
-#: lib/lotus/web/queries/masu_messages.ex:117
+#: lib/lotus/web/queries/masu_messages.ex:144
 #, elixir-autogen, elixir-format
 msgid "Not pinned"
 msgstr "Non épinglée"
 
-#: lib/lotus/web/queries/masu_messages.ex:89
+#: lib/lotus/web/queries/masu_messages.ex:111
 #, elixir-autogen, elixir-format
 msgid "Not saved."
 msgstr "Non enregistré."
 
-#: lib/lotus/web/queries/masu_messages.ex:109
+#: lib/lotus/web/queries/masu_messages.ex:136
 #, elixir-autogen, elixir-format
 msgid "Page"
 msgstr "Page"
 
-#: lib/lotus/web/queries/masu_messages.ex:110
+#: lib/lotus/web/queries/masu_messages.ex:137
 #, elixir-autogen, elixir-format
 msgid "Pages"
 msgstr "Pages"
 
-#: lib/lotus/web/queries/masu_messages.ex:150
+#: lib/lotus/web/queries/masu_messages.ex:180
 #, elixir-autogen, elixir-format
 msgid "Part of this view no longer applies: {label}"
 msgstr "Une partie de cette vue ne s'applique plus : {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:115
+#: lib/lotus/web/queries/masu_messages.ex:142
 #, elixir-autogen, elixir-format
 msgid "Pin {label}"
 msgstr "Épingler {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:116
+#: lib/lotus/web/queries/masu_messages.ex:143
 #, elixir-autogen, elixir-format
 msgid "Pinned to the end"
 msgstr "Épinglée à la fin"
 
-#: lib/lotus/web/queries/masu_messages.ex:118
+#: lib/lotus/web/queries/masu_messages.ex:145
 #, elixir-autogen, elixir-format
 msgid "Pinned to the start"
 msgstr "Épinglée au début"
 
-#: lib/lotus/web/queries/masu_messages.ex:119
+#: lib/lotus/web/queries/masu_messages.ex:146
 #, elixir-autogen, elixir-format
 msgid "Previous"
 msgstr "Précédent"
 
-#: lib/lotus/web/queries/masu_messages.ex:121
+#: lib/lotus/web/queries/masu_messages.ex:148
 #, elixir-autogen, elixir-format
 msgid "Remove the filter"
 msgstr "Supprimer le filtre"
 
-#: lib/lotus/web/queries/masu_messages.ex:126
+#: lib/lotus/web/queries/masu_messages.ex:80
+#: lib/lotus/web/queries/masu_messages.ex:154
 #, elixir-autogen, elixir-format
 msgid "Row added"
 msgstr "Ligne ajoutée"
 
-#: lib/lotus/web/queries/masu_messages.ex:127
+#: lib/lotus/web/queries/masu_messages.ex:155
 #, elixir-autogen, elixir-format
 msgid "Row added; the filters leave it out"
 msgstr "Ligne ajoutée ; les filtres l'excluent"
 
-#: lib/lotus/web/queries/masu_messages.ex:123
+#: lib/lotus/web/queries/masu_messages.ex:150
 #, elixir-autogen, elixir-format
 msgid "Row brought back"
 msgstr "Ligne rétablie"
 
-#: lib/lotus/web/queries/masu_messages.ex:40
+#: lib/lotus/web/queries/masu_messages.ex:43
+#: lib/lotus/web/queries/masu_messages.ex:81
 #, elixir-autogen, elixir-format
 msgid "Row deleted"
 msgstr "Ligne supprimée"
 
-#: lib/lotus/web/queries/masu_messages.ex:124
+#: lib/lotus/web/queries/masu_messages.ex:151
 #, elixir-autogen, elixir-format
 msgid "Run again"
 msgstr "Relancer"
 
-#: lib/lotus/web/queries/masu_messages.ex:131
+#: lib/lotus/web/queries/masu_messages.ex:160
 #, elixir-autogen, elixir-format
 msgid "Running…"
 msgstr "Exécution…"
 
-#: lib/lotus/web/queries/masu_messages.ex:153
+#: lib/lotus/web/queries/masu_messages.ex:183
 #, elixir-autogen, elixir-format
 msgid "Save view"
 msgstr "Enregistrer la vue"
 
-#: lib/lotus/web/components/layouts.ex:122
+#: lib/lotus/web/components/layouts.ex:125
 #, elixir-autogen, elixir-format
 msgid "Search queries and dashboards, or run a command"
 msgstr ""
@@ -2783,58 +2753,58 @@ msgstr ""
 msgid "Search queries and dashboards, or run a command…"
 msgstr ""
 
-#: lib/lotus/web/queries/masu_messages.ex:134
+#: lib/lotus/web/queries/masu_messages.ex:164
 #, elixir-autogen, elixir-format
 msgid "Search values"
 msgstr "Rechercher des valeurs"
 
-#: lib/lotus/web/queries/masu_messages.ex:135
+#: lib/lotus/web/queries/masu_messages.ex:165
 #, elixir-autogen, elixir-format
 msgid "Select every row"
 msgstr "Sélectionner toutes les lignes"
 
-#: lib/lotus/web/queries/masu_messages.ex:136
+#: lib/lotus/web/queries/masu_messages.ex:166
 #, elixir-autogen, elixir-format
 msgid "Select the row"
 msgstr "Sélectionner la ligne"
 
-#: lib/lotus/web/queries/masu_messages.ex:155
+#: lib/lotus/web/queries/masu_messages.ex:185
 #, elixir-autogen, elixir-format
 msgid "Share with everyone"
 msgstr "Partager avec tout le monde"
 
-#: lib/lotus/web/queries/masu_messages.ex:156
+#: lib/lotus/web/queries/masu_messages.ex:186
 #, elixir-autogen, elixir-format
 msgid "Shared"
 msgstr "Partagée"
 
-#: lib/lotus/web/queries/masu_messages.ex:138
+#: lib/lotus/web/queries/masu_messages.ex:168
 #, elixir-autogen, elixir-format
 msgid "Show all"
 msgstr "Tout afficher"
 
-#: lib/lotus/web/queries/masu_messages.ex:139
+#: lib/lotus/web/queries/masu_messages.ex:169
 #, elixir-autogen, elixir-format
 msgid "Showing {label}'s view"
 msgstr "Vue de {label} affichée"
 
-#: lib/lotus/web/queries/masu_messages.ex:140
+#: lib/lotus/web/queries/masu_messages.ex:170
 #, elixir-autogen, elixir-format
 msgid "Sort ascending"
 msgstr "Trier par ordre croissant"
 
-#: lib/lotus/web/queries/masu_messages.ex:141
+#: lib/lotus/web/queries/masu_messages.ex:171
 #, elixir-autogen, elixir-format
 msgid "Sort descending"
 msgstr "Trier par ordre décroissant"
 
-#: lib/lotus/web/queries/masu_messages.ex:142
-#: lib/lotus/web/queries/masu_messages.ex:143
+#: lib/lotus/web/queries/masu_messages.ex:172
+#: lib/lotus/web/queries/masu_messages.ex:173
 #, elixir-autogen, elixir-format
 msgid "Stop"
 msgstr "Arrêter"
 
-#: lib/lotus/web/queries/masu_messages.ex:148
+#: lib/lotus/web/queries/masu_messages.ex:178
 #, elixir-autogen, elixir-format
 msgid "Stop grouping by {label}"
 msgstr "Ne plus grouper par {label}"
@@ -2844,32 +2814,32 @@ msgstr "Ne plus grouper par {label}"
 msgid "System"
 msgstr ""
 
-#: lib/lotus/web/queries/masu_messages.ex:49
+#: lib/lotus/web/queries/masu_messages.ex:53
 #, elixir-autogen, elixir-format
 msgid "The export failed"
 msgstr "L'export a échoué"
 
-#: lib/lotus/web/queries/masu_messages.ex:51
+#: lib/lotus/web/queries/masu_messages.ex:55
 #, elixir-autogen, elixir-format
 msgid "The export is downloading"
 msgstr "L'export est en cours de téléchargement"
 
-#: lib/lotus/web/queries/masu_messages.ex:152
+#: lib/lotus/web/queries/masu_messages.ex:182
 #, elixir-autogen, elixir-format
 msgid "The grid's own view"
 msgstr "La vue par défaut de la grille"
 
-#: lib/lotus/web/queries/masu_messages.ex:53
+#: lib/lotus/web/queries/masu_messages.ex:57
 #, elixir-autogen, elixir-format
 msgid "The query failed: {label}"
 msgstr "La requête a échoué : {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:145
+#: lib/lotus/web/queries/masu_messages.ex:175
 #, elixir-autogen, elixir-format
 msgid "The query took too long"
 msgstr "La requête a pris trop de temps"
 
-#: lib/lotus/web/queries/masu_messages.ex:34
+#: lib/lotus/web/queries/masu_messages.ex:37
 #, elixir-autogen, elixir-format
 msgid "The rows could not be copied"
 msgstr "Les lignes n'ont pas pu être copiées"
@@ -2879,47 +2849,47 @@ msgstr "Les lignes n'ont pas pu être copiées"
 msgid "Theme"
 msgstr ""
 
-#: lib/lotus/web/queries/masu_messages.ex:14
+#: lib/lotus/web/queries/masu_messages.ex:15
 #, elixir-autogen, elixir-format
 msgid "This action no longer applies"
 msgstr "Cette action ne s'applique plus"
 
-#: lib/lotus/web/queries/masu_messages.ex:146
+#: lib/lotus/web/queries/masu_messages.ex:176
 #, elixir-autogen, elixir-format
 msgid "To"
 msgstr "À"
 
 #: lib/lotus/web/commands.ex:70
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Toggle schema explorer"
 msgstr "Afficher/Masquer l'explorateur de schémas"
 
 #: lib/lotus/web/commands.ex:75
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Toggle variable settings"
 msgstr "Afficher/Masquer les paramètres des variables"
 
 #: lib/lotus/web/commands.ex:79
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Toggle visualization settings"
 msgstr "Afficher/Masquer les paramètres de visualisation"
 
-#: lib/lotus/web/queries/masu_messages.ex:147
+#: lib/lotus/web/queries/masu_messages.ex:177
 #, elixir-autogen, elixir-format
 msgid "Total"
 msgstr "Total"
 
-#: lib/lotus/web/queries/masu_messages.ex:154
+#: lib/lotus/web/queries/masu_messages.ex:184
 #, elixir-autogen, elixir-format
 msgid "View saved"
 msgstr "Vue enregistrée"
 
-#: lib/lotus/web/queries/masu_messages.ex:158
+#: lib/lotus/web/queries/masu_messages.ex:188
 #, elixir-autogen, elixir-format
 msgid "Views"
 msgstr "Vues"
 
-#: lib/lotus/web/queries/masu_messages.ex:157
+#: lib/lotus/web/queries/masu_messages.ex:187
 #, elixir-autogen, elixir-format
 msgid "Views: {label}"
 msgstr "Vues : {label}"
@@ -2929,252 +2899,392 @@ msgstr "Vues : {label}"
 msgid "Write the text of the card…"
 msgstr ""
 
-#: lib/lotus/web/queries/masu_messages.ex:159
+#: lib/lotus/web/queries/masu_messages.ex:189
 #, elixir-autogen, elixir-format
 msgid "Yes"
 msgstr "Oui"
 
-#: lib/lotus/web/queries/masu_messages.ex:96
+#: lib/lotus/web/queries/masu_messages.ex:119
 #, elixir-autogen, elixir-format
 msgid "after"
 msgstr "après"
 
-#: lib/lotus/web/queries/masu_messages.ex:16
+#: lib/lotus/web/queries/masu_messages.ex:19
 #, elixir-autogen, elixir-format
 msgid "and"
 msgstr "et"
 
-#: lib/lotus/web/queries/masu_messages.ex:97
+#: lib/lotus/web/queries/masu_messages.ex:120
 #, elixir-autogen, elixir-format
 msgid "at least"
 msgstr "au moins"
 
-#: lib/lotus/web/queries/masu_messages.ex:103
+#: lib/lotus/web/queries/masu_messages.ex:128
 #, elixir-autogen, elixir-format
 msgid "at most"
 msgstr "au plus"
 
-#: lib/lotus/web/queries/masu_messages.ex:102
+#: lib/lotus/web/queries/masu_messages.ex:127
 #, elixir-autogen, elixir-format
 msgid "before"
 msgstr "avant"
 
-#: lib/lotus/web/queries/masu_messages.ex:91
+#: lib/lotus/web/queries/masu_messages.ex:114
 #, elixir-autogen, elixir-format
 msgid "between"
 msgstr "entre"
 
-#: lib/lotus/web/queries/masu_messages.ex:92
+#: lib/lotus/web/queries/masu_messages.ex:115
 #, elixir-autogen, elixir-format
 msgid "contains"
 msgstr "contient"
 
-#: lib/lotus/web/queries/masu_messages.ex:106
+#: lib/lotus/web/queries/masu_messages.ex:132
 #, elixir-autogen, elixir-format
 msgid "does not contain"
 msgstr "ne contient pas"
 
-#: lib/lotus/web/queries/masu_messages.ex:93
+#: lib/lotus/web/queries/masu_messages.ex:116
 #, elixir-autogen, elixir-format
 msgid "ends with"
 msgstr "se termine par"
 
-#: lib/lotus/web/queries/masu_messages.ex:95
+#: lib/lotus/web/queries/masu_messages.ex:118
 #, elixir-autogen, elixir-format
 msgid "greater than"
 msgstr "supérieur à"
 
-#: lib/lotus/web/queries/masu_messages.ex:94
+#: lib/lotus/web/queries/masu_messages.ex:117
 #, elixir-autogen, elixir-format
 msgid "is"
 msgstr "est"
 
-#: lib/lotus/web/queries/masu_messages.ex:100
+#: lib/lotus/web/queries/masu_messages.ex:124
 #, elixir-autogen, elixir-format
 msgid "is empty"
 msgstr "est vide"
 
-#: lib/lotus/web/queries/masu_messages.ex:105
+#: lib/lotus/web/queries/masu_messages.ex:130
 #, elixir-autogen, elixir-format
 msgid "is not"
 msgstr "n'est pas"
 
-#: lib/lotus/web/queries/masu_messages.ex:107
+#: lib/lotus/web/queries/masu_messages.ex:133
 #, elixir-autogen, elixir-format
 msgid "is not empty"
 msgstr "n'est pas vide"
 
-#: lib/lotus/web/queries/masu_messages.ex:99
+#: lib/lotus/web/queries/masu_messages.ex:122
 #, elixir-autogen, elixir-format
 msgid "is one of"
 msgstr "est l'une des valeurs"
 
-#: lib/lotus/web/queries/masu_messages.ex:101
+#: lib/lotus/web/queries/masu_messages.ex:126
 #, elixir-autogen, elixir-format
 msgid "less than"
 msgstr "inférieur à"
 
-#: lib/lotus/web/queries/masu_messages.ex:90
+#: lib/lotus/web/queries/masu_messages.ex:112
 #, elixir-autogen, elixir-format
 msgid "of {count}"
 msgstr "sur {count}"
 
-#: lib/lotus/web/queries/masu_messages.ex:98
+#: lib/lotus/web/queries/masu_messages.ex:121
 #, elixir-autogen, elixir-format
 msgid "on or after"
 msgstr "le ou après le"
 
-#: lib/lotus/web/queries/masu_messages.ex:104
+#: lib/lotus/web/queries/masu_messages.ex:129
 #, elixir-autogen, elixir-format
 msgid "on or before"
 msgstr "le ou avant le"
 
-#: lib/lotus/web/queries/masu_messages.ex:108
+#: lib/lotus/web/queries/masu_messages.ex:135
 #, elixir-autogen, elixir-format
 msgid "starts with"
 msgstr "commence par"
 
-#: lib/lotus/web/queries/masu_messages.ex:88
+#: lib/lotus/web/queries/masu_messages.ex:110
 #, elixir-autogen, elixir-format
 msgid "{count} cells cannot be edited"
 msgstr "{count} cellules ne peuvent pas être modifiées"
 
-#: lib/lotus/web/queries/masu_messages.ex:132
+#: lib/lotus/web/queries/masu_messages.ex:161
 #, elixir-autogen, elixir-format
 msgid "{count} cells saved"
 msgstr "{count} cellules enregistrées"
 
-#: lib/lotus/web/queries/masu_messages.ex:125
+#: lib/lotus/web/queries/masu_messages.ex:152
 #, elixir-autogen, elixir-format
 msgid "{count} row"
 msgstr "{count} ligne"
 
-#: lib/lotus/web/queries/masu_messages.ex:128
+#: lib/lotus/web/queries/masu_messages.ex:157
 #, elixir-autogen, elixir-format
 msgid "{count} rows"
 msgstr "{count} lignes"
 
-#: lib/lotus/web/queries/masu_messages.ex:129
+#: lib/lotus/web/queries/masu_messages.ex:158
 #, elixir-autogen, elixir-format
 msgid "{count} rows added"
 msgstr "{count} lignes ajoutées"
 
-#: lib/lotus/web/queries/masu_messages.ex:122
+#: lib/lotus/web/queries/masu_messages.ex:149
 #, elixir-autogen, elixir-format
 msgid "{count} rows brought back"
 msgstr "{count} lignes rétablies"
 
-#: lib/lotus/web/queries/masu_messages.ex:31
+#: lib/lotus/web/queries/masu_messages.ex:34
 #, elixir-autogen, elixir-format
 msgid "{count} rows copied"
 msgstr "{count} lignes copiées"
 
-#: lib/lotus/web/queries/masu_messages.ex:39
+#: lib/lotus/web/queries/masu_messages.ex:42
 #, elixir-autogen, elixir-format
 msgid "{count} rows deleted"
 msgstr "{count} lignes supprimées"
 
-#: lib/lotus/web/queries/masu_messages.ex:137
+#: lib/lotus/web/queries/masu_messages.ex:167
 #, elixir-autogen, elixir-format
 msgid "{count} rows selected"
 msgstr "{count} lignes sélectionnées"
 
-#: lib/lotus/web/queries/masu_messages.ex:21
+#: lib/lotus/web/queries/masu_messages.ex:24
 #, elixir-autogen, elixir-format
 msgid "{count} selected"
 msgstr "{count} sélectionnées"
 
-#: lib/lotus/web/queries/masu_messages.ex:130
+#: lib/lotus/web/queries/masu_messages.ex:159
 #, elixir-autogen, elixir-format
 msgid "{count}+ rows"
 msgstr "{count}+ lignes"
 
-#: lib/lotus/web/queries/masu_messages.ex:120
+#: lib/lotus/web/queries/masu_messages.ex:147
 #, elixir-autogen, elixir-format
 msgid "{first}–{last} of {count}"
 msgstr "{first}–{last} sur {count}"
 
-#: lib/lotus/web/queries/masu_messages.ex:112
+#: lib/lotus/web/queries/masu_messages.ex:139
 #, elixir-autogen, elixir-format
 msgid "{label} is editing this cell"
 msgstr "{label} modifie cette cellule"
 
-#: lib/lotus/web/queries/masu_messages.ex:68
+#: lib/lotus/web/queries/masu_messages.ex:74
 #, elixir-autogen, elixir-format
 msgid "{label} is on a row your filters leave out"
 msgstr "{label} est sur une ligne exclue par vos filtres"
 
-#: lib/lotus/web/queries/masu_messages.ex:113
+#: lib/lotus/web/queries/masu_messages.ex:140
 #, elixir-autogen, elixir-format
 msgid "{label} is typing"
 msgstr "{label} est en train d'écrire"
 
-#: lib/lotus/web/queries/masu_messages.ex:27
+#: lib/lotus/web/queries/masu_messages.ex:30
 #, elixir-autogen, elixir-format
 msgid "{label} menu"
 msgstr "Menu {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:83
+#: lib/lotus/web/queries/masu_messages.ex:105
 #, elixir-autogen, elixir-format
 msgid "{label} moved"
 msgstr "{label} déplacée"
 
-#: lib/lotus/web/queries/masu_messages.ex:144
+#: lib/lotus/web/queries/masu_messages.ex:174
 #, elixir-autogen, elixir-format
 msgid "{label}'s view"
 msgstr "Vue de {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:20
+#: lib/lotus/web/queries/masu_messages.ex:23
 #, elixir-autogen, elixir-format
 msgid "{label}: actions"
 msgstr "{label} : actions"
 
-#: lib/lotus/web/queries/masu_results.ex:76
+#: lib/lotus/web/queries/masu_results.ex:72
 #, elixir-autogen, elixir-format
 msgid "Column stats"
 msgstr "Statistiques de la colonne"
 
-#: lib/lotus/web/queries/masu_messages.ex:61
+#: lib/lotus/web/queries/masu_messages.ex:62
 #, elixir-autogen, elixir-format
 msgid "After {label}"
 msgstr "Après {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:59
+#: lib/lotus/web/queries/masu_messages.ex:63
 #, elixir-autogen, elixir-format
 msgid "At least {label}"
 msgstr "Au moins {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:60
+#: lib/lotus/web/queries/masu_messages.ex:67
 #, elixir-autogen, elixir-format
 msgid "At most {label}"
 msgstr "Au plus {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:62
+#: lib/lotus/web/queries/masu_messages.ex:66
 #, elixir-autogen, elixir-format
 msgid "Before {label}"
 msgstr "Avant {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:65
+#: lib/lotus/web/queries/masu_messages.ex:59
 #, elixir-autogen, elixir-format
 msgid "Contains {label}"
 msgstr "Contient {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:57
+#: lib/lotus/web/queries/masu_messages.ex:61
 #, elixir-autogen, elixir-format
 msgid "Greater than {label}"
 msgstr "Supérieur à {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:58
+#: lib/lotus/web/queries/masu_messages.ex:65
 #, elixir-autogen, elixir-format
 msgid "Less than {label}"
 msgstr "Inférieur à {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:63
+#: lib/lotus/web/queries/masu_messages.ex:64
 #, elixir-autogen, elixir-format
 msgid "On or after {label}"
 msgstr "Le ou après le {label}"
 
-#: lib/lotus/web/queries/masu_messages.ex:64
+#: lib/lotus/web/queries/masu_messages.ex:68
 #, elixir-autogen, elixir-format
 msgid "On or before {label}"
 msgstr "Le ou avant le {label}"
+
+#: lib/lotus/web/queries/masu_messages.ex:44
+#, elixir-autogen, elixir-format
+msgid "Deleting…"
+msgstr "Suppression…"
+
+#: lib/lotus/web/queries/masu_messages.ex:69
+#, elixir-autogen, elixir-format
+msgid "Filter by none"
+msgstr "Filtrer par aucun"
+
+#: lib/lotus/web/queries/masu_messages.ex:71
+#, elixir-autogen, elixir-format
+msgid "Filter by some"
+msgstr "Filtrer par au moins un"
+
+#: lib/lotus/web/queries/masu_messages.ex:79
+#, elixir-autogen, elixir-format
+msgid "History"
+msgstr "Historique"
+
+#: lib/lotus/web/queries/masu_messages.ex:82
+#, elixir-autogen, elixir-format
+msgid "No changes yet"
+msgstr "Aucune modification pour l'instant"
+
+#: lib/lotus/web/queries/masu_messages.ex:90
+#, elixir-autogen, elixir-format
+msgid "Restore {label}"
+msgstr "Restaurer {label}"
+
+#: lib/lotus/web/queries/masu_messages.ex:153
+#, elixir-autogen, elixir-format
+msgid "Row actions"
+msgstr "Actions de la ligne"
+
+#: lib/lotus/web/queries/masu_messages.ex:156
+#, elixir-autogen, elixir-format
+msgid "Row history"
+msgstr "Historique de la ligne"
+
+#: lib/lotus/web/queries/masu_messages.ex:162
+#, elixir-autogen, elixir-format
+msgid "Saving…"
+msgstr "Enregistrement…"
+
+#: lib/lotus/web/queries/masu_messages.ex:93
+#, elixir-autogen, elixir-format
+msgid "Someone"
+msgstr "Quelqu'un"
+
+#: lib/lotus/web/queries/masu_messages.ex:91
+#, elixir-autogen, elixir-format
+msgid "Undo all {count}"
+msgstr "Annuler les {count}"
+
+#: lib/lotus/web/queries/masu_messages.ex:84
+#, elixir-autogen, elixir-format
+msgid "cleared"
+msgstr "effacé"
+
+#: lib/lotus/web/queries/masu_messages.ex:85
+#, elixir-autogen, elixir-format
+msgid "filled"
+msgstr "rempli"
+
+#: lib/lotus/web/queries/masu_messages.ex:113
+#, elixir-autogen, elixir-format
+msgid "has all of"
+msgstr "contient tous"
+
+#: lib/lotus/web/queries/masu_messages.ex:123
+#, elixir-autogen, elixir-format
+msgid "has any of"
+msgstr "contient l'un de"
+
+#: lib/lotus/web/queries/masu_messages.ex:125
+#, elixir-autogen, elixir-format
+msgid "has none"
+msgstr "n'a aucune valeur"
+
+#: lib/lotus/web/queries/masu_messages.ex:131
+#, elixir-autogen, elixir-format
+msgid "has none of"
+msgstr "ne contient aucun de"
+
+#: lib/lotus/web/queries/masu_messages.ex:134
+#, elixir-autogen, elixir-format
+msgid "has some"
+msgstr "a des valeurs"
+
+#: lib/lotus/web/queries/masu_messages.ex:86
+#, elixir-autogen, elixir-format
+msgid "pasted"
+msgstr "collé"
+
+#: lib/lotus/web/queries/masu_messages.ex:87
+#, elixir-autogen, elixir-format
+msgid "redone"
+msgstr "rétabli"
+
+#: lib/lotus/web/queries/masu_messages.ex:88
+#, elixir-autogen, elixir-format
+msgid "restored"
+msgstr "restauré"
+
+#: lib/lotus/web/queries/masu_messages.ex:89
+#, elixir-autogen, elixir-format
+msgid "undone"
+msgstr "annulé"
+
+#: lib/lotus/web/queries/masu_messages.ex:94
+#, elixir-autogen, elixir-format
+msgid "was {label}"
+msgstr "était {label}"
+
+#: lib/lotus/web/queries/masu_messages.ex:92
+#, elixir-autogen, elixir-format
+msgid "{count} restored"
+msgstr "{count} restaurés"
+
+#: lib/lotus/web/queries/masu_messages.ex:14
+#, elixir-autogen, elixir-format
+msgid "{label}: done"
+msgstr "{label} : terminé"
+
+#: lib/lotus/web/queries/masu_messages.ex:83
+#, elixir-autogen, elixir-format
+msgid "{label}: history"
+msgstr "{label} : historique"
+
+#: lib/lotus/web/queries/masu_messages.ex:17
+#, elixir-autogen, elixir-format
+msgid "{label}: running…"
+msgstr "{label} : en cours…"
+
+#: lib/lotus/web/queries/masu_messages.ex:16
+#, elixir-autogen, elixir-format
+msgid "{label}: {done} of {total}"
+msgstr "{label} : {done} sur {total}"

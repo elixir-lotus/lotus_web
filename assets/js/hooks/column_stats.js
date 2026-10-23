@@ -1,5 +1,3 @@
-import tippy from "tippy.js";
-
 function formatNumber(n) {
   if (n == null) return "—";
   return Number(n).toLocaleString(undefined, { maximumFractionDigits: 4 });
@@ -128,53 +126,9 @@ function buildContent(stats) {
   return html;
 }
 
+// The stats of a column in a panel of the results grid (its "Column stats"
+// header item).
 const ColumnStats = {
-  mounted() {
-    const raw = this.el.getAttribute("data-stats");
-    if (!raw) return;
-
-    let stats;
-    try {
-      stats = JSON.parse(raw);
-    } catch {
-      return;
-    }
-
-    this.tippy = tippy(this.el, {
-      content: buildContent(stats),
-      theme: "lotus-stats",
-      arrow: true,
-      offset: [0, 8],
-      placement: "bottom-start",
-      trigger: "click",
-      interactive: true,
-      allowHTML: true,
-      animation: "fade",
-      maxWidth: 320,
-      appendTo: () => document.body,
-    });
-  },
-
-  updated() {
-    const raw = this.el.getAttribute("data-stats");
-    if (!raw || !this.tippy) return;
-
-    try {
-      const stats = JSON.parse(raw);
-      this.tippy.setContent(buildContent(stats));
-    } catch {
-      // ignore parse errors
-    }
-  },
-
-  destroyed() {
-    if (this.tippy) this.tippy.destroy();
-  },
-};
-
-// The stats of a column in a panel of Masu's results grid (its "Column
-// stats" header item): the same content, in the panel the grid opens.
-export const MasuColumnStats = {
   mounted() {
     this.render();
   },

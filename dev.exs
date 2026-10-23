@@ -274,11 +274,6 @@ Application.put_env(:lotus_web, WebDev.ClickHouseRepo,
 
 Application.put_env(:lotus_web, WebDev.SearchClient, url: "http://localhost:9209")
 
-# The results table: Lotus's own, or Masu's (a trial): LOTUS_RESULTS_TABLE=masu.
-if System.get_env("LOTUS_RESULTS_TABLE") == "masu" do
-  Application.put_env(:lotus_web, :results_table, :masu)
-end
-
 Application.put_env(:phoenix, :serve_endpoints, true)
 Application.put_env(:phoenix, :persistent, true)
 

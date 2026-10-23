@@ -8,6 +8,28 @@
   same icon as the Lotus site and Lotus Works. It is served under the mount
   prefix with a content hash, like the CSS and JS.
 
+### Changed
+
+- **The results table is Masu's grid.** The query editor draws its results
+  with [Masu](https://hex.pm/packages/masu); Lotus still runs the query, the
+  page, the sort and the filters.
+  - Rows arrive in blocks as the person scrolls, and the page's HTML is
+    about a tenth of the old table's on a 1,000-row page.
+  - Sorting and filtering are in the column headers. The filters are those
+    Lotus runs: `=`, `≠`, `>`, `<`, `≥`, `≤`, between, contains, starts and
+    ends with (on text), empty and not empty.
+  - A cell's menu filters on its value, sorts, and copies, with or without
+    headers. The column stats are in each column's header menu.
+  - While a query runs, the grid keeps its rows and shows that it is
+    loading.
+  - The grid's words follow the dashboard's language, in English and French.
+
+### Removed
+
+- The old results table, its right-click menu and its filter and sort chips.
+  "Contains" is no longer offered on number and date columns, where it
+  failed on PostgreSQL.
+
 ## [1.4.0] - 2026-10-17
 
 Lotus Web serves Lotus's new MCP server, with the dashboard's resolver

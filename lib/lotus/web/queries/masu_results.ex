@@ -1,11 +1,10 @@
 defmodule Lotus.Web.Queries.MasuResults do
   @moduledoc false
 
-  # The results table drawn by Masu (a trial: `config :lotus_web,
-  # results_table: :masu`). Masu is only the view. Lotus runs the query, as
-  # for its own table: the grid shows the rows of the page Lotus read, and
-  # gives back the person's sort and filters (`on_query`), which the query
-  # editor turns into Lotus's filters and sorts and runs.
+  # The results table, drawn by Masu. Masu is only the view. Lotus runs the
+  # query: the grid shows the rows of the page Lotus read, and gives back
+  # the person's sort and filters (`on_query`), which the query editor turns
+  # into Lotus's filters and sorts and runs.
 
   use Phoenix.Component
 
@@ -33,9 +32,6 @@ defmodule Lotus.Web.Queries.MasuResults do
     :is_nil,
     :not_nil
   ]
-
-  @doc "Whether the results table is Masu's."
-  def enabled?, do: Application.get_env(:lotus_web, :results_table, :table) == :masu
 
   attr(:id, :string, required: true)
   attr(:result, :map, required: true)
@@ -76,7 +72,7 @@ defmodule Lotus.Web.Queries.MasuResults do
         <:header_action :let={action} label={gettext("Column stats")}>
           <div
             id={"#{@id}-stats-#{action.column}"}
-            phx-hook="MasuColumnStats"
+            phx-hook="ColumnStats"
             data-stats={stats_json(@stats[action.column])}
           >
           </div>

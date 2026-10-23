@@ -1,15 +1,11 @@
 defmodule Lotus.Web.Pages.QueryEditorMasuTest do
-  # The results table as Masu's grid (config :lotus_web, results_table:
-  # :masu): the grid shows the page Lotus read, and Lotus runs the sort and
-  # the filters the person sets in it.
+  # The results table is Masu's grid: the grid shows the page Lotus read,
+  # and Lotus runs the sort and the filters the person sets in it.
   use Lotus.Web.Case
 
   import Phoenix.LiveViewTest
 
   setup do
-    Application.put_env(:lotus_web, :results_table, :masu)
-    on_exit(fn -> Application.delete_env(:lotus_web, :results_table) end)
-
     create_test_users()
 
     query =

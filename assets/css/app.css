@@ -563,29 +563,7 @@
   display: none;
 }
 
-/* Column Statistics Popover */
-.tippy-box[data-theme~="lotus-stats"] {
-    @apply pointer-events-auto z-[9999] rounded-lg text-xs shadow-lg;
-    @apply text-zinc-700 bg-white ring-1 ring-zinc-200;
-    @apply dark:text-zinc-300 dark:bg-zinc-800 dark:ring-zinc-700;
-    @apply transition duration-100 ease-out;
-}
-.tippy-box[data-theme~="lotus-stats"] .tippy-content {
-    @apply p-0;
-}
-.tippy-box[data-theme~="lotus-stats"][data-state="hidden"] {
-    @apply opacity-0 scale-95;
-}
-.tippy-box[data-theme~="lotus-stats"][data-state="visible"] {
-    @apply opacity-100 scale-100;
-}
-.tippy-box[data-theme~="lotus-stats"] .tippy-arrow {
-    color: white;
-}
-.dark .tippy-box[data-theme~="lotus-stats"] .tippy-arrow {
-    color: #27272a;
-}
-
+/* Column Statistics (the results grid's "Column stats" panel) */
 .lotus-stats-popover {
     padding: 12px;
     min-width: 220px;
