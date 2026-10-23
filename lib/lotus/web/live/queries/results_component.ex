@@ -46,9 +46,18 @@ defmodule Lotus.Web.Queries.ResultsComponent do
 
           <%!-- Content area: Table or Chart --%>
           <div class="flex-1 overflow-hidden">
-            <%= if @visualization_view_mode == :chart && has_valid_config?(@visualization_config) do %>
-              <.render_chart result={@result} config={@visualization_config} />
-            <% else %>
+            <.render_chart
+              :if={@visualization_view_mode == :chart && has_valid_config?(@visualization_config)}
+              result={@result}
+              config={@visualization_config}
+            />
+            <%!-- Hidden, not gone, under a chart: the grid keeps the sort and
+            filters Lotus runs, and shows them again with the table --%>
+            <div class={[
+              "h-full",
+              @visualization_view_mode == :chart && has_valid_config?(@visualization_config) &&
+                "hidden"
+            ]}>
               <MasuResults.grid
                 id={"results-grid-#{@query_id}-#{@results_run}"}
                 result={@result}
@@ -56,7 +65,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
                 target={@target}
                 stats={Statistics.compute_all(@result)}
               />
-            <% end %>
+            </div>
           </div>
 
           <%!-- Bottom bar with controls --%>

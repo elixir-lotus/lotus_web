@@ -48,6 +48,31 @@ defmodule Lotus.Web.Pages.QueryEditorMasuTest do
     assert names(live, grid) == ["Alice", "Bob", "Charlie"]
   end
 
+  test "the grid keeps its filters under a chart" do
+    query =
+      query_fixture(%{name: "Charted", statement: "SELECT name FROM test_users ORDER BY name"})
+
+    {:ok, _viz} =
+      Lotus.create_visualization(query, %{
+        name: "Chart",
+        position: 0,
+        config: %{"chart_type" => "bar", "x_field" => "name", "y_field" => "name"}
+      })
+
+    {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{query.id}")
+    html = render_async(live)
+    [grid] = Regex.run(~r/id="(results-grid-[^"]+)"/, html, capture: :all_but_first)
+
+    Masu.Test.filter(live, grid, [{"name", :eq, "Bob"}])
+    render_async(live)
+
+    live |> element("#view-mode-chart-btn") |> render_click()
+    live |> element("#view-mode-table-btn") |> render_click()
+
+    assert names(live, grid) == ["Bob"]
+    assert %{"filter" => _} = Masu.Test.view(live, grid)
+  end
+
   test "the grid's words are in the dashboard's language" do
     query = query_fixture(%{name: "Users FR", statement: "SELECT name FROM test_users"})
 
