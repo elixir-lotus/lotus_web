@@ -686,4 +686,151 @@ defmodule Lotus.Web.ChartsTest do
       refute Map.has_key?(config, "smooth")
     end
   end
+
+  describe "chart/2: maps, tooltips and callouts" do
+    defp countries do
+      result(["country", "users", "plan"], [
+        ["PRT", 120, "pro"],
+        ["ESP", 80, "free"],
+        ["FRA", 200, "pro"]
+      ])
+    end
+
+    test "a map colors each region by its value, on the world unless told the US" do
+      config = %{"chart_type" => "map", "x_field" => "country", "y_field" => "users"}
+      wire = wire(countries(), config)
+
+      assert wire["kind"] == "choropleth"
+      assert hd(wire["layers"])["options"]["map"] == "world"
+      assert wire["scales"]["region"]["domain"] == ["PRT", "ESP", "FRA"]
+      assert wire["scales"]["color"]["type"] == "sequential"
+
+      us = wire(countries(), Map.put(config, "map", "us-states"))
+      assert hd(us["layers"])["options"]["map"] == "us-states"
+    end
+
+    test "a bubble map sizes a circle at each region" do
+      config = %{"chart_type" => "bubble_map", "x_field" => "country", "y_field" => "users"}
+      wire = wire(countries(), config)
+
+      assert wire["kind"] == "bubble_map"
+      assert %{"size" => %{"type" => "sqrt"}} = wire["scales"]
+    end
+
+    test "map types are valid with a region and a value, and keep their map" do
+      assert Charts.valid_config?(%{"chart_type" => "map", "x_field" => "c", "y_field" => "v"})
+
+      assert %{"map" => "us-states"} =
+               Charts.build_config(%{
+                 "chart_type" => "map",
+                 "x_field" => "c",
+                 "y_field" => "v",
+                 "map" => "us-states"
+               })
+    end
+
+    test "tooltip fields go to Fude's tooltip channel; an empty choice is none" do
+      config = %{"chart_type" => "map", "x_field" => "country", "y_field" => "users"}
+
+      assert [%{"title" => "Plan"}] =
+               hd(wire(countries(), Map.put(config, "tooltip_fields", ["", "plan"]))["layers"])[
+                 "tooltip"
+               ]
+
+      assert hd(wire(countries(), Map.put(config, "tooltip_fields", [""]))["layers"])["tooltip"] ==
+               []
+
+      assert Charts.build_config(Map.put(config, "tooltip_fields", [""]))
+             |> Map.has_key?("tooltip_fields") ==
+               false
+    end
+
+    test "callouts on the highest and the lowest value, with the value" do
+      result =
+        result(["month", "revenue"], [
+          [~D[2026-01-01], 100],
+          [~D[2026-02-01], 412_500],
+          [~D[2026-03-01], 50]
+        ])
+
+      config = %{
+        "chart_type" => "line",
+        "x_field" => "month",
+        "y_field" => "revenue",
+        "mark_max" => "true",
+        "mark_min" => "true"
+      }
+
+      assert [
+               %{"type" => "label", "y" => 412_500, "text" => "Highest: 412.5K"},
+               %{"type" => "label", "y" => 50, "text" => "Lowest: 50"}
+             ] = wire(result, config)["annotations"]
+    end
+
+    test "no callouts on stacked series, whose marks are not at their values" do
+      config = %{
+        "chart_type" => "bar",
+        "x_field" => "region",
+        "y_field" => "revenue",
+        "series_field" => "channel",
+        "mark_max" => "true"
+      }
+
+      assert wire(sales(), config)["annotations"] == []
+      assert [_] = wire(sales(), Map.put(config, "stack", "grouped"))["annotations"]
+    end
+
+    test "a shaded range of dates, of categories and of numbers" do
+      dates = result(["month", "revenue"], [[~D[2026-01-01], 1], [~D[2026-03-01], 2]])
+
+      config = %{
+        "chart_type" => "line",
+        "x_field" => "month",
+        "y_field" => "revenue",
+        "band_from" => "2026-01-15",
+        "band_to" => "2026-02-15",
+        "band_label" => "Sale"
+      }
+
+      assert [%{"type" => "band", "x" => from, "x2" => to, "text" => "Sale"}] =
+               wire(dates, config)["annotations"]
+
+      assert {from, to} ==
+               {DateTime.to_unix(~U[2026-01-15 00:00:00Z], :millisecond),
+                DateTime.to_unix(~U[2026-02-15 00:00:00Z], :millisecond)}
+
+      categories = %{
+        "chart_type" => "bar",
+        "x_field" => "region",
+        "y_field" => "revenue",
+        "band_from" => "North",
+        "band_to" => "South"
+      }
+
+      assert [%{"type" => "band", "x" => 0, "x2" => 1}] = wire(sales(), categories)["annotations"]
+
+      numbers = result(["x", "y"], [[1, 2], [10, 3]])
+
+      config = %{
+        "chart_type" => "scatter",
+        "x_field" => "x",
+        "y_field" => "y",
+        "band_from" => "2",
+        "band_to" => "5"
+      }
+
+      assert [%{"x" => 2.0, "x2" => 5.0}] = wire(numbers, config)["annotations"]
+    end
+
+    test "half a range is no range" do
+      config = %{
+        "chart_type" => "bar",
+        "x_field" => "region",
+        "y_field" => "revenue",
+        "band_from" => "North"
+      }
+
+      assert wire(sales(), config)["annotations"] == []
+    end
+  end
 end

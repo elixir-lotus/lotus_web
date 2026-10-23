@@ -100,6 +100,55 @@ defmodule Lotus.Web.Queries.ChartOptions do
         />
       </section>
 
+      <section :if={"tooltip_fields" in @keys and @columns != []} class="space-y-2">
+        <.heading>{gettext("Tooltip")}</.heading>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{gettext("More fields to show on hover")}</p>
+        <input type="hidden" name={name(@prefix, "tooltip_fields") <> "[]"} value="" />
+        <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+          <label :for={col <- @columns} class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 min-w-0">
+            <input
+              type="checkbox"
+              name={name(@prefix, "tooltip_fields") <> "[]"}
+              value={col}
+              checked={col in List.wrap(@config["tooltip_fields"])}
+              class="rounded border-gray-300 dark:border-gray-600 text-pink-500 focus:ring-pink-500"
+            />
+            <span class="truncate">{col}</span>
+          </label>
+        </div>
+      </section>
+
+      <section :if={"mark_max" in @keys or "band_from" in @keys} class="space-y-3">
+        <.heading>{gettext("Callouts")}</.heading>
+        <.switch :if={"mark_max" in @keys} config={@config} prefix={@prefix} key="mark_max" label={gettext("Mark the highest value")} />
+        <.switch :if={"mark_min" in @keys} config={@config} prefix={@prefix} key="mark_min" label={gettext("Mark the lowest value")} />
+        <div :if={"band_from" in @keys} class="space-y-2">
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            {gettext("Shade a range of the horizontal axis: dates as 2026-03-01, categories by name.")}
+          </p>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">{gettext("From")}</label>
+              <input type="text" name={name(@prefix, "band_from")} value={@config["band_from"]} class={@input} />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">{gettext("To")}</label>
+              <input type="text" name={name(@prefix, "band_to")} value={@config["band_to"]} class={@input} />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">{gettext("Label")}</label>
+            <input
+              type="text"
+              name={name(@prefix, "band_label")}
+              value={@config["band_label"]}
+              placeholder={gettext("e.g. Holiday sale")}
+              class={@input}
+            />
+          </div>
+        </div>
+      </section>
+
       <section :if={"reference_value" in @keys} class="space-y-3">
         <.heading>{gettext("Reference line")}</.heading>
         <div class="grid grid-cols-2 gap-2">

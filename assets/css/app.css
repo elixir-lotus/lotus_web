@@ -786,6 +786,11 @@
     --fude-shadow: var(--lotus-shadow-md);
 }
 
+/* A card saves its chart from its header: the chart's own buttons stay hidden. */
+.lotus-card-chart .fude-export {
+    display: none;
+}
+
 .dark .lotus-chart {
     --fude-text: rgb(var(--lotus-text-dark));
     --fude-secondary: rgb(var(--lotus-gray-300));

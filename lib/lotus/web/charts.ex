@@ -49,7 +49,7 @@ defmodule Lotus.Web.Charts do
   use Phoenix.Component
   use Gettext, backend: Lotus.Web.Gettext
 
-  @chart_type_ids ~w(bar horizontal_bar line area combo scatter bubble histogram heatmap pie donut funnel waterfall kpi trend gauge progress sparkline)
+  @chart_type_ids ~w(bar horizontal_bar line area combo scatter bubble histogram heatmap pie donut funnel waterfall map bubble_map kpi trend gauge progress sparkline)
 
   @doc "Returns the ordered list of chart type ID strings."
   def chart_type_ids, do: @chart_type_ids
@@ -60,6 +60,7 @@ defmodule Lotus.Web.Charts do
       {gettext("Charts"), ~w(bar horizontal_bar line area combo)},
       {gettext("Distribution"), ~w(scatter bubble histogram heatmap)},
       {gettext("Part of whole"), ~w(pie donut funnel waterfall)},
+      {gettext("Maps"), ~w(map bubble_map)},
       {gettext("Single value"), ~w(kpi trend gauge progress sparkline)}
     ]
   end
@@ -78,6 +79,8 @@ defmodule Lotus.Web.Charts do
   def chart_type_label("waterfall"), do: gettext("Waterfall")
   def chart_type_label("heatmap"), do: gettext("Heatmap")
   def chart_type_label("histogram"), do: gettext("Histogram")
+  def chart_type_label("map"), do: gettext("Map")
+  def chart_type_label("bubble_map"), do: gettext("Bubble Map")
   def chart_type_label("kpi"), do: gettext("KPI Card")
   def chart_type_label("trend"), do: gettext("Trend")
   def chart_type_label("gauge"), do: gettext("Gauge")
@@ -130,12 +133,22 @@ defmodule Lotus.Web.Charts do
       case viz[key] do
         nil -> acc
         "" -> acc
+        list when is_list(list) -> put_list(acc, key, list)
         val -> Map.put(acc, key, val)
       end
     end)
   end
 
   defp config_fields(type), do: fields(type) ++ option_keys(type)
+
+  # A list of a form (the tooltip's fields) without the empty value that lets
+  # it send none.
+  defp put_list(config, key, list) do
+    case Enum.reject(list, &(&1 == "")) do
+      [] -> config
+      list -> Map.put(config, key, list)
+    end
+  end
 
   defp fields("kpi"), do: ~w(value_field kpi_label)
   defp fields("gauge"), do: ~w(value_field kpi_label min_value max_value)
@@ -144,40 +157,60 @@ defmodule Lotus.Web.Charts do
   defp fields("histogram"), do: ~w(x_field bin_count series_field)
   defp fields("bubble"), do: ~w(x_field y_field series_field size_field)
   defp fields("combo"), do: ~w(x_field y_field y2_field series_field y2_axis_title)
+  defp fields("map"), do: ~w(x_field y_field map)
+  defp fields("bubble_map"), do: ~w(x_field y_field map)
   defp fields(_), do: ~w(x_field y_field series_field)
 
   @words ~w(subtitle source)
   @format ~w(number_format currency)
   @reference ~w(reference_value reference_label)
   @facet ~w(facet_field facet_columns)
+  @tooltip ["tooltip_fields"]
+  @marks ~w(mark_max mark_min)
+  @band ~w(band_from band_to band_label)
 
   @doc """
   The keys of the options of a chart type: how it looks, beyond its fields.
   The settings offer these, and `build_config/1` keeps them.
 
       iex> Lotus.Web.Charts.option_keys("pie")
-      ["number_format", "currency", "subtitle", "source"]
+      ["number_format", "currency", "tooltip_fields", "subtitle", "source"]
   """
   @spec option_keys(String.t() | nil) :: [String.t()]
-  def option_keys(type) when type in ~w(bar horizontal_bar),
-    do: @format ++ ~w(show_values stack sort) ++ @reference ++ @facet ++ @words
+  def option_keys("bar"),
+    do:
+      @format ++
+        ~w(show_values stack sort) ++
+        @tooltip ++ @marks ++ @reference ++ @band ++ @facet ++ @words
+
+  def option_keys("horizontal_bar"),
+    do: @format ++ ~w(show_values stack sort) ++ @tooltip ++ @reference ++ @facet ++ @words
 
   def option_keys("line"),
-    do: @format ++ ~w(y_axis_zero smooth) ++ @reference ++ @facet ++ @words
+    do:
+      @format ++
+        ~w(y_axis_zero smooth) ++ @tooltip ++ @marks ++ @reference ++ @band ++ @facet ++ @words
 
   # An area starts at zero: it is filled down to it.
-  def option_keys("area"), do: @format ++ ~w(stack smooth) ++ @reference ++ @facet ++ @words
+  def option_keys("area"),
+    do:
+      @format ++ ~w(stack smooth) ++ @tooltip ++ @marks ++ @reference ++ @band ++ @facet ++ @words
 
   def option_keys(type) when type in ~w(scatter bubble),
-    do: @format ++ ["y_axis_zero"] ++ @reference ++ @facet ++ @words
+    do: @format ++ ["y_axis_zero"] ++ @tooltip ++ @reference ++ @band ++ @facet ++ @words
 
   def option_keys("combo"),
-    do: @format ++ ~w(y2_number_format y_axis_zero y2_axis_zero smooth) ++ @reference ++ @words
+    do:
+      @format ++
+        ~w(y2_number_format y_axis_zero y2_axis_zero smooth) ++
+        @marks ++ @reference ++ @band ++ @words
 
   def option_keys("sparkline"), do: @format ++ ["smooth"] ++ @words
 
-  def option_keys(type) when type in ~w(pie donut heatmap waterfall histogram funnel),
-    do: @format ++ @words
+  def option_keys(type) when type in ~w(pie donut heatmap map bubble_map),
+    do: @format ++ @tooltip ++ @words
+
+  def option_keys(type) when type in ~w(waterfall histogram funnel), do: @format ++ @words
 
   def option_keys(type) when type in ~w(kpi trend gauge progress), do: @format ++ @words
   def option_keys(_type), do: []
@@ -207,9 +240,13 @@ defmodule Lotus.Web.Charts do
   """
   @spec chart(Lotus.Result.t(), map()) :: Fude.Chart.t()
   def chart(result, %{"chart_type" => type} = config) do
+    data = data(result)
+
     type
-    |> build(data(result), config)
+    |> build(data, config)
     |> reference(type, config)
+    |> marks(type, data, config)
+    |> band(type, data, config)
     |> facet(type, config)
   end
 
@@ -272,30 +309,31 @@ defmodule Lotus.Web.Charts do
 
   # -- The kinds ---------------------------------------------------------------
 
-  defp build("bar", data, c), do: Fude.bar(data, bars(c) ++ words(c))
+  defp build("bar", data, c), do: Fude.bar(data, bars(c) ++ tooltip(c) ++ words(c))
 
   defp build("horizontal_bar", data, c),
-    do: Fude.bar(data, bars(c) ++ [horizontal: true] ++ words(c))
+    do: Fude.bar(data, bars(c) ++ [horizontal: true] ++ tooltip(c) ++ words(c))
 
   # A dot at each value, but not in small multiples: their narrow panels
   # would be all dots.
   defp build("line", data, c) do
     points = present(c["facet_field"]) == nil
-    Fude.line(data, cartesian(c) ++ [points: points] ++ curve(c) ++ words(c))
+    Fude.line(data, cartesian(c) ++ [points: points] ++ curve(c) ++ tooltip(c) ++ words(c))
   end
 
   defp build("area", data, c) do
     [x: x, y: y] ++ rest = cartesian(c)
-    Fude.area(data, [x: x, y: y ++ stack(c)] ++ rest ++ curve(c) ++ words(c))
+    Fude.area(data, [x: x, y: y ++ stack(c)] ++ rest ++ curve(c) ++ tooltip(c) ++ words(c))
   end
 
-  defp build("scatter", data, c), do: Fude.scatter(data, cartesian(c) ++ size(c) ++ words(c))
+  defp build("scatter", data, c),
+    do: Fude.scatter(data, cartesian(c) ++ size(c) ++ tooltip(c) ++ words(c))
 
   # A bubble without a size field is a scatter: the size is what makes it one.
   defp build("bubble", data, c) do
     case size(c) do
-      [] -> Fude.scatter(data, cartesian(c) ++ words(c))
-      size -> Fude.bubble(data, cartesian(c) ++ size ++ words(c))
+      [] -> Fude.scatter(data, cartesian(c) ++ tooltip(c) ++ words(c))
+      size -> Fude.bubble(data, cartesian(c) ++ size ++ tooltip(c) ++ words(c))
     end
   end
 
@@ -319,12 +357,32 @@ defmodule Lotus.Web.Charts do
 
     Fude.heatmap(
       data,
-      [x: axis(c, "x_field", :x), y: axis(c, "y_field", :y), color: color] ++ words(c)
+      [x: axis(c, "x_field", :x), y: axis(c, "y_field", :y), color: color] ++
+        tooltip(c) ++ words(c)
     )
   end
 
-  defp build("pie", data, c), do: Fude.pie(data, slices(c) ++ words(c))
-  defp build("donut", data, c), do: Fude.donut(data, slices(c) ++ words(c))
+  defp build("pie", data, c), do: Fude.pie(data, slices(c) ++ tooltip(c) ++ words(c))
+  defp build("donut", data, c), do: Fude.donut(data, slices(c) ++ tooltip(c) ++ words(c))
+
+  # A region of the map for each row, by its code or name (x_field), colored
+  # by its value (y_field).
+  defp build("map", data, c) do
+    Fude.choropleth(
+      data,
+      [region: c["x_field"], color: measure(c, c["y_field"]), map: map_name(c)] ++
+        tooltip(c) ++ words(c)
+    )
+  end
+
+  # A circle at each region, sized by its value.
+  defp build("bubble_map", data, c) do
+    Fude.bubble_map(
+      data,
+      [region: c["x_field"], size: measure(c, c["y_field"]), map: map_name(c)] ++
+        tooltip(c) ++ words(c)
+    )
+  end
 
   defp build("funnel", data, c),
     do: Fude.funnel(data, [x: c["x_field"], y: measure(c, c["y_field"])] ++ words(c))
@@ -418,6 +476,138 @@ defmodule Lotus.Web.Charts do
   end
 
   defp facet(chart, _type, _c), do: chart
+
+  # Callouts on the highest and the lowest value, each with its value: the
+  # first thing a reader looks for. Not on stacked series, whose marks are
+  # not at their values.
+  @marks_types ~w(bar line area combo)
+
+  defp marks(chart, type, data, c) when type in @marks_types do
+    if stacked?(type, c) do
+      chart
+    else
+      points = points(data, c["x_field"], c["y_field"])
+
+      chart
+      |> mark(
+        on?(c["mark_max"], false),
+        Enum.max_by(points, &elem(&1, 1), fn -> nil end),
+        &gettext("Highest: %{value}", value: &1)
+      )
+      |> mark(
+        on?(c["mark_min"], false),
+        Enum.min_by(points, &elem(&1, 1), fn -> nil end),
+        &gettext("Lowest: %{value}", value: &1)
+      )
+    end
+  end
+
+  defp marks(chart, _type, _data, _c), do: chart
+
+  defp mark(chart, true, {x, y}, text),
+    do: Fude.annotate(chart, :label, x: x, y: y, text: text.(short(y)))
+
+  defp mark(chart, _on, _point, _text), do: chart
+
+  defp stacked?("area", c), do: present(c["series_field"]) != nil and c["stack"] != "grouped"
+
+  defp stacked?(type, c) when type in ~w(bar combo),
+    do: present(c["series_field"]) != nil and c["stack"] != "grouped"
+
+  defp stacked?(_type, _c), do: false
+
+  # The rows' x and y, where y is a number.
+  defp points(%{columns: columns, rows: rows}, x, y) do
+    with xi when is_integer(xi) <- Enum.find_index(columns, &(&1 == x)),
+         yi when is_integer(yi) <- Enum.find_index(columns, &(&1 == y)) do
+      for row <- rows, value = to_number(Enum.at(row, yi)), is_number(value) do
+        {Enum.at(row, xi), value}
+      end
+    else
+      _ -> []
+    end
+  end
+
+  defp to_number(%Decimal{} = value), do: Decimal.to_float(value)
+  defp to_number(value) when is_number(value), do: value
+  defp to_number(_value), do: nil
+
+  # A number in a few characters, for a callout: 411.2K, 6.9M, 72.4.
+  defp short(value) do
+    {scaled, suffix} =
+      cond do
+        abs(value) >= 1.0e9 -> {value / 1.0e9, "B"}
+        abs(value) >= 1.0e6 -> {value / 1.0e6, "M"}
+        abs(value) >= 1.0e4 -> {value / 1.0e3, "K"}
+        true -> {value, ""}
+      end
+
+    rounded = Float.round(scaled * 1.0, 1)
+
+    text =
+      if rounded == trunc(rounded),
+        do: Integer.to_string(trunc(rounded)),
+        else: Float.to_string(rounded)
+
+    text <> suffix
+  end
+
+  # A shaded range of x, with its words: a campaign, a holiday, an outage.
+  # The range is written as x's values are: dates as 2026-03-01, numbers as
+  # numbers, categories by name.
+  @band_types ~w(bar line area combo scatter bubble)
+
+  defp band(chart, type, data, c) when type in @band_types do
+    with from when not is_nil(from) <- present(c["band_from"]),
+         to when not is_nil(to) <- present(c["band_to"]) do
+      kind = x_kind(data, c["x_field"])
+
+      Fude.annotate(chart, :band,
+        x: {place(from, kind), place(to, kind)},
+        text: present(c["band_label"])
+      )
+    else
+      _ -> chart
+    end
+  end
+
+  defp band(chart, _type, _data, _c), do: chart
+
+  defp x_kind(%{columns: columns, rows: rows}, x) do
+    case Enum.find_index(columns, &(&1 == x)) do
+      nil ->
+        :text
+
+      index ->
+        rows
+        |> Enum.map(&Enum.at(&1, index))
+        |> Enum.find(&(not is_nil(&1)))
+        |> case do
+          value when is_number(value) -> :number
+          %Decimal{} -> :number
+          _ -> :text
+        end
+    end
+  end
+
+  defp place(value, :number), do: number(value, value)
+  defp place(value, :text), do: String.trim(value)
+
+  defp tooltip(c) do
+    case c["tooltip_fields"] do
+      fields when is_list(fields) ->
+        case Enum.reject(fields, &(&1 in [nil, ""])) do
+          [] -> []
+          fields -> [tooltip: fields]
+        end
+
+      _ ->
+        []
+    end
+  end
+
+  defp map_name(%{"map" => "us-states"}), do: "us-states"
+  defp map_name(_c), do: "world"
 
   defp columns(value) do
     case number(value, nil) do

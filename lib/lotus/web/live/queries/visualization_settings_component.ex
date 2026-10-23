@@ -266,6 +266,18 @@ defmodule Lotus.Web.Queries.VisualizationSettingsComponent do
     """
   end
 
+  defp chart_icon(%{type: "map"} = assigns) do
+    ~H"""
+    <Icons.chart_map class={["h-6 w-6 mb-1", icon_color(@selected)]} />
+    """
+  end
+
+  defp chart_icon(%{type: "bubble_map"} = assigns) do
+    ~H"""
+    <Icons.chart_bubble_map class={["h-6 w-6 mb-1", icon_color(@selected)]} />
+    """
+  end
+
   defp chart_icon(assigns) do
     ~H"""
     <Icons.chart_bar class={["h-6 w-6 mb-1", icon_color(@selected)]} />
@@ -322,6 +334,8 @@ defmodule Lotus.Web.Queries.VisualizationSettingsComponent do
               <.combo_fields config={@config} columns={@columns} />
             <% "histogram" -> %>
               <.histogram_fields config={@config} columns={@columns} />
+            <% type when type in ~w(map bubble_map) -> %>
+              <.map_fields config={@config} columns={@columns} chart_type={type} />
             <% "heatmap" -> %>
               <.heatmap_fields config={@config} columns={@columns} />
             <% _ -> %>
@@ -728,6 +742,65 @@ defmodule Lotus.Web.Queries.VisualizationSettingsComponent do
 
   attr(:config, :map, required: true)
   attr(:columns, :list, required: true)
+  attr(:chart_type, :string, required: true)
+
+  defp map_fields(assigns) do
+    ~H"""
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <%= gettext("Map") %>
+      </label>
+      <select
+        name="map"
+        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-pink-500 focus:border-pink-500"
+      >
+        <option value="world" selected={@config["map"] != "us-states"}><%= gettext("World (countries)") %></option>
+        <option value="us-states" selected={@config["map"] == "us-states"}><%= gettext("United States (states)") %></option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <%= gettext("Region Field") %>
+      </label>
+      <select
+        name="x_field"
+        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-pink-500 focus:border-pink-500"
+      >
+        <option value=""><%= gettext("Select field...") %></option>
+        <%= for col <- @columns do %>
+          <option value={col} selected={@config["x_field"] == col}><%= col %></option>
+        <% end %>
+      </select>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        <%= if @config["map"] == "us-states",
+          do: gettext("A state's code (CA), FIPS number (06) or name"),
+          else: gettext("A country's ISO code (PRT or PT), number or name") %>
+      </p>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <%= gettext("Value Field") %>
+      </label>
+      <select
+        name="y_field"
+        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-pink-500 focus:border-pink-500"
+      >
+        <option value=""><%= gettext("Select field...") %></option>
+        <%= for col <- @columns do %>
+          <option value={col} selected={@config["y_field"] == col}><%= col %></option>
+        <% end %>
+      </select>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        <%= if @chart_type == "map",
+          do: gettext("Colors each region"),
+          else: gettext("Sizes each circle") %>
+      </p>
+    </div>
+    """
+  end
+
+  attr(:config, :map, required: true)
+  attr(:columns, :list, required: true)
   attr(:chart_type, :string, default: nil)
 
   defp standard_fields(assigns) do
@@ -971,6 +1044,9 @@ defmodule Lotus.Web.Queries.VisualizationSettingsComponent do
 
   defp config_incomplete_hint("heatmap"),
     do: gettext("Select Column and Row fields to enable the heatmap.")
+
+  defp config_incomplete_hint(type) when type in ~w(map bubble_map),
+    do: gettext("Select Region and Value fields to draw the map.")
 
   defp config_incomplete_hint(_),
     do: gettext("Select both X-Axis and Y-Axis fields to enable the chart view.")

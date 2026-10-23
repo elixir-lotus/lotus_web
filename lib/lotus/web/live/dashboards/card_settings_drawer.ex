@@ -313,9 +313,21 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
             <% end %>
           <% else %>
             <%= if @chart_type do %>
+              <div :if={@chart_type in ~w(map bubble_map)}>
+                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  <%= gettext("Map") %>
+                </label>
+                <select
+                  name="visualization[map]"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
+                >
+                  <option value="world" selected={@config["map"] != "us-states"}><%= gettext("World (countries)") %></option>
+                  <option value="us-states" selected={@config["map"] == "us-states"}><%= gettext("United States (states)") %></option>
+                </select>
+              </div>
               <div>
                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  <%= if @chart_type == "histogram", do: gettext("Data Field"), else: gettext("X-Axis Field") %>
+                  <%= x_field_label(@chart_type) %>
                 </label>
                 <select
                   name="visualization[x_field]"
@@ -331,7 +343,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
               <%= if @chart_type not in ~w(histogram sparkline) do %>
                 <div>
                   <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-                    <%= if @chart_type == "combo", do: gettext("Bar Series (Y-Axis)"), else: gettext("Y-Axis Field") %>
+                    <%= y_field_label(@chart_type) %>
                   </label>
                   <select
                     name="visualization[y_field]"
@@ -395,7 +407,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
                 </div>
               <% end %>
 
-              <div>
+              <div :if={@chart_type not in ~w(map bubble_map)}>
                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
                   <%= gettext("Color/Series Field") %> <span class="text-gray-400">(<%= gettext("optional") %>)</span>
                 </label>
@@ -652,6 +664,14 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
   end
 
   defp chart_type_label(type), do: Charts.chart_type_label(type)
+
+  defp x_field_label("histogram"), do: gettext("Data Field")
+  defp x_field_label(type) when type in ~w(map bubble_map), do: gettext("Region Field")
+  defp x_field_label(_type), do: gettext("X-Axis Field")
+
+  defp y_field_label("combo"), do: gettext("Bar Series (Y-Axis)")
+  defp y_field_label(type) when type in ~w(map bubble_map), do: gettext("Value Field")
+  defp y_field_label(_type), do: gettext("Y-Axis Field")
 
   @impl Phoenix.LiveComponent
   def update(params, socket) do

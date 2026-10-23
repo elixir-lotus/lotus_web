@@ -90,13 +90,28 @@ defmodule Lotus.Web.MixProject do
     ]
   end
 
+  # Fude's maps (the world's countries, the US states), served by
+  # Lotus.Web.Assets and fetched by the browser when a map chart draws.
+  defp copy_maps(_args) do
+    to = Path.join(["priv", "static", "maps"])
+    File.mkdir_p!(to)
+
+    for name <- ~w(world us-states) do
+      File.cp!(
+        Path.join(["deps", "fude", "assets", "maps", "#{name}.json"]),
+        Path.join(to, "#{name}.json")
+      )
+    end
+  end
+
   defp aliases do
     [
       "assets.build": [
         "tailwind default",
         "esbuild default",
         "esbuild mcp_chart",
-        "esbuild mcp_chart_css"
+        "esbuild mcp_chart_css",
+        &copy_maps/1
       ],
       dev: "run --no-halt dev.exs",
       # The compile and the asset build run in a child VM: once anything

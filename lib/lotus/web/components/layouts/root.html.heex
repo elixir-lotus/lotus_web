@@ -9,6 +9,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content={get_csrf_token()} />
+    <meta name="lotus-map-world" content={asset_path(:world)} />
+    <meta name="lotus-map-us-states" content={asset_path(:us_states)} />
 
     <title>{assigns[:page_title] || "Lotus"}</title>
     <link rel="icon" href={asset_path(:svg)} type="image/svg+xml" />

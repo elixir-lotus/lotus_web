@@ -668,6 +668,7 @@ defmodule Lotus.Web.QueryEditorPage do
       |> put_or_remove_config("comparison_field", params["comparison_field"])
       |> put_or_remove_config("y2_field", params["y2_field"])
       |> put_or_remove_config("y2_axis_title", params["y2_axis_title"])
+      |> maybe_put_config("map", params["map"])
       |> maybe_put_axis_config(params)
       |> put_chart_options(params)
 
@@ -2063,8 +2064,19 @@ defmodule Lotus.Web.QueryEditorPage do
     config["chart_type"]
     |> Charts.option_keys()
     |> Enum.filter(&Map.has_key?(params, &1))
-    |> Enum.reduce(config, &put_or_remove_config(&2, &1, params[&1]))
+    |> Enum.reduce(config, &put_or_remove_config(&2, &1, option_value(params[&1])))
   end
+
+  # A list (the tooltip's fields) without the empty value that lets a form
+  # send none; no list at all when that leaves nothing.
+  defp option_value(values) when is_list(values) do
+    case Enum.reject(values, &(&1 == "")) do
+      [] -> nil
+      values -> values
+    end
+  end
+
+  defp option_value(value), do: value
 
   # Handle axis display config (only for cartesian charts)
   # Check if axis title params exist to know if axis section was rendered

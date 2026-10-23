@@ -34,8 +34,18 @@ defmodule Lotus.Web.Dashboards.CardComponent do
           <h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">
             <%= @card.title || default_title(@card) %>
           </h3>
+          <div class="flex items-center gap-1">
+            <button
+              :if={@card.card_type == :query and @result && Charts.valid_config?(@card.visualization_config)}
+              type="button"
+              phx-click={JS.dispatch("click", to: "#chart-#{@card.id} [data-fude-export=png]")}
+              class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+              title={gettext("Save as PNG")}
+              aria-label={gettext("Save as PNG")}
+            >
+              <Icons.download class="h-4 w-4" />
+            </button>
           <%= unless Map.get(assigns, :public, false) do %>
-            <div class="flex items-center gap-1">
               <%= if @card.card_type == :query do %>
                 <button
                   phx-click="refresh_card"
@@ -57,8 +67,8 @@ defmodule Lotus.Web.Dashboards.CardComponent do
               >
                 <Icons.cog_6_tooth class="h-4 w-4" />
               </button>
-            </div>
           <% end %>
+          </div>
         </div>
       <% end %>
 
@@ -155,7 +165,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   defp query_content(assigns) do
     ~H"""
     <%= cond do %>
-      <% @running -> %>
+      <% @running and is_nil(@result) -> %>
         <div class="flex items-center justify-center h-full">
           <.spinner size="32" />
         </div>
@@ -166,13 +176,18 @@ defmodule Lotus.Web.Dashboards.CardComponent do
           <span class="truncate"><%= @error %></span>
         </div>
 
+      <%!-- While a refresh runs, the chart stays, dimmed, so that its marks move to the new rows. --%>
       <% @result && Charts.valid_config?(@card.visualization_config) -> %>
-        <Charts.draw
-          id={"chart-#{@card.id}"}
-          result={@result}
-          config={@card.visualization_config}
-          height={chart_height(@card.layout)}
-        />
+        <div class={["h-full transition-opacity", @running && "opacity-50"]} aria-busy={to_string(@running)}>
+          <Charts.draw
+            id={"chart-#{@card.id}"}
+            result={@result}
+            config={@card.visualization_config}
+            height={chart_height(@card.layout)}
+            export
+            class="lotus-card-chart"
+          />
+        </div>
 
       <% @result -> %>
         <.mini_table result={@result} />
