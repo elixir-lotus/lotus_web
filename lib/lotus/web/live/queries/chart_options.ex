@@ -48,6 +48,21 @@ defmodule Lotus.Web.Queries.ChartOptions do
           input={@input}
           currency={false}
         />
+        <.choice
+          :if={"decimals" in @keys}
+          config={@config}
+          prefix={@prefix}
+          key="decimals"
+          label={gettext("Decimals")}
+          input={@input}
+          options={[
+            {"", gettext("Automatic")},
+            {"0", "0"},
+            {"1", "1"},
+            {"2", "2"},
+            {"3", "3"}
+          ]}
+        />
         <.switch
           :if={"show_values" in @keys}
           config={@config}
@@ -56,6 +71,76 @@ defmodule Lotus.Web.Queries.ChartOptions do
           default={Charts.show_values_default?(@type)}
           label={gettext("Show values on the bars")}
         />
+      </section>
+
+      <section :if={"color_scheme" in @keys} class="space-y-3">
+        <.heading>{gettext("Colors")}</.heading>
+        <%= if "scheme_mid" in @keys do %>
+          <div class="grid grid-cols-3 gap-2">
+            <div class={if diverging?(@config["color_scheme"]), do: "col-span-2", else: "col-span-3"}>
+              <.choice config={@config} prefix={@prefix} key="color_scheme" label={gettext("Scheme")} input={@input} options={value_schemes()} />
+            </div>
+            <div :if={diverging?(@config["color_scheme"])}>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">{gettext("Neutral at")}</label>
+              <input
+                type="number"
+                step="any"
+                name={name(@prefix, "scheme_mid")}
+                value={@config["scheme_mid"]}
+                placeholder="0"
+                class={@input}
+              />
+            </div>
+          </div>
+        <% else %>
+          <.choice config={@config} prefix={@prefix} key="color_scheme" label={gettext("Scheme")} input={@input} options={series_schemes()} />
+        <% end %>
+      </section>
+
+      <section :if={"funnel_colors" in @keys} class="space-y-3">
+        <.heading>{gettext("Stages")}</.heading>
+        <.choice
+          config={@config}
+          prefix={@prefix}
+          key="funnel_colors"
+          label={gettext("Colors")}
+          input={@input}
+          options={[
+            {"", gettext("One color")},
+            {"stages", gettext("A color for each stage")},
+            {"steps", gettext("Lighter at each stage")}
+          ]}
+        />
+        <.choice
+          config={@config}
+          prefix={@prefix}
+          key="funnel_labels"
+          label={gettext("Values")}
+          input={@input}
+          options={[
+            {"", gettext("Beside the bars")},
+            {"inside", gettext("In the bars")},
+            {"none", gettext("None")}
+          ]}
+        />
+      </section>
+
+      <section :if={"sparkline_area" in @keys} class="space-y-3">
+        <.heading>{gettext("Sparkline")}</.heading>
+        <.switch config={@config} prefix={@prefix} key="sparkline_area" label={gettext("Fill under the line")} />
+        <.choice
+          config={@config}
+          prefix={@prefix}
+          key="sparkline_points"
+          label={gettext("Dots")}
+          input={@input}
+          options={[
+            {"", gettext("None")},
+            {"last", gettext("On the last value")},
+            {"extremes", gettext("On the last, lowest and highest")}
+          ]}
+        />
+        <.switch config={@config} prefix={@prefix} key="sparkline_value" label={gettext("Write the last value")} />
       </section>
 
       <section :if={Enum.any?(~w(stack sort smooth y_axis_zero), &(&1 in @keys))} class="space-y-3">
@@ -338,6 +423,28 @@ defmodule Lotus.Web.Queries.ChartOptions do
       {"compact", gettext("Compact (1.2M)")},
       {"percent", gettext("Percent (0.42 → 42%)")}
     ] ++ if(currency?, do: [{"currency", gettext("Currency")}], else: [])
+  end
+
+  defp diverging?(scheme), do: scheme in ~w(red_blue red_green)
+
+  defp value_schemes do
+    [
+      {"", gettext("Blue")},
+      {"green", gettext("Green")},
+      {"orange", gettext("Orange")},
+      {"purple", gettext("Purple")},
+      {"gray", gettext("Gray")},
+      {"viridis", gettext("Viridis (many hues)")},
+      {"red_blue", gettext("Red to blue, through a neutral")},
+      {"red_green", gettext("Red to green, through a neutral")}
+    ]
+  end
+
+  defp series_schemes do
+    [
+      {"", gettext("Default")},
+      {"okabe_ito", gettext("Colorblind-safe (Okabe–Ito)")}
+    ]
   end
 
   defp stack_options("area") do

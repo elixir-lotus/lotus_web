@@ -162,7 +162,9 @@ defmodule Lotus.Web.Charts do
   defp fields(_), do: ~w(x_field y_field series_field)
 
   @words ~w(subtitle source)
-  @format ~w(number_format currency)
+  @format ~w(number_format currency decimals)
+  @series_scheme ["color_scheme"]
+  @value_scheme ~w(color_scheme scheme_mid)
   @reference ~w(reference_value reference_label)
   @facet ~w(facet_field facet_columns)
   @tooltip ["tooltip_fields"]
@@ -174,30 +176,39 @@ defmodule Lotus.Web.Charts do
   The settings offer these, and `build_config/1` keeps them.
 
       iex> Lotus.Web.Charts.option_keys("pie")
-      ["number_format", "currency", "tooltip_fields", "subtitle", "source"]
+      ["number_format", "currency", "decimals", "color_scheme", "tooltip_fields", "subtitle", "source"]
   """
   @spec option_keys(String.t() | nil) :: [String.t()]
   def option_keys("bar"),
     do:
       @format ++
         ~w(show_values stack sort) ++
-        @tooltip ++ @marks ++ @reference ++ @band ++ @facet ++ @words
+        @series_scheme ++ @tooltip ++ @marks ++ @reference ++ @band ++ @facet ++ @words
 
   def option_keys("horizontal_bar"),
-    do: @format ++ ~w(show_values stack sort) ++ @tooltip ++ @reference ++ @facet ++ @words
+    do:
+      @format ++
+        ~w(show_values stack sort) ++
+        @series_scheme ++ @tooltip ++ @reference ++ @facet ++ @words
 
   def option_keys("line"),
     do:
       @format ++
-        ~w(y_axis_zero smooth) ++ @tooltip ++ @marks ++ @reference ++ @band ++ @facet ++ @words
+        ~w(y_axis_zero smooth) ++
+        @series_scheme ++ @tooltip ++ @marks ++ @reference ++ @band ++ @facet ++ @words
 
   # An area starts at zero: it is filled down to it.
   def option_keys("area"),
     do:
-      @format ++ ~w(stack smooth) ++ @tooltip ++ @marks ++ @reference ++ @band ++ @facet ++ @words
+      @format ++
+        ~w(stack smooth) ++
+        @series_scheme ++ @tooltip ++ @marks ++ @reference ++ @band ++ @facet ++ @words
 
   def option_keys(type) when type in ~w(scatter bubble),
-    do: @format ++ ["y_axis_zero"] ++ @tooltip ++ @reference ++ @band ++ @facet ++ @words
+    do:
+      @format ++
+        ["y_axis_zero"] ++
+        @series_scheme ++ @tooltip ++ @reference ++ @band ++ @facet ++ @words
 
   def option_keys("combo"),
     do:
@@ -205,12 +216,19 @@ defmodule Lotus.Web.Charts do
         ~w(y2_number_format y_axis_zero y2_axis_zero smooth) ++
         @marks ++ @reference ++ @band ++ @words
 
-  def option_keys("sparkline"), do: @format ++ ["smooth"] ++ @words
+  def option_keys("sparkline"),
+    do: @format ++ ~w(smooth sparkline_area sparkline_points sparkline_value) ++ @words
 
-  def option_keys(type) when type in ~w(pie donut heatmap map bubble_map),
-    do: @format ++ @tooltip ++ @words
+  def option_keys(type) when type in ~w(pie donut),
+    do: @format ++ @series_scheme ++ @tooltip ++ @words
 
-  def option_keys(type) when type in ~w(waterfall histogram funnel), do: @format ++ @words
+  def option_keys(type) when type in ~w(heatmap map),
+    do: @format ++ @value_scheme ++ @tooltip ++ @words
+
+  def option_keys("bubble_map"), do: @format ++ @tooltip ++ @words
+  def option_keys("histogram"), do: @format ++ @series_scheme ++ @words
+  def option_keys("funnel"), do: @format ++ ~w(funnel_colors funnel_labels) ++ @words
+  def option_keys("waterfall"), do: @format ++ @words
 
   def option_keys(type) when type in ~w(kpi trend gauge progress), do: @format ++ @words
   def option_keys(_type), do: []
@@ -342,7 +360,7 @@ defmodule Lotus.Web.Charts do
 
     Fude.histogram(
       data,
-      [x: x, bins: bin_count(c["bin_count"])] ++ color(c["series_field"]) ++ words(c)
+      [x: x, bins: bin_count(c["bin_count"])] ++ color(c, c["series_field"]) ++ words(c)
     )
   end
 
@@ -352,7 +370,7 @@ defmodule Lotus.Web.Charts do
     color =
       case present(c["series_field"]) do
         nil -> {:count, c["x_field"]}
-        field -> [field: field] ++ format(c, "number_format")
+        field -> [field: field] ++ format(c, "number_format") ++ value_scheme(c)
       end
 
     Fude.heatmap(
@@ -370,8 +388,11 @@ defmodule Lotus.Web.Charts do
   defp build("map", data, c) do
     Fude.choropleth(
       data,
-      [region: c["x_field"], color: measure(c, c["y_field"]), map: map_name(c)] ++
-        tooltip(c) ++ words(c)
+      [
+        region: c["x_field"],
+        color: measure(c, c["y_field"]) ++ value_scheme(c),
+        map: map_name(c)
+      ] ++ tooltip(c) ++ words(c)
     )
   end
 
@@ -384,17 +405,52 @@ defmodule Lotus.Web.Charts do
     )
   end
 
-  defp build("funnel", data, c),
-    do: Fude.funnel(data, [x: c["x_field"], y: measure(c, c["y_field"])] ++ words(c))
+  # One color, a color for each stage, or each stage lighter than the last;
+  # the values beside the bars, in them, or none.
+  defp build("funnel", data, c) do
+    colors =
+      case c["funnel_colors"] do
+        "stages" -> [color: :stage]
+        "steps" -> [step: true]
+        _ -> []
+      end
+
+    labels =
+      case c["funnel_labels"] do
+        "inside" -> [labels: :inside]
+        "none" -> [labels: false]
+        _ -> []
+      end
+
+    Fude.funnel(
+      data,
+      [x: c["x_field"], y: measure(c, c["y_field"])] ++ colors ++ labels ++ words(c)
+    )
+  end
 
   defp build("waterfall", data, c) do
     y = axis(c, "y_field", :y) ++ format(c, "number_format")
     Fude.waterfall(data, [x: axis(c, "x_field", :x), y: y] ++ words(c))
   end
 
-  defp build("sparkline", data, c),
-    do:
-      Fude.sparkline(data, [x: c["x_field"], y: measure(c, c["y_field"])] ++ curve(c) ++ words(c))
+  # A line, or an area under it; a dot on its last value or on its extremes
+  # too; and its last value written at its end.
+  defp build("sparkline", data, c) do
+    points =
+      case c["sparkline_points"] do
+        "last" -> [points: :last]
+        "extremes" -> [points: :extremes]
+        _ -> []
+      end
+
+    Fude.sparkline(
+      data,
+      [x: c["x_field"], y: measure(c, c["y_field"])] ++
+        curve(c) ++
+        [area: on?(c["sparkline_area"], false), value: on?(c["sparkline_value"], false)] ++
+        points ++ words(c)
+    )
+  end
 
   # Bars of y on the left axis; the line of y2, of its own units, on the right.
   defp build("combo", data, c) do
@@ -633,7 +689,18 @@ defmodule Lotus.Web.Charts do
   defp curve(c), do: if(on?(c["smooth"], false), do: [curve: :monotone], else: [])
 
   # The measure's format, from the config: Fude's own when there is none.
-  defp format(c, key) do
+  # The decimals go with the values' format (not the combo line's).
+  defp format(c, "number_format" = key), do: base_format(c, key) ++ digits(c["decimals"])
+  defp format(c, key), do: base_format(c, key)
+
+  defp digits(value) do
+    case number(value, nil) do
+      n when is_number(n) and n >= 0 and n <= 6 -> [digits: trunc(n)]
+      _ -> []
+    end
+  end
+
+  defp base_format(c, key) do
     case present(c[key]) do
       "number" ->
         [format: :number]
@@ -673,7 +740,7 @@ defmodule Lotus.Web.Charts do
   # x, y and the series, with the axes' titles and the measure's format.
   defp cartesian(c) do
     y = axis(c, "y_field", :y) ++ format(c, "number_format") ++ zero(c, "y_axis_zero")
-    [x: axis(c, "x_field", :x), y: y] ++ color(c["series_field"])
+    [x: axis(c, "x_field", :x), y: y] ++ color(c, c["series_field"])
   end
 
   # Bars: sorted and stacked as the config says, their values on them or not.
@@ -726,13 +793,52 @@ defmodule Lotus.Web.Charts do
   # A slice of a pie or a donut for each category: the series field when
   # there is one, else the x field.
   defp slices(c) do
-    [value: measure(c, c["y_field"]), color: present(c["series_field"]) || c["x_field"]]
+    category = present(c["series_field"]) || c["x_field"]
+    [value: measure(c, c["y_field"])] ++ color(c, category)
   end
 
-  defp color(field) do
+  # The series' color, by the config's scheme: Fude's own, or one that is
+  # told apart by people with colour vision deficiencies too.
+  defp color(c, field) do
     case present(field) do
-      nil -> []
-      field -> [color: field]
+      nil ->
+        []
+
+      field ->
+        case c["color_scheme"] do
+          "okabe_ito" -> [color: [field: field, scheme: :okabe_ito]]
+          _ -> [color: field]
+        end
+    end
+  end
+
+  # A value's colors: a sequential ramp, or one that diverges through a
+  # neutral at `scheme_mid` (0 unless given).
+  @sequential %{
+    "blue" => :blue,
+    "green" => :green,
+    "orange" => :orange,
+    "purple" => :purple,
+    "gray" => :gray,
+    "viridis" => :viridis
+  }
+  @diverging %{"red_blue" => :red_blue, "red_green" => :red_green}
+
+  defp value_scheme(c) do
+    name = c["color_scheme"]
+
+    cond do
+      scheme = @sequential[name] ->
+        [scheme: scheme]
+
+      scheme = @diverging[name] ->
+        case number(c["scheme_mid"], nil) do
+          nil -> [scheme: scheme]
+          mid -> [scheme: scheme, mid: mid]
+        end
+
+      true ->
+        []
     end
   end
 

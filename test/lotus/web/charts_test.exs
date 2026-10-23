@@ -833,4 +833,111 @@ defmodule Lotus.Web.ChartsTest do
       assert wire(sales(), config)["annotations"] == []
     end
   end
+
+  describe "chart/2: decimals, colors, funnels and sparklines" do
+    @series %{
+      "chart_type" => "bar",
+      "x_field" => "region",
+      "y_field" => "revenue",
+      "series_field" => "channel"
+    }
+
+    test "the decimals go with the values' format, or alone" do
+      config = Map.merge(@series, %{"number_format" => "number", "decimals" => "0"})
+      assert wire(sales(), config)["scales"]["y"]["format"] == "number:0"
+
+      assert wire(sales(), Map.put(@series, "decimals", "2"))["scales"]["y"]["format"] == ":2"
+      refute wire(sales(), Map.put(@series, "decimals", ""))["scales"]["y"]["format"]
+    end
+
+    test "a single value takes its decimals" do
+      result = result(["total"], [[6_893_913.6]])
+
+      config = %{
+        "chart_type" => "kpi",
+        "value_field" => "total",
+        "number_format" => "number",
+        "decimals" => "0"
+      }
+
+      assert wire(result, config)["single"]["format"] == "number:0"
+    end
+
+    test "series in the colorblind-safe scheme, or Fude's own" do
+      assert wire(sales(), Map.put(@series, "color_scheme", "okabe_ito"))["scales"]["color"][
+               "scheme"
+             ] ==
+               "okabe_ito"
+
+      refute wire(sales(), @series)["scales"]["color"]["scheme"]
+    end
+
+    test "a value's colors: a sequential ramp, or diverging through a neutral" do
+      config = %{
+        "chart_type" => "heatmap",
+        "x_field" => "region",
+        "y_field" => "channel",
+        "series_field" => "revenue"
+      }
+
+      assert wire(sales(), Map.put(config, "color_scheme", "green"))["scales"]["color"]["scheme"] ==
+               "green"
+
+      diverging = Map.merge(config, %{"color_scheme" => "red_green", "scheme_mid" => "100"})
+
+      assert %{"scheme" => "red_green", "mid" => 100.0} =
+               wire(sales(), diverging)["scales"]["color"]
+
+      refute wire(sales(), Map.put(config, "color_scheme", "nonsense"))["scales"]["color"][
+               "scheme"
+             ]
+    end
+
+    test "a funnel's colors and values" do
+      result = result(["stage", "people"], [["Visited", 100], ["Paid", 9]])
+      config = %{"chart_type" => "funnel", "x_field" => "stage", "y_field" => "people"}
+
+      stages =
+        wire(
+          result,
+          Map.merge(config, %{"funnel_colors" => "stages", "funnel_labels" => "inside"})
+        )
+
+      assert %{"legend" => false, "domain" => ["Visited", "Paid"]} = stages["scales"]["color"]
+      assert hd(stages["layers"])["options"]["labels"] == "inside"
+
+      steps =
+        wire(result, Map.merge(config, %{"funnel_colors" => "steps", "funnel_labels" => "none"}))
+
+      assert %{"step" => true, "labels" => false} = hd(steps["layers"])["options"]
+    end
+
+    test "a sparkline's area, dots and last value" do
+      result = result(["day", "visits"], [[~D[2026-01-01], 10], [~D[2026-01-02], 5]])
+
+      config = %{
+        "chart_type" => "sparkline",
+        "x_field" => "day",
+        "y_field" => "visits",
+        "sparkline_area" => "true",
+        "sparkline_points" => "extremes",
+        "sparkline_value" => "true"
+      }
+
+      assert %{"area" => true, "points" => "extremes", "value" => true} =
+               hd(wire(result, config)["layers"])["options"]
+    end
+
+    test "tooltip fields carry their values" do
+      config = %{
+        "chart_type" => "bar",
+        "x_field" => "region",
+        "y_field" => "revenue",
+        "tooltip_fields" => ["channel"]
+      }
+
+      assert [%{"title" => "Channel", "values" => [_ | _]}] =
+               hd(wire(sales(), config)["layers"])["tooltip"]
+    end
+  end
 end

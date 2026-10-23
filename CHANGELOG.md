@@ -29,6 +29,15 @@
   code, number or name. The maps are served by Lotus, under the mount
   prefix with a content hash, and fetched only when a map draws.
 - **Tooltip fields.** More fields to show when a mark is hovered.
+- **Decimals.** How many decimals a chart's values write, with their
+  format or alone: a KPI's exact number without its cents.
+- **Color schemes.** A chart's series in Fude's colors or a colorblind-safe
+  set (Okabe–Ito); a heatmap's or a map's value on a ramp of a hue, or
+  diverging through a neutral at a chosen value.
+- **Funnels and sparklines of their own.** A funnel's stages in one color,
+  a color each, or lighter at each stage, with their values beside the
+  bars, in them, or none; a sparkline's fill, its dots on its last or
+  extreme values, and its last value at its end.
 - **Callouts and ranges.** A chart can mark its highest and lowest values
   with their values, and shade a range of its horizontal axis with a
   label.
