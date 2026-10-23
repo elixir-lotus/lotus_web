@@ -1,52 +1,45 @@
 name: Feature request
-description: Suggest an idea to improve Lotus
+description: An idea, or a change to what Lotus Web does.
 labels: [enhancement]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for proposing an improvement!
-        Before you open a pull request, please make sure there is an issue tracking the change.
-  - type: textarea
-    id: context
-    attributes:
-      label: Context and why this matters
-      description: Explain the context behind this request. Why is this important? Who benefits? What problems does it solve?
-      placeholder: Describe the use case, the pain today, constraints, and impact.
-    validations:
-      required: true
+        Thanks for the idea. A change of behaviour or a new feature is agreed here before a pull request; a small fix needs no issue (see CONTRIBUTING.md).
+
   - type: textarea
     id: problem
     attributes:
-      label: Problem to solve
-      description: Describe the problem or use case you're trying to address.
+      label: The problem
+      description: What you are trying to do, for whom, and what stops you today.
     validations:
       required: true
+
   - type: textarea
     id: proposal
     attributes:
-      label: Proposed solution
-      description: Describe your proposal at a high level. Highlight breaking changes if applicable.
+      label: What you propose
+      description: How it would look to the app that mounts Lotus Web (a mount option, a resolver callback, a guide) and to the person at the dashboard. Say if it changes what the dashboard does today, or breaks an existing setup.
     validations:
       required: true
+
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives considered
-      description: What else did you try? Why is your proposal preferable?
-    validations:
-      required: false
+      label: What else you considered
+      description: Other designs, and what you do today instead.
+
   - type: textarea
     id: risks
     attributes:
-      label: Risks / trade-offs
-      description: Any risks or trade-offs to be aware of?
-    validations:
-      required: false
-  - type: textarea
-    id: docs
+      label: Risks and trade-offs
+      description: For example, for who may see or run what, or for performance.
+
+  - type: checkboxes
+    id: checks
     attributes:
-      label: Documentation impact
-      description: Does this change require updates to guides, README, or API docs?
-    validations:
-      required: false
+      label: Checks
+      options:
+        - label: I searched the open and closed issues.
+          required: true
+        - label: I would like to make the pull request myself.

@@ -33,11 +33,16 @@ end
 ```elixir
 # config/config.exs
 config :lotus_web, Lotus.Web.MCP, resolver: MyApp.LotusResolver
-
-config :lotus, :mcp,
-  authorize: {Lotus.Web.MCP, :authorize?},
-  actor: {Lotus.Web.MCP, :actor}
 ```
+
+That's all Lotus needs to know. `Lotus.Web.MCP` tells `Lotus.MCP` to ask
+your resolver who may use it and as which actor (with `Lotus.MCP.Host`),
+so `config :lotus, :mcp` needs neither `authorize:` nor `actor:`. Its other
+keys, such as `data_sources:` and `max_rows:`, work as before. If you do
+set `authorize:` or `actor:` there, yours wins.
+
+Without Sake in your deps, `Lotus.Web.MCP` isn't compiled; Lotus Web logs a
+warning at start if you configured it anyway.
 
 ```
 claude mcp add --transport http lotus https://myapp.example.com/lotus/mcp

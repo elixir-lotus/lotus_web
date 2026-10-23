@@ -2,7 +2,7 @@ defmodule Lotus.Web.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/elixir-lotus/lotus_web"
-  @version "1.4.0"
+  @version "2.0.0-dev"
 
   def project do
     [
@@ -52,7 +52,11 @@ defmodule Lotus.Web.MixProject do
       {:mdex, "~> 0.13"},
 
       # Lotus
-      {:lotus, "~> 1.3"},
+      # Temporarily on main, for Lotus.MCP.Host (elixir-lotus/lotus#343), until
+      # the next Lotus release. Hex refuses to publish a git dependency.
+      # Overridden because Lotus's main is 2.0.0-dev, which the adapters'
+      # `~> 1.3` doesn't match.
+      {:lotus, github: "elixir-lotus/lotus", branch: "main", override: true},
       {:sake, "~> 0.4", optional: true},
       {:lotus_clickhouse,
        git: "git@github.com:elixir-lotus/lotus_clickhouse.git", branch: "main", only: :dev},
@@ -63,6 +67,7 @@ defmodule Lotus.Web.MixProject do
       {:postgrex, "~> 0.20", only: [:dev, :test]},
       {:myxql, "~> 0.8", only: [:dev, :test]},
       {:ecto_ch, "~> 0.3", only: :dev},
+      {:ecto_sqlite3, "~> 0.21", only: :dev},
 
       # Tests
       {:floki, "~> 0.33", only: [:test, :dev]},
@@ -140,7 +145,9 @@ defmodule Lotus.Web.MixProject do
         "guides/dashboards.md",
         "guides/variables-and-widgets.md",
         "guides/theming.md",
-        "guides/mcp.md"
+        "guides/mcp.md",
+        "CONTRIBUTING.md",
+        "SECURITY.md"
       ]
     ]
   end

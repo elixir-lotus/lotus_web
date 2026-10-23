@@ -1,53 +1,23 @@
----
-> Thank you for contributing to Lotus!
+## Why
 
-> ⚠️ IMPORTANT: Every pull request MUST reference a tracked issue before it is opened.
-> If you don't have an issue yet, please create one first to describe the problem
-> or proposal and discuss scope.
+<!-- The problem this solves, for whom, and what happened before it (an error, a crash, a wrong result). -->
 
-Unless mentioned otherwise, all sections are required. Please remove any sections that are not applicable.
+Fixes #<!-- the issue; see CONTRIBUTING.md for when a pull request needs one -->
 
-## Issue reference
+## What
 
-Link the issue this PR addresses:
+<!-- The change, in a few lines. A screenshot for a change to the UI. -->
 
-- Implements #<issue-number>
-- Fixes #<issue-number>
-- Resolves #<issue-number>
+## How it was tested
 
-> PRs without a valid issue reference may be closed without review.
-
-## Changes
-
-- [ ] Briefly list the key changes in this PR
-- [ ] Note any notable refactors
-
-## Screenshots / Logs (optional)
-
-If UI output, logs, or screenshots help reviewers, include them here.
-
-## Breaking changes
-
-- [ ] This PR introduces breaking changes
-
-## Documentation updates
-
-- [ ] Public API changed and docs were updated
-- [ ] Guides updated (if applicable)
+<!-- The tests added, and what you ran by hand. -->
 
 ## Checklist
 
-- [ ] I have linked a GitHub issue using "Closes/Fixes/Resolves #<id>" (required)
-- [ ] I have followed the project's coding standards (please let us know if you aren't sure, we're happy to clarify!)
-- [ ] Tests added or updated to cover changes
-- [ ] All tests pass locally (mix test)
-- [ ] Code formatted (mix format)
-- [ ] Credo is clean (mix credo)
-- [ ] Dialyzer is clean (mix dialyzer)
-- [ ] CHANGELOG.md updated, if user-facing behavior changed
-
-## Notes for reviewers (optional)
-
-Anything specific you want reviewers to focus on? Edge cases, decisions, or follow-ups.
-
----
+- [ ] One change: anything unrelated is in its own pull request.
+- [ ] A bug fix has a test that fails on `main` and passes here.
+- [ ] `mix format --check-formatted`, `mix compile --warnings-as-errors`, `mix credo`, `mix docs`, `mix test` and `mix dialyzer` pass.
+- [ ] `npm test --prefix assets` passes, for a change to `assets/js`.
+- [ ] The guides and `CHANGELOG.md` are updated, for a change a user can see.
+- [ ] Says so here if it changes the public API, who may do what, or what the dashboard does today.
+- [ ] No changes to the version or the release headings of the changelog (the maintainers keep those).

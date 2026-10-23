@@ -375,10 +375,20 @@ npm install --prefix assets
 mix dev
 ```
 
+`mix dev` connects to and seeds every backend from `docker-compose.yml`, plus a local SQLite file. To run only some, list them in `BACKENDS`:
+
+```bash
+BACKENDS=postgres mix dev
+BACKENDS=postgres,sqlite mix dev
+```
+
+Valid names are `postgres`, `mysql`, `sqlite`, `clickhouse` and `elasticsearch`. Postgres always runs because it stores Lotus' own queries and dashboards.
+
 ### Running Tests
 
 ```bash
 mix test
+npm test --prefix assets   # the JavaScript tests (vitest)
 ```
 
 ### AI Assistant Setup (Optional)
@@ -432,7 +442,9 @@ Once a release line is end-of-life, the branch can be deleted. Tags keep the com
 
 ## Contributing
 
-We welcome contributions! When reporting bugs, please include your Elixir/OTP versions, dependency versions, and steps to reproduce.
+See [CONTRIBUTING.md](CONTRIBUTING.md): when a change needs an issue
+first, and what a pull request needs. Report a security problem
+privately, as [SECURITY.md](SECURITY.md) says.
 
 ## Acknowledgments
 

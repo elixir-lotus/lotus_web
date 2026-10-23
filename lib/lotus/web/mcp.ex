@@ -16,9 +16,9 @@ if Code.ensure_loaded?(Sake.Server) do
         # config/config.exs
         config :lotus_web, Lotus.Web.MCP, resolver: MyApp.LotusResolver
 
-        config :lotus, :mcp,
-          authorize: {Lotus.Web.MCP, :authorize?},
-          actor: {Lotus.Web.MCP, :actor}
+    That's all: this server tells `Lotus.MCP` to ask `authorize?/1` and
+    `actor/1` (with `Lotus.MCP.Host`), so `config :lotus, :mcp` needs neither
+    `authorize:` nor `actor:`. Where it sets one, it still wins.
 
     `authorize?/1` lets in whoever the resolver's `resolve_access/1` gives
     `:all` or `:read_only` access; `actor/1` gives Lotus the
@@ -48,6 +48,11 @@ if Code.ensure_loaded?(Sake.Server) do
     tools [Lotus.Web.MCP.ShowChart]
     resources [Lotus.Web.MCP.ChartApp]
 
+    # Who may use Lotus and as which actor: this server's resolver.
+    middleware :before_request, [
+      {Lotus.MCP.Host, authorize: {__MODULE__, :authorize?}, actor: {__MODULE__, :actor}}
+    ]
+
     # Lotus.MCP's own gate covers only the components it declares: run it
     # on this server's list too, so show_chart is behind it as well.
     middleware :after_list, [Lotus.MCP.Authorize, Lotus.Web.MCP.Access]
@@ -57,7 +62,7 @@ if Code.ensure_loaded?(Sake.Server) do
 
     @doc """
     Whether `user` may use Lotus over MCP: the resolver's `resolve_access/1`
-    gives `:all` or `:read_only`. For `config :lotus, :mcp, authorize:`.
+    gives `:all` or `:read_only`. `Lotus.MCP` asks it on every request.
 
     A resolver that does not implement `resolve_access/1` lets nobody in,
     rather than everybody, as the dashboard's default would: an MCP endpoint
@@ -80,8 +85,8 @@ if Code.ensure_loaded?(Sake.Server) do
     end
 
     @doc """
-    The `:context` and `:scope` the dashboard would give Lotus for `user`.
-    For `config :lotus, :mcp, actor:`.
+    The `:context` and `:scope` the dashboard would give Lotus for `user`,
+    the actor `Lotus.MCP` runs its tools with.
     """
     @spec actor(Resolver.user()) :: nonempty_list({:context, term()} | {:scope, term()})
     def actor(user) do
