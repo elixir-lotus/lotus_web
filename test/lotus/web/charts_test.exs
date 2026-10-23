@@ -940,4 +940,45 @@ defmodule Lotus.Web.ChartsTest do
                hd(wire(sales(), config)["layers"])["tooltip"]
     end
   end
+
+  describe "chart/2: what tooltips add, motion, bubble map colors" do
+    test "a tooltip adds the change, the share, the rank and a history" do
+      config = %{
+        "chart_type" => "bar",
+        "x_field" => "region",
+        "y_field" => "revenue",
+        "tooltip_adds" => ["", "change", "rank", "history", "nonsense"]
+      }
+
+      assert hd(wire(sales(), config)["layers"])["tips"] ==
+               %{"change" => true, "rank" => true, "history" => true}
+
+      both = Map.merge(config, %{"tooltip_fields" => ["channel"], "tooltip_adds" => ["share"]})
+      layer = hd(wire(sales(), both)["layers"])
+      assert %{"share" => true} = layer["tips"]
+      assert [%{"title" => "Channel"}] = layer["tooltip"]
+    end
+
+    test "a chart moves unless told not to" do
+      config = %{"chart_type" => "bar", "x_field" => "region", "y_field" => "revenue"}
+
+      refute Map.get(wire(sales(), config), "animate") == false
+      assert wire(sales(), Map.put(config, "animate", "false"))["animate"] == false
+      refute wire(sales(), Map.put(config, "animate", "true"))["animate"] == false
+    end
+
+    test "a bubble map colors its circles by a category" do
+      result = result(["country", "users", "plan"], [["PRT", 120, "pro"], ["ESP", 80, "free"]])
+
+      config = %{
+        "chart_type" => "bubble_map",
+        "x_field" => "country",
+        "y_field" => "users",
+        "series_field" => "plan"
+      }
+
+      assert wire(result, config)["scales"]["color"]["domain"] == ["pro", "free"]
+      assert %{"series_field" => "plan"} = Charts.build_config(config)
+    end
+  end
 end

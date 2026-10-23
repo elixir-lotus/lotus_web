@@ -439,7 +439,7 @@ msgstr ""
 msgid "Showing 0"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:302
+#: lib/lotus/web/live/queries/chart_options.ex:327
 #: lib/lotus/web/live/queries/segmented_data_selector_component.ex:29
 #, elixir-autogen, elixir-format
 msgid "Source"
@@ -699,7 +699,7 @@ msgstr ""
 msgid "See details below"
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:896
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:910
 #, elixir-autogen, elixir-format
 msgid "Axis Display"
 msgstr ""
@@ -733,12 +733,13 @@ msgstr ""
 
 #: lib/lotus/web/live/dashboards/card_settings_drawer.ex:412
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:661
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:846
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:801
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:860
 #, elixir-autogen, elixir-format
 msgid "Color/Series Field"
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:1023
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:1037
 #, elixir-autogen, elixir-format
 msgid "Configuration incomplete"
 msgstr ""
@@ -748,27 +749,27 @@ msgstr ""
 msgid "Configure"
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:930
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:968
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:944
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:982
 #, elixir-autogen, elixir-format
 msgid "Enter label..."
 msgstr ""
 
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:673
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:858
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:872
 #, elixir-autogen, elixir-format
 msgid "Group data by this field using different colors"
 msgstr ""
 
 #: lib/lotus/web/live/dashboards/card_settings_drawer.ex:267
-#: lib/lotus/web/live/queries/chart_options.ex:225
-#: lib/lotus/web/live/queries/chart_options.ex:252
+#: lib/lotus/web/live/queries/chart_options.ex:250
+#: lib/lotus/web/live/queries/chart_options.ex:277
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:381
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:418
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:476
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:524
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:923
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:961
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:937
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:975
 #: lib/lotus/web/pages/dashboard_editor_page.ex:364
 #, elixir-autogen, elixir-format
 msgid "Label"
@@ -779,12 +780,13 @@ msgstr ""
 #: lib/lotus/web/live/dashboards/card_settings_drawer.ex:418
 #: lib/lotus/web/live/queries/chart_options.ex:123
 #: lib/lotus/web/live/queries/chart_options.ex:138
-#: lib/lotus/web/live/queries/chart_options.ex:270
+#: lib/lotus/web/live/queries/chart_options.ex:295
 #: lib/lotus/web/live/queries/editor_component.ex:234
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:595
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:667
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:852
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:872
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:807
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:866
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:886
 #: lib/lotus/web/pages/dashboard_editor_page.ex:505
 #, elixir-autogen, elixir-format
 msgid "None"
@@ -801,7 +803,7 @@ msgstr ""
 msgid "Running..."
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:1052
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:1066
 #, elixir-autogen, elixir-format
 msgid "Select both X-Axis and Y-Axis fields to enable the chart view."
 msgstr ""
@@ -820,14 +822,14 @@ msgstr ""
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:713
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:769
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:788
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:816
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:834
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:830
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:848
 #, elixir-autogen, elixir-format
 msgid "Select field..."
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:907
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:945
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:921
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:959
 #, elixir-autogen, elixir-format
 msgid "Show label"
 msgstr ""
@@ -848,17 +850,17 @@ msgstr ""
 msgid "Table view"
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:822
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:836
 #, elixir-autogen, elixir-format
 msgid "The field to use for the horizontal axis"
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:840
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:854
 #, elixir-autogen, elixir-format
 msgid "The field to use for the vertical axis (should be numeric)"
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:1015
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:1029
 #, elixir-autogen, elixir-format
 msgid "Use the chart icon in the bottom bar to view."
 msgstr ""
@@ -870,30 +872,30 @@ msgstr ""
 msgid "Visualization"
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:1011
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:1025
 #, elixir-autogen, elixir-format
 msgid "Visualization configured"
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:902
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:916
 #, elixir-autogen, elixir-format
 msgid "X-Axis"
 msgstr ""
 
 #: lib/lotus/web/live/dashboards/card_settings_drawer.ex:670
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:561
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:810
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:824
 #, elixir-autogen, elixir-format
 msgid "X-Axis Field"
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:940
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:954
 #, elixir-autogen, elixir-format
 msgid "Y-Axis"
 msgstr ""
 
 #: lib/lotus/web/live/dashboards/card_settings_drawer.ex:674
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:828
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:842
 #, elixir-autogen, elixir-format
 msgid "Y-Axis Field"
 msgstr ""
@@ -912,8 +914,9 @@ msgstr ""
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:606
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:661
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:725
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:846
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:866
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:801
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:860
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:880
 #, elixir-autogen, elixir-format
 msgid "optional"
 msgstr ""
@@ -1685,7 +1688,7 @@ msgstr ""
 msgid "Number of Bins"
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:878
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:892
 #, elixir-autogen, elixir-format
 msgid "Numeric field to control bubble size"
 msgstr ""
@@ -1720,32 +1723,32 @@ msgstr ""
 msgid "Second field rendered as a line on the right Y-axis"
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:1046
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:1060
 #, elixir-autogen, elixir-format
 msgid "Select Column and Row fields to enable the heatmap."
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:1043
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:1057
 #, elixir-autogen, elixir-format
 msgid "Select a Data Field to show the histogram."
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:1034
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:1048
 #, elixir-autogen, elixir-format
 msgid "Select a Value Field to display the KPI card."
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:1035
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:1049
 #, elixir-autogen, elixir-format
 msgid "Select a Value Field to display the gauge."
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:1038
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:1052
 #, elixir-autogen, elixir-format
 msgid "Select a Value Field to display the progress bar."
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:1040
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:1054
 #, elixir-autogen, elixir-format
 msgid "Select a Value Field to display the trend."
 msgstr ""
@@ -1756,7 +1759,7 @@ msgid "Single value"
 msgstr ""
 
 #: lib/lotus/web/live/dashboards/card_settings_drawer.ex:396
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:866
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:880
 #, elixir-autogen, elixir-format
 msgid "Size Field"
 msgstr ""
@@ -2430,7 +2433,7 @@ msgstr ""
 msgid "Clear"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:275
+#: lib/lotus/web/live/queries/chart_options.ex:300
 #: lib/lotus/web/queries/masu_messages.ex:31
 #, elixir-autogen, elixir-format
 msgid "Columns"
@@ -2546,7 +2549,7 @@ msgstr ""
 msgid "Following {label}"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:216
+#: lib/lotus/web/live/queries/chart_options.ex:241
 #: lib/lotus/web/queries/masu_messages.ex:76
 #, elixir-autogen, elixir-format
 msgid "From"
@@ -2861,7 +2864,7 @@ msgstr ""
 msgid "This action no longer applies"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:220
+#: lib/lotus/web/live/queries/chart_options.ex:245
 #: lib/lotus/web/queries/masu_messages.ex:176
 #, elixir-autogen, elixir-format
 msgid "To"
@@ -3297,7 +3300,7 @@ msgstr ""
 msgid "{label}: {done} of {total}"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:268
+#: lib/lotus/web/live/queries/chart_options.ex:293
 #, elixir-autogen, elixir-format
 msgid "A chart for each"
 msgstr ""
@@ -3307,23 +3310,23 @@ msgstr ""
 msgid "As the query returns them"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:241
+#: lib/lotus/web/live/queries/chart_options.ex:266
 #, elixir-autogen, elixir-format
 msgid "At"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:282
+#: lib/lotus/web/live/queries/chart_options.ex:307
 #, elixir-autogen, elixir-format
 msgid "Auto"
 msgstr ""
 
 #: lib/lotus/web/live/queries/chart_options.ex:59
-#: lib/lotus/web/live/queries/chart_options.ex:420
+#: lib/lotus/web/live/queries/chart_options.ex:445
 #, elixir-autogen, elixir-format
 msgid "Automatic"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:415
+#: lib/lotus/web/live/queries/chart_options.ex:440
 #, elixir-autogen, elixir-format
 msgid "Bars' format"
 msgstr ""
@@ -3333,23 +3336,23 @@ msgstr ""
 msgid "By name"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:423
+#: lib/lotus/web/live/queries/chart_options.ex:448
 #, elixir-autogen, elixir-format
 msgid "Compact (1.2M)"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:347
-#: lib/lotus/web/live/queries/chart_options.ex:425
+#: lib/lotus/web/live/queries/chart_options.ex:372
+#: lib/lotus/web/live/queries/chart_options.ex:450
 #, elixir-autogen, elixir-format
 msgid "Currency"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:421
+#: lib/lotus/web/live/queries/chart_options.ex:446
 #, elixir-autogen, elixir-format
 msgid "Exact (1,234,567.8)"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:414
+#: lib/lotus/web/live/queries/chart_options.ex:439
 #, elixir-autogen, elixir-format
 msgid "Format"
 msgstr ""
@@ -3379,17 +3382,17 @@ msgstr ""
 msgid "Order"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:453
+#: lib/lotus/web/live/queries/chart_options.ex:487
 #, elixir-autogen, elixir-format
 msgid "Overlapping"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:424
+#: lib/lotus/web/live/queries/chart_options.ex:449
 #, elixir-autogen, elixir-format
 msgid "Percent (0.42 → 42%)"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:238
+#: lib/lotus/web/live/queries/chart_options.ex:263
 #, elixir-autogen, elixir-format
 msgid "Reference line"
 msgstr ""
@@ -3404,12 +3407,12 @@ msgstr ""
 msgid "Show values on the bars"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:461
+#: lib/lotus/web/live/queries/chart_options.ex:495
 #, elixir-autogen, elixir-format
 msgid "Side by side"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:265
+#: lib/lotus/web/live/queries/chart_options.ex:290
 #, elixir-autogen, elixir-format
 msgid "Small multiples"
 msgstr ""
@@ -3424,74 +3427,74 @@ msgstr ""
 msgid "Smooth lines"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:452
-#: lib/lotus/web/live/queries/chart_options.ex:460
+#: lib/lotus/web/live/queries/chart_options.ex:486
+#: lib/lotus/web/live/queries/chart_options.ex:494
 #, elixir-autogen, elixir-format
 msgid "Stacked"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:454
-#: lib/lotus/web/live/queries/chart_options.ex:462
+#: lib/lotus/web/live/queries/chart_options.ex:488
+#: lib/lotus/web/live/queries/chart_options.ex:496
 #, elixir-autogen, elixir-format
 msgid "Stacked to 100%"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:177
+#: lib/lotus/web/live/queries/chart_options.ex:185
 #, elixir-autogen, elixir-format
 msgid "Start the axis at zero"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:177
+#: lib/lotus/web/live/queries/chart_options.ex:185
 #, elixir-autogen, elixir-format
 msgid "Start the bars' axis at zero"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:184
+#: lib/lotus/web/live/queries/chart_options.ex:192
 #, elixir-autogen, elixir-format
 msgid "Start the line's axis at zero"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:292
+#: lib/lotus/web/live/queries/chart_options.ex:317
 #, elixir-autogen, elixir-format
 msgid "Subtitle"
 msgstr ""
 
-#: lib/lotus/web/charts.ex:303
+#: lib/lotus/web/charts.ex:308
 #, elixir-autogen, elixir-format
 msgid "The chart could not be drawn: %{reason}"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:416
+#: lib/lotus/web/live/queries/chart_options.ex:441
 #, elixir-autogen, elixir-format
 msgid "Values' format"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:422
+#: lib/lotus/web/live/queries/chart_options.ex:447
 #, elixir-autogen, elixir-format
 msgid "Whole (1,234,568)"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:290
+#: lib/lotus/web/live/queries/chart_options.ex:315
 #, elixir-autogen, elixir-format
 msgid "Words"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:247
+#: lib/lotus/web/live/queries/chart_options.ex:272
 #, elixir-autogen, elixir-format
 msgid "e.g. 5000"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:307
+#: lib/lotus/web/live/queries/chart_options.ex:332
 #, elixir-autogen, elixir-format
 msgid "e.g. Billing, updated daily"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:257
+#: lib/lotus/web/live/queries/chart_options.ex:282
 #, elixir-autogen, elixir-format
 msgid "e.g. Goal"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:297
+#: lib/lotus/web/live/queries/chart_options.ex:322
 #, elixir-autogen, elixir-format
 msgid "e.g. Monthly revenue by channel"
 msgstr ""
@@ -3511,7 +3514,7 @@ msgstr ""
 msgid "Bubble Map"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:207
+#: lib/lotus/web/live/queries/chart_options.ex:232
 #, elixir-autogen, elixir-format
 msgid "Callouts"
 msgstr ""
@@ -3521,12 +3524,12 @@ msgstr ""
 msgid "Colors each region"
 msgstr ""
 
-#: lib/lotus/web/charts.ex:551
+#: lib/lotus/web/charts.ex:556
 #, elixir-autogen, elixir-format
 msgid "Highest: %{value}"
 msgstr ""
 
-#: lib/lotus/web/charts.ex:556
+#: lib/lotus/web/charts.ex:561
 #, elixir-autogen, elixir-format
 msgid "Lowest: %{value}"
 msgstr ""
@@ -3543,17 +3546,17 @@ msgstr ""
 msgid "Maps"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:208
+#: lib/lotus/web/live/queries/chart_options.ex:233
 #, elixir-autogen, elixir-format
 msgid "Mark the highest value"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:209
+#: lib/lotus/web/live/queries/chart_options.ex:234
 #, elixir-autogen, elixir-format
 msgid "Mark the lowest value"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:190
+#: lib/lotus/web/live/queries/chart_options.ex:198
 #, elixir-autogen, elixir-format
 msgid "More fields to show on hover"
 msgstr ""
@@ -3570,12 +3573,12 @@ msgstr ""
 msgid "Save as PNG"
 msgstr ""
 
-#: lib/lotus/web/live/queries/visualization_settings_component.ex:1049
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:1063
 #, elixir-autogen, elixir-format
 msgid "Select Region and Value fields to draw the map."
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:212
+#: lib/lotus/web/live/queries/chart_options.ex:237
 #, elixir-autogen, elixir-format
 msgid "Shade a range of the horizontal axis: dates as 2026-03-01, categories by name."
 msgstr ""
@@ -3585,7 +3588,7 @@ msgstr ""
 msgid "Sizes each circle"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:189
+#: lib/lotus/web/live/queries/chart_options.ex:197
 #, elixir-autogen, elixir-format
 msgid "Tooltip"
 msgstr ""
@@ -3602,7 +3605,7 @@ msgstr ""
 msgid "World (countries)"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:230
+#: lib/lotus/web/live/queries/chart_options.ex:255
 #, elixir-autogen, elixir-format
 msgid "e.g. Holiday sale"
 msgstr ""
@@ -3617,12 +3620,12 @@ msgstr ""
 msgid "Beside the bars"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:432
+#: lib/lotus/web/live/queries/chart_options.ex:466
 #, elixir-autogen, elixir-format
 msgid "Blue"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:446
+#: lib/lotus/web/live/queries/chart_options.ex:480
 #, elixir-autogen, elixir-format
 msgid "Colorblind-safe (Okabe–Ito)"
 msgstr ""
@@ -3638,7 +3641,7 @@ msgstr ""
 msgid "Decimals"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:445
+#: lib/lotus/web/live/queries/chart_options.ex:479
 #, elixir-autogen, elixir-format
 msgid "Default"
 msgstr ""
@@ -3653,12 +3656,12 @@ msgstr ""
 msgid "Fill under the line"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:436
+#: lib/lotus/web/live/queries/chart_options.ex:470
 #, elixir-autogen, elixir-format
 msgid "Gray"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:433
+#: lib/lotus/web/live/queries/chart_options.ex:467
 #, elixir-autogen, elixir-format
 msgid "Green"
 msgstr ""
@@ -3693,22 +3696,22 @@ msgstr ""
 msgid "One color"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:434
+#: lib/lotus/web/live/queries/chart_options.ex:468
 #, elixir-autogen, elixir-format
 msgid "Orange"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:435
+#: lib/lotus/web/live/queries/chart_options.ex:469
 #, elixir-autogen, elixir-format
 msgid "Purple"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:438
+#: lib/lotus/web/live/queries/chart_options.ex:472
 #, elixir-autogen, elixir-format
 msgid "Red to blue, through a neutral"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:439
+#: lib/lotus/web/live/queries/chart_options.ex:473
 #, elixir-autogen, elixir-format
 msgid "Red to green, through a neutral"
 msgstr ""
@@ -3729,7 +3732,7 @@ msgstr ""
 msgid "Values"
 msgstr ""
 
-#: lib/lotus/web/live/queries/chart_options.ex:437
+#: lib/lotus/web/live/queries/chart_options.ex:471
 #, elixir-autogen, elixir-format
 msgid "Viridis (many hues)"
 msgstr ""
@@ -3737,4 +3740,34 @@ msgstr ""
 #: lib/lotus/web/live/queries/chart_options.ex:143
 #, elixir-autogen, elixir-format
 msgid "Write the last value"
+msgstr ""
+
+#: lib/lotus/web/live/queries/chart_options.ex:458
+#, elixir-autogen, elixir-format
+msgid "A small history of the series"
+msgstr ""
+
+#: lib/lotus/web/live/queries/chart_options.ex:213
+#, elixir-autogen, elixir-format
+msgid "And from the series"
+msgstr ""
+
+#: lib/lotus/web/live/queries/chart_options.ex:178
+#, elixir-autogen, elixir-format
+msgid "Animate changes"
+msgstr ""
+
+#: lib/lotus/web/live/queries/chart_options.ex:455
+#, elixir-autogen, elixir-format
+msgid "Change from the point before"
+msgstr ""
+
+#: lib/lotus/web/live/queries/chart_options.ex:457
+#, elixir-autogen, elixir-format
+msgid "Rank"
+msgstr ""
+
+#: lib/lotus/web/live/queries/chart_options.ex:456
+#, elixir-autogen, elixir-format
+msgid "Share of the stack or of the total"
 msgstr ""

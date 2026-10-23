@@ -25,10 +25,15 @@
   chart as PNG from its header.
 - **Maps.** Two chart types draw on a map of the world's countries or the
   US states: a *Map* colors each region by a value, a *Bubble Map* puts a
-  circle sized by a value on each. A region is found by its ISO or postal
+  circle sized by a value on each, colored by a series if you like. A region is found by its ISO or postal
   code, number or name. The maps are served by Lotus, under the mount
   prefix with a content hash, and fetched only when a map draws.
-- **Tooltip fields.** More fields to show when a mark is hovered.
+- **Tooltip fields.** More fields to show when a mark is hovered, and
+  what a tooltip adds from its series: the change from the point before,
+  the share, the rank, and a small history.
+- **Motion that can be turned off.** A chart moves to new data, its bars
+  sliding past each other when they change order; *Animate changes* off,
+  it redraws in place.
 - **Decimals.** How many decimals a chart's values write, with their
   format or alone: a KPI's exact number without its cents.
 - **Color schemes.** A chart's series in Fude's colors or a colorblind-safe

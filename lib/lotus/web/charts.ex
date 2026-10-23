@@ -158,7 +158,7 @@ defmodule Lotus.Web.Charts do
   defp fields("bubble"), do: ~w(x_field y_field series_field size_field)
   defp fields("combo"), do: ~w(x_field y_field y2_field series_field y2_axis_title)
   defp fields("map"), do: ~w(x_field y_field map)
-  defp fields("bubble_map"), do: ~w(x_field y_field map)
+  defp fields("bubble_map"), do: ~w(x_field y_field series_field map)
   defp fields(_), do: ~w(x_field y_field series_field)
 
   @words ~w(subtitle source)
@@ -168,6 +168,8 @@ defmodule Lotus.Web.Charts do
   @reference ~w(reference_value reference_label)
   @facet ~w(facet_field facet_columns)
   @tooltip ["tooltip_fields"]
+  @tooltip_adds ["tooltip_adds"]
+  @motion ["animate"]
   @marks ~w(mark_max mark_min)
   @band ~w(band_from band_to band_label)
 
@@ -176,59 +178,62 @@ defmodule Lotus.Web.Charts do
   The settings offer these, and `build_config/1` keeps them.
 
       iex> Lotus.Web.Charts.option_keys("pie")
-      ["number_format", "currency", "decimals", "color_scheme", "tooltip_fields", "subtitle", "source"]
+      ["number_format", "currency", "decimals", "color_scheme", "tooltip_fields", "subtitle", "source", "animate"]
   """
   @spec option_keys(String.t() | nil) :: [String.t()]
   def option_keys("bar"),
     do:
       @format ++
         ~w(show_values stack sort) ++
-        @series_scheme ++ @tooltip ++ @marks ++ @reference ++ @band ++ @facet ++ @words
+        @series_scheme ++
+        @tooltip ++ @tooltip_adds ++ @marks ++ @reference ++ @band ++ @facet ++ @words ++ @motion
 
   def option_keys("horizontal_bar"),
     do:
       @format ++
         ~w(show_values stack sort) ++
-        @series_scheme ++ @tooltip ++ @reference ++ @facet ++ @words
+        @series_scheme ++ @tooltip ++ @tooltip_adds ++ @reference ++ @facet ++ @words ++ @motion
 
   def option_keys("line"),
     do:
       @format ++
         ~w(y_axis_zero smooth) ++
-        @series_scheme ++ @tooltip ++ @marks ++ @reference ++ @band ++ @facet ++ @words
+        @series_scheme ++
+        @tooltip ++ @tooltip_adds ++ @marks ++ @reference ++ @band ++ @facet ++ @words ++ @motion
 
   # An area starts at zero: it is filled down to it.
   def option_keys("area"),
     do:
       @format ++
         ~w(stack smooth) ++
-        @series_scheme ++ @tooltip ++ @marks ++ @reference ++ @band ++ @facet ++ @words
+        @series_scheme ++
+        @tooltip ++ @tooltip_adds ++ @marks ++ @reference ++ @band ++ @facet ++ @words ++ @motion
 
   def option_keys(type) when type in ~w(scatter bubble),
     do:
       @format ++
         ["y_axis_zero"] ++
-        @series_scheme ++ @tooltip ++ @reference ++ @band ++ @facet ++ @words
+        @series_scheme ++ @tooltip ++ @reference ++ @band ++ @facet ++ @words ++ @motion
 
   def option_keys("combo"),
     do:
       @format ++
         ~w(y2_number_format y_axis_zero y2_axis_zero smooth) ++
-        @marks ++ @reference ++ @band ++ @words
+        @marks ++ @reference ++ @band ++ @words ++ @motion
 
   def option_keys("sparkline"),
-    do: @format ++ ~w(smooth sparkline_area sparkline_points sparkline_value) ++ @words
+    do: @format ++ ~w(smooth sparkline_area sparkline_points sparkline_value) ++ @words ++ @motion
 
   def option_keys(type) when type in ~w(pie donut),
-    do: @format ++ @series_scheme ++ @tooltip ++ @words
+    do: @format ++ @series_scheme ++ @tooltip ++ @words ++ @motion
 
   def option_keys(type) when type in ~w(heatmap map),
-    do: @format ++ @value_scheme ++ @tooltip ++ @words
+    do: @format ++ @value_scheme ++ @tooltip ++ @words ++ @motion
 
-  def option_keys("bubble_map"), do: @format ++ @tooltip ++ @words
-  def option_keys("histogram"), do: @format ++ @series_scheme ++ @words
-  def option_keys("funnel"), do: @format ++ ~w(funnel_colors funnel_labels) ++ @words
-  def option_keys("waterfall"), do: @format ++ @words
+  def option_keys("bubble_map"), do: @format ++ @series_scheme ++ @tooltip ++ @words ++ @motion
+  def option_keys("histogram"), do: @format ++ @series_scheme ++ @words ++ @motion
+  def option_keys("funnel"), do: @format ++ ~w(funnel_colors funnel_labels) ++ @words ++ @motion
+  def option_keys("waterfall"), do: @format ++ @words ++ @motion
 
   def option_keys(type) when type in ~w(kpi trend gauge progress), do: @format ++ @words
   def option_keys(_type), do: []
@@ -396,12 +401,12 @@ defmodule Lotus.Web.Charts do
     )
   end
 
-  # A circle at each region, sized by its value.
+  # A circle at each region, sized by its value, colored by the series.
   defp build("bubble_map", data, c) do
     Fude.bubble_map(
       data,
       [region: c["x_field"], size: measure(c, c["y_field"]), map: map_name(c)] ++
-        tooltip(c) ++ words(c)
+        color(c, c["series_field"]) ++ tooltip(c) ++ words(c)
     )
   end
 
@@ -649,16 +654,26 @@ defmodule Lotus.Web.Charts do
   defp place(value, :number), do: number(value, value)
   defp place(value, :text), do: String.trim(value)
 
+  # The tooltip's fields beyond the chart's, and what it adds from the
+  # series: the change from the point before, the share of the stack or of
+  # the total, the rank, and a small history.
   defp tooltip(c) do
-    case c["tooltip_fields"] do
-      fields when is_list(fields) ->
-        case Enum.reject(fields, &(&1 in [nil, ""])) do
-          [] -> []
-          fields -> [tooltip: fields]
-        end
+    fields = c["tooltip_fields"] |> List.wrap() |> Enum.reject(&(&1 in [nil, ""]))
 
-      _ ->
-        []
+    adds =
+      c["tooltip_adds"]
+      |> List.wrap()
+      |> Enum.flat_map(fn
+        "change" -> [change: true]
+        "share" -> [share: true]
+        "rank" -> [rank: true]
+        "history" -> [history: true]
+        _ -> []
+      end)
+
+    case fields ++ adds do
+      [] -> []
+      tooltip -> [tooltip: tooltip]
     end
   end
 
@@ -672,14 +687,18 @@ defmodule Lotus.Web.Charts do
     end
   end
 
-  # The chart's words around it: how it is measured, and where it comes from.
+  # The chart's words around it (how it is measured, and where it comes
+  # from), and whether it moves when its data changes.
   defp words(c) do
-    Enum.flat_map([subtitle: "subtitle", source: "source"], fn {key, name} ->
-      case present(c[name]) do
-        nil -> []
-        text -> [{key, text}]
-      end
-    end)
+    words =
+      Enum.flat_map([subtitle: "subtitle", source: "source"], fn {key, name} ->
+        case present(c[name]) do
+          nil -> []
+          text -> [{key, text}]
+        end
+      end)
+
+    if on?(c["animate"], true), do: words, else: words ++ [animate: false]
   end
 
   defp labels(c) do
