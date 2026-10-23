@@ -17,26 +17,30 @@ defmodule Lotus.Web.Queries.MasuResults do
   alias Lotus.Query.Filter
   alias Lotus.Query.Sort
 
-  # The filters Lotus runs: = ≠ > < ≥ ≤, LIKE (contains, starts with, ends
-  # with), null and not null. Masu offers those, and between (≥ and ≤).
-  @masu_filters [
-    :eq,
-    :neq,
-    :gt,
-    :lt,
-    :gte,
-    :lte,
-    :contains,
-    :starts_with,
-    :ends_with,
-    :is_nil,
-    :not_nil
+  # Masu's filters and the Lotus operator each runs as: = ≠ > < ≥ ≤,
+  # contains, starts with and ends with (text as written, without regard to
+  # case), null and not null. Masu also offers between, as ≥ and ≤.
+  @lotus_ops [
+    eq: :eq,
+    neq: :neq,
+    gt: :gt,
+    lt: :lt,
+    gte: :gte,
+    lte: :lte,
+    contains: :contains,
+    starts_with: :starts_with,
+    ends_with: :ends_with,
+    is_nil: :is_null,
+    not_nil: :is_not_null
   ]
 
   attr(:id, :string, required: true)
   attr(:result, :map, required: true)
   attr(:running, :boolean, default: false)
   attr(:target, :any, required: true)
+  # The `Lotus.Query.Filter` operators the source runs: the grid offers
+  # the filters of those only.
+  attr(:operators, :list, default: [])
   attr(:stats, :map, default: %{})
 
   def grid(assigns) do
@@ -45,7 +49,7 @@ defmodule Lotus.Web.Queries.MasuResults do
     assigns =
       assign(assigns,
         rows: rows(assigns.result),
-        columns: columns(assigns.result),
+        columns: columns(assigns.result, filters_for(assigns.operators)),
         on_query: &Phoenix.LiveView.send_update(target, %{action: :masu_query, report: &1}),
         messages: MasuMessages.messages(),
         locale: Gettext.get_locale(Lotus.Web.Gettext)
@@ -85,8 +89,12 @@ defmodule Lotus.Web.Queries.MasuResults do
   # The columns as Lotus names them, of the types of their values, with the
   # filters Lotus runs; their values as Lotus's table shows them (`raw`),
   # not formatted for the locale.
-  defp columns(%{columns: columns}),
-    do: for(name <- columns, do: %{key: name, label: name, filters: @masu_filters, raw: true})
+  defp columns(%{columns: columns}, filters),
+    do: for(name <- columns, do: %{key: name, label: name, filters: filters, raw: true})
+
+  @doc "Masu's filters of the Lotus operators a source runs."
+  def filters_for(operators),
+    do: for({masu, lotus} <- @lotus_ops, lotus in operators, do: masu)
 
   # Each value as Masu reads it: numbers, decimals, dates and booleans as
   # they are, so that they sort, filter and align by their type; the rest
@@ -130,14 +138,8 @@ defmodule Lotus.Web.Queries.MasuResults do
       :between ->
         [Filter.new(key, :gte, Enum.at(value, 0)), Filter.new(key, :lte, Enum.at(value, 1))]
 
-      :contains ->
-        [Filter.new(key, :like, "%#{value}%")]
-
-      :starts_with ->
-        [Filter.new(key, :like, "#{value}%")]
-
-      :ends_with ->
-        [Filter.new(key, :like, "%#{value}")]
+      op when op in [:contains, :starts_with, :ends_with] ->
+        [Filter.new(key, op, value)]
 
       :is_nil ->
         [Filter.new(key, :is_null)]

@@ -22,6 +22,8 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   # Each run of the editor's query: a new results grid, with no sort or
   # filter of the one before.
   attr(:results_run, :integer, default: 0)
+  # The `Lotus.Query.Filter` operators the query's source runs.
+  attr(:filter_operators, :list, default: [])
 
   def render_result(assigns) do
     ~H"""
@@ -63,6 +65,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
                 result={@result}
                 running={@running}
                 target={@target}
+                operators={@filter_operators}
                 stats={Statistics.compute_all(@result)}
               />
             </div>

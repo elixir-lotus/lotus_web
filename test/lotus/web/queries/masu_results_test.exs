@@ -21,7 +21,7 @@ defmodule Lotus.Web.Queries.MasuResultsTest do
                {[Filter.new("n", :gte, 1), Filter.new("n", :lte, 9)], []}
     end
 
-    test "contains, starts with and ends with are LIKE" do
+    test "contains, starts with and ends with are Lotus's, of text as written" do
       {filters, []} =
         MasuResults.lotus_query(
           query([
@@ -32,7 +32,7 @@ defmodule Lotus.Web.Queries.MasuResultsTest do
         )
 
       assert Enum.map(filters, &{&1.op, &1.value}) ==
-               [{:like, "%ab%"}, {:like, "ab%"}, {:like, "%ab"}]
+               [{:contains, "ab"}, {:starts_with, "ab"}, {:ends_with, "ab"}]
     end
 
     test "empty and not empty are null and not null" do
@@ -44,6 +44,18 @@ defmodule Lotus.Web.Queries.MasuResultsTest do
       sorts = [%Masu.Sort{key: "a", direction: :desc}, %Masu.Sort{key: "b", direction: :asc}]
 
       assert MasuResults.lotus_query(query([], sorts)) == {[], [Sort.new("a", :desc)]}
+    end
+  end
+
+  describe "filters_for/1" do
+    test "Masu's filters of the operators the source runs" do
+      assert MasuResults.filters_for(Filter.operators()) ==
+               ~w(eq neq gt lt gte lte contains starts_with ends_with is_nil not_nil)a
+
+      assert MasuResults.filters_for(Filter.operators() -- Filter.text_operators()) ==
+               ~w(eq neq gt lt gte lte is_nil not_nil)a
+
+      assert MasuResults.filters_for([:eq, :like, :is_null]) == [:eq, :is_nil]
     end
   end
 
