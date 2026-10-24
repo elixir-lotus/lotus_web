@@ -47,16 +47,17 @@ defmodule Lotus.Web.Dashboards.ChartFilters do
   @spec select(map(), %{optional(String.t()) => map()}, map()) :: map()
   def select(filter_values, targets, values) do
     Enum.reduce(targets, filter_values, fn {channel, filter}, acc ->
-      case value(filter, Map.get(values, channel)) do
-        nil ->
-          acc
-
-        value ->
-          if to_string(Map.get(acc, filter.name)) == value,
-            do: Map.put(acc, filter.name, ""),
-            else: Map.put(acc, filter.name, value)
-      end
+      toggle(acc, filter.name, value(filter, Map.get(values, channel)))
     end)
+  end
+
+  # The mark's value, or none when the filter already has it.
+  defp toggle(filter_values, _name, nil), do: filter_values
+
+  defp toggle(filter_values, name, value) do
+    if to_string(Map.get(filter_values, name)) == value,
+      do: Map.put(filter_values, name, ""),
+      else: Map.put(filter_values, name, value)
   end
 
   @doc """
