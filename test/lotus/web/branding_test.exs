@@ -1,13 +1,19 @@
 defmodule Lotus.Web.BrandingTest do
   @moduledoc """
-  A package brands the dashboard per request (`Lotus.Web.Pro.branding/1`).
-  The package is stood in for through a setting, so these tests run alone.
+  Only Lotus Pro brands the dashboard. The free version is always Lotus: the
+  router takes no branding options, and without Pro the name, the logo and
+  the "Powered by Lotus" footer are Lotus's. With Pro installed, Lotus asks
+  `Lotus.Pro.Web.branding/1` (through `Lotus.Web.Pro.branding/1`) for each
+  request's branding, and even then the footer stays.
+
+  `ProWeb` below stands in for `Lotus.Pro.Web`, set through a setting, so
+  these tests run alone.
   """
   use Lotus.Web.Case, async: false
 
   import Phoenix.LiveViewTest
 
-  defmodule Package do
+  defmodule ProWeb do
     @moduledoc false
 
     def pages, do: []
@@ -20,99 +26,122 @@ defmodule Lotus.Web.BrandingTest do
     end
   end
 
-  defp brand(branding) do
-    Application.put_env(:lotus_web, :__pro_web__, Package)
-    :persistent_term.put({Package, :test}, self())
-    :persistent_term.put({Package, :branding}, branding)
+  # Installs the stand-in for Lotus Pro, answering `branding`.
+  defp with_pro(branding) do
+    Application.put_env(:lotus_web, :__pro_web__, ProWeb)
+    :persistent_term.put({ProWeb, :test}, self())
+    :persistent_term.put({ProWeb, :branding}, branding)
 
     on_exit(fn ->
       Application.delete_env(:lotus_web, :__pro_web__)
-      :persistent_term.erase({Package, :test})
-      :persistent_term.erase({Package, :branding})
+      :persistent_term.erase({ProWeb, :test})
+      :persistent_term.erase({ProWeb, :branding})
     end)
   end
 
-  test "without a package, the dashboard is Lotus" do
-    {:ok, _live, html} = live(build_conn(), "/lotus")
+  describe "the free version, without Lotus Pro" do
+    test "is Lotus: its name, its mark and Powered by Lotus" do
+      refute Lotus.Web.Pro.available?()
 
-    assert html =~ "<title>Lotus Dashboard</title>"
-    assert html =~ "lotus-wordmark"
+      {:ok, _live, html} = live(build_conn(), "/lotus")
+      assert html =~ "<title>Lotus Dashboard</title>"
+      assert html =~ "lotus-wordmark"
 
-    dashboard = public_dashboard_fixture(%{name: "Sales"})
-    {:ok, _live, html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
-    assert html =~ "Powered by"
+      dashboard = public_dashboard_fixture(%{name: "Sales"})
+      {:ok, _live, html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
+      assert html =~ "Powered by"
+    end
+
+    test "has no branding options: the router refuses them" do
+      for option <- [product_name: "Acme", logo: "/acme.svg", assistant_name: "Acme AI"] do
+        assert_raise ArgumentError, ~r/invalid option for lotus_dashboard/, fn ->
+          Lotus.Web.Router.__options__("/lotus", [option])
+        end
+      end
+    end
   end
 
-  test "a package names the product, shows its logo, and sets the theme and colours" do
-    brand(%{
-      product_name: "Acme Insights",
-      logo: "https://cdn.acme.test/logo.svg",
-      theme: :sumi,
-      theme_colors: %{"pink-600" => "#0ea5e9"}
-    })
+  describe "with Lotus Pro" do
+    test "Pro names the product, shows its logo, and sets the theme and colours" do
+      with_pro(%{
+        product_name: "Acme Insights",
+        logo: "https://cdn.acme.test/logo.svg",
+        theme: :sumi,
+        theme_colors: %{"pink-600" => "#0ea5e9"}
+      })
 
-    {:ok, _live, html} = live(build_conn(), "/lotus")
+      {:ok, _live, html} = live(build_conn(), "/lotus")
 
-    assert html =~ "<title>Acme Insights Dashboard</title>"
-    assert html =~ ~s(src="https://cdn.acme.test/logo.svg")
-    assert html =~ ~s(alt="Acme Insights")
-    refute html =~ "lotus-wordmark"
-    assert html =~ ~s(data-lotus-theme="sumi")
-    assert html =~ "#0ea5e9" or html =~ "14 165 233"
+      assert html =~ "<title>Acme Insights Dashboard</title>"
+      assert html =~ ~s(src="https://cdn.acme.test/logo.svg")
+      assert html =~ ~s(alt="Acme Insights")
+      refute html =~ "lotus-wordmark"
+      assert html =~ ~s(data-lotus-theme="sumi")
+      assert html =~ "#0ea5e9" or html =~ "14 165 233"
 
-    assert_received {:branding, %{public: false, dashboard: nil}}
-  end
+      assert_received {:branding, %{public: false, dashboard: nil}}
+    end
 
-  test "a name without a logo shows the name, not the Lotus mark" do
-    brand(%{product_name: "Acme Insights"})
+    test "a name without a logo shows the name, not the Lotus mark" do
+      with_pro(%{product_name: "Acme Insights"})
 
-    {:ok, _live, html} = live(build_conn(), "/lotus")
+      {:ok, _live, html} = live(build_conn(), "/lotus")
 
-    assert html =~ "Acme Insights"
-    refute html =~ "lotus-wordmark"
-  end
+      assert html =~ "Acme Insights"
+      refute html =~ "lotus-wordmark"
+    end
 
-  test "what is not valid is ignored" do
-    brand(%{
-      product_name: "  ",
-      logo: "javascript:alert(1)",
-      theme: :neon,
-      theme_colors: %{"pink-600" => "red"}
-    })
+    test "Pro answering no branding leaves the dashboard Lotus" do
+      with_pro(%{})
 
-    {:ok, _live, html} = live(build_conn(), "/lotus")
+      {:ok, _live, html} = live(build_conn(), "/lotus")
 
-    assert html =~ "<title>Lotus Dashboard</title>"
-    refute html =~ "javascript:"
-    assert html =~ ~s(data-lotus-theme="lotus")
-    refute html =~ "pink-600: red"
-  end
+      assert html =~ "<title>Lotus Dashboard</title>"
+      assert html =~ "lotus-wordmark"
+    end
 
-  test "a public dashboard is branded for its dashboard, and keeps Powered by Lotus" do
-    brand(%{product_name: "Acme Insights", powered_by: false})
-    dashboard = public_dashboard_fixture(%{name: "Sales"})
+    test "what Pro gives that is not valid is ignored" do
+      with_pro(%{
+        product_name: "  ",
+        logo: "javascript:alert(1)",
+        theme: :neon,
+        theme_colors: %{"pink-600" => "red"}
+      })
 
-    {:ok, _live, html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
+      {:ok, _live, html} = live(build_conn(), "/lotus")
 
-    assert html =~ "Powered by"
-    id = dashboard.id
-    assert_received {:branding, %{public: true, dashboard: %{id: ^id}}}
-  end
+      assert html =~ "<title>Lotus Dashboard</title>"
+      refute html =~ "javascript:"
+      assert html =~ ~s(data-lotus-theme="lotus")
+      refute html =~ "pink-600: red"
+    end
 
-  test "a package names the assistant" do
-    brand(%{assistant_name: "Acme Copilot"})
-    Application.put_env(:lotus, :ai, enabled: true, api_key: "sk-test")
-    Lotus.Config.reload!()
+    test "a public dashboard is branded for its dashboard, and still says Powered by Lotus" do
+      with_pro(%{product_name: "Acme Insights", powered_by: false})
+      dashboard = public_dashboard_fixture(%{name: "Sales"})
 
-    on_exit(fn ->
-      Application.delete_env(:lotus, :ai)
+      {:ok, _live, html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
+
+      assert html =~ "Powered by"
+      id = dashboard.id
+      assert_received {:branding, %{public: true, dashboard: %{id: ^id}}}
+    end
+
+    test "Pro names the assistant" do
+      with_pro(%{assistant_name: "Acme Copilot"})
+      Application.put_env(:lotus, :ai, enabled: true, api_key: "sk-test")
       Lotus.Config.reload!()
-    end)
 
-    {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
-    render_async(live)
-    live |> element("#ai-assistant-btn") |> render_click()
+      on_exit(fn ->
+        Application.delete_env(:lotus, :ai)
+        Lotus.Config.reload!()
+      end)
 
-    assert render(live) =~ "Acme Copilot"
+      {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
+      render_async(live)
+      live |> element("#ai-assistant-btn") |> render_click()
+
+      assert render(live) =~ "Acme Copilot"
+    end
   end
 end

@@ -1,11 +1,12 @@
 defmodule Lotus.Web.Branding do
   @moduledoc false
 
-  # How the dashboard names and shows itself: Lotus, unless a package on the
-  # bridge (`Lotus.Web.Pro.branding/1`) gives another branding for the
-  # request. It may also give a theme and colours, which win over the
-  # router's. The footer of a public dashboard always says "Powered by
-  # Lotus".
+  # How the dashboard names and shows itself. Only Lotus Pro brands it: the
+  # free version is always Lotus, and the router takes no branding options.
+  # With Pro installed, `Lotus.Web.Pro.branding/1` asks it for the request's
+  # branding, which may also give a theme and colours over the router's.
+  # The footer of a public dashboard always says "Powered by Lotus", with
+  # Pro too.
 
   import Phoenix.Component, only: [assign: 3]
 
