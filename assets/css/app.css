@@ -815,6 +815,63 @@
     --hakushi-edge: rgb(var(--lotus-gray-500));
 }
 
+/* The dashboard's grid, once its hook places the cards (dashboard_grid.js):
+   each card at its box, moving there when the layout changes. */
+.lotus-grid-placed {
+    position: relative;
+    display: block;
+}
+
+.lotus-grid-placed > [data-card-id] {
+    position: absolute;
+    min-height: 0 !important;
+    transition: top 180ms ease, left 180ms ease, width 180ms ease, height 180ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lotus-grid-placed > [data-card-id] {
+        transition: none;
+    }
+}
+
+/* On a phone: one column, in the order the hook gives. */
+.lotus-grid-placed.lotus-grid-stacked {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.lotus-grid-placed.lotus-grid-stacked > [data-card-id] {
+    position: relative;
+    transition: none;
+}
+
+/* A folded card is its title. */
+[data-card-id][data-folded="true"] .lotus-card-body {
+    display: none;
+}
+
+[data-card-id][data-folded="true"] [data-card-fold] svg {
+    transform: rotate(-90deg);
+}
+
+/* In edit mode, the 12 columns show as bands: the slots a card snaps to. */
+.lotus-grid-placed[data-editing="true"]:not(.lotus-grid-stacked) {
+    background-image: linear-gradient(
+        to right,
+        rgb(var(--lotus-pink-500) / 0.045) calc(100% - 16px),
+        transparent calc(100% - 16px)
+    );
+    background-size: calc((100% + 16px) / 12) 100%;
+}
+
+.lotus-grid-placed > .lotus-card-dragging {
+    z-index: 20;
+    transition: top 90ms ease-out, left 90ms ease-out, width 90ms ease-out, height 90ms ease-out;
+    cursor: grabbing;
+    box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.35), 0 0 0 2px rgb(var(--lotus-pink-500));
+}
+
 /* A card saves its chart from its header: the chart's own buttons stay hidden. */
 .lotus-card-chart .fude-export {
     display: none;

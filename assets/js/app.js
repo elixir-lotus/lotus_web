@@ -18,6 +18,7 @@ import AIPromptInput from "./hooks/ai_prompt_input";
 import AutoRefresh from "./hooks/auto_refresh";
 import AutoScrollAI from "./hooks/auto_scroll_ai";
 import Clipboard from "./hooks/clipboard";
+import DashboardGrid from "./hooks/dashboard_grid";
 import ColumnStats from "./hooks/column_stats";
 import DispatchChangeOnUpdate from "./hooks/dispatch_change_on_update";
 import EditorContextMenu from "./hooks/editor_context_menu";
@@ -113,6 +114,7 @@ const hooks = {
   AutoRefresh,
   AutoScrollAI,
   Clipboard,
+  DashboardGrid,
   DispatchChangeOnUpdate,
   EditorContextMenu,
   EditorForm,
