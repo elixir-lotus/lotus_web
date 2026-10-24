@@ -170,6 +170,7 @@ defmodule Lotus.Web.Charts do
   @tooltip ["tooltip_fields"]
   @tooltip_adds ["tooltip_adds"]
   @motion ["animate"]
+  @table ["data_table"]
   @marks ~w(mark_max mark_min)
   @band ~w(band_from band_to band_label)
 
@@ -178,7 +179,7 @@ defmodule Lotus.Web.Charts do
   The settings offer these, and `build_config/1` keeps them.
 
       iex> Lotus.Web.Charts.option_keys("pie")
-      ["number_format", "currency", "decimals", "color_scheme", "tooltip_fields", "subtitle", "source", "animate"]
+      ["number_format", "currency", "decimals", "color_scheme", "tooltip_fields", "subtitle", "source", "animate", "data_table"]
   """
   @spec option_keys(String.t() | nil) :: [String.t()]
   def option_keys("bar"),
@@ -186,20 +187,23 @@ defmodule Lotus.Web.Charts do
       @format ++
         ~w(show_values stack sort) ++
         @series_scheme ++
-        @tooltip ++ @tooltip_adds ++ @marks ++ @reference ++ @band ++ @facet ++ @words ++ @motion
+        @tooltip ++
+        @tooltip_adds ++ @marks ++ @reference ++ @band ++ @facet ++ @words ++ @motion ++ @table
 
   def option_keys("horizontal_bar"),
     do:
       @format ++
         ~w(show_values stack sort) ++
-        @series_scheme ++ @tooltip ++ @tooltip_adds ++ @reference ++ @facet ++ @words ++ @motion
+        @series_scheme ++
+        @tooltip ++ @tooltip_adds ++ @reference ++ @facet ++ @words ++ @motion ++ @table
 
   def option_keys("line"),
     do:
       @format ++
         ~w(y_axis_zero smooth) ++
         @series_scheme ++
-        @tooltip ++ @tooltip_adds ++ @marks ++ @reference ++ @band ++ @facet ++ @words ++ @motion
+        @tooltip ++
+        @tooltip_adds ++ @marks ++ @reference ++ @band ++ @facet ++ @words ++ @motion ++ @table
 
   # An area starts at zero: it is filled down to it.
   def option_keys("area"),
@@ -207,33 +211,41 @@ defmodule Lotus.Web.Charts do
       @format ++
         ~w(stack smooth) ++
         @series_scheme ++
-        @tooltip ++ @tooltip_adds ++ @marks ++ @reference ++ @band ++ @facet ++ @words ++ @motion
+        @tooltip ++
+        @tooltip_adds ++ @marks ++ @reference ++ @band ++ @facet ++ @words ++ @motion ++ @table
 
   def option_keys(type) when type in ~w(scatter bubble),
     do:
       @format ++
         ["y_axis_zero"] ++
-        @series_scheme ++ @tooltip ++ @reference ++ @band ++ @facet ++ @words ++ @motion
+        @series_scheme ++ @tooltip ++ @reference ++ @band ++ @facet ++ @words ++ @motion ++ @table
 
   def option_keys("combo"),
     do:
       @format ++
         ~w(y2_number_format y_axis_zero y2_axis_zero smooth) ++
-        @marks ++ @reference ++ @band ++ @words ++ @motion
+        @marks ++ @reference ++ @band ++ @words ++ @motion ++ @table
 
   def option_keys("sparkline"),
-    do: @format ++ ~w(smooth sparkline_area sparkline_points sparkline_value) ++ @words ++ @motion
+    do:
+      @format ++
+        ~w(smooth sparkline_area sparkline_points sparkline_value) ++ @words ++ @motion ++ @table
 
   def option_keys(type) when type in ~w(pie donut),
-    do: @format ++ @series_scheme ++ @tooltip ++ @words ++ @motion
+    do: @format ++ @series_scheme ++ @tooltip ++ @words ++ @motion ++ @table
 
   def option_keys(type) when type in ~w(heatmap map),
-    do: @format ++ @value_scheme ++ @tooltip ++ @words ++ @motion
+    do: @format ++ @value_scheme ++ @tooltip ++ @words ++ @motion ++ @table
 
-  def option_keys("bubble_map"), do: @format ++ @series_scheme ++ @tooltip ++ @words ++ @motion
-  def option_keys("histogram"), do: @format ++ @series_scheme ++ @words ++ @motion
-  def option_keys("funnel"), do: @format ++ ~w(funnel_colors funnel_labels) ++ @words ++ @motion
-  def option_keys("waterfall"), do: @format ++ @words ++ @motion
+  def option_keys("bubble_map"),
+    do: @format ++ @series_scheme ++ @tooltip ++ @words ++ @motion ++ @table
+
+  def option_keys("histogram"), do: @format ++ @series_scheme ++ @words ++ @motion ++ @table
+
+  def option_keys("funnel"),
+    do: @format ++ ~w(funnel_colors funnel_labels) ++ @words ++ @motion ++ @table
+
+  def option_keys("waterfall"), do: @format ++ @words ++ @motion ++ @table
 
   def option_keys(type) when type in ~w(kpi trend gauge progress), do: @format ++ @words
   def option_keys(_type), do: []
@@ -289,7 +301,8 @@ defmodule Lotus.Web.Charts do
     assigns =
       assign(assigns,
         built: build_chart(assigns.result, assigns.config),
-        locale: Gettext.get_locale(Lotus.Web.Gettext)
+        locale: Gettext.get_locale(Lotus.Web.Gettext),
+        table: data_table(assigns.config["data_table"])
       )
 
     ~H"""
@@ -301,6 +314,7 @@ defmodule Lotus.Web.Charts do
           height={@height}
           locale={@locale}
           export={@export}
+          table={@table}
           class={["lotus-chart", @class]}
         />
       <% {:error, message} -> %>
@@ -310,6 +324,12 @@ defmodule Lotus.Web.Charts do
     <% end %>
     """
   end
+
+  # Where a chart's data shows (Fude's `table`): in the plot's place by
+  # default, as every chart here has a height of its own.
+  defp data_table("below"), do: :below
+  defp data_table("none"), do: false
+  defp data_table(_), do: :swap
 
   @doc """
   The chart of a result and a config, or why Fude refuses the config (a

@@ -18,7 +18,15 @@ defmodule Lotus.Web.Dashboards.CardComponent do
     can_manage = Map.get(assigns, :can_manage, true)
 
     assigns =
-      assign(assigns, show_header: show_header, is_public: is_public, can_manage: can_manage)
+      assign(assigns,
+        show_header: show_header,
+        is_public: is_public,
+        can_manage: can_manage,
+        chart?:
+          assigns.card.card_type == :query and assigns.result != nil and
+            Charts.valid_config?(assigns.card.visualization_config),
+        maximized: Map.get(assigns, :maximized, false)
+      )
 
     ~H"""
     <div
@@ -36,7 +44,19 @@ defmodule Lotus.Web.Dashboards.CardComponent do
           </h3>
           <div class="flex items-center gap-1">
             <button
-              :if={@card.card_type == :query and @result && Charts.valid_config?(@card.visualization_config)}
+              :if={@chart?}
+              id={"#{@id}-maximize"}
+              type="button"
+              phx-click="maximize"
+              phx-target={@myself}
+              class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+              title={gettext("Maximize")}
+              aria-label={gettext("Maximize")}
+            >
+              <Icons.maximize class="h-4 w-4" />
+            </button>
+            <button
+              :if={@chart?}
               type="button"
               phx-click={JS.dispatch("click", to: "#chart-#{@card.id} [data-fude-export=png]")}
               class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -86,6 +106,8 @@ defmodule Lotus.Web.Dashboards.CardComponent do
             <.text_content content={@card.content} public={Map.get(assigns, :public, false)} />
         <% end %>
       </div>
+
+      <.maximized :if={@maximized and @chart?} id={@id} card={@card} result={@result} target={@myself} />
     </div>
     """
   end
@@ -93,6 +115,68 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   @impl Phoenix.LiveComponent
   def handle_event("chart_render_error", %{"error" => error}, socket) do
     {:noreply, assign(socket, :error, error)}
+  end
+
+  def handle_event("maximize", _params, socket), do: {:noreply, assign(socket, :maximized, true)}
+  def handle_event("restore", _params, socket), do: {:noreply, assign(socket, :maximized, false)}
+
+  # A card's chart over the whole page, drawn again at its size. Its clicks
+  # stay in it: the card under it selects on a click (`select_card`).
+  attr(:id, :string, required: true)
+  attr(:card, :map, required: true)
+  attr(:result, :map, required: true)
+  attr(:target, :any, required: true)
+
+  defp maximized(assigns) do
+    assigns =
+      assign(assigns,
+        restore:
+          JS.push("restore", target: assigns.target) |> JS.focus(to: "##{assigns.id}-maximize")
+      )
+
+    ~H"""
+    <div
+      id={"#{@id}-maximized"}
+      class="fixed inset-0 z-50 flex bg-black/40 p-0 sm:p-6 cursor-default"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={"#{@id}-maximized-title"}
+      phx-click={@restore}
+      phx-window-keydown={@restore}
+      phx-key="Escape"
+      phx-mounted={JS.focus(to: "##{@id}-restore")}
+    >
+      <div
+        class="flex flex-1 flex-col overflow-hidden bg-white dark:bg-gray-800 shadow-xl sm:rounded-lg"
+        phx-click={%JS{}}
+      >
+        <div class="flex items-center justify-between gap-4 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <h3 id={"#{@id}-maximized-title"} class="text-sm font-medium text-gray-900 dark:text-white truncate">
+            <%= @card.title || default_title(@card) %>
+          </h3>
+          <button
+            id={"#{@id}-restore"}
+            type="button"
+            phx-click={@restore}
+            class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+            title={gettext("Close")}
+            aria-label={gettext("Close")}
+          >
+            <Icons.x_mark class="h-4 w-4" />
+          </button>
+        </div>
+        <div class="flex-1 overflow-auto p-4">
+          <Charts.draw
+            id={"chart-max-#{@card.id}"}
+            result={@result}
+            config={@card.visualization_config}
+            export
+            class="lotus-chart-max"
+          />
+        </div>
+      </div>
+    </div>
+    """
   end
 
   defp grid_position(%{x: x, y: y, w: w, h: h}) do

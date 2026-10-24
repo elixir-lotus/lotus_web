@@ -820,6 +820,12 @@
     display: none;
 }
 
+/* A maximized card's chart fills the page, less the dialog's header and
+   padding and the chart's title. */
+.lotus-chart-max .fude-plot {
+    height: max(16rem, calc(100dvh - 13rem)) !important;
+}
+
 .dark .lotus-chart {
     --fude-text: rgb(var(--lotus-text-dark));
     --fude-secondary: rgb(var(--lotus-gray-300));

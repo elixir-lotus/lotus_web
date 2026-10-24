@@ -3771,3 +3771,23 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Share of the stack or of the total"
 msgstr ""
+
+#: lib/lotus/web/live/dashboards/card_component.ex:53
+#, elixir-autogen, elixir-format
+msgid "Maximize"
+msgstr ""
+
+#: lib/lotus/web/live/queries/chart_options.ex:185
+#, elixir-autogen, elixir-format
+msgid "Data table"
+msgstr ""
+
+#: lib/lotus/web/live/queries/chart_options.ex:188
+#, elixir-autogen, elixir-format
+msgid "In the chart's place"
+msgstr ""
+
+#: lib/lotus/web/live/queries/chart_options.ex:189
+#, elixir-autogen, elixir-format
+msgid "Under the chart"
+msgstr ""

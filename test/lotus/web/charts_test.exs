@@ -981,4 +981,42 @@ defmodule Lotus.Web.ChartsTest do
       assert %{"series_field" => "plan"} = Charts.build_config(config)
     end
   end
+
+  describe "draw/1: the data table" do
+    import Phoenix.LiveViewTest
+
+    defp draw(config) do
+      config =
+        Map.merge(%{"chart_type" => "bar", "x_field" => "region", "y_field" => "revenue"}, config)
+
+      render_component(&Charts.draw/1, id: "c", result: sales(), config: config, height: 200)
+    end
+
+    test "is in the chart's place, under it, or none" do
+      assert draw(%{}) =~ ~s(id="c-data")
+      assert draw(%{}) =~ "fude-data-toggle"
+
+      below = draw(%{"data_table" => "below"})
+      refute below =~ ~s(id="c-data")
+      assert below =~ "<details"
+
+      none = draw(%{"data_table" => "none"})
+      refute none =~ "fude-data-toggle"
+      refute none =~ "<details"
+    end
+
+    test "is an option of a plotted chart, which the config keeps" do
+      assert "data_table" in Charts.option_keys("bar")
+      refute "data_table" in Charts.option_keys("kpi")
+
+      config = %{
+        "chart_type" => "bar",
+        "x_field" => "region",
+        "y_field" => "revenue",
+        "data_table" => "none"
+      }
+
+      assert %{"data_table" => "none"} = Charts.build_config(config)
+    end
+  end
 end

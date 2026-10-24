@@ -55,6 +55,13 @@
 - **Callouts and ranges.** A chart can mark its highest and lowest values
   with their values, and shade a range of its horizontal axis with a
   label.
+- **A chart's data in its place.** A chart's **Data** shows its table in
+  the chart's place, at its size, so a dashboard card keeps its size and
+  the table scrolls in it. The chart's *Data table* setting puts it there
+  (the default), under the chart, or nowhere. From Fude 0.3.
+- **Maximize a chart.** A dashboard card's chart opens over the whole page
+  from its header, drawn again at that size, and closes with Escape, its
+  close button or a click outside it; on a public dashboard too.
 
 ### Changed
 
@@ -120,6 +127,11 @@
 - The old results table, its right-click menu and its filter and sort chips.
   "Contains" is no longer offered on number and date columns, where it
   failed on PostgreSQL.
+
+### Fixed
+
+- **A card's Data stays open.** Opening the Data of a card that was not
+  selected closed it again as the click selected the card. From Fude 0.3.
 
 ## [1.4.0] - 2026-10-17
 
