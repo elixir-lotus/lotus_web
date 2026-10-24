@@ -64,10 +64,10 @@ defmodule Lotus.Web.MixProject do
       {:sake, "~> 0.4", optional: true},
       # The AI assistant. Optional, as in Lotus: a host that uses AI adds it.
       {:req_llm, "~> 1.29", optional: true},
-      {:lotus_clickhouse,
-       git: "git@github.com:elixir-lotus/lotus_clickhouse.git", branch: "main", only: :dev},
+      # Over HTTPS: the v2 branch's workflow fetches the dev deps with no SSH key.
+      {:lotus_clickhouse, github: "elixir-lotus/lotus_clickhouse", branch: "main", only: :dev},
       {:lotus_elasticsearch,
-       git: "git@github.com:elixir-lotus/lotus_elasticsearch.git", branch: "main", only: :dev},
+       github: "elixir-lotus/lotus_elasticsearch", branch: "main", only: :dev},
 
       # Databases
       {:postgrex, "~> 0.20", only: [:dev, :test]},
@@ -165,6 +165,7 @@ defmodule Lotus.Web.MixProject do
         "README.md",
         "guides/installation.md",
         "guides/getting-started.md",
+        "guides/upgrading-to-v2.md",
         "guides/upgrading-to-v1.md",
         "guides/ai-assistant.md",
         "guides/visualizations.md",

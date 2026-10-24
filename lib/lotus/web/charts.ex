@@ -40,8 +40,27 @@ defmodule Lotus.Web.Charts do
         "smooth" => boolean (lines and areas),
         "reference_value" => number, "reference_label" => "Goal",
         "facet_field" => "column_name", "facet_columns" => integer (small multiples),
-        "subtitle" => "How it is measured", "source" => "Where the data comes from"
+        "subtitle" => "How it is measured", "source" => "Where the data comes from",
+        "decimals" => 0..6 (with the values' format, or alone),
+        "spark_field" => "column_name" (kpi, trend: the value's history under it),
+        "map" => "world" | "us-states" (map, bubble_map; x_field is the region),
+        "mark_max" => boolean, "mark_min" => boolean (callouts on the extremes),
+        "band_from" => "2026-03-01", "band_to" => "2026-03-31", "band_label" => "Launch",
+        "tooltip_fields" => ["column_name"],
+        "tooltip_adds" => ["change" | "share" | "rank" | "history"],
+        "color_scheme" => "okabe_ito" (series) |
+                          "blue" | "green" | "orange" | "purple" | "gray" | "viridis" |
+                          "red_blue" | "red_green" (heatmap, map),
+        "scheme_mid" => number (where a diverging scheme is neutral, 0 unless given),
+        "funnel_colors" => "steps" | "stages", "funnel_labels" => "inside" | "none",
+        "sparkline_area" => boolean, "sparkline_points" => "last" | "extremes",
+        "sparkline_value" => boolean,
+        "animate" => boolean (default: true),
+        "data_table" => "swap" | "below" | "none" (where the chart's Data shows)
       }
+
+  A heatmap's columns are `"x_field"`, its rows `"y_field"` and its value
+  `"series_field"`; without a value, each cell counts its rows.
 
   Booleans arrive from forms as `"true"` and `"false"`; both forms are read.
   """
