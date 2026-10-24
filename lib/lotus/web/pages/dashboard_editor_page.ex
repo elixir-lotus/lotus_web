@@ -174,6 +174,7 @@ defmodule Lotus.Web.DashboardEditorPage do
                   can_manage={@can_manage and @editing}
                   connecting={@editing && Enum.find(@dashboard.filters, &(&1.name == @connecting))}
                   filters={@dashboard.filters}
+                  pro_info={Pro.request_info(assigns)}
                   parent={@myself}
                 />
               <% end %>
@@ -203,6 +204,7 @@ defmodule Lotus.Web.DashboardEditorPage do
         id="add-card-modal"
         queries={@available_queries}
         type={@add_card_type}
+        pro_info={Pro.request_info(assigns)}
         parent={@myself}
       />
 
@@ -692,7 +694,12 @@ defmodule Lotus.Web.DashboardEditorPage do
       query_id = Map.get(params, "query-id")
       query_id = if query_id && query_id != "", do: String.to_integer(query_id), else: nil
 
-      socket = add_card(socket, card_type, query_id)
+      socket =
+        case card_type do
+          {:pro, kind} -> add_pro_card(socket, kind)
+          card_type -> add_card(socket, card_type, query_id)
+        end
+
       {:noreply, assign(socket, add_card_modal_open: false)}
     else
       {:deny, reason} ->
@@ -1839,7 +1846,17 @@ defmodule Lotus.Web.DashboardEditorPage do
     |> Ecto.Changeset.validate_required([:name])
   end
 
-  defp add_card(socket, card_type, query_id) do
+  # A card of a kind Lotus Pro offers to this request; another kind is not
+  # added.
+  defp add_pro_card(socket, kind) do
+    offered = Enum.map(Pro.card_kinds(Pro.request_info(socket.assigns)), & &1.kind)
+
+    if kind in offered,
+      do: add_card(socket, :pro, nil, %{"kind" => kind}),
+      else: socket
+  end
+
+  defp add_card(socket, card_type, query_id, content \\ nil) do
     dashboard = socket.assigns.dashboard
 
     # Calculate next position index
@@ -1871,7 +1888,7 @@ defmodule Lotus.Web.DashboardEditorPage do
       query: query,
       visualization_config: nil,
       filter_mappings: %{},
-      content: nil
+      content: content
     }
 
     updated_dashboard = %{dashboard | cards: dashboard.cards ++ [new_card]}
@@ -1894,6 +1911,7 @@ defmodule Lotus.Web.DashboardEditorPage do
         :query -> {6, 4}
         :heading -> {12, 1}
         :text -> {6, 2}
+        :pro -> {6, 4}
         :link -> {6, 1}
       end
 
@@ -1980,6 +1998,7 @@ defmodule Lotus.Web.DashboardEditorPage do
   defp parse_card_type("text"), do: :text
   defp parse_card_type("link"), do: :link
   defp parse_card_type("heading"), do: :heading
+  defp parse_card_type("pro:" <> kind), do: {:pro, kind}
   defp parse_card_type(_), do: nil
 
   defp parse_filter_type("text"), do: :text

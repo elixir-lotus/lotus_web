@@ -43,7 +43,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
               <.visualization_section card={@card} columns={@available_columns} parent={@parent} />
               <.filter_mapping_section card={@card} filters={@filters} parent={@parent} />
             <% else %>
-              <.content_section card={@card} filters={@filters} parent={@parent} />
+              <.content_section :if={@card.card_type != :pro} card={@card} filters={@filters} parent={@parent} />
             <% end %>
 
             <.danger_section card={@card} parent={@parent} />
@@ -546,6 +546,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
   defp default_title(%{card_type: :text}), do: gettext("Text")
   defp default_title(%{card_type: :heading}), do: gettext("Heading")
   defp default_title(%{card_type: :link}), do: gettext("Link")
+  defp default_title(%{card_type: :pro}), do: gettext("Lotus Pro")
   defp default_title(_), do: gettext("Card")
 
   defp stringify_config(config) when is_map(config) do

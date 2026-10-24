@@ -96,6 +96,44 @@ defmodule Lotus.Web.Queries.MasuResults do
   attr(:result, :map, required: true)
   attr(:label, :string, default: nil)
 
+  attr(:row_actions, :list,
+    default: [],
+    doc: "Lotus Pro's actions on each row (`Lotus.Web.Pro.row_actions/2`)"
+  )
+
+  def card(%{row_actions: [_ | _] = actions} = assigns) do
+    assigns =
+      assign(assigns,
+        rows: assigns.result |> rows() |> with_row_ids(),
+        columns: card_columns(assigns.result),
+        messages: MasuMessages.messages(),
+        locale: Gettext.get_locale(Lotus.Web.Gettext),
+        on_actions:
+          for(%{on_action: fun} = action <- actions, do: %{action | on_action: without_id(fun)}),
+        links:
+          for(%{navigate: fun} = action <- actions, do: %{action | navigate: without_id(fun)})
+      )
+
+    ~H"""
+    <.data_grid
+      id={@id}
+      rows={@rows}
+      columns={@columns}
+      row_id={&List.last/1}
+      density={:compact}
+      filter_bar={false}
+      messages={@messages}
+      locale={@locale}
+      label={@label}
+      class="lotus-results lotus-card-table"
+      height="100%"
+    >
+      <:row_action :for={action <- @on_actions} label={action.label} on_action={action.on_action} />
+      <:row_action :for={action <- @links} label={action.label} navigate={action.navigate} />
+    </.data_grid>
+    """
+  end
+
   def card(assigns) do
     assigns =
       assign(assigns,
@@ -120,6 +158,27 @@ defmodule Lotus.Web.Queries.MasuResults do
       height="100%"
     />
     """
+  end
+
+  # Row actions need a row's id to stay the same from one run to the next: a
+  # hash of its values and of how many rows with the same values came
+  # before it, after its cells. Pro's actions get the row without it.
+  defp with_row_ids(rows) do
+    {rows, _seen} =
+      Enum.map_reduce(rows, %{}, fn row, seen ->
+        n = Map.get(seen, row, 0)
+        {row ++ [:erlang.phash2({row, n})], Map.put(seen, row, n + 1)}
+      end)
+
+    rows
+  end
+
+  defp without_id(fun) do
+    fn
+      %{row: row} = context when is_list(row) -> fun.(%{context | row: Enum.drop(row, -1)})
+      row when is_list(row) -> fun.(Enum.drop(row, -1))
+      other -> fun.(other)
+    end
   end
 
   # A card's columns, each as wide as its longest value, or as its name

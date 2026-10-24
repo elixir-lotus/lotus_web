@@ -1,7 +1,8 @@
 defmodule Lotus.Web.Dashboards.AddCardModal do
   @moduledoc """
   Modal component for adding new cards to a dashboard.
-  Supports query, text and link card types (a heading is a text card).
+  Supports query, text and link card types (a heading is a text card), and
+  the kinds of card Lotus Pro adds (`Lotus.Web.Pro.card_kinds/1`).
   """
 
   use Lotus.Web, :live_component
@@ -41,6 +42,12 @@ defmodule Lotus.Web.Dashboards.AddCardModal do
       },
       %{type: :link, icon: :link_icon, label: gettext("Link"), desc: gettext("External link")}
     ]
+
+    pro_types =
+      for kind <- Lotus.Web.Pro.card_kinds(assigns[:pro_info] || %{}),
+          do: %{type: "pro:" <> kind.kind, icon: :pro, label: kind.label, desc: kind.description}
+
+    card_types = card_types ++ pro_types
 
     assigns = assign(assigns, card_types: card_types)
 
@@ -128,6 +135,7 @@ defmodule Lotus.Web.Dashboards.AddCardModal do
 
   defp dynamic_icon(%{name: :heading} = assigns), do: ~H"<Icons.heading class={@class} />"
   defp dynamic_icon(%{name: :link_icon} = assigns), do: ~H"<Icons.link_icon class={@class} />"
+  defp dynamic_icon(%{name: :pro} = assigns), do: ~H"<Icons.sparkles class={@class} />"
   defp dynamic_icon(assigns), do: ~H"<Icons.squares_2x2 class={@class} />"
 
   @impl Phoenix.LiveComponent
@@ -145,5 +153,6 @@ defmodule Lotus.Web.Dashboards.AddCardModal do
   defp parse_card_type("text"), do: :text
   defp parse_card_type("link"), do: :link
   defp parse_card_type("heading"), do: :heading
+  defp parse_card_type("pro:" <> _kind = type), do: type
   defp parse_card_type(_), do: :query
 end

@@ -70,6 +70,7 @@ defmodule Lotus.Web.PublicDashboardPage do
                 selected_card_id={nil}
                 public={true}
                 filters={@dashboard.filters}
+                pro_info={Lotus.Web.Pro.request_info(%{})}
                 parent={@myself}
               />
             <% else %>
