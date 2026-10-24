@@ -8,6 +8,20 @@ defmodule Lotus.Web.CoreComponents do
   alias Phoenix.LiveView.JS
   alias Lotus.Web.Components.Icons
 
+  # Lotus Pro's content for the slot `name` (`Lotus.Web.Pro.render_slot/2`),
+  # given `slot_assigns`. Nothing without Pro.
+  #
+  # The slots: `:nav` (the header), `:list_toolbar` (above the lists of
+  # queries and dashboards), `:query_badges` and `:dashboard_badges` (on each
+  # tile and row), `:query_editor_header` and `:card_header`.
+  @doc false
+  attr(:name, :atom, required: true)
+  attr(:slot_assigns, :map, default: %{})
+
+  def pro_slot(assigns) do
+    ~H"{Lotus.Web.Pro.render_slot(@name, @slot_assigns)}"
+  end
+
   @doc """
   Renders a button.
 

@@ -87,6 +87,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
         <h3 class={["min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-gray-100", not @folds? && "pl-2"]}>
           <%= @card.title || default_title(@card) %>
         </h3>
+        <.pro_slot name={:card_header} slot_assigns={%{card: @card}} />
         <span
           :if={@can_manage and @folded}
           class="shrink-0 rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-medium text-pink-700 dark:bg-pink-900/30 dark:text-pink-300"

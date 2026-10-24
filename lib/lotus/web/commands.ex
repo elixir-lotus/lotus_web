@@ -18,6 +18,7 @@ defmodule Lotus.Web.Commands do
   import Lotus.Web.Helpers, only: [lotus_path: 1, lotus_path: 2]
 
   alias Lotus.Web.Authorization
+  alias Lotus.Web.Pro
   alias Lotus.Web.RichText
   alias Phoenix.LiveView.JS
 
@@ -49,7 +50,7 @@ defmodule Lotus.Web.Commands do
     assigns = socket.assigns
 
     [
-      queries: [label: gettext("Queries"), search: &search_queries/1],
+      queries: [label: gettext("Queries"), search: &search_queries(assigns, &1)],
       dashboards: [label: gettext("Dashboards"), search: &search_dashboards(assigns, &1)]
     ]
   end
@@ -190,8 +191,10 @@ defmodule Lotus.Web.Commands do
 
   # Ranked with the palette's own rules (Jumon.Match): a typo or an accent
   # still finds a query or a dashboard.
-  defp search_queries(query) do
-    Lotus.list_queries()
+  defp search_queries(assigns, query) do
+    assigns
+    |> Pro.request_info()
+    |> Pro.list_queries()
     |> Enum.map(fn stored ->
       action("query-#{stored.id}", stored.name,
         subtitle: stored.description,
@@ -203,7 +206,9 @@ defmodule Lotus.Web.Commands do
   end
 
   defp search_dashboards(assigns, query) do
-    Lotus.list_dashboards()
+    assigns
+    |> Pro.request_info()
+    |> Pro.list_dashboards()
     |> Enum.filter(&Authorization.allowed?(assigns, :view_dashboard, &1))
     |> Enum.map(fn dashboard ->
       action("dashboard-#{dashboard.id}", dashboard.name,

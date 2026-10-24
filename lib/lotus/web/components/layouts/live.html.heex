@@ -18,6 +18,7 @@
           >
             <%= item.label %>
           </.link>
+          <.pro_slot :if={not Map.get(assigns, :public_view, false)} name={:nav} slot_assigns={assigns} />
         </div>
         <div class="flex items-center space-x-2 sm:space-x-4">
           <Jumon.Components.command_button
