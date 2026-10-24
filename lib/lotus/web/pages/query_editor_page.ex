@@ -112,6 +112,7 @@ defmodule Lotus.Web.QueryEditorPage do
               current_statement={@query_form[:statement].value}
               assistant_name={@branding.assistant_name}
               steps={@ai_steps}
+              draft={@ai_draft}
               action={@ai_action}
               schema={@editor_schema}
               lotus_mark={@branding.product_name == "Lotus" and is_nil(@branding.logo)}
@@ -1206,7 +1207,7 @@ defmodule Lotus.Web.QueryEditorPage do
 
     socket =
       socket
-      |> assign(ai_steps: [], ai_action: nil, ai_started_at: nil)
+      |> assign(ai_steps: [], ai_draft: "", ai_action: nil, ai_started_at: nil)
       |> update(:ai_conversation, &keep_ai_work(&1, steps, elapsed, base))
       |> maybe_preview_ai_answer()
 
@@ -1250,7 +1251,13 @@ defmodule Lotus.Web.QueryEditorPage do
 
   @impl Phoenix.LiveComponent
   def update(%{action: :ai_tool_call, event: event}, socket) do
+    # Text the model wrote before it called a tool is not the answer.
+    socket = if event[:phase] == :start, do: assign(socket, ai_draft: ""), else: socket
     {:ok, update(socket, :ai_steps, &AiSteps.track(&1, event))}
+  end
+
+  def update(%{action: :ai_text, text: text}, socket) do
+    {:ok, update(socket, :ai_draft, &((&1 || "") <> text))}
   end
 
   def update(%{action: :close_dropdown_options_modal}, socket) do
@@ -1388,6 +1395,7 @@ defmodule Lotus.Web.QueryEditorPage do
       ai_conversation: new_conversation(),
       ai_pending_variables: nil,
       ai_steps: [],
+      ai_draft: "",
       ai_action: nil,
       ai_started_at: nil
     )
@@ -1884,8 +1892,14 @@ defmodule Lotus.Web.QueryEditorPage do
     myself = socket.assigns.myself
     ai_opts = [on_tool_call: &send_update(view, myself, %{action: :ai_tool_call, event: &1})]
 
+    # An explanation is read, so it shows as it is written.
+    ai_opts =
+      if action in [:explain, :explain_fragment],
+        do: [{:on_text, &send_update(view, myself, %{action: :ai_text, text: &1})} | ai_opts],
+        else: ai_opts
+
     socket
-    |> assign(ai_steps: [], ai_action: action, ai_started_at: now_ms())
+    |> assign(ai_steps: [], ai_draft: "", ai_action: action, ai_started_at: now_ms())
     |> start_async(name, fn ->
       Telemetry.span([:lotus_web, :ai], metadata, fn -> fun.(ai_opts) end)
     end)

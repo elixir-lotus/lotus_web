@@ -30,6 +30,7 @@
   once, read-only, for its first rows: the answer shows them, and the
   chart they suggest (a line over dates, bars over names, a number on its
   own), with a button that puts the query in the editor as that chart.
+  An explanation shows as it is written (Lotus's `:on_text`).
   The panel opens on prompts made of the source's own tables, and the
   optimization suggestions are cards with their impact and statements.
   Its colours are the theme's. Needs Lotus's `:on_tool_call`

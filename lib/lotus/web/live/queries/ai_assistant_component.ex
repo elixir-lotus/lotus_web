@@ -53,6 +53,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
             data_source={@data_source}
             generating={@generating}
             steps={assigns[:steps] || []}
+            draft={assigns[:draft] || ""}
             action={assigns[:action]}
             schema={assigns[:schema]}
             lotus_mark={assigns[:lotus_mark]}
@@ -158,6 +159,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
   attr(:data_source, :string, default: nil)
   attr(:generating, :boolean, default: false)
   attr(:steps, :list, default: [])
+  attr(:draft, :string, default: "")
   attr(:action, :atom, default: nil)
   attr(:schema, :map, default: nil)
   attr(:lotus_mark, :boolean, default: true)
@@ -181,7 +183,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
         <%= for {message, index} <- Enum.with_index(@conversation.messages) do %>
           <.message message={message} index={index} parent={@parent} current_statement={@current_statement} />
         <% end %>
-        <.working :if={@generating} steps={@steps} action={@action} lotus_mark={@lotus_mark} />
+        <.working :if={@generating} steps={@steps} draft={@draft} action={@action} lotus_mark={@lotus_mark} />
       <% end %>
     </div>
     """
@@ -243,10 +245,12 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
   end
 
   attr(:steps, :list, required: true)
+  attr(:draft, :string, default: "")
   attr(:action, :atom, default: nil)
   attr(:lotus_mark, :boolean, default: true)
 
-  # The answer being written: what the assistant is doing, step by step.
+  # The answer being written: what the assistant is doing, step by step, and
+  # an explanation as the model writes it.
   defp working(assigns) do
     ~H"""
     <div id="ai-working" data-ai-working class="flex gap-3 lotus-ai-in" aria-live="polite">
@@ -256,9 +260,12 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
         <ol :if={@steps != []} class="mt-2.5 space-y-1.5">
           <.step :for={step <- @steps} step={step} />
         </ol>
-        <div :if={@steps == []} class="mt-3 space-y-2">
+        <div :if={@steps == [] and @draft == ""} class="mt-3 space-y-2">
           <div class="lotus-ai-skeleton h-2.5 w-4/5"></div>
           <div class="lotus-ai-skeleton h-2.5 w-3/5"></div>
+        </div>
+        <div :if={@draft != ""} class="mt-3 lotus-ai-explanation lotus-ai-draft" data-ai-draft>
+          <div class={explanation_classes()}><%= render_markdown(@draft) %></div>
         </div>
       </div>
     </div>
@@ -786,10 +793,14 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
   defp explanation_message(assigns) do
     ~H"""
     <div class="lotus-ai-explanation">
-      <div class="text-sm text-gray-700 dark:text-gray-300 prose prose-sm dark:prose-invert max-w-none prose-p:my-1.5 prose-ul:my-1.5 prose-li:my-0.5 prose-strong:text-gray-900 dark:prose-strong:text-gray-50 prose-code:before:content-none prose-code:after:content-none prose-code:bg-gray-100 prose-code:dark:bg-gray-700/70 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-[11px] prose-code:font-normal"><%= render_markdown(@message.content) %></div>
+      <div class={explanation_classes()}><%= render_markdown(@message.content) %></div>
     </div>
     """
   end
+
+  defp explanation_classes,
+    do:
+      "text-sm text-gray-700 dark:text-gray-300 prose prose-sm dark:prose-invert max-w-none prose-p:my-1.5 prose-ul:my-1.5 prose-li:my-0.5 prose-strong:text-gray-900 dark:prose-strong:text-gray-50 prose-code:before:content-none prose-code:after:content-none prose-code:bg-gray-100 prose-code:dark:bg-gray-700/70 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-[11px] prose-code:font-normal"
 
   attr(:generating, :boolean, required: true)
   attr(:parent, :any, required: true)
@@ -1077,7 +1088,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
      |> assign(generating: false)
      |> assign(conversation: new_conversation())
      |> assign(current_statement: nil)
-     |> assign(steps: [], action: nil, schema: nil, lotus_mark: true)}
+     |> assign(steps: [], draft: "", action: nil, schema: nil, lotus_mark: true)}
   end
 
   @impl Phoenix.LiveComponent

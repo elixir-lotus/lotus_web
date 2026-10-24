@@ -1611,6 +1611,40 @@
     border-left-color: rgb(var(--lotus-pink-400) / 0.5);
 }
 
+/* An explanation as it is written: a caret after its last word. */
+.lotus-ai-draft .prose > :last-child::after {
+    content: "";
+    display: inline-block;
+    width: 0.45em;
+    height: 1em;
+    margin-left: 0.15em;
+    vertical-align: -0.12em;
+    border-radius: 1px;
+    background: rgb(var(--lotus-pink-500));
+    animation: lotus-ai-caret 1s steps(2, start) infinite;
+}
+
+.lotus-ai-draft .prose > ul:last-child::after,
+.lotus-ai-draft .prose > ol:last-child::after {
+    display: none;
+}
+
+.lotus-ai-draft .prose > :is(ul, ol):last-child > li:last-child::after {
+    content: "";
+    display: inline-block;
+    width: 0.45em;
+    height: 1em;
+    margin-left: 0.15em;
+    vertical-align: -0.12em;
+    border-radius: 1px;
+    background: rgb(var(--lotus-pink-500));
+    animation: lotus-ai-caret 1s steps(2, start) infinite;
+}
+
+@keyframes lotus-ai-caret {
+    to { visibility: hidden; }
+}
+
 /* Pointing at the page: what is under the pointer is outlined and named,
    and what was picked rides with the message as a chip. */
 .lotus-ai-picking,
