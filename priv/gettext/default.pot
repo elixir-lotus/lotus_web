@@ -4070,3 +4070,60 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Move to"
 msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:168
+#, elixir-autogen, elixir-format
+msgid "Search dashboards…"
+msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:168
+#, elixir-autogen, elixir-format
+msgid "Search dashboards"
+msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:176
+#, elixir-autogen, elixir-format
+msgid "Sort"
+msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:179
+#, elixir-autogen, elixir-format
+msgid "Recently updated"
+msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:181
+#, elixir-autogen, elixir-format
+msgid "Recently created"
+msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:184
+#, elixir-autogen, elixir-format
+msgid "View"
+msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:186
+#, elixir-autogen, elixir-format
+msgid "Gallery"
+msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:186
+#, elixir-autogen, elixir-format
+msgid "Table"
+msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:216
+#, elixir-autogen, elixir-format
+msgid "No dashboard has these words."
+msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:284
+#, elixir-autogen, elixir-format
+msgid "Public"
+msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:292
+#, elixir-autogen, elixir-format
+msgid "1 tab"
+msgid_plural "%{count} tabs"
+msgstr[0] ""
+msgstr[1] ""

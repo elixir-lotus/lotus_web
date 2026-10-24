@@ -953,3 +953,23 @@
 .lotus-dashboard:fullscreen .lotus-card-actions {
     display: none;
 }
+
+/* A dashboard's layout, sketched for the list of dashboards
+   (Lotus.Web.Dashboards.Sketch). */
+.lotus-sketch-card { fill: #fff; stroke: rgb(var(--lotus-gray-200)); stroke-width: 1; }
+.lotus-sketch-title, .lotus-sketch-soft { fill: rgb(var(--lotus-gray-200)); }
+.lotus-sketch-heading { fill: rgb(var(--lotus-gray-400)); }
+.lotus-sketch-mark { fill: #2878d6; }
+.lotus-sketch-fill { fill: #9cc0ee; opacity: 0.6; }
+.lotus-sketch-line { fill: none; stroke: #2878d6; stroke-width: 1.8; stroke-linejoin: round; }
+.lotus-sketch-dot { fill: #2878d6; }
+.lotus-sketch-number { fill: rgb(var(--lotus-gray-700)); }
+.lotus-sketch-up { fill: #22c55e; }
+.lotus-sketch-link { fill: rgb(var(--lotus-pink-500)); opacity: 0.7; }
+
+.dark .lotus-sketch-card { fill: rgb(var(--lotus-gray-800)); stroke: rgb(var(--lotus-gray-600)); }
+.dark .lotus-sketch-title, .dark .lotus-sketch-soft { fill: rgb(var(--lotus-gray-600)); }
+.dark .lotus-sketch-heading { fill: rgb(var(--lotus-gray-500)); }
+.dark .lotus-sketch-number { fill: rgb(var(--lotus-gray-200)); }
+.lotus-sketch-mini .lotus-sketch-card { stroke-width: 0.6; }
+.lotus-sketch-mini .lotus-sketch-line { stroke-width: 0.8; }

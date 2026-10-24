@@ -13,6 +13,15 @@
 
 ### Added
 
+- **The dashboards, as a gallery.** The Dashboards tab shows a tile for
+  each dashboard: its layout sketched (its cards where they are, each as
+  what it shows: bars, a line, a pie, a number, rows, text, a map), its
+  name, a *Public* badge for a shared one, its description, its cards and
+  tabs, and when it last changed; *Duplicate* on hover. A toggle shows them
+  as a table instead, a small sketch beside each name, and the browser
+  keeps the viewer's choice. Search (in names and descriptions) and sort
+  (recently updated, name, recently created) work in both.
+
 - **Tabs.** A dashboard's cards can be on tabs, each with its own grid. In
   edit mode, *Tab* adds one (a dashboard's first tab holds its cards), the
   tab shown takes a new name in place and is removed by its ×, and a card's

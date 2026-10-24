@@ -47,30 +47,85 @@ defmodule Lotus.Web.Pages.QueriesPageTest do
   end
 
   describe "dashboards tab" do
-    test "preloads :cards so card counts render without triggering NotLoaded" do
-      dashboard1 = dashboard_fixture(%{name: "Sales"})
-      dashboard_card_fixture(dashboard1, %{position: 0})
-      dashboard_card_fixture(dashboard1, %{position: 1})
+    setup do
+      sales = dashboard_fixture(%{name: "Sales", description: "Revenue by region"})
+      dashboard_card_fixture(sales, %{position: 0})
+      dashboard_card_fixture(sales, %{position: 1})
 
-      dashboard2 = dashboard_fixture(%{name: "Marketing"})
-      dashboard_card_fixture(dashboard2, %{position: 0})
+      marketing = dashboard_fixture(%{name: "Marketing"})
+      dashboard_card_fixture(marketing, %{position: 0})
 
+      {:ok, sales: sales, marketing: marketing}
+    end
+
+    test "a gallery of tiles, each with its layout sketched and its cards counted", %{
+      sales: sales,
+      marketing: marketing
+    } do
       {:ok, live, _html} = live(build_conn(), "/lotus?tab=dashboards")
 
-      # The card count column renders `length(dashboard.cards)` — if `:cards`
-      # were still `%Ecto.Association.NotLoaded{}`, render would raise and
-      # the `{:ok, live, _}` match above would blow up. Asserting on the
-      # actual counts also pins the preload to returning loaded data (not,
-      # say, an accidentally-empty list).
+      assert has_element?(
+               live,
+               "#dashboard-tile-#{sales.id} svg.lotus-sketch rect.lotus-sketch-card"
+             )
+
+      assert has_element?(live, "#dashboard-tile-#{sales.id}", "2 cards")
+      assert has_element?(live, "#dashboard-tile-#{marketing.id}", "1 card")
+      assert has_element?(live, "#dashboards-list[phx-hook=ListView][data-view=grid]")
+    end
+
+    test "the table shows the same dashboards, a sketch beside each name", %{sales: sales} do
+      {:ok, live, _html} = live(build_conn(), "/lotus?tab=dashboards")
+
+      live |> element("#dashboards-view-list") |> render_click()
+
+      refute has_element?(live, "#dashboards-gallery")
       assert has_element?(live, ~s|#dashboards-table tr|, "Sales")
       assert has_element?(live, ~s|#dashboards-table tr|, "Marketing")
+      assert has_element?(live, "#dashboards-table svg.lotus-sketch-mini")
+      assert render(live) =~ ~r/Sales.*?\b2\b/s
+      assert has_element?(live, "#dashboard-#{sales.id}-updated-row[phx-hook=RelativeTime]")
+    end
 
-      html = render(live)
-      assert html =~ "Sales"
-      assert html =~ "Marketing"
-      # Both dashboards' card-count cells are present.
-      assert html =~ ~r/Sales.*?\b2\b/s
-      assert html =~ ~r/Marketing.*?\b1\b/s
+    test "the chosen view stays as the LiveView renders again" do
+      {:ok, live, _html} = live(build_conn(), "/lotus?tab=dashboards")
+      live |> element("#dashboards-view-list") |> render_click()
+
+      # A render of the LiveView itself (a flash) hands the page its assigns.
+      send(live.pid, {:put_flash, [:info, "Saved"]})
+
+      assert has_element?(live, "#dashboards-list[data-view=list]")
+      assert has_element?(live, "#dashboards-table")
+    end
+
+    test "search keeps the dashboards with its words, in name or description", %{
+      sales: sales,
+      marketing: marketing
+    } do
+      {:ok, live, _html} = live(build_conn(), "/lotus?tab=dashboards")
+
+      live
+      |> element("#dashboards-search")
+      |> render_change(%{"search" => "region", "sort" => "name"})
+
+      assert has_element?(live, "#dashboard-tile-#{sales.id}")
+      refute has_element?(live, "#dashboard-tile-#{marketing.id}")
+
+      live
+      |> element("#dashboards-search")
+      |> render_change(%{"search" => "nothing like it", "sort" => "name"})
+
+      assert render(live) =~ "No dashboard has these words."
+    end
+
+    test "a tile's Duplicate copies the dashboard and opens the copy", %{sales: sales} do
+      {:ok, live, _html} = live(build_conn(), "/lotus?tab=dashboards")
+
+      assert {:error, {:live_redirect, %{to: to}}} =
+               live |> element("#dashboard-tile-#{sales.id}-duplicate") |> render_click()
+
+      [_, id] = Regex.run(~r{/dashboards/(\d+)$}, to)
+      assert Lotus.get_dashboard!(String.to_integer(id)).name == "Sales (copy)"
     end
   end
 
