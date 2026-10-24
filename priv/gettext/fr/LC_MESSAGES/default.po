@@ -3990,3 +3990,13 @@ msgstr[1] "%{count} cartes"
 #, elixir-autogen, elixir-format
 msgid "is the name of another filter"
 msgstr "est le nom d'un autre filtre"
+
+#: lib/lotus/web/live/queries/visualization_settings_component.ex:409
+#, elixir-autogen, elixir-format
+msgid "A line of the value by this field (a date) under the number"
+msgstr "Une ligne de la valeur selon ce champ (une date) sous le nombre"
+
+#: lib/lotus/web/live/dashboards/card_component.ex:484
+#, elixir-autogen, elixir-format
+msgid "Click the chart to filter by %{filters}"
+msgstr "Cliquez sur le graphique pour filtrer par %{filters}"

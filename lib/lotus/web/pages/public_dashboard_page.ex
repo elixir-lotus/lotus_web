@@ -10,6 +10,7 @@ defmodule Lotus.Web.PublicDashboardPage do
   alias Lotus.Web.Dashboards.CardGridComponent
   alias Lotus.Web.Dashboards.CardRunner
   alias Lotus.Web.Dashboards.CardVariables
+  alias Lotus.Web.Dashboards.ChartFilters
   alias Lotus.Web.Dashboards.Components
   alias Lotus.Web.Dashboards.FilterBarComponent
   alias Lotus.Web.Dashboards.FilterOptions
@@ -55,6 +56,7 @@ defmodule Lotus.Web.PublicDashboardPage do
                 running_cards={@running_cards}
                 selected_card_id={nil}
                 public={true}
+                filters={@dashboard.filters}
                 parent={@myself}
               />
             <% else %>
@@ -135,6 +137,17 @@ defmodule Lotus.Web.PublicDashboardPage do
   def handle_event("refresh_card", %{"card-id" => card_id}, socket) do
     card_id = parse_id(card_id)
     {:noreply, run_card(socket, card_id)}
+  end
+
+  # A click on a chart's mark filters the dashboard by it.
+  @impl Phoenix.LiveComponent
+  def handle_event("chart_select", params, socket) do
+    %{dashboard: dashboard, filter_values: filter_values} = socket.assigns
+
+    case ChartFilters.click(dashboard.cards, dashboard.filters, filter_values, params) do
+      {:ok, values} -> {:noreply, apply_filter_values(socket, values)}
+      :none -> {:noreply, socket}
+    end
   end
 
   def handle_event("filter_changed", %{"filter" => filter_values}, socket) do

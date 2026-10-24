@@ -150,10 +150,10 @@ defmodule Lotus.Web.Charts do
     end
   end
 
-  defp fields("kpi"), do: ~w(value_field kpi_label)
+  defp fields("kpi"), do: ~w(value_field kpi_label spark_field)
   defp fields("gauge"), do: ~w(value_field kpi_label min_value max_value)
   defp fields("progress"), do: ~w(value_field kpi_label goal_value)
-  defp fields("trend"), do: ~w(value_field kpi_label comparison_field)
+  defp fields("trend"), do: ~w(value_field kpi_label comparison_field spark_field)
   defp fields("histogram"), do: ~w(x_field bin_count series_field)
   defp fields("bubble"), do: ~w(x_field y_field series_field size_field)
   defp fields("combo"), do: ~w(x_field y_field y2_field series_field y2_axis_title)
@@ -300,7 +300,14 @@ defmodule Lotus.Web.Charts do
   )
 
   attr(:export, :boolean, default: false, doc: "whether the chart has buttons that save it")
+
+  attr(:select, :string,
+    default: nil,
+    doc: "the event a click on a mark sends (Fude's `select`), where `phx-target` says"
+  )
+
   attr(:class, :any, default: nil)
+  attr(:rest, :global, include: ~w(phx-target))
 
   def draw(assigns) do
     assigns =
@@ -320,7 +327,9 @@ defmodule Lotus.Web.Charts do
           locale={@locale}
           export={@export}
           table={@table}
+          select={@select}
           class={["lotus-chart", @class]}
+          {@rest}
         />
       <% {:error, message} -> %>
         <div id={@id} class="flex items-center justify-center h-full p-4 text-sm text-red-500 dark:text-red-400" role="alert">
@@ -504,7 +513,7 @@ defmodule Lotus.Web.Charts do
     end
   end
 
-  defp build("kpi", data, c), do: Fude.number(data, single(c) ++ label(c) ++ words(c))
+  defp build("kpi", data, c), do: Fude.number(data, single(c) ++ spark(c) ++ label(c) ++ words(c))
 
   # Compared with the comparison field of the first row, or, without one,
   # with the value of the second row.
@@ -515,7 +524,7 @@ defmodule Lotus.Web.Charts do
         field -> [compare: field]
       end
 
-    Fude.trend(data, single(c) ++ compare ++ label(c) ++ words(c))
+    Fude.trend(data, single(c) ++ compare ++ spark(c) ++ label(c) ++ words(c))
   end
 
   defp build("gauge", data, c) do
@@ -833,6 +842,14 @@ defmodule Lotus.Web.Charts do
   defp measure(c, field), do: [field: field] ++ format(c, "number_format")
 
   defp single(c), do: [value: measure(c, c["value_field"])]
+
+  # A KPI's history under its number: its value by the spark field (a time).
+  defp spark(c) do
+    case present(c["spark_field"]) do
+      nil -> []
+      field -> [spark: field]
+    end
+  end
 
   # A slice of a pie or a donut for each category: the series field when
   # there is one, else the x field.

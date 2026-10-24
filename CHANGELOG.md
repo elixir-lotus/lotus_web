@@ -13,6 +13,13 @@
 
 ### Added
 
+- **A click on a chart filters the dashboard.** A bar, a slice or a
+  region of a map sets the filter of its field (a filter of the same
+  name, or one that sets a variable of that name in the card's query),
+  and a click on it again clears it. Its series (the chart's color) sets
+  its filter too. Out of edit mode, on the dashboard and its public link;
+  the chart says which filters a click sets. Fude 0.6's `select`.
+
 - **Filters connect to cards on the dashboard.** In edit mode each filter
   says how many cards it is connected to (or that it is connected to none),
   and its button shows, over each card, what the filter sets in it: a
@@ -84,6 +91,9 @@
   settings, and **Cancel** (the dashboard as it was) or **Save** (at once,
   for a dashboard that has its name). Cards are picked and set up only in
   edit mode; a new dashboard opens in it.
+- **A KPI's history under its number.** A KPI or a Trend chart has
+  *History*: a field (a date) by which the value draws a small line under
+  the number, oldest to newest, ending on the number (Fude 0.6's `spark`).
 - **Table cards are Masu's grid.** A dashboard card that shows a table is
   the query editor's grid, read-only and compact, filling the card: every
   row of the result (not the first 10 rows of 5 columns), each column of

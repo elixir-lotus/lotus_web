@@ -7,6 +7,7 @@ defmodule Lotus.Web.Dashboards.CardGridComponent do
   use Lotus.Web, :live_component
 
   alias Lotus.Web.Dashboards.CardComponent
+  alias Lotus.Web.Dashboards.ChartFilters
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
@@ -35,10 +36,18 @@ defmodule Lotus.Web.Dashboards.CardGridComponent do
           can_manage={Map.get(assigns, :can_manage, not Map.get(assigns, :public, false))}
           values={Map.get(assigns, :values, %{})}
           connecting={Map.get(assigns, :connecting)}
+          click_filters={click_filters(assigns, card)}
           parent={@parent}
         />
       <% end %>
     </div>
     """
+  end
+
+  # Out of edit mode, a click on a chart filters the dashboard by its mark.
+  defp click_filters(assigns, card) do
+    if Map.get(assigns, :can_manage, not Map.get(assigns, :public, false)),
+      do: %{},
+      else: ChartFilters.targets(card, Map.get(assigns, :filters, []))
   end
 end
