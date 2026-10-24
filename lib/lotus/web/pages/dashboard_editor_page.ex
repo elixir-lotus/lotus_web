@@ -21,6 +21,7 @@ defmodule Lotus.Web.DashboardEditorPage do
   alias Lotus.Web.Dashboards.FilterOptions
   alias Lotus.Web.Dashboards.FilterValues
   alias Lotus.Web.Dashboards.SettingsDrawer
+  alias Lotus.Web.Dashboards.TextCard
   alias Lotus.Web.Page
   alias Lotus.Web.Pro
   alias Lotus.Web.RichText
@@ -138,6 +139,7 @@ defmodule Lotus.Web.DashboardEditorPage do
                   module={CardGridComponent}
                   id="card-grid"
                   dashboard_id={@dashboard.id}
+                  values={text_values(@dashboard.filters, @filter_values)}
                   cards={@dashboard.cards}
                   card_results={@card_results}
                   card_errors={@card_errors}
@@ -598,7 +600,12 @@ defmodule Lotus.Web.DashboardEditorPage do
   @impl Phoenix.LiveComponent
   def handle_event("edit", _params, socket) do
     authorize_manage(socket, fn ->
-      {:noreply, assign(socket, editing: true, saved_dashboard: socket.assigns.dashboard)}
+      %{dashboard: dashboard} = socket.assigns
+
+      # A heading card from before is edited as a text card with a heading.
+      editing = %{dashboard | cards: Enum.map(dashboard.cards, &TextCard.as_text/1)}
+
+      {:noreply, assign(socket, editing: true, saved_dashboard: dashboard, dashboard: editing)}
     end)
   end
 
@@ -1229,6 +1236,12 @@ defmodule Lotus.Web.DashboardEditorPage do
   end
 
   defp blank?(name), do: name in [nil, ""]
+
+  # The values a text card writes for `{{name}}`: each filter's, or its
+  # default.
+  defp text_values(filters, filter_values) do
+    Map.new(filters, &{&1.name, Map.get(filter_values, &1.name, &1.default_value)})
+  end
 
   defp new_dashboard do
     %{

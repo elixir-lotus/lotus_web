@@ -105,7 +105,7 @@ export default {
     const folded = new Set(this.cards().filter((el) => this.folded(el)).map((el) => el.dataset.cardId));
     // A heading, out of edit mode, is a line of text over the cards it names.
     const headings = new Set(
-      this.editing() ? [] : this.cards().filter((el) => el.dataset.cardType === "heading").map((el) => el.dataset.cardId),
+      this.editing() ? [] : this.cards().filter((el) => el.dataset.heading === "true").map((el) => el.dataset.cardId),
     );
     const cards = this.base().map((card) =>
       folded.has(card.id) ? { ...card, h: FOLDED } : headings.has(card.id) ? { ...card, h: HEADING } : card,
@@ -281,7 +281,7 @@ export default {
     if (!this.editing()) return;
     const base = this.base();
     const headings = new Set(
-      this.cards().filter((el) => el.dataset.cardType === "heading").map((el) => el.dataset.cardId),
+      this.cards().filter((el) => el.dataset.heading === "true").map((el) => el.dataset.cardId),
     );
     this.commit(base, tidy(base, headings));
   },

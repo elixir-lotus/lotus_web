@@ -48,6 +48,7 @@ defmodule Lotus.Web.PublicDashboardPage do
                 module={CardGridComponent}
                 id="card-grid"
                 dashboard_id={@dashboard.id}
+                values={Map.new(@dashboard.filters, &{&1.name, Map.get(@filter_values, &1.name, &1.default_value)})}
                 cards={@dashboard.cards}
                 card_results={@card_results}
                 card_errors={@card_errors}
