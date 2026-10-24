@@ -4127,3 +4127,30 @@ msgid "1 tab"
 msgid_plural "%{count} tabs"
 msgstr[0] ""
 msgstr[1] ""
+
+#: lib/lotus/web/pages/queries_page.ex:141
+#, elixir-autogen, elixir-format
+msgid "Search queries…"
+msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:141
+#, elixir-autogen, elixir-format
+msgid "Search queries"
+msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:149
+#, elixir-autogen, elixir-format
+msgid "All sources"
+msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:172
+#, elixir-autogen, elixir-format
+msgid "No query has these words."
+msgstr ""
+
+#: lib/lotus/web/pages/queries_page.ex:248
+#, elixir-autogen, elixir-format
+msgid "In 1 dashboard"
+msgid_plural "In %{count} dashboards"
+msgstr[0] ""
+msgstr[1] ""

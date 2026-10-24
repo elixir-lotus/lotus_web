@@ -13,6 +13,14 @@
 
 ### Added
 
+- **The queries, as a gallery.** The Queries tab shows a tile for each
+  query: the chart it is saved with, sketched, or the first lines of its
+  SQL (its keywords and variables marked); its source; its name and
+  description; its variables; how many dashboards use it; and when it last
+  changed. A toggle shows them as a list, a line a query with its SQL at a
+  glance, and the browser keeps the viewer's choice. Search (in names,
+  descriptions and SQL) and the source chips work in both.
+
 - **The dashboards, as a gallery.** The Dashboards tab shows a tile for
   each dashboard: its layout sketched (its cards where they are, each as
   what it shows: bars, a line, a pie, a number, rows, text, a map), its
