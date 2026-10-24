@@ -105,6 +105,90 @@ defmodule Lotus.Web.Dashboards.Components do
   end
 
   @doc """
+  A dashboard's tabs, over its cards: a tab shows its cards. In edit mode,
+  the tab shown takes a new name in place, and is removed by its ×; Tab
+  adds one. Out of edit mode it shows only for two tabs or more.
+  """
+  attr(:tabs, :list, required: true)
+  attr(:current, :string, default: nil)
+  attr(:editing, :boolean, default: false)
+  attr(:target, :any, required: true)
+
+  def tab_bar(assigns) do
+    ~H"""
+    <div
+      :if={@editing or length(@tabs) > 1}
+      id="dashboard-tabs"
+      class="lotus-dashboard-tabs flex items-end gap-1 overflow-x-auto border-b border-gray-200 px-4 sm:px-6 pt-3 dark:border-gray-700"
+      role="tablist"
+      aria-label={gettext("Tabs")}
+    >
+      <div :for={tab <- @tabs} class="flex shrink-0 items-center">
+        <%= if @editing and tab["id"] == @current do %>
+          <form
+            id={"dashboard-tab-#{tab["id"]}-name"}
+            phx-change="rename_tab"
+            phx-submit="rename_tab"
+            phx-target={@target}
+            class="flex items-center border-b-2 border-pink-600 pb-1.5"
+          >
+            <input type="hidden" name="tab" value={tab["id"]} />
+            <input
+              type="text"
+              name="name"
+              value={tab["name"]}
+              phx-debounce="300"
+              aria-label={gettext("Name of the tab")}
+              class="w-32 rounded border-0 bg-transparent px-1 py-0.5 text-sm font-medium text-gray-900 focus:ring-1 focus:ring-pink-500 dark:text-white"
+            />
+            <button
+              type="button"
+              phx-click="delete_tab"
+              phx-value-tab={tab["id"]}
+              phx-target={@target}
+              data-confirm={gettext("Remove this tab? Its cards go to the first tab.")}
+              class="ml-0.5 rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-700"
+              title={gettext("Remove the tab")}
+              aria-label={gettext("Remove the tab")}
+            >
+              <Icons.x_mark class="h-3.5 w-3.5" />
+            </button>
+          </form>
+        <% else %>
+          <button
+            id={"dashboard-tab-#{tab["id"]}"}
+            type="button"
+            role="tab"
+            aria-selected={to_string(tab["id"] == @current)}
+            phx-click="select_tab"
+            phx-value-tab={tab["id"]}
+            phx-target={@target}
+            class={[
+              "border-b-2 px-3 pb-2 pt-1 text-sm font-medium whitespace-nowrap",
+              tab["id"] == @current && "border-pink-600 text-gray-900 dark:text-white",
+              tab["id"] != @current &&
+                "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            ]}
+          >
+            <%= tab["name"] %>
+          </button>
+        <% end %>
+      </div>
+      <button
+        :if={@editing}
+        id="dashboard-add-tab"
+        type="button"
+        phx-click="add_tab"
+        phx-target={@target}
+        class="mb-1 ml-1 inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-sm text-pink-600 hover:bg-pink-50 dark:text-pink-400 dark:hover:bg-pink-900/20"
+      >
+        <Icons.plus class="h-4 w-4" /> <%= gettext("Tab") %>
+      </button>
+    </div>
+    """
+  end
+
+  @doc """
   The bar of edit mode: what can be added, the dashboard's settings, and
   Cancel and Save.
   """

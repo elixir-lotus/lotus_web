@@ -30,7 +30,8 @@ defmodule Lotus.Web.Dashboards.Duplicate do
     %{
       name: gettext("%{name} (copy)", name: dashboard.name),
       description: dashboard.description,
-      auto_refresh_seconds: dashboard.auto_refresh_seconds
+      auto_refresh_seconds: dashboard.auto_refresh_seconds,
+      settings: dashboard.settings
     }
   end
 
@@ -110,7 +111,8 @@ defmodule Lotus.Web.Dashboards.Duplicate do
       y: layout.y,
       w: layout.w,
       h: layout.h,
-      folded: Map.get(layout, :folded, false)
+      folded: Map.get(layout, :folded, false),
+      tab: Map.get(layout, :tab)
     }
 
   # Creates each item, and returns what each became, by its id.

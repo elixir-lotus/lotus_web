@@ -39,6 +39,8 @@ defmodule Lotus.Web.Dashboards.CardGridComponent do
           connecting={Map.get(assigns, :connecting)}
           click_filters={click_filters(assigns, card)}
           query_vars={query_vars(assigns, card)}
+          tabs={Map.get(assigns, :tabs, [])}
+          tab={Map.get(assigns, :tab)}
           parent={@parent}
         />
       <% end %>
