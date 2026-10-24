@@ -144,6 +144,17 @@ defmodule Lotus.Web.Test.Router do
 
     lotus_dashboard("/one_theme", as: :one_theme_dashboard, themes: [:lotus])
   end
+
+  pipeline :embed do
+    plug(:fetch_session)
+    plug(Lotus.Web.EmbedFrame)
+  end
+
+  scope "/", ThisWontBeUsed, as: :this_wont_be_used_embed do
+    pipe_through(:embed)
+
+    lotus_embed("/lotus-embed")
+  end
 end
 
 defmodule Lotus.Web.Endpoint do

@@ -13,6 +13,16 @@
 
 ### Added
 
+- **Embedding, with Lotus Pro.** `lotus_embed "/lotus-embed"` defines
+  `/dashboard/:token` and `/card/:token`: a dashboard, or one card on its
+  own, in another app's page, with no header, nav or edit mode. Lotus Pro
+  mints the tokens and checks them on every load (`verify_embed`), and gives
+  the viewer: the cards and the filters' options run with its context and
+  scope, and the host's filter values apply first, which the viewer can
+  change. `Lotus.Web.EmbedFrame` sends the `frame-ancestors` Pro allows for
+  the token. The free version has the routes, and they say embedding needs
+  Lotus Pro; no site may frame them.
+
 - **Lotus Pro's cards and row actions.** With Pro installed, the "Add card"
   dialog offers the kinds of card Pro adds (`card_type: :pro`, an action
   button for example), and Pro draws them. Pro can also put actions on each
