@@ -28,7 +28,11 @@ defmodule Lotus.Web.PublicDashboardPage do
             dashboard={@dashboard}
             refreshed_at={@refreshed_at}
             running={MapSet.size(@running_cards) > 0}
-          />
+          >
+            <:actions :if={@dashboard.cards != []}>
+              <Components.fullscreen_button />
+            </:actions>
+          </Components.dashboard_head>
 
           <%!-- Filter Bar --%>
           <.live_component

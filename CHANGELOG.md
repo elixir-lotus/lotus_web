@@ -13,6 +13,15 @@
 
 ### Added
 
+- **Full screen, for a wall or a TV.** A dashboard's *Full screen* (on the
+  dashboard and its public link) shows it over the whole screen with no
+  buttons: its cards, its filters and when its data was read; with its
+  refresh, it stays up to date. Escape leaves it.
+- **Duplicate a dashboard.** *Duplicate* makes a copy of a saved dashboard,
+  "Name (copy)", with its filters (and what each depends on), its cards
+  and what each filter sets in each card, and opens it. Not its public
+  link: a copy is shared on its own.
+
 - **A card's query opens with the card's values.** A dashboard card's
   *Open the query* opens its query in the editor with the values the card
   ran with (the dashboard's filters, through the card's connections), so

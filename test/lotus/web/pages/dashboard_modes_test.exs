@@ -38,6 +38,8 @@ defmodule Lotus.Web.Pages.DashboardModesTest do
     refute has_element?(live, ~s(#card-#{chart.id} button[phx-click="open_card_settings"]))
     # When its data was read.
     assert has_element?(live, "#dashboard-refreshed-at[phx-hook=RelativeTime]")
+    # Full screen, for a wall or a TV.
+    assert has_element?(live, ~s(#dashboard-fullscreen[phx-click*="lotus:fullscreen"]))
   end
 
   test "Edit opens the editor; Cancel puts the dashboard back as it was", %{
@@ -50,6 +52,7 @@ defmodule Lotus.Web.Pages.DashboardModesTest do
 
     assert has_element?(live, "#dashboard-edit-bar")
     assert has_element?(live, "#add-card-btn")
+    refute has_element?(live, "#dashboard-fullscreen")
     assert has_element?(live, "#card-#{note.id}[phx-click]")
 
     live
@@ -137,5 +140,10 @@ defmodule Lotus.Web.Pages.DashboardModesTest do
     send(live.pid, {:card_result, chart.id, result})
 
     assert render(live) =~ "Live North"
+  end
+
+  test "a public dashboard goes full screen too", %{dashboard: dashboard} do
+    {:ok, live, _html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
+    assert has_element?(live, ~s(#dashboard-fullscreen[phx-click*="lotus:fullscreen"]))
   end
 end
