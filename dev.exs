@@ -361,9 +361,6 @@ else
 end
 
 Task.async(fn ->
-  # Fude from GitHub: its browser files, before the watchers bundle them.
-  Mix.Task.run("fude.git_assets")
-
   # Start esbuild and tailwind applications first
   {:ok, _} = Application.ensure_all_started(:esbuild)
   {:ok, _} = Application.ensure_all_started(:tailwind)
