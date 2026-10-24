@@ -45,6 +45,35 @@
   `:manage_schedule` action (`:all` access by default). Without the feature
   nothing changes.
 
+- **Ask AI from the command palette.** On the query editor, "Ask AI" in
+  the palette (⌘K) asks for a question and the assistant opens on it, as if
+  it had been typed in its panel. "Ask AI…", which opened the panel, is
+  "Open AI assistant".
+
+- **Point at the page to ask the AI assistant about it.** "Point at", in
+  the assistant's composer, outlines and names what is under the pointer:
+  a column or a row of the results, a line or the selection in the editor,
+  a table or a column of the schema explorer. A click adds it to the
+  message as a chip (Shift and click adds several), and the model reads
+  what each one is: a row with its values, a column with a few of them.
+
+- **The AI assistant shows its work, and what a query returns.** While it
+  answers, each step the model takes is listed as it happens (the tables
+  it reads, the values it looks at, the check of the query), folded under
+  the answer once it is done; the editor is no longer covered while it
+  works. An answer's query is highlighted as the editor highlights it,
+  with a copy button, and a refinement shows the lines it adds and
+  removes from the editor's query. A query that needs no variable runs at
+  once, read-only, for its first rows: the answer shows them, and the
+  chart they suggest (a line over dates, bars over names, a number on its
+  own), with a button that puts the query in the editor as that chart.
+  An explanation shows as it is written (Lotus's `:on_text`).
+  The panel opens on prompts made of the source's own tables, and the
+  optimization suggestions are cards with their impact and statements.
+  Its colours are the theme's. Needs Lotus's `:on_tool_call`
+  (elixir-lotus/lotus); without it the answers come as before, without
+  their steps.
+
 - **Lotus Pro's cards and row actions.** With Pro installed, the "Add card"
   dialog offers the kinds of card Pro adds (`card_type: :pro`, an action
   button for example), and Pro draws them. Pro can also put actions on each

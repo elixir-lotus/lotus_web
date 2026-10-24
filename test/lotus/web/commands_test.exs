@@ -66,4 +66,46 @@ defmodule Lotus.Web.CommandsTest do
 
     refute html =~ ~s(phx-hook="Jumon")
   end
+
+  describe "Ask AI" do
+    @describetag capture_log: true
+
+    setup do
+      Application.put_env(:lotus, :ai, enabled: true, model: "openai:gpt-4o", api_key: "sk-test")
+      # The questions asked here go nowhere, at once.
+      Application.put_env(:req_llm, :openai, base_url: "http://127.0.0.1:1/v1")
+      Lotus.Config.reload!()
+
+      on_exit(fn ->
+        Application.delete_env(:req_llm, :openai)
+        Application.delete_env(:lotus, :ai)
+        Lotus.Config.reload!()
+      end)
+    end
+
+    test "is an action of the query editor, which asks for a question" do
+      {:ok, view, _html} = live(build_conn(), "/lotus/queries/new")
+
+      assert %{"args" => [%{"name" => "question"}]} =
+               view |> actions() |> Enum.find(&(&1["name"] == "Ask AI"))
+
+      {:ok, view, _html} = live(build_conn(), "/lotus")
+      refute "Ask AI" in names(actions(view))
+    end
+
+    test "opens the assistant on the question" do
+      {:ok, view, _html} = live(build_conn(), "/lotus/queries/new")
+
+      assert %{"ok" => true} = run(view, :ask_ai, %{"question" => "Revenue by month"})
+
+      html = render(view)
+      assert html =~ "Revenue by month"
+      assert html =~ "Writing the query"
+    end
+  end
+
+  test "Ask AI is not offered with AI off" do
+    {:ok, view, _html} = live(build_conn(), "/lotus/queries/new")
+    refute "Ask AI" in names(actions(view))
+  end
 end
