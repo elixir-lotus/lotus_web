@@ -17,6 +17,49 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
     def describe(_rule, _status, _value), do: ""
   end
 
+  defmodule Elixir.Lotus.Web.Test.MailChannel do
+    @moduledoc false
+    @behaviour Lotus.Delivery.Channel
+    def formats, do: :any
+    def label, do: "Mail"
+
+    def settings,
+      do: [
+        %{key: "to", label: "Recipients", type: :email_list, required: true},
+        %{key: "subject", label: "Subject", type: :text}
+      ]
+
+    def validate_config(_config), do: :ok
+    def deliver(_content, _attachments, _config), do: :ok
+  end
+
+  defmodule Elixir.Lotus.Web.Test.PigeonChannel do
+    @moduledoc false
+    @behaviour Lotus.Delivery.Channel
+    def formats, do: :any
+    def available, do: {:error, "the pigeons are not set up"}
+    def validate_config(_config), do: :ok
+    def deliver(_content, _attachments, _config), do: :ok
+  end
+
+  defmodule Elixir.Lotus.Web.Test.PlainChannel do
+    @moduledoc false
+    @behaviour Lotus.Delivery.Channel
+    def formats, do: :any
+    def validate_config(_config), do: :ok
+    def deliver(_content, _attachments, _config), do: :ok
+  end
+
+  defp put_channels(channels) do
+    Application.put_env(:lotus, :delivery, channels: channels)
+    Lotus.Config.reload!()
+
+    on_exit(fn ->
+      Application.delete_env(:lotus, :delivery)
+      Lotus.Config.reload!()
+    end)
+  end
+
   defp schedule_fixture(query, attrs \\ %{}) do
     {:ok, schedule} =
       Schedules.create_schedule(
@@ -113,6 +156,7 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
       assert has_element?(live, "#schedule-target", "Revenue")
 
       live |> element("#add-delivery") |> render_click()
+      live |> element("#add-webhook") |> render_click()
 
       live
       |> form("#schedule-form",
@@ -121,8 +165,7 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
           deliveries: %{
             "0" => %{
               format: "csv",
-              url: "https://hooks.example.com/x",
-              authorization: "Bearer s3cret"
+              values: %{url: "https://hooks.example.com/x", authorization: "Bearer s3cret"}
             }
           }
         }
@@ -154,10 +197,156 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
                  format: "csv",
                  config: %{
                    "url" => "https://hooks.example.com/x",
-                   "headers" => %{"authorization" => "Bearer s3cret"}
+                   "authorization" => "Bearer s3cret"
                  }
                }
              ] = schedule.deliveries
+    end
+
+    test "a Slack destination takes its webhook URL, and has no format to choose", %{query: query} do
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/new?query_id=#{query.id}")
+
+      live |> element("#add-delivery") |> render_click()
+      assert has_element?(live, "#add-slack", "Slack")
+      live |> element("#add-slack") |> render_click()
+
+      refute has_element?(
+               live,
+               ~s(#delivery-0 input[type="radio"][name="draft[deliveries][0][format]"])
+             )
+
+      assert has_element?(
+               live,
+               ~s(#delivery-0 input[type="password"][name="draft[deliveries][0][values][webhook_url]"])
+             )
+
+      hook = "https://hooks.slack.com/services/T000/B000/XXXX"
+
+      assert {:error, {:live_redirect, _}} =
+               live
+               |> form("#schedule-form",
+                 draft: %{name: "To Slack", deliveries: %{"0" => %{values: %{webhook_url: hook}}}}
+               )
+               |> render_submit()
+
+      assert [%{deliveries: [%{channel: "slack", config: %{"webhook_url" => ^hook}}]}] =
+               Schedules.list_schedules()
+    end
+
+    test "a channel's settings form: email recipients as chips", %{query: query} do
+      put_channels(%{"mail" => Lotus.Web.Test.MailChannel})
+
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/new?query_id=#{query.id}")
+      live |> element("#add-delivery") |> render_click()
+      live |> element("#add-mail") |> render_click()
+
+      # The tag input's hook writes the addresses to the hidden input.
+      live
+      |> form("#schedule-form")
+      |> render_change(%{
+        draft: %{deliveries: %{"0" => %{values: %{to: "a@example.com,b@example.com"}}}}
+      })
+
+      assert has_element?(live, "#delivery-0-to-chip-0", "a@example.com")
+      assert has_element?(live, "#delivery-0-to-chip-1", "b@example.com")
+
+      live
+      |> element(~s(#delivery-0-to-chip-0 button))
+      |> render_click()
+
+      refute has_element?(live, "#delivery-0", "a@example.com")
+
+      # An address still being typed is saved too.
+      assert {:error, {:live_redirect, _}} =
+               live
+               |> form("#schedule-form",
+                 draft: %{
+                   name: "Mail",
+                   deliveries: %{
+                     "0" => %{pending: %{to: "c@example.com"}, values: %{subject: " Weekly "}}
+                   }
+                 }
+               )
+               |> render_submit()
+
+      assert [%{deliveries: [%{channel: "mail", config: config}]}] = Schedules.list_schedules()
+      assert config == %{"to" => ["b@example.com", "c@example.com"], "subject" => "Weekly"}
+    end
+
+    test "a channel that cannot send is shown with why, and cannot be added", %{query: query} do
+      put_channels(%{"pigeon" => Lotus.Web.Test.PigeonChannel})
+
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/new?query_id=#{query.id}")
+      live |> element("#add-delivery") |> render_click()
+
+      assert has_element?(live, "#add-pigeon[disabled]", "the pigeons are not set up")
+      render_click(with_target(live, "#schedules-page"), "add_delivery", %{"channel" => "pigeon"})
+      refute has_element?(live, "#delivery-0")
+    end
+
+    test "email is offered, and says what it needs until the app has a mailer", %{query: query} do
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/new?query_id=#{query.id}")
+      live |> element("#add-delivery") |> render_click()
+
+      assert has_element?(live, "#add-email[disabled]", "Not set up:")
+      assert has_element?(live, "#add-email", "Swoosh")
+    end
+
+    test "a channel that does not describe its settings takes them as JSON", %{query: query} do
+      put_channels(%{"plain" => Lotus.Web.Test.PlainChannel})
+
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/new?query_id=#{query.id}")
+      live |> element("#add-delivery") |> render_click()
+      live |> element("#add-plain") |> render_click()
+
+      html =
+        live
+        |> form("#schedule-form", draft: %{deliveries: %{"0" => %{json: "[1]"}}})
+        |> render_submit()
+
+      assert html =~ "must be a JSON object"
+
+      assert {:error, {:live_redirect, _}} =
+               live
+               |> form("#schedule-form",
+                 draft: %{name: "Plain", deliveries: %{"0" => %{json: ~s({"room": "ops"})}}}
+               )
+               |> render_submit()
+
+      assert [%{deliveries: [%{config: %{"room" => "ops"}}]}] = Schedules.list_schedules()
+    end
+
+    test "a webhook saved with an authorization header shows it in its field", %{query: query} do
+      schedule =
+        schedule_fixture(query, %{
+          deliveries: [
+            %{
+              channel: "webhook",
+              format: "json",
+              config: %{
+                "url" => "https://hooks.example.com/x",
+                "headers" => %{"authorization" => "Bearer old", "x-team" => "data"}
+              }
+            }
+          ]
+        })
+
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/#{schedule.id}")
+
+      assert has_element?(
+               live,
+               ~s(#delivery-0 input[name="draft[deliveries][0][values][authorization]"][value="Bearer old"])
+             )
+
+      live |> form("#schedule-form") |> render_submit()
+
+      assert %{deliveries: [%{config: config}]} = Schedules.get_schedule!(schedule.id)
+
+      assert config == %{
+               "url" => "https://hooks.example.com/x",
+               "authorization" => "Bearer old",
+               "headers" => %{"x-team" => "data"}
+             }
     end
 
     test "each frequency writes its cron", %{query: query} do
