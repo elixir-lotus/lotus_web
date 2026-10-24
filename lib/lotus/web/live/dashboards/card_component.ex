@@ -40,7 +40,8 @@ defmodule Lotus.Web.Dashboards.CardComponent do
         place: place(assigns.card.layout),
         folds?: not heading,
         folded: layout_value(assigns.card.layout || %{}, :folded, false) == true,
-        connecting: can_manage && Map.get(assigns, :connecting)
+        connecting: can_manage && Map.get(assigns, :connecting),
+        click_filters: Map.get(assigns, :click_filters) || %{}
       )
 
     ~H"""
@@ -125,7 +126,14 @@ defmodule Lotus.Web.Dashboards.CardComponent do
       >
         <%= case @card.card_type do %>
           <% :query -> %>
-            <.query_content card={@card} result={@result} error={@error} running={@running} />
+            <.query_content
+              card={@card}
+              result={@result}
+              error={@error}
+              running={@running}
+              click_filters={@click_filters}
+              parent={@parent}
+            />
           <% :text -> %>
             <TextCard.editor :if={@can_manage} card={@card} target={@parent} />
             <.text_content :if={not @can_manage} card={@card} values={@values} heading={@heading} />
@@ -463,6 +471,19 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   defp present?(nil), do: false
   defp present?(text) when is_binary(text), do: String.trim(text) != ""
 
+  # What a click on the chart does, for the pointer that rests on it.
+  defp click_hint(targets) when targets == %{}, do: nil
+
+  defp click_hint(targets) do
+    names =
+      targets
+      |> Map.values()
+      |> Enum.uniq_by(& &1.name)
+      |> Enum.map_join(", ", &(&1.label || &1.name))
+
+    gettext("Click the chart to filter by %{filters}", filters: names)
+  end
+
   defp default_title(%{card_type: :query, query: query}) when not is_nil(query) do
     query.name || gettext("Query")
   end
@@ -494,6 +515,9 @@ defmodule Lotus.Web.Dashboards.CardComponent do
             config={@card.visualization_config}
             height={:fill}
             export
+            select={@click_filters != %{} && "chart_select"}
+            phx-target={@parent}
+            title={click_hint(@click_filters)}
             class="lotus-card-chart"
           />
         </div>

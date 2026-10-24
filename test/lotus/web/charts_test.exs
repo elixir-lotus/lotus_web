@@ -1019,4 +1019,24 @@ defmodule Lotus.Web.ChartsTest do
       assert %{"data_table" => "none"} = Charts.build_config(config)
     end
   end
+
+  describe "chart/2: a KPI's history" do
+    test "a KPI or a trend with a history field has its spark, oldest first" do
+      months =
+        result(["month", "mrr"], [
+          [~D[2026-03-01], 300],
+          [~D[2026-02-01], 200],
+          [~D[2026-01-01], 100]
+        ])
+
+      for type <- ~w(kpi trend) do
+        config = %{"chart_type" => type, "value_field" => "mrr", "spark_field" => "month"}
+        assert %{"spark" => [100, 200, 300]} = wire(months, config)["single"]
+        assert %{"spark_field" => "month"} = Charts.build_config(config)
+      end
+
+      no_spark = %{"chart_type" => "kpi", "value_field" => "mrr"}
+      assert wire(months, no_spark)["single"]["spark"] == nil
+    end
+  end
 end

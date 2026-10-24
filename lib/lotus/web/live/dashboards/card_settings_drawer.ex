@@ -146,6 +146,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
         max_value: config["max_value"] || "100",
         goal_value: config["goal_value"] || "100",
         comparison_field: config["comparison_field"],
+        spark_field: config["spark_field"],
         y2_field: config["y2_field"],
         y2_axis_title: config["y2_axis_title"] || ""
       )
@@ -200,6 +201,20 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
                 placeholder={gettext("e.g. Total Orders")}
                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
               />
+            </div>
+            <div :if={@chart_type in ~w(kpi trend)}>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                <%= gettext("History") %> <span class="text-gray-400">(<%= gettext("optional") %>)</span>
+              </label>
+              <select
+                name="visualization[spark_field]"
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
+              >
+                <option value=""><%= gettext("None") %></option>
+                <%= for col <- @columns do %>
+                  <option value={col} selected={@spark_field == col}><%= col %></option>
+                <% end %>
+              </select>
             </div>
             <%= if @chart_type == "gauge" do %>
               <div class="grid grid-cols-2 gap-2">

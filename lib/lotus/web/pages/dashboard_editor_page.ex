@@ -15,6 +15,7 @@ defmodule Lotus.Web.DashboardEditorPage do
   alias Lotus.Web.Dashboards.CardRunner
   alias Lotus.Web.Dashboards.CardSettingsDrawer
   alias Lotus.Web.Dashboards.CardVariables
+  alias Lotus.Web.Dashboards.ChartFilters
   alias Lotus.Web.Dashboards.Components
   alias Lotus.Web.Dashboards.DateTokens
   alias Lotus.Web.Dashboards.FilterBarComponent
@@ -150,6 +151,7 @@ defmodule Lotus.Web.DashboardEditorPage do
                   selected_card_id={@selected_card && @selected_card.id}
                   can_manage={@can_manage and @editing}
                   connecting={@editing && Enum.find(@dashboard.filters, &(&1.name == @connecting))}
+                  filters={@dashboard.filters}
                   parent={@myself}
                 />
               <% end %>
@@ -781,6 +783,17 @@ defmodule Lotus.Web.DashboardEditorPage do
   @impl Phoenix.LiveComponent
   def handle_event("auto_refresh_tick", _params, socket) do
     {:noreply, run_all_cards(socket)}
+  end
+
+  # A click on a chart's mark filters the dashboard by it.
+  @impl Phoenix.LiveComponent
+  def handle_event("chart_select", params, socket) do
+    %{dashboard: dashboard, filter_values: filter_values} = socket.assigns
+
+    case ChartFilters.click(dashboard.cards, dashboard.filters, filter_values, params) do
+      {:ok, values} -> {:noreply, apply_filter_values(socket, values)}
+      :none -> {:noreply, socket}
+    end
   end
 
   @impl Phoenix.LiveComponent
