@@ -47,9 +47,7 @@ defmodule Lotus.Web.MixProject do
       {:kotoba, "~> 0.3"},
       {:masu, "~> 0.6"},
       # The charts.
-      # Fude's main until its next release: the dashboards' work needs it
-      # (mix fude.git_assets builds its browser files).
-      {:fude, github: "hattoriai/fude", branch: "main"},
+      {:fude, "~> 0.7"},
       # The schema diagram.
       {:hakushi, "~> 0.5"},
       {:phoenix_html, "~> 4.0"},
@@ -108,27 +106,9 @@ defmodule Lotus.Web.MixProject do
     end
   end
 
-  # Fude from GitHub has no built files (Hex has them): its JS, from its
-  # source, its style sheet and its maps. Until Fude's next release.
-  defp fude_git_assets(_args) do
-    static = Path.join(["deps", "fude", "priv", "static"])
-
-    unless File.exists?(Path.join(static, "fude.esm.js")) do
-      Mix.Task.run("esbuild", ["fude"])
-
-      File.cp!(
-        Path.join(["deps", "fude", "assets", "css", "fude.css"]),
-        Path.join(static, "fude.css")
-      )
-
-      File.cp_r!(Path.join(["deps", "fude", "assets", "maps"]), Path.join(static, "maps"))
-    end
-  end
-
   defp aliases do
     [
       "assets.build": [
-        "fude.git_assets",
         "tailwind default",
         "esbuild default",
         "esbuild mcp_chart",
@@ -136,7 +116,6 @@ defmodule Lotus.Web.MixProject do
         &copy_maps/1
       ],
       dev: "run --no-halt dev.exs",
-      "fude.git_assets": &fude_git_assets/1,
       # The compile and the asset build run in a child VM: once anything
       # compiles in this VM, Mix no longer finds the tasks of the Hex archive
       # (Elixir 1.20, Hex 2.5). hex.publish stays in this VM so that it can

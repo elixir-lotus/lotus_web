@@ -27,22 +27,6 @@ if config_env() == :dev do
       cd: Path.expand("../assets", __DIR__),
       env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
     ],
-    # Fude from GitHub, built from its source (mix fude.git_assets), until
-    # its next release.
-    fude: [
-      args: ~w(
-        src/index.ts
-        --bundle
-        --minify
-        --target=es2020
-        --external:phoenix
-        --external:phoenix_live_view
-        --format=esm
-        --outfile=../priv/static/fude.esm.js
-      ),
-      cd: Path.expand("../deps/fude/assets", __DIR__),
-      env: %{"NODE_PATH" => nil}
-    ],
     # Fude's style sheet for the chart MCP App, inlined into its document.
     mcp_chart_css: [
       args: ~w(
