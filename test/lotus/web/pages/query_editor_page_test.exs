@@ -255,6 +255,30 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
       assert html =~ "2 columns"
     end
 
+    test "what the user points at rides with the message, as chips" do
+      {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
+      set_ai_conversation(live, build_ai_conversation([]))
+
+      context =
+        Lotus.JSON.encode!([
+          %{
+            "kind" => "row",
+            "label" => "row 1 · status = pending",
+            "detail" => "row 1 of the results"
+          }
+        ])
+
+      html =
+        live
+        |> form("#ai-message-form", %{"message" => "Why is this pending?"})
+        # The hook sets the hidden field, which the form renders empty.
+        |> render_submit(%{"context" => context})
+
+      assert html =~ "row 1 · status = pending"
+      assert html =~ "Why is this pending?"
+      refute html =~ "I am pointing at"
+    end
+
     test "a previewed answer's chart goes into the editor as that chart" do
       {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
 

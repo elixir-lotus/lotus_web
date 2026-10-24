@@ -160,7 +160,7 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
         <% :tables -> %>
           <.tables_list sources_map={@sources_map} current_db={@current_db} current_db_info={@current_db_info} target={@myself} />
         <% :columns -> %>
-          <.columns_list columns={@columns} schema={@current_schema} />
+          <.columns_list columns={@columns} schema={@current_schema} table={@current_table} />
       <% end %>
     </div>
     """
@@ -204,7 +204,7 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
 
           <span class="sr-only"><%= gettext("Tables in Schema") %></span>
           <div class={["ml-5", if(@current_db_info.supports_schemas, do: "border-l border-gray-200 dark:border-gray-700", else: "ml-0")]}>
-            <div :for={table <- schema.tables} class="flex items-center py-1.5 px-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-r cursor-pointer" phx-click="select_table" phx-value-schema={schema.name} phx-value-table={table} phx-target={@target}>
+            <div :for={table <- schema.tables} class="flex items-center py-1.5 px-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-r cursor-pointer" phx-click="select_table" phx-value-schema={schema.name} phx-value-table={table} phx-target={@target} data-ai-pick="table" data-ai-pick-label={table}>
               <div class="flex-shrink-0 mr-3">
                 <Icons.tables class="h-4 w-4 text-green-500" />
               </div>
@@ -224,6 +224,8 @@ defmodule Lotus.Web.Queries.SchemaExplorerComponent do
         :for={column <- @columns}
         class="flex items-center py-2 px-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer"
         title={column[:comment]}
+        data-ai-pick="column"
+        data-ai-pick-label={if @table, do: "#{@table}.#{column.name}", else: column.name}
       >
         <div class="flex-shrink-0 mr-3">
           <.column_icon column={column} />

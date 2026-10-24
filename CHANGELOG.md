@@ -13,6 +13,13 @@
 
 ### Added
 
+- **Point at the page to ask the AI assistant about it.** "Point at", in
+  the assistant's composer, outlines and names what is under the pointer:
+  a column or a row of the results, a line or the selection in the editor,
+  a table or a column of the schema explorer. A click adds it to the
+  message as a chip (Shift and click adds several), and the model reads
+  what each one is: a row with its values, a column with a few of them.
+
 - **The AI assistant shows its work, and what a query returns.** While it
   answers, each step the model takes is listed as it happens (the tables
   it reads, the values it looks at, the check of the query), folded under

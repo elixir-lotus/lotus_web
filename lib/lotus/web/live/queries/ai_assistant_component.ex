@@ -344,9 +344,16 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
   attr(:current_statement, :string, default: nil)
 
   defp message(%{message: %{role: :user}} = assigns) do
+    assigns = assign(assigns, :context, Map.get(assigns.message, :context, []))
+
     ~H"""
-    <div id={"ai-message-#{@index}"} class="flex justify-end lotus-ai-in" title={time(@message)}>
-      <p class="lotus-ai-user max-w-[85%] text-sm whitespace-pre-wrap"><%= @message.content %></p>
+    <div id={"ai-message-#{@index}"} class="flex flex-col items-end gap-1.5 lotus-ai-in" title={time(@message)}>
+      <div :if={@context != []} class="flex flex-wrap justify-end gap-1.5 max-w-[85%]">
+        <span :for={item <- @context} class="lotus-ai-context-chip" data-kind={item["kind"]}>
+          <span class="truncate"><%= item["label"] %></span>
+        </span>
+      </div>
+      <p class="lotus-ai-user max-w-[85%] text-sm whitespace-pre-wrap"><%= Map.get(@message, :display, @message.content) %></p>
     </div>
     """
   end
@@ -801,7 +808,11 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
           generating={@generating}
         />
       </div>
-      <form id="ai-message-form" phx-submit="send_ai_message" phx-target={@parent} class="lotus-ai-composer">
+      <form id="ai-message-form" phx-submit="send_ai_message" phx-target={@parent} phx-hook="AiPicker" class="lotus-ai-composer">
+        <div id="ai-context-chips" phx-update="ignore">
+          <input type="hidden" name="context" value="" />
+          <div data-ai-chips data-remove-label={gettext("Remove")} hidden class="flex flex-wrap gap-1.5 px-3 pt-3"></div>
+        </div>
         <textarea
           id="ai-message-input"
           name="message"
@@ -812,10 +823,20 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
           disabled={@generating}
           phx-hook="AIMessageInput"
         ></textarea>
-        <div class="flex items-center justify-between px-2.5 pb-2">
-          <span class="text-[10px] text-gray-400 dark:text-gray-500 pl-1">
-            <%= gettext("Enter to send · Shift+Enter for a new line") %>
-          </span>
+        <div class="flex items-center justify-between gap-2 px-2.5 pb-2">
+          <button
+            type="button"
+            data-ai-pick-toggle
+            aria-pressed="false"
+            class="lotus-ai-pick-toggle"
+            title={gettext("Point at a column, a row or a line of the query to ask about it")}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5" aria-hidden="true">
+              <path d="M4 4l7 17 2.5-7.5L21 11z" />
+            </svg>
+            <span class="lotus-ai-pick-off"><%= gettext("Point at") %></span>
+            <span class="lotus-ai-pick-on"><%= gettext("Click what to ask about · Esc") %></span>
+          </button>
           <button
             type="submit"
             disabled={@generating}

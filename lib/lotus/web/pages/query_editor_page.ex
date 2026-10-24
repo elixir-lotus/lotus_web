@@ -602,8 +602,9 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   @impl Phoenix.LiveComponent
-  def handle_event("send_ai_message", %{"message" => message}, socket) do
-    authorize_ai(socket, fn -> ai_send_message(socket, message) end)
+  def handle_event("send_ai_message", %{"message" => message} = params, socket) do
+    context = ai_context(params["context"])
+    authorize_ai(socket, fn -> ai_send_message(socket, message, context) end)
   end
 
   @impl Phoenix.LiveComponent
@@ -1805,7 +1806,34 @@ defmodule Lotus.Web.QueryEditorPage do
     end
   end
 
-  defp ai_send_message(socket, message) do
+  # What the user pointed at on the page (the AiPicker hook), as it sends it:
+  # a few items of `kind`, `label` and `detail`, kept short.
+  defp ai_context(json) when is_binary(json) and json != "" do
+    case Lotus.JSON.decode(json) do
+      {:ok, items} when is_list(items) ->
+        items
+        |> Enum.filter(&match?(%{"label" => label} when is_binary(label), &1))
+        |> Enum.take(8)
+        |> Enum.map(fn item ->
+          Map.new(~w(kind label detail), &{&1, item[&1] |> to_string() |> String.slice(0, 500)})
+        end)
+
+      _ ->
+        []
+    end
+  end
+
+  defp ai_context(_json), do: []
+
+  # The message the model reads: the user's, then what they pointed at.
+  defp ai_prompt(message, []), do: message
+
+  defp ai_prompt(message, context) do
+    pointed = Enum.map_join(context, "\n", &"- #{&1["detail"] || &1["label"]}")
+    message <> "\n\nI am pointing at, on the page:\n" <> pointed
+  end
+
+  defp ai_send_message(socket, message, context) do
     data_source = resolve_data_source(socket)
 
     if is_nil(data_source) or data_source == "" do
@@ -1817,7 +1845,14 @@ defmodule Lotus.Web.QueryEditorPage do
 
       {:noreply, assign(socket, ai_conversation: conversation)}
     else
-      conversation = add_user_message(socket.assigns.ai_conversation, message)
+      prompt = ai_prompt(message, context)
+
+      conversation =
+        add_user_message(socket.assigns.ai_conversation, prompt,
+          display: message,
+          context: context
+        )
+
       query_context = build_ai_query_context(socket.assigns)
       actor = Actor.opts(socket.assigns)
 
@@ -1828,7 +1863,7 @@ defmodule Lotus.Web.QueryEditorPage do
         |> start_ai(:ai_generation, :generate, data_source, fn ai_opts ->
           Lotus.AI.generate_query_with_context(
             [
-              prompt: message,
+              prompt: prompt,
               data_source: data_source,
               conversation: conversation,
               query_context: query_context
@@ -2335,13 +2370,15 @@ defmodule Lotus.Web.QueryEditorPage do
     end
   end
 
-  defp add_user_message(conversation, content) do
-    message = %{
-      role: :user,
-      content: content,
-      statement: nil,
-      timestamp: DateTime.utc_now()
-    }
+  # `content` is what the model reads; `:display` and `:context`, what the
+  # panel shows of it when they differ: the user's words and the chips of
+  # what they pointed at.
+  defp add_user_message(conversation, content, opts \\ []) do
+    message =
+      Map.merge(
+        %{role: :user, content: content, statement: nil, timestamp: DateTime.utc_now()},
+        Map.new(Keyword.take(opts, [:display, :context]))
+      )
 
     %{
       conversation
