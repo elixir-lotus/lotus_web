@@ -29,21 +29,42 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
       ]}
       inert={!@visible}
     >
-      <%= if @visible do %>
-        <.header parent={@parent} conversation={@conversation} />
-        <.conversation_history
-          conversation={@conversation}
-          parent={@parent}
-          current_statement={@current_statement}
-          data_source={@data_source}
-        />
-        <.input_area
-          generating={@generating}
-          parent={@parent}
-          current_statement={@current_statement}
-          data_source={@data_source}
-        />
+      <%= cond do %>
+        <% not @visible -> %>
+        <% Lotus.Web.AI.missing_dependency?() -> %>
+          <.header parent={@parent} conversation={@conversation} />
+          <.missing_dependency />
+        <% true -> %>
+          <.header parent={@parent} conversation={@conversation} />
+          <.conversation_history
+            conversation={@conversation}
+            parent={@parent}
+            current_statement={@current_statement}
+            data_source={@data_source}
+          />
+          <.input_area
+            generating={@generating}
+            parent={@parent}
+            current_statement={@current_statement}
+            data_source={@data_source}
+          />
       <% end %>
+    </div>
+    """
+  end
+
+  # AI is switched on, but req_llm, which it needs, is not installed: the
+  # panel says so, where the conversation would be.
+  defp missing_dependency(assigns) do
+    ~H"""
+    <div id="ai-missing-dependency" class="flex-1 p-6 text-sm text-gray-600 dark:text-gray-300">
+      <p class="font-medium text-gray-900 dark:text-gray-100">
+        <%= gettext("The AI assistant is not installed") %>
+      </p>
+      <p class="mt-2">
+        <%= gettext("AI is enabled, but it needs the req_llm package. Add it to your app's dependencies and restart it:") %>
+      </p>
+      <pre class="mt-3 rounded bg-gray-100 dark:bg-gray-900 px-3 py-2 font-mono text-xs"><code><%= ~s({:req_llm, "~> 1.29"}) %></code></pre>
     </div>
     """
   end

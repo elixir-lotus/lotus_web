@@ -164,7 +164,7 @@ defmodule Lotus.Web.Layouts do
                 keys={["⌘", "Shift", "V"]}
                 alt_keys={["Ctrl", "Shift", "V"]}
               />
-              <%= if ai_enabled?() do %>
+              <%= if Lotus.Web.AI.assistant?() do %>
                 <.shortcut_item
                   description={gettext("Toggle AI Assistant")}
                   keys={["⌘", "J"]}
@@ -254,9 +254,5 @@ defmodule Lotus.Web.Layouts do
       </div>
     </div>
     """
-  end
-
-  defp ai_enabled? do
-    Lotus.AI.enabled?()
   end
 end

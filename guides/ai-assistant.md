@@ -19,7 +19,18 @@ The AI Assistant:
 
 ## Enabling the Feature
 
-AI features are disabled by default. To enable them, configure Lotus with your API key. See the [Lotus AI documentation](https://hexdocs.pm/lotus/ai_query_generation.html) for detailed setup instructions.
+AI features are disabled by default. They need [ReqLLM](https://hex.pm/packages/req_llm), an optional dependency of Lotus and Lotus Web: add it to your app's deps.
+
+```elixir
+def deps do
+  [
+    {:lotus_web, "~> 2.0"},
+    {:req_llm, "~> 1.29"}
+  ]
+end
+```
+
+Then configure Lotus with your API key. See the [Lotus AI documentation](https://hexdocs.pm/lotus/ai_query_generation.html) for detailed setup instructions.
 
 Quick example:
 
@@ -30,6 +41,11 @@ config :lotus, :ai,
   model: "openai:gpt-4o",
   api_key: System.get_env("OPENAI_API_KEY")
 ```
+
+With AI enabled but `req_llm` not installed, the dashboard shows no AI
+controls except the assistant's button, whose panel says which dependency
+to add; Lotus logs a warning once. The dashboard asks Lotus whether AI is on
+at every render, so a setting changed at runtime shows at once.
 
 ## AI Support Is Per Source
 
