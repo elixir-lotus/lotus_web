@@ -4000,3 +4000,38 @@ msgstr "Une ligne de la valeur selon ce champ (une date) sous le nombre"
 #, elixir-autogen, elixir-format
 msgid "Click the chart to filter by %{filters}"
 msgstr "Cliquez sur le graphique pour filtrer par %{filters}"
+
+#: lib/lotus/web/pages/dashboard_editor_page.ex:82
+#, elixir-autogen, elixir-format
+msgid "A copy of this dashboard, to change on its own"
+msgstr "Une copie de ce tableau de bord, à modifier à part"
+
+#: lib/lotus/web/pages/dashboard_editor_page.ex:84
+#, elixir-autogen, elixir-format
+msgid "Duplicate"
+msgstr "Dupliquer"
+
+#: lib/lotus/web/pages/dashboard_editor_page.ex:827
+#, elixir-autogen, elixir-format
+msgid "A copy of the dashboard, to change on its own."
+msgstr "Une copie du tableau de bord, à modifier à part."
+
+#: lib/lotus/web/pages/dashboard_editor_page.ex:830
+#, elixir-autogen, elixir-format
+msgid "The dashboard could not be copied."
+msgstr "Le tableau de bord n'a pas pu être copié."
+
+#: lib/lotus/web/dashboards/duplicate.ex:31
+#, elixir-autogen, elixir-format
+msgid "%{name} (copy)"
+msgstr "%{name} (copie)"
+
+#: lib/lotus/web/live/dashboards/components.ex:100
+#, elixir-autogen, elixir-format
+msgid "Full screen, for a wall or a TV (Escape leaves it)"
+msgstr "Plein écran, pour un mur ou une télévision (Échap pour quitter)"
+
+#: lib/lotus/web/live/dashboards/components.ex:100
+#, elixir-autogen, elixir-format
+msgid "Full screen"
+msgstr "Plein écran"

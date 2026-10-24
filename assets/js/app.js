@@ -68,6 +68,15 @@ window.addEventListener("phx:page-loading-stop", (info) => {
   topbar.hide();
 });
 
+// A dashboard's Full screen: the dashboard over the whole screen, again to
+// leave it (as Escape does).
+window.addEventListener("lotus:fullscreen", (event) => {
+  const board = event.target.closest(".lotus-dashboard");
+  if (!board) return;
+  if (document.fullscreenElement) document.exitFullscreen();
+  else board.requestFullscreen?.();
+});
+
 window.addEventListener("phx:open-blank", (event) => {
   window.open(event.detail.location, '_blank');
 });

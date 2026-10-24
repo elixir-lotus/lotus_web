@@ -4000,3 +4000,38 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Click the chart to filter by %{filters}"
 msgstr ""
+
+#: lib/lotus/web/pages/dashboard_editor_page.ex:82
+#, elixir-autogen, elixir-format
+msgid "A copy of this dashboard, to change on its own"
+msgstr ""
+
+#: lib/lotus/web/pages/dashboard_editor_page.ex:84
+#, elixir-autogen, elixir-format
+msgid "Duplicate"
+msgstr ""
+
+#: lib/lotus/web/pages/dashboard_editor_page.ex:827
+#, elixir-autogen, elixir-format
+msgid "A copy of the dashboard, to change on its own."
+msgstr ""
+
+#: lib/lotus/web/pages/dashboard_editor_page.ex:830
+#, elixir-autogen, elixir-format
+msgid "The dashboard could not be copied."
+msgstr ""
+
+#: lib/lotus/web/dashboards/duplicate.ex:31
+#, elixir-autogen, elixir-format
+msgid "%{name} (copy)"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:100
+#, elixir-autogen, elixir-format
+msgid "Full screen, for a wall or a TV (Escape leaves it)"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:100
+#, elixir-autogen, elixir-format
+msgid "Full screen"
+msgstr ""

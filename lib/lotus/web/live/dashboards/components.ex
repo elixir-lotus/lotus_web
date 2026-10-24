@@ -28,7 +28,7 @@ defmodule Lotus.Web.Dashboards.Components do
           <.link
             :if={@back}
             navigate={@back}
-            class="-ml-1 p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700"
+            class="lotus-dashboard-back -ml-1 p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700"
             aria-label={gettext("All dashboards")}
           >
             <Icons.chevron_left class="h-5 w-5" />
@@ -63,7 +63,7 @@ defmodule Lotus.Web.Dashboards.Components do
           <% end %>
         </p>
       </div>
-      <div :if={@actions != []} class="flex shrink-0 items-center gap-2">
+      <div :if={@actions != []} class="lotus-dashboard-actions flex shrink-0 items-center gap-2">
         <%= render_slot(@actions) %>
       </div>
     </div>
@@ -73,7 +73,7 @@ defmodule Lotus.Web.Dashboards.Components do
   @doc """
   A button of the head of a dashboard: an icon and a word.
   """
-  attr(:rest, :global, include: ~w(id))
+  attr(:rest, :global, include: ~w(id title))
   slot(:inner_block, required: true)
 
   def head_button(assigns) do
@@ -85,6 +85,22 @@ defmodule Lotus.Web.Dashboards.Components do
     >
       <%= render_slot(@inner_block) %>
     </button>
+    """
+  end
+
+  @doc """
+  Full screen: the dashboard over the whole screen, for a wall or a TV,
+  with no buttons (Escape leaves it).
+  """
+  def fullscreen_button(assigns) do
+    ~H"""
+    <.head_button
+      id="dashboard-fullscreen"
+      phx-click={JS.dispatch("lotus:fullscreen")}
+      title={gettext("Full screen, for a wall or a TV (Escape leaves it)")}
+    >
+      <Icons.maximize class="h-4 w-4" /> <%= gettext("Full screen") %>
+    </.head_button>
     """
   end
 

@@ -18,6 +18,7 @@ defmodule Lotus.Web.DashboardEditorPage do
   alias Lotus.Web.Dashboards.ChartFilters
   alias Lotus.Web.Dashboards.Components
   alias Lotus.Web.Dashboards.DateTokens
+  alias Lotus.Web.Dashboards.Duplicate
   alias Lotus.Web.Dashboards.FilterBarComponent
   alias Lotus.Web.Dashboards.FilterConnections
   alias Lotus.Web.Dashboards.FilterOptions
@@ -70,8 +71,18 @@ defmodule Lotus.Web.DashboardEditorPage do
               >
                 <Icons.rotate_ccw class="h-5 w-5" />
               </button>
+              <Components.fullscreen_button :if={@dashboard.cards != []} />
               <Components.head_button :if={@can_share} phx-click="toggle_settings" phx-target={@myself}>
                 <Icons.share class="h-4 w-4" /> <%= gettext("Share") %>
+              </Components.head_button>
+              <Components.head_button
+                :if={@can_manage and @page.mode == :edit}
+                id="dashboard-duplicate"
+                phx-click="duplicate"
+                phx-target={@myself}
+                title={gettext("A copy of this dashboard, to change on its own")}
+              >
+                <Icons.clipboard_copy class="h-4 w-4" /> <%= gettext("Duplicate") %>
               </Components.head_button>
               <Components.head_button
                 :if={@can_manage}
@@ -804,6 +815,22 @@ defmodule Lotus.Web.DashboardEditorPage do
   @impl Phoenix.LiveComponent
   def handle_event("add_filter", _params, socket) do
     authorize_manage(socket, fn -> do_add_filter(socket) end)
+  end
+
+  # A copy of the saved dashboard, opened at once.
+  @impl Phoenix.LiveComponent
+  def handle_event("duplicate", _params, socket) do
+    authorize_manage(socket, fn ->
+      with %{mode: :edit, id: id} <- socket.assigns.page,
+           {:ok, copy} <- Duplicate.copy(id, Actor.opts(socket.assigns)) do
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("A copy of the dashboard, to change on its own."))
+         |> push_navigate(to: lotus_path(["dashboards", copy.id]))}
+      else
+        _ -> {:noreply, put_flash(socket, :error, gettext("The dashboard could not be copied."))}
+      end
+    end)
   end
 
   # Connecting a filter: each card shows what the filter sets in it.

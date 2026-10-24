@@ -13,12 +13,28 @@
 
 ### Added
 
+- **Full screen, for a wall or a TV.** A dashboard's *Full screen* (on the
+  dashboard and its public link) shows it over the whole screen with no
+  buttons: its cards, its filters and when its data was read; with its
+  refresh, it stays up to date. Escape leaves it.
+- **Duplicate a dashboard.** *Duplicate* makes a copy of a saved dashboard,
+  "Name (copy)", with its filters (and what each depends on), its cards
+  and what each filter sets in each card, and opens it. Not its public
+  link: a copy is shared on its own.
+
+- **A card's query opens with the card's values.** A dashboard card's
+  *Open the query* opens its query in the editor with the values the card
+  ran with (the dashboard's filters, through the card's connections), so
+  the editor shows the rows behind the card. The editor takes values for a
+  query's variables in its URL: `?vars[region]=North`.
+
 - **A click on a chart filters the dashboard.** A bar, a slice or a
   region of a map sets the filter of its field (a filter of the same
   name, or one that sets a variable of that name in the card's query),
   and a click on it again clears it. Its series (the chart's color) sets
   its filter too. Out of edit mode, on the dashboard and its public link;
-  the chart says which filters a click sets. Fude 0.6's `select`.
+  the chart says which filters a click sets, and the bar a filter picks
+  stands out, the others faded. Fude's `select` and `selected`.
 
 - **Filters connect to cards on the dashboard.** In edit mode each filter
   says how many cards it is connected to (or that it is connected to none),

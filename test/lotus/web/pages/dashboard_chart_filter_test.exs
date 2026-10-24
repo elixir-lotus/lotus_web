@@ -53,6 +53,8 @@ defmodule Lotus.Web.Pages.DashboardChartFilterTest do
     })
 
     assert has_element?(live, ~s(#filter-bar input[name="filter[region]"][value="North"]))
+    # Its bar stands out, the others faded.
+    assert has_element?(live, ~s(#chart-#{chart.id}[data-fude-selected='{"x":"North"}']))
 
     render_hook(chart_el, "chart_select", %{
       "id" => "chart-#{chart.id}",
@@ -61,6 +63,7 @@ defmodule Lotus.Web.Pages.DashboardChartFilterTest do
     })
 
     refute has_element?(live, ~s(#filter-bar input[name="filter[region]"][value="North"]))
+    refute has_element?(live, "#chart-#{chart.id}[data-fude-selected]")
   end
 
   test "a chart with no filter of its fields, and a chart in edit mode, send no click", %{
@@ -79,6 +82,26 @@ defmodule Lotus.Web.Pages.DashboardChartFilterTest do
     live |> element("#dashboard-edit") |> render_click()
     render_async(live)
     refute has_element?(live, "#chart-#{chart.id}[data-fude-select]")
+  end
+
+  test "Open the query takes the card's values to the query editor", %{dashboard: dashboard} do
+    query =
+      query_fixture(%{
+        name: "By region",
+        statement: "SELECT {{region}} AS region",
+        variables: [%{name: "region", type: :text}]
+      })
+
+    card = query_card_fixture(dashboard, query, %{title: "One region", position: 1})
+    [region] = Lotus.list_dashboard_filters(dashboard.id)
+    {:ok, _} = Lotus.create_filter_mapping(card, region, "region")
+
+    {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}?region=North")
+
+    assert has_element?(
+             live,
+             ~s(#card-#{card.id}-menu-items a[href$="/queries/#{query.id}?vars[region]=North"])
+           )
   end
 
   test "a public dashboard filters by a click too", %{dashboard: dashboard, chart: chart} do

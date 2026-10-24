@@ -940,3 +940,16 @@
     --masu-cell-hover: rgb(var(--lotus-zinc-700));
     --masu-selection: rgb(var(--lotus-pink-500) / 0.16);
 }
+
+/* A dashboard in full screen, for a wall or a TV: the whole screen, its
+   cards and what they say, with no buttons to press. */
+.lotus-dashboard:fullscreen {
+    border-radius: 0;
+    overflow-y: auto;
+}
+
+.lotus-dashboard:fullscreen .lotus-dashboard-back,
+.lotus-dashboard:fullscreen .lotus-dashboard-actions,
+.lotus-dashboard:fullscreen .lotus-card-actions {
+    display: none;
+}
