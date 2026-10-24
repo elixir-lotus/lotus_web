@@ -34,4 +34,17 @@ defmodule Lotus.Web.Pro do
   def render_slot(name, assigns) do
     if available?(), do: apply(@pro_web, :render_slot, [name, assigns]), else: nil
   end
+
+  @doc """
+  Lets Pro watch a dashboard that a LiveView shows, for live updates: Pro
+  sends the LiveView `{:card_result, card_id, result}` when a card's data
+  changes, as a card that ran does. Does nothing without Pro.
+  """
+  @spec watch_dashboard(map(), pid()) :: :ok
+  def watch_dashboard(dashboard, pid) do
+    if available?() and function_exported?(@pro_web, :watch_dashboard, 2),
+      do: apply(@pro_web, :watch_dashboard, [dashboard, pid])
+
+    :ok
+  end
 end

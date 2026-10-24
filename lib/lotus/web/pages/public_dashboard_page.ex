@@ -10,29 +10,24 @@ defmodule Lotus.Web.PublicDashboardPage do
   alias Lotus.Web.Dashboards.CardGridComponent
   alias Lotus.Web.Dashboards.CardRunner
   alias Lotus.Web.Dashboards.CardVariables
+  alias Lotus.Web.Dashboards.Components
   alias Lotus.Web.Dashboards.FilterBarComponent
   alias Lotus.Web.Dashboards.FilterOptions
   alias Lotus.Web.Dashboards.FilterValues
-  alias Lotus.Web.Markdown
   alias Lotus.Web.Page
+  alias Lotus.Web.Pro
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
     ~H"""
     <div id="public-dashboard" class="flex flex-col h-full overflow-hidden">
       <div class="mx-auto w-full px-0 sm:px-0 lg:px-6 py-0 sm:py-6 h-full flex flex-col">
-        <div class="bg-white dark:bg-gray-800 shadow rounded-lg h-full flex flex-col overflow-hidden">
-          <%!-- Header --%>
-          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h1 class="lotus-title text-2xl font-bold text-gray-900 dark:text-white">
-              <%= @dashboard.name %>
-            </h1>
-            <%= if @dashboard.description do %>
-              <div class="mt-1 prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-400">
-                <%= Markdown.to_safe_html(@dashboard.description) %>
-              </div>
-            <% end %>
-          </div>
+        <div class="lotus-dashboard bg-gray-50 dark:bg-gray-900 shadow-sm ring-1 ring-black/5 dark:ring-white/10 rounded-lg h-full flex flex-col overflow-hidden">
+          <Components.dashboard_head
+            dashboard={@dashboard}
+            refreshed_at={@refreshed_at}
+            running={MapSet.size(@running_cards) > 0}
+          />
 
           <%!-- Filter Bar --%>
           <.live_component
@@ -47,7 +42,7 @@ defmodule Lotus.Web.PublicDashboardPage do
           />
 
           <%!-- Grid Content --%>
-          <div class="flex-1 overflow-y-auto p-4">
+          <div class="flex-1 overflow-y-auto px-4 sm:px-6 pt-2 pb-6">
             <%= if @dashboard.cards != [] do %>
               <.live_component
                 module={CardGridComponent}
@@ -68,7 +63,7 @@ defmodule Lotus.Web.PublicDashboardPage do
           </div>
 
           <%!-- Footer --%>
-          <div class="px-6 py-3 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-gray-500 dark:text-gray-400">
+          <div class="px-6 py-3 text-center text-xs text-gray-500 dark:text-gray-400">
             <%= gettext("Powered by") %>
             <a href="https://github.com/elixir-lotus/lotus" class="text-pink-600 hover:text-pink-700 dark:text-pink-400">
               Lotus
@@ -90,7 +85,8 @@ defmodule Lotus.Web.PublicDashboardPage do
       card_results: %{},
       card_errors: %{},
       running_cards: MapSet.new(),
-      card_runner: CardRunner.new(socket.assigns.card_concurrency)
+      card_runner: CardRunner.new(socket.assigns.card_concurrency),
+      refreshed_at: nil
     )
   end
 
@@ -114,6 +110,7 @@ defmodule Lotus.Web.PublicDashboardPage do
             {:noreply,
              socket
              |> assign(dashboard: dashboard, filter_values: filter_values)
+             |> watch()
              |> assign_filter_options()
              |> run_all_cards()}
         end
@@ -142,13 +139,31 @@ defmodule Lotus.Web.PublicDashboardPage do
     {:noreply, apply_filter_values(socket, FilterValues.normalize(filter_values))}
   end
 
+  # A card's new result from Pro's live updates (`Lotus.Web.Pro.watch_dashboard/2`).
   @impl Page
+  def handle_info({:card_result, card_id, result}, socket) do
+    {:noreply, socket |> put_card_result(card_id, {:ok, {:ok, result}}) |> mark_refreshed()}
+  end
+
   def handle_info(_msg, socket), do: {:noreply, socket}
+
+  # Pro's live updates of the dashboard's cards (`Lotus.Web.Pro.watch_dashboard/2`).
+  defp watch(socket) do
+    if connected?(socket), do: Pro.watch_dashboard(socket.assigns.dashboard, self())
+    socket
+  end
+
+  # When the last card running has its result, the dashboard was read.
+  defp mark_refreshed(socket) do
+    if MapSet.size(socket.assigns.running_cards) == 0,
+      do: assign(socket, refreshed_at: DateTime.utc_now()),
+      else: socket
+  end
 
   @impl Phoenix.LiveComponent
   def handle_async({:run_card, card_id}, result, socket) do
     case CardRunner.finish(socket, card_id, &prepare_card/2) do
-      {:ok, socket} -> {:noreply, put_card_result(socket, card_id, result)}
+      {:ok, socket} -> {:noreply, socket |> put_card_result(card_id, result) |> mark_refreshed()}
       :stale -> {:noreply, socket}
     end
   end

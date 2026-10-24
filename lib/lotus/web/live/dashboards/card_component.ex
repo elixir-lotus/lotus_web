@@ -12,18 +12,24 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   @impl Phoenix.LiveComponent
   def render(assigns) do
     is_public = Map.get(assigns, :public, false)
-    show_header = not (is_public and assigns.card.card_type in [:heading, :text])
-    # Selecting a card opens its settings, so a user who may not manage the
-    # dashboard gets neither the click nor the gear.
+    # Selecting a card opens its settings: in edit mode, for a user who may
+    # manage the dashboard (the page passes `can_manage` only then).
     can_manage = Map.get(assigns, :can_manage, true)
+    card_type = assigns.card.card_type
 
     assigns =
       assign(assigns,
-        show_header: show_header,
         is_public: is_public,
         can_manage: can_manage,
+        # A heading is its text, with no frame; a text or a link has a
+        # title bar when it has a title. A card being edited always has one,
+        # for its settings.
+        framed: can_manage or card_type != :heading,
+        show_header:
+          can_manage or card_type == :query or
+            (card_type in [:text, :link] and present?(assigns.card.title)),
         chart?:
-          assigns.card.card_type == :query and assigns.result != nil and
+          card_type == :query and assigns.result != nil and
             Charts.valid_config?(assigns.card.visualization_config),
         maximized: Map.get(assigns, :maximized, false)
       )
@@ -31,84 +37,165 @@ defmodule Lotus.Web.Dashboards.CardComponent do
     ~H"""
     <div
       id={@id}
-      class={card_classes(@selected, @card.card_type, @show_header, @is_public)}
-      style={grid_position(@card.layout)}
+      class={card_classes(@selected, @framed, @can_manage)}
+      style={grid_position(@card.layout, @framed)}
       phx-click={@can_manage && "select_card"}
       phx-value-card-id={@card.id}
       phx-target={@parent}
+      data-card-type={@card.card_type}
     >
-      <%= if @show_header do %>
-        <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
-          <h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">
-            <%= @card.title || default_title(@card) %>
-          </h3>
-          <div class="flex items-center gap-1">
-            <button
-              :if={@chart?}
-              id={"#{@id}-maximize"}
-              type="button"
-              phx-click="maximize"
-              phx-target={@myself}
-              class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-              title={gettext("Maximize")}
-              aria-label={gettext("Maximize")}
-            >
-              <Icons.maximize class="h-4 w-4" />
-            </button>
-            <button
-              :if={@chart?}
-              type="button"
-              phx-click={JS.dispatch("click", to: "#chart-#{@card.id} [data-fude-export=png]")}
-              class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-              title={gettext("Save as PNG")}
-              aria-label={gettext("Save as PNG")}
-            >
-              <Icons.download class="h-4 w-4" />
-            </button>
-          <%= unless Map.get(assigns, :public, false) do %>
-              <%= if @card.card_type == :query do %>
-                <button
-                  phx-click="refresh_card"
-                  phx-value-card-id={@card.id}
-                  phx-target={@parent}
-                  class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                  title={gettext("Refresh")}
-                >
-                  <Icons.rotate_ccw class={["h-4 w-4", @running && "animate-spin"]} />
-                </button>
-              <% end %>
-              <button
-                :if={@can_manage}
-                phx-click="open_card_settings"
-                phx-value-card-id={@card.id}
-                phx-target={@parent}
-                class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                title={gettext("Settings")}
-              >
-                <Icons.cog_6_tooth class="h-4 w-4" />
-              </button>
-          <% end %>
-          </div>
+      <div :if={@show_header} class="flex items-center gap-2 pl-4 pr-2 pt-2.5 pb-0.5 min-h-[2.5rem]">
+        <h3 class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <%= @card.title || default_title(@card) %>
+        </h3>
+        <div class={[
+          "lotus-card-actions flex items-center gap-0.5 transition-opacity",
+          not @can_manage && "opacity-0 group-hover/card:opacity-100 focus-within:opacity-100"
+        ]}>
+          <.card_button :if={@chart?} id={"#{@id}-maximize"} phx-click="maximize" phx-target={@myself} label={gettext("Maximize")}>
+            <Icons.maximize class="h-4 w-4" />
+          </.card_button>
+          <.card_button
+            :if={@can_manage}
+            phx-click="open_card_settings"
+            phx-value-card-id={@card.id}
+            phx-target={@parent}
+            label={gettext("Settings")}
+          >
+            <Icons.cog_6_tooth class="h-4 w-4" />
+          </.card_button>
+          <.card_menu
+            :if={@chart? or (@card.card_type == :query and not @is_public) or @can_manage}
+            id={"#{@id}-menu"}
+            card={@card}
+            chart?={@chart?}
+            public={@is_public}
+            can_manage={@can_manage}
+            running={@running}
+            parent={@parent}
+          />
         </div>
-      <% end %>
+      </div>
 
-      <div class={["flex-1 overflow-hidden", @show_header && "p-3"]}>
+      <div class={["flex-1 min-h-0 overflow-hidden", @show_header && "px-4 pt-1 pb-3", not @show_header && @framed && "p-4"]}>
         <%= case @card.card_type do %>
           <% :query -> %>
             <.query_content card={@card} result={@result} error={@error} running={@running} />
           <% :text -> %>
-            <.text_content content={@card.content} public={Map.get(assigns, :public, false)} />
+            <.text_content content={@card.content} public={@is_public} />
           <% :heading -> %>
-            <.heading_content content={@card.content} public={Map.get(assigns, :public, false)} />
+            <.heading_content content={@card.content} public={@is_public} />
           <% :link -> %>
             <.link_content content={@card.content} />
           <% _ -> %>
-            <.text_content content={@card.content} public={Map.get(assigns, :public, false)} />
+            <.text_content content={@card.content} public={@is_public} />
         <% end %>
       </div>
 
       <.maximized :if={@maximized and @chart?} id={@id} card={@card} result={@result} target={@myself} />
     </div>
+    """
+  end
+
+  attr(:label, :string, required: true)
+  attr(:rest, :global, include: ~w(id))
+  slot(:inner_block, required: true)
+
+  defp card_button(assigns) do
+    ~H"""
+    <button
+      type="button"
+      class="p-1.5 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700"
+      title={@label}
+      aria-label={@label}
+      {@rest}
+    >
+      <%= render_slot(@inner_block) %>
+    </button>
+    """
+  end
+
+  # The card's ⋯: what a viewer may do with it (refresh it, save its chart,
+  # open its query) and, in edit mode, remove it.
+  attr(:id, :string, required: true)
+  attr(:card, :map, required: true)
+  attr(:chart?, :boolean, required: true)
+  attr(:public, :boolean, required: true)
+  attr(:can_manage, :boolean, required: true)
+  attr(:running, :boolean, required: true)
+  attr(:parent, :any, required: true)
+
+  defp card_menu(assigns) do
+    assigns = assign(assigns, close: JS.hide(to: "##{assigns.id}-items"))
+
+    ~H"""
+    <div class="relative">
+      <.card_button
+        id={"#{@id}-button"}
+        phx-click={JS.toggle(to: "##{@id}-items") |> JS.focus_first(to: "##{@id}-items")}
+        label={gettext("More")}
+        aria-haspopup="menu"
+        aria-controls={"#{@id}-items"}
+      >
+        <Icons.ellipsis class="h-4 w-4" />
+      </.card_button>
+      <div
+        id={"#{@id}-items"}
+        role="menu"
+        class="absolute right-0 top-full z-30 mt-1 hidden w-48 rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/10 dark:bg-gray-800 dark:ring-white/10"
+        phx-click-away={@close}
+        phx-window-keydown={@close}
+        phx-key="Escape"
+      >
+        <.menu_item
+          :if={@card.card_type == :query and not @public}
+          phx-click={@close |> JS.push("refresh_card", value: %{"card-id" => @card.id}, target: @parent)}
+        >
+          <Icons.rotate_ccw class={["h-4 w-4", @running && "animate-spin"]} /> <%= gettext("Refresh") %>
+        </.menu_item>
+        <.menu_item
+          :if={@chart?}
+          phx-click={@close |> JS.dispatch("click", to: "#chart-#{@card.id} [data-fude-export=png]")}
+        >
+          <Icons.download class="h-4 w-4" /> <%= gettext("Save as PNG") %>
+        </.menu_item>
+        <.link
+          :if={@card.card_type == :query and @card.query_id != nil and not @public}
+          navigate={lotus_path(["queries", @card.query_id])}
+          role="menuitem"
+          class="flex w-full items-center gap-2 px-3 py-1.5 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+        >
+          <Icons.code_braces class="h-4 w-4" /> <%= gettext("Open the query") %>
+        </.link>
+        <.menu_item
+          :if={@can_manage}
+          class="text-red-600 dark:text-red-400"
+          phx-click={@close |> JS.push("delete_card", value: %{"card-id" => @card.id}, target: @parent)}
+        >
+          <Icons.trash class="h-4 w-4" /> <%= gettext("Remove from dashboard") %>
+        </.menu_item>
+      </div>
+    </div>
+    """
+  end
+
+  attr(:class, :any, default: nil)
+  attr(:rest, :global)
+  slot(:inner_block, required: true)
+
+  defp menu_item(assigns) do
+    ~H"""
+    <button
+      type="button"
+      role="menuitem"
+      class={[
+        "flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700",
+        @class || "text-gray-700 dark:text-gray-200"
+      ]}
+      {@rest}
+    >
+      <%= render_slot(@inner_block) %>
+    </button>
     """
   end
 
@@ -179,23 +266,21 @@ defmodule Lotus.Web.Dashboards.CardComponent do
     """
   end
 
-  defp grid_position(%{x: x, y: y, w: w, h: h}) do
-    min_height = h * 100
+  # Its place on the 12 columns, and its height (a row is 100px). A heading,
+  # with no frame, is as high as its text.
+  defp grid_position(nil, _framed), do: "grid-column: span 6; min-height: 400px;"
 
-    "grid-column: #{x + 1} / span #{w}; grid-row: #{y + 1} / span #{h}; min-height: #{min_height}px;"
+  defp grid_position(layout, framed) when is_map(layout) do
+    [x, y, w, h] =
+      for {key, default} <- [x: 0, y: 0, w: 6, h: 4], do: layout_value(layout, key, default)
+
+    min_height = if framed, do: " min-height: #{h * 100}px;"
+
+    "grid-column: #{x + 1} / span #{w}; grid-row: #{y + 1} / span #{h};#{min_height}"
   end
 
-  defp grid_position(nil), do: "grid-column: span 6; min-height: 400px;"
-
-  defp grid_position(layout) when is_map(layout) do
-    x = Map.get(layout, "x", Map.get(layout, :x, 0))
-    y = Map.get(layout, "y", Map.get(layout, :y, 0))
-    w = Map.get(layout, "w", Map.get(layout, :w, 6))
-    h = Map.get(layout, "h", Map.get(layout, :h, 4))
-    min_height = h * 100
-
-    "grid-column: #{x + 1} / span #{w}; grid-row: #{y + 1} / span #{h}; min-height: #{min_height}px;"
-  end
+  defp layout_value(layout, key, default),
+    do: Map.get(layout, key, Map.get(layout, Atom.to_string(key), default))
 
   # The plot's height: the card's (a row is 100px) less its header, its
   # padding and the chart's title.
@@ -210,31 +295,21 @@ defmodule Lotus.Web.Dashboards.CardComponent do
     max(h * 100 - 96, 120)
   end
 
-  defp card_classes(selected, card_type, show_header, is_public) do
-    base =
-      "flex flex-col bg-white dark:bg-gray-700 rounded-lg shadow-sm border-2 transition-all overflow-hidden"
-
-    base =
-      if is_public do
-        base
-      else
-        "#{base} cursor-pointer"
-      end
-
-    base =
-      if card_type == :heading and not show_header do
-        "#{base} p-4"
-      else
-        base
-      end
-
-    if selected do
-      "#{base} border-pink-500 ring-2 ring-pink-500/20"
-    else
-      hover = if is_public, do: "", else: " hover:border-gray-300 dark:hover:border-gray-500"
-      "#{base} border-transparent#{hover}"
-    end
+  # A card on the dashboard's canvas: white, with a soft edge. A heading is
+  # its text alone. In edit mode a card is picked by a click, and the picked
+  # one is outlined.
+  defp card_classes(selected, framed, editing) do
+    [
+      "group/card relative flex flex-col rounded-xl transition-shadow",
+      framed && "bg-white dark:bg-gray-800 shadow-sm ring-1 ring-black/[0.06] dark:ring-white/10",
+      editing && "cursor-pointer",
+      editing && not selected && "hover:ring-gray-300 dark:hover:ring-gray-500",
+      selected && "ring-2 ring-pink-500 dark:ring-pink-400"
+    ]
   end
+
+  defp present?(nil), do: false
+  defp present?(text) when is_binary(text), do: String.trim(text) != ""
 
   defp default_title(%{card_type: :query, query: query}) when not is_nil(query) do
     query.name || gettext("Query")
@@ -324,31 +399,25 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   defp format_cell(value), do: CellFormatter.format(value)
 
   defp text_content(assigns) do
-    text = get_content_text(assigns.content)
-    is_public = Map.get(assigns, :public, false)
-    html = render_markdown(text)
-    assigns = assign(assigns, html: html, is_public: is_public)
+    assigns = assign(assigns, html: render_markdown(get_content_text(assigns.content)))
 
     ~H"""
-    <div class={["prose prose-sm dark:prose-invert max-w-none", @is_public && "p-3"]}>
+    <div class="prose prose-sm dark:prose-invert max-w-none prose-headings:tracking-tight prose-p:text-gray-600 dark:prose-p:text-gray-300">
       <%= @html %>
     </div>
     """
   end
 
+  # A heading sits at the foot of its row, over the cards it names.
   defp heading_content(assigns) do
-    text = get_content_text(assigns.content)
-    is_public = Map.get(assigns, :public, false)
-    assigns = assign(assigns, text: text, is_public: is_public)
+    assigns = assign(assigns, text: get_content_text(assigns.content))
 
     ~H"""
-    <h2 class={[
-      "font-bold text-gray-900 dark:text-white",
-      @is_public && "text-2xl",
-      !@is_public && "text-xl"
-    ]}>
-      <%= @text %>
-    </h2>
+    <div class="flex h-full items-end">
+      <h2 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
+        <%= @text %>
+      </h2>
+    </div>
     """
   end
 

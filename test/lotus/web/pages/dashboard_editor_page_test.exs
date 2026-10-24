@@ -35,7 +35,8 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
       dashboard = dashboard_fixture(%{name: "Sales", description: "Old **text**"})
       {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
 
-      live |> element("button", "Save") |> render_click()
+      edit(live)
+      live |> element("#dashboard-edit-bar button", "Details") |> render_click()
 
       assert has_element?(live, "#dashboard-description-editor[phx-hook='Kotoba']")
 
@@ -64,7 +65,8 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
       dashboard = dashboard_fixture(%{name: "Sales", description: "Old"})
       {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
 
-      live |> element("button", "Save") |> render_click()
+      edit(live)
+      live |> element("#dashboard-edit-bar button", "Details") |> render_click()
 
       live
       |> element("#save-dashboard-modal form")
@@ -85,12 +87,13 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
       {:ok, dashboard: dashboard}
     end
 
-    test "loads existing dashboard", %{dashboard: dashboard} do
-      {:ok, _live, html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+    test "loads existing dashboard in view mode", %{dashboard: dashboard} do
+      {:ok, live, html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
 
       assert html =~ "Existing Dashboard"
-      assert html =~ "Delete"
-      assert html =~ "Save"
+      assert has_element?(live, "#dashboard-edit", "Edit")
+      refute has_element?(live, "#dashboard-edit-bar")
+      refute has_element?(live, "#add-card-btn")
     end
 
     test "redirects when dashboard not found" do
@@ -101,10 +104,11 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
 
     test "shows delete modal when clicking Delete button", %{dashboard: dashboard} do
       {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+      open_settings(live)
 
       html =
         live
-        |> element("button", "Delete")
+        |> element("button", "Delete Dashboard")
         |> render_click()
 
       assert html =~ "Delete Dashboard"
@@ -115,8 +119,10 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
       {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
 
       # Open delete modal
+      open_settings(live)
+
       live
-      |> element("button", "Delete")
+      |> element("button", "Delete Dashboard")
       |> render_click()
 
       # Confirm deletion - this triggers push_navigate
@@ -482,6 +488,7 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
     } do
       {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
 
+      edit(live)
       live |> element("#filter-bar button", "Add Filter") |> render_click()
 
       live
@@ -496,6 +503,7 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
         }
       })
 
+      edit(live)
       live |> element("#filter-bar button", "Add Filter") |> render_click()
 
       [_match, author_id] =
@@ -514,11 +522,7 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
         }
       })
 
-      live |> element("button", "Save") |> render_click()
-
-      live
-      |> element("#save-dashboard-modal form")
-      |> render_submit(%{"dashboard" => %{"name" => "Cascading Dashboard"}})
+      live |> element("#dashboard-save") |> render_click()
 
       filters = Map.new(Lotus.list_dashboard_filters(dashboard.id), &{&1.name, &1})
 
@@ -533,6 +537,7 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
       {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
 
       assert has_element?(live, "select[name='filter[post_title]'][disabled]")
+      edit(live)
 
       live
       |> element("button[phx-click='delete_filter'][phx-value-filter-id='#{parent.id}']")
@@ -781,6 +786,8 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
   defp unescape(html), do: html |> String.replace("&quot;", ~s(")) |> String.replace("&amp;", "&")
 
   defp open_filter_editor(live, filter) do
+    edit(live)
+
     live
     |> element("button[phx-click='edit_filter'][phx-value-filter-id='#{filter.id}']")
     |> render_click()
@@ -805,5 +812,16 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
     live
     |> element("#filter-modal form")
     |> render_submit(%{"filter" => Map.merge(base, params)})
+  end
+
+  # Edit mode, where a dashboard's cards, filters and settings are edited.
+  defp edit(live) do
+    if has_element?(live, "#dashboard-edit"),
+      do: live |> element("#dashboard-edit") |> render_click()
+  end
+
+  defp open_settings(live) do
+    edit(live)
+    live |> element("#dashboard-edit-bar button", "Settings") |> render_click()
   end
 end
