@@ -7,6 +7,7 @@ defmodule Lotus.Web.Dashboards.CardGridComponent do
   use Lotus.Web, :live_component
 
   alias Lotus.Web.Dashboards.CardComponent
+  alias Lotus.Web.Dashboards.CardVariables
   alias Lotus.Web.Dashboards.ChartFilters
 
   @impl Phoenix.LiveComponent
@@ -37,12 +38,30 @@ defmodule Lotus.Web.Dashboards.CardGridComponent do
           values={Map.get(assigns, :values, %{})}
           connecting={Map.get(assigns, :connecting)}
           click_filters={click_filters(assigns, card)}
+          query_vars={query_vars(assigns, card)}
           parent={@parent}
         />
       <% end %>
     </div>
     """
   end
+
+  # The values the card's query runs with, for its "Open the query": the
+  # rows behind the card, in the query editor.
+  defp query_vars(assigns, %{card_type: :query} = card) do
+    card.filter_mappings
+    |> CardVariables.build(
+      Map.get(assigns, :filters, []),
+      Map.get(assigns, :values, %{}),
+      Date.utc_today()
+    )
+    |> Map.new(fn {name, value} -> {name, url_value(value)} end)
+  end
+
+  defp query_vars(_assigns, _card), do: %{}
+
+  defp url_value(values) when is_list(values), do: Enum.map(values, &to_string/1)
+  defp url_value(value), do: to_string(value)
 
   # Out of edit mode, a click on a chart filters the dashboard by its mark.
   defp click_filters(assigns, card) do

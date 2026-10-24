@@ -327,7 +327,7 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   @impl Lotus.Web.Page
-  def handle_params(_params, _uri, socket) do
+  def handle_params(params, _uri, socket) do
     case socket.assigns.page do
       %{mode: :edit, id: id} ->
         case Lotus.get_query(id) do
@@ -341,6 +341,7 @@ defmodule Lotus.Web.QueryEditorPage do
             {:noreply,
              socket
              |> ensure_query_repo_default(query)
+             |> prefill_variables(query, params["vars"])
              |> assign_query_changeset(query)
              |> load_visualization(query)
              |> maybe_auto_run_query()}
@@ -1338,6 +1339,28 @@ defmodule Lotus.Web.QueryEditorPage do
       optional_variable_names: optional_names
     )
   end
+
+  # A query opened with values for its variables (`?vars[region]=North`,
+  # a dashboard card's "Open the query"): its defaults, and these over them.
+  # Only on the first open; a name that is no variable of the query is left out.
+  defp prefill_variables(socket, %Query{} = query, vars) when is_map(vars) do
+    if Map.get(socket.assigns, :variable_values) do
+      socket
+    else
+      names = Enum.map(query.variables, & &1.name)
+
+      values =
+        query.variables
+        |> Enum.filter(& &1.default)
+        |> Map.new(&{&1.name, &1.default})
+        |> Map.merge(Map.take(vars, names))
+        |> Variables.normalize_values(query.variables)
+
+      assign(socket, variable_values: values)
+    end
+  end
+
+  defp prefill_variables(socket, _query, _vars), do: socket
 
   defp ensure_query_repo_default(socket, %Query{} = q) do
     if q.data_source in socket.assigns.data_source_names do

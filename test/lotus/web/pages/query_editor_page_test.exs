@@ -73,6 +73,25 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
       refute html =~ "bob@test.com"
     end
 
+    test "a query opened with values for its variables runs with them (a dashboard card's)" do
+      create_test_users()
+
+      query =
+        query_fixture(%{
+          name: "Prefilled Query",
+          statement: "SELECT name, email FROM test_users WHERE name = {{name}}",
+          variables: [%{name: "name", type: "text", widget: "input", default: "Alice"}]
+        })
+
+      {:ok, live, _html} =
+        live(build_conn(), "/lotus/queries/#{query.id}?vars[name]=Bob&vars[other]=x")
+
+      assert has_element?(live, ~s(input[name="variables[name]"][value="Bob"]))
+      html = render_async(live)
+      assert html =~ "bob@test.com"
+      refute html =~ "alice@test.com"
+    end
+
     test "a date variable is a date picker with its default" do
       query =
         query_fixture(%{

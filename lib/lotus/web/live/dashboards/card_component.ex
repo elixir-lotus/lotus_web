@@ -42,7 +42,8 @@ defmodule Lotus.Web.Dashboards.CardComponent do
         folds?: not heading,
         folded: layout_value(assigns.card.layout || %{}, :folded, false) == true,
         connecting: can_manage && Map.get(assigns, :connecting),
-        click_filters: Map.get(assigns, :click_filters) || %{}
+        click_filters: Map.get(assigns, :click_filters, %{}),
+        query_vars: Map.get(assigns, :query_vars, %{})
       )
 
     ~H"""
@@ -116,6 +117,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
             public={@is_public}
             can_manage={@can_manage}
             running={@running}
+            query_vars={@query_vars}
             parent={@parent}
           />
         </div>
@@ -270,6 +272,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   attr(:public, :boolean, required: true)
   attr(:can_manage, :boolean, required: true)
   attr(:running, :boolean, required: true)
+  attr(:query_vars, :map, default: %{})
   attr(:parent, :any, required: true)
 
   defp card_menu(assigns) do
@@ -312,7 +315,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
         </.menu_item>
         <.link
           :if={@card.card_type == :query and @card.query_id != nil and not @public}
-          navigate={lotus_path(["queries", @card.query_id])}
+          navigate={lotus_path(["queries", @card.query_id], query_params(@query_vars))}
           role="menuitem"
           class="flex w-full items-center gap-2 px-3 py-1.5 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
         >
@@ -472,6 +475,10 @@ defmodule Lotus.Web.Dashboards.CardComponent do
 
   defp present?(nil), do: false
   defp present?(text) when is_binary(text), do: String.trim(text) != ""
+
+  # The card's values in the query editor's URL (`?vars[region]=North`).
+  defp query_params(vars) when vars == %{}, do: %{}
+  defp query_params(vars), do: %{vars: vars}
 
   # What a click on the chart does, for the pointer that rests on it.
   defp click_hint(targets) when targets == %{}, do: nil

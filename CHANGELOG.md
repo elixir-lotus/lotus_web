@@ -13,6 +13,12 @@
 
 ### Added
 
+- **A card's query opens with the card's values.** A dashboard card's
+  *Open the query* opens its query in the editor with the values the card
+  ran with (the dashboard's filters, through the card's connections), so
+  the editor shows the rows behind the card. The editor takes values for a
+  query's variables in its URL: `?vars[region]=North`.
+
 - **A click on a chart filters the dashboard.** A bar, a slice or a
   region of a map sets the filter of its field (a filter of the same
   name, or one that sets a variable of that name in the card's query),
