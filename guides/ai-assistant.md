@@ -8,6 +8,9 @@ The AI Query Assistant helps you write queries from natural language description
 
 The AI Assistant:
 - **Conversational** - Multi-turn chat interface for iterative query building and refinement
+- **Shows its work** - Each step the AI takes (the tables it reads, the values it looks at, the check of the query) appears as it happens
+- **Shows what a query returns** - An answer previews its first rows and the chart they suggest, before you use it
+- **Point at the page** - Click a column, a row or a line of the query to ask about it
 - **BYOK (Bring Your Own Key)** - You provide and manage your own API keys
 - **Adapter-driven** - The source's adapter supplies the query language, an example query, and syntax notes through its `ai_context/1` callback
 - **Source-aware** - Introspects the selected data source before it answers
@@ -69,7 +72,7 @@ Lotus.AI.unsupported_reason("my_source", :optimization)
 # => "Query plans are not available for this engine."
 ```
 
-In this release the dashboard does not pre-check those two functions — the **Explain query** and **Optimize query** buttons are enabled whenever the editor holds a non-empty query. Asking for a feature the source does not support returns the refusal as an error bubble in the conversation instead of a disabled button.
+The dashboard asks `unsupported_reason/2` for the selected source: when a source cannot explain or optimize, the **Explain query** or **Optimize query** button is disabled, with the reason as its tooltip.
 
 ### The Trust Boundary
 
@@ -86,7 +89,14 @@ The built-in Ecto adapter and its per-dialect wrappers are always trusted. For a
 
 ### 1. Opening the Assistant
 
-Click the **robot icon** in the query editor toolbar, or press **Cmd/Ctrl+J**. A conversational drawer slides in from the left with a chat interface. If this is your first time, you'll see example prompts to help you get started.
+Click the **robot icon** in the query editor toolbar, or press **Cmd/Ctrl+J**. A drawer slides in from the left. When the conversation is empty it offers a few prompts made of the source's own tables ("Total amount by month in orders", "How many users are there by status?"); click one to send it.
+
+From the command palette (**Cmd/Ctrl+K**) on the query editor:
+
+- **Ask AI** asks for a question and sends it: the drawer opens on it, as if it had been typed there.
+- **Open AI assistant** opens the drawer.
+
+Both are offered only when AI is enabled and you may use it.
 
 The icon appears only when AI is enabled and configured. Clicking it without configuration raises a flash message instead of opening the drawer.
 
@@ -103,18 +113,35 @@ Type your message in the input at the bottom of the drawer and press **Enter** t
 - "Show users"
 - "Data"
 
-### 3. Reviewing Generated Queries
+### 3. Watching the AI Work
 
-The AI responds in a chat bubble with the generated query. **Always review the query** before using it:
+While the AI answers, each step it takes is listed as it happens: "Listing the tables · 5 tables", "Reading orders · 6 columns", "Looking at the values of orders.status · completed, pending, shipped", "Checking the query · valid". Once the answer arrives the steps fold into one line above it ("Read 2 tables · 4.2s", with the tables named); click it to see them again. The editor stays usable the whole time.
+
+The steps need Lotus's `:on_tool_call` (see the [Lotus AI documentation](https://hexdocs.pm/lotus/ai_query_generation.html#showing-the-work-as-it-happens)); with an older Lotus the answer arrives without them.
+
+### 4. Reviewing Generated Queries
+
+The answer shows the query highlighted as the editor highlights it, with a copy button. **Always review the query** before using it:
 
 1. Check that it reads the right tables or indices
 2. Verify joins, or the equivalent shape for your engine, are correct
 3. Confirm filters match your intent
 4. Check that the result set is bounded
 
-Click the **"Use this query"** button on any AI message containing a query to insert it into the editor.
+Click **"Use this query"** to insert it into the editor.
 
-### 4. AI-Generated Variables
+When the editor already holds a query and the answer changes it (a follow-up such as "only completed orders"), the answer shows the change instead: the lines it adds and removes, with a count ("+1 −0"), and the button reads **"Apply change"**.
+
+#### The preview
+
+A query that needs no variables runs as soon as it arrives, read-only, for its first 50 rows. It runs only for a user who may run queries on the source, and goes through the same visibility rules and middleware as the Run button. The answer then shows:
+
+- **A chart, when the columns suggest one** — a line when the first column holds dates, bars when it holds names, a single number for one row of one number. It charts a measure (an amount, a revenue, a total) before a count.
+- **The first five rows**, and how many it read.
+
+When it suggests a chart, a second button puts the query in the editor as that chart and runs it: **"Use as line chart"**, **"Use as bar chart"** or **"Use as KPI card"**. If the query fails, the answer says why under it.
+
+### 5. AI-Generated Variables
 
 When your query uses `{{variable}}` placeholders, the AI can also generate variable configurations alongside the query — including type, widget, label, default value, and static options.
 
@@ -132,7 +159,7 @@ Show orders filtered by status with a dropdown, and by date range
 
 Against a Postgres source the AI may generate `SELECT * FROM orders WHERE status = {{status}} AND created_at >= {{start_date}}` along with variable configs: `status` as a select widget with options from the `status` column, and `start_date` as a date input.
 
-### 5. Iterating with Follow-Up Messages
+### 6. Iterating with Follow-Up Messages
 
 The conversation keeps full context, so you can refine queries naturally:
 - "Only return 100 rows"
@@ -140,19 +167,31 @@ The conversation keeps full context, so you can refine queries naturally:
 - "Also include the customer email"
 - "That's not right — the status column is called `state`"
 
-### 6. Fixing Errors Automatically
+#### Pointing at the page
 
-When a query execution fails while the AI drawer is open, the error appears in the conversation, with the failed query behind a **"Show failed query"** disclosure. Click **"Ask AI to fix this"** to send the error context to the AI, which will attempt to generate a corrected query.
+**Point at**, under the message box, lets you show the AI what you mean. While it is on, what is under the pointer is outlined and named:
+
+- a **column** of the results (the AI is told its name and a few of its values);
+- a **row** of the results, from any of its cells (the AI is told every value in the row);
+- a **line** of the query in the editor, or the **selection** there;
+- a **table** or a **column** in the schema explorer.
+
+Click to add it to your message as a chip; Shift-click to add several, and Esc to stop. Remove a chip with its ×. The chips stay above your message in the conversation, and the AI reads what each one is, so "Why is this one still pending?" knows which order you mean.
+
+### 7. Fixing Errors Automatically
+
+When a query execution fails while the AI drawer is open, the error appears in the conversation, with the failed query behind a **"Show the query"** disclosure. Click **"Ask AI to fix this"** to send the error context to the AI, which will attempt to generate a corrected query.
 
 Where the adapter declares `:error_patterns`, a matching engine error also contributes a hint to the fix suggestions — for example, the Elasticsearch adapter turns `index_not_found_exception` into "The index does not exist. List available indices via list_tables."
 
-### 7. Managing the Conversation
+### 8. Managing the Conversation
 
-- The header shows the message count and how many queries have been generated
-- Click the **trash icon** to clear the conversation and start fresh
-- Scroll through conversation history — the chat auto-scrolls to new messages
+- The header names the data source the assistant works on
+- Click **+** in the header to start a new conversation
+- The conversation follows new messages and steps, unless you have scrolled up to read an earlier one
+- Hover a message to see the time it was sent
 
-Provider-level failures (rate limits, authentication, timeouts) render as amber **Service Unavailable** bubbles, distinct from red query errors.
+Provider-level failures (rate limits, authentication, timeouts) render as neutral **Service Unavailable** notes, distinct from failed queries.
 
 ## Explaining Queries
 
@@ -168,7 +207,7 @@ There are two ways to trigger an explanation:
 Clicking either button:
 - Adds an "Explain this query" message to the conversation
 - Sends the current query to the AI for analysis
-- Displays the explanation as formatted text with inline code, bullet points, and paragraphs
+- Shows the explanation as it is written, then as formatted text with inline code, bullet points, and paragraphs (streaming needs Lotus's `:on_text`; with an older Lotus the explanation arrives at once)
 
 The explanation covers what the query does step by step — what it reads, how it combines and filters, any aggregation, and the shape of the result set.
 
@@ -204,15 +243,15 @@ Core runs the adapter's `prepare_for_analysis/2` and `query_plan/3` first. SQL s
 
 ### Reading Optimization Suggestions
 
-Each suggestion is rendered as a card with:
-- **Type pill** — The kind of optimization: `index`, `rewrite`, `structure`, or `configuration`
-- **Impact pill** — Expected improvement level: `high` (red), `medium` (yellow), or `low` (green)
+Each suggestion is a card that opens and closes; the first one is open. It shows:
+- **An impact meter** — three bars, filled for `high`, two for `medium`, one for `low`
 - **Title** — A short summary of the suggestion
-- **Details** — Full explanation, often including an exact statement (for example a `CREATE INDEX`)
+- **Its kind and impact** — `index`, `rewrite`, `structure` or `configuration`, and the impact in words
+- **Details** — The explanation, with any exact statement (a `CREATE INDEX`, say) set apart and highlighted, with a copy button
 
 If the query is already well-optimized, you'll see a success message instead.
 
-> The `structure` type replaces the pre-1.0 `schema` type. A model that still emits `{"type": "schema", ...}` renders with the neutral fallback colour.
+> The `structure` type replaces the pre-1.0 `schema` type. A model that still emits `{"type": "schema", ...}` shows its type as it is.
 
 ### Lotus Variable Syntax
 
@@ -326,7 +365,7 @@ The AI will respond: `UNABLE_TO_GENERATE: api_keys table not available`
 
 - **English recommended** - Other languages may work but aren't tested
 - **Session-only history** - Conversation is not persisted across page reloads
-- **No per-feature button gating** - The dashboard does not yet grey out actions a source cannot support; the refusal arrives as an error message in the conversation
+- **Previews need no variables** - A query with `{{variables}}` is not previewed; use it and run it with values
 
 ### When AI Can't Help
 
@@ -379,7 +418,7 @@ Query generation typically takes 2-10 seconds depending on:
 - LLM model
 - Network latency
 
-This is normal! The AI is introspecting your data source.
+This is normal! The AI is introspecting your data source; the steps in the drawer show what it is doing.
 
 ### Incorrect Queries
 
