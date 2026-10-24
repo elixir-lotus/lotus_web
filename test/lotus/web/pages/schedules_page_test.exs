@@ -30,7 +30,23 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
       ]
 
     def validate_config(_config), do: :ok
-    def deliver(_content, _attachments, _config), do: :ok
+
+    # A test is sent from a task: it tells the test process, by name.
+    def deliver(content, _attachments, config) do
+      if pid = Process.whereis(:lotus_web_delivery_test),
+        do: send(pid, {:delivered, content.title, config})
+
+      :ok
+    end
+  end
+
+  defmodule Elixir.Lotus.Web.Test.ClosedChannel do
+    @moduledoc false
+    @behaviour Lotus.Delivery.Channel
+    def formats, do: :any
+    def settings, do: [%{key: "room", label: "Room", type: :text}]
+    def validate_config(_config), do: :ok
+    def deliver(_content, _attachments, _config), do: {:error, "the room is closed"}
   end
 
   defmodule Elixir.Lotus.Web.Test.PigeonChannel do
@@ -273,6 +289,38 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
       assert config == %{"to" => ["b@example.com", "c@example.com"], "subject" => "Weekly"}
     end
 
+    test "sends a test to a destination as it stands in the form", %{query: query} do
+      put_channels(%{"mail" => Lotus.Web.Test.MailChannel})
+      Process.register(self(), :lotus_web_delivery_test)
+
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/new?query_id=#{query.id}")
+      live |> element("#add-delivery") |> render_click()
+      live |> element("#add-mail") |> render_click()
+
+      live
+      |> form("#schedule-form", draft: %{name: "Weekly revenue"})
+      |> render_change(%{draft: %{deliveries: %{"0" => %{values: %{to: "ops@example.com"}}}}})
+
+      live |> element("#test-delivery-0") |> render_click()
+      render_async(live)
+
+      assert has_element?(live, "#test-delivery-0-result", "Test sent")
+      assert_received {:delivered, "Test: Weekly revenue", %{"to" => ["ops@example.com"]}}
+      assert Schedules.list_schedules() == []
+    end
+
+    test "a test that fails says the channel's reason", %{query: query} do
+      put_channels(%{"closed" => Lotus.Web.Test.ClosedChannel})
+
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/new?query_id=#{query.id}")
+      live |> element("#add-delivery") |> render_click()
+      live |> element("#add-closed") |> render_click()
+      live |> element("#test-delivery-0") |> render_click()
+      render_async(live)
+
+      assert has_element?(live, "#test-delivery-0-result", "the room is closed")
+    end
+
     test "a channel that cannot send is shown with why, and cannot be added", %{query: query} do
       put_channels(%{"pigeon" => Lotus.Web.Test.PigeonChannel})
 
@@ -509,6 +557,9 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
 
       render_click(with_target(live, "#schedules-page"), "delete_schedule", %{})
       assert Schedules.get_schedule(schedule.id)
+
+      render_click(with_target(live, "#schedules-page"), "test_delivery", %{"index" => "0"})
+      refute has_element?(live, "#test-delivery-0-result")
     end
   end
 end

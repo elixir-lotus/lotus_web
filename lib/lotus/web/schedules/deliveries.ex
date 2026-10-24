@@ -330,9 +330,15 @@ defmodule Lotus.Web.Schedules.Deliveries do
   attr(:index, :integer, required: true)
   attr(:delivery, :map, required: true)
   attr(:spec, :map, required: true)
+
+  attr(:test, :any,
+    default: nil,
+    doc: "the last test: `:sending`, `:sent` or `{:error, message}`"
+  )
+
   attr(:target, :any, required: true)
 
-  @doc "A destination's card: its channel, format and fields."
+  @doc "A destination's card: its channel, format and fields, and its test."
   def destination(assigns) do
     ~H"""
     <div id={@id} class="rounded-lg border border-gray-200 dark:border-gray-700">
@@ -362,6 +368,19 @@ defmodule Lotus.Web.Schedules.Deliveries do
         <input :if={not format_choice?(@spec)} type="hidden" name={"draft[deliveries][#{@index}][format]"} value={@delivery["format"]} />
         <button
           type="button"
+          id={"test-delivery-#{@index}"}
+          phx-click="test_delivery"
+          phx-value-index={@index}
+          phx-target={@target}
+          disabled={@test == :sending or match?({:error, _}, @spec.available)}
+          title={gettext("Send sample results here now, to check the settings")}
+          class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 dark:ring-gray-600 dark:hover:bg-gray-700"
+        >
+          <Icons.send class="h-3.5 w-3.5" />
+          <%= if @test == :sending, do: gettext("Sending…"), else: gettext("Send a test") %>
+        </button>
+        <button
+          type="button"
           id={"remove-delivery-#{@index}"}
           phx-click="remove_delivery"
           phx-value-index={@index}
@@ -375,6 +394,7 @@ defmodule Lotus.Web.Schedules.Deliveries do
       </div>
 
       <div class="space-y-3 p-3">
+        <.test_result id={"test-delivery-#{@index}-result"} test={@test} />
         <p
           :if={match?({:error, _}, @spec.available)}
           class="flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
@@ -413,6 +433,31 @@ defmodule Lotus.Web.Schedules.Deliveries do
     </div>
     """
   end
+
+  attr(:id, :string, required: true)
+  attr(:test, :any, required: true)
+
+  defp test_result(%{test: :sent} = assigns) do
+    ~H"""
+    <p id={@id} class="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-xs text-green-800 dark:bg-green-950/30 dark:text-green-300">
+      <Icons.check class="h-4 w-4 shrink-0" />
+      <%= gettext("Test sent. Check that it arrived.") %>
+    </p>
+    """
+  end
+
+  defp test_result(%{test: {:error, message}} = assigns) do
+    assigns = assign(assigns, :message, message)
+
+    ~H"""
+    <p id={@id} class="flex items-start gap-2 rounded-md bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-300">
+      <Icons.exclamation_circle class="mt-0.5 h-4 w-4 shrink-0" />
+      <span><%= gettext("The test was not sent: %{reason}", reason: @message) %></span>
+    </p>
+    """
+  end
+
+  defp test_result(assigns), do: ~H""
 
   attr(:setting, :map, required: true)
   attr(:value, :any, required: true)
