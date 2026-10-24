@@ -143,7 +143,7 @@ defmodule Lotus.Web.Queries.ChartOptions do
         <.switch config={@config} prefix={@prefix} key="sparkline_value" label={gettext("Write the last value")} />
       </section>
 
-      <section :if={Enum.any?(~w(stack sort smooth y_axis_zero animate), &(&1 in @keys))} class="space-y-3">
+      <section :if={Enum.any?(~w(stack sort smooth y_axis_zero animate data_table), &(&1 in @keys))} class="space-y-3">
         <.heading>{gettext("Layout")}</.heading>
         <.choice
           :if={"stack" in @keys and @series?}
@@ -176,6 +176,19 @@ defmodule Lotus.Web.Queries.ChartOptions do
           key="animate"
           default={true}
           label={gettext("Animate changes")}
+        />
+        <.choice
+          :if={"data_table" in @keys}
+          config={@config}
+          prefix={@prefix}
+          key="data_table"
+          label={gettext("Data table")}
+          input={@input}
+          options={[
+            {"", gettext("In the chart's place")},
+            {"below", gettext("Under the chart")},
+            {"none", gettext("None")}
+          ]}
         />
         <.switch
           :if={"y_axis_zero" in @keys}
