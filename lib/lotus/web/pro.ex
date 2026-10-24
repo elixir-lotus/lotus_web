@@ -1,14 +1,15 @@
 defmodule Lotus.Web.Pro do
   @moduledoc false
 
-  @pro_web Lotus.Pro.Web
+  # The module, a setting only so that tests can stand in for it.
+  defp pro_web, do: Application.get_env(:lotus_web, :__pro_web__, Lotus.Pro.Web)
 
   @doc """
   Returns `true` if `Lotus.Pro.Web` is available at runtime.
   """
   @spec available?() :: boolean()
   def available? do
-    Code.ensure_loaded?(@pro_web)
+    Code.ensure_loaded?(pro_web())
   end
 
   @doc """
@@ -16,7 +17,7 @@ defmodule Lotus.Web.Pro do
   """
   @spec extra_pages() :: [map()]
   def extra_pages do
-    if available?(), do: apply(@pro_web, :pages, []), else: []
+    if available?(), do: apply(pro_web(), :pages, []), else: []
   end
 
   @doc """
@@ -24,7 +25,7 @@ defmodule Lotus.Web.Pro do
   """
   @spec nav_items(map()) :: [map()]
   def nav_items(assigns) do
-    if available?(), do: apply(@pro_web, :nav_items, [assigns]), else: []
+    if available?(), do: apply(pro_web(), :nav_items, [assigns]), else: []
   end
 
   @doc """
@@ -32,7 +33,7 @@ defmodule Lotus.Web.Pro do
   """
   @spec render_slot(atom(), map()) :: term() | nil
   def render_slot(name, assigns) do
-    if available?(), do: apply(@pro_web, :render_slot, [name, assigns]), else: nil
+    if available?(), do: apply(pro_web(), :render_slot, [name, assigns]), else: nil
   end
 
   @doc """
@@ -42,9 +43,29 @@ defmodule Lotus.Web.Pro do
   """
   @spec watch_dashboard(map(), pid()) :: :ok
   def watch_dashboard(dashboard, pid) do
-    if available?() and function_exported?(@pro_web, :watch_dashboard, 2),
-      do: apply(@pro_web, :watch_dashboard, [dashboard, pid])
+    if available?() and function_exported?(pro_web(), :watch_dashboard, 2),
+      do: apply(pro_web(), :watch_dashboard, [dashboard, pid])
 
     :ok
+  end
+
+  @doc """
+  Whether a public dashboard may be shown through its share link, asked on
+  every load of the link with the URL's params: `:allow`, or
+  `{:deny, message}` to show the message instead of the dashboard. Without
+  Pro, or when Pro does not decide, every link is allowed, as before. An
+  answer it does not understand denies.
+  """
+  @spec authorize_public_dashboard(map(), map()) :: :allow | {:deny, String.t() | nil}
+  def authorize_public_dashboard(dashboard, params) do
+    if available?() and function_exported?(pro_web(), :authorize_public_dashboard, 2) do
+      case apply(pro_web(), :authorize_public_dashboard, [dashboard, params]) do
+        :allow -> :allow
+        {:deny, message} when is_binary(message) -> {:deny, message}
+        _other -> {:deny, nil}
+      end
+    else
+      :allow
+    end
   end
 end

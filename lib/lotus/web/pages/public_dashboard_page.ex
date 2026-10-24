@@ -119,19 +119,7 @@ defmodule Lotus.Web.PublicDashboardPage do
              |> assign(dashboard: empty_dashboard())}
 
           dashboard ->
-            cards = Lotus.list_dashboard_cards(dashboard.id, preload: [:query, :filter_mappings])
-            filters = Lotus.list_dashboard_filters(dashboard.id)
-            dashboard = %{dashboard | cards: cards, filters: filters}
-            filter_values = extract_filter_values(params, filters)
-
-            report_view(socket, dashboard)
-
-            {:noreply,
-             socket
-             |> assign(dashboard: dashboard, filter_values: filter_values)
-             |> watch()
-             |> assign_filter_options()
-             |> run_all_cards()}
+            open(socket, dashboard, params)
         end
 
       _ ->
@@ -181,6 +169,36 @@ defmodule Lotus.Web.PublicDashboardPage do
 
   def handle_info(_msg, socket), do: {:noreply, socket}
 
+  # A package may refuse the link (`Lotus.Web.Pro.authorize_public_dashboard/2`).
+  defp open(socket, dashboard, params) do
+    case Pro.authorize_public_dashboard(dashboard, params) do
+      :allow ->
+        show(socket, dashboard, params)
+
+      {:deny, message} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, message || gettext("This dashboard is not available"))
+         |> assign(dashboard: empty_dashboard(gettext("Dashboard Unavailable")))}
+    end
+  end
+
+  defp show(socket, dashboard, params) do
+    cards = Lotus.list_dashboard_cards(dashboard.id, preload: [:query, :filter_mappings])
+    filters = Lotus.list_dashboard_filters(dashboard.id)
+    dashboard = %{dashboard | cards: cards, filters: filters}
+    filter_values = extract_filter_values(params, filters)
+
+    report_view(socket, dashboard)
+
+    {:noreply,
+     socket
+     |> assign(dashboard: dashboard, filter_values: filter_values)
+     |> watch()
+     |> assign_filter_options()
+     |> run_all_cards()}
+  end
+
   # A view is counted once per connected page load, not on each patch.
   defp report_view(socket, %{id: id} = dashboard) do
     if connected?(socket) and not match?(%{id: ^id}, socket.assigns.dashboard),
@@ -215,10 +233,10 @@ defmodule Lotus.Web.PublicDashboardPage do
 
   # Private
 
-  defp empty_dashboard do
+  defp empty_dashboard(name \\ gettext("Dashboard Not Found")) do
     %{
       id: nil,
-      name: gettext("Dashboard Not Found"),
+      name: name,
       description: nil,
       cards: [],
       filters: []
