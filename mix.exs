@@ -49,7 +49,7 @@ defmodule Lotus.Web.MixProject do
       # The charts.
       # Fude's main until its next release: the dashboards' work needs it
       # (mix fude.git_assets builds its browser files).
-      {:fude, github: "hattoriai/fude", branch: "chart-selected"},
+      {:fude, github: "hattoriai/fude", branch: "main"},
       # The schema diagram.
       {:hakushi, "~> 0.5"},
       {:phoenix_html, "~> 4.0"},
