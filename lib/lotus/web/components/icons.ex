@@ -77,6 +77,43 @@ defmodule Lotus.Web.Components.Icons do
 
   attr(:rest, :global)
 
+  def pencil(assigns) do
+    ~H"""
+    <.svg_outline {@rest}>
+      <path d="M12 20h9"/>
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+    </.svg_outline>
+    """
+  end
+
+  attr(:rest, :global)
+
+  def share(assigns) do
+    ~H"""
+    <.svg_outline {@rest}>
+      <circle cx="18" cy="5" r="3"/>
+      <circle cx="6" cy="12" r="3"/>
+      <circle cx="18" cy="19" r="3"/>
+      <path d="m8.59 13.51 6.83 3.98"/>
+      <path d="m15.41 6.51-6.82 3.98"/>
+    </.svg_outline>
+    """
+  end
+
+  attr(:rest, :global)
+
+  def ellipsis(assigns) do
+    ~H"""
+    <.svg_outline {@rest}>
+      <circle cx="5" cy="12" r="1"/>
+      <circle cx="12" cy="12" r="1"/>
+      <circle cx="19" cy="12" r="1"/>
+    </.svg_outline>
+    """
+  end
+
+  attr(:rest, :global)
+
   def minimize(assigns) do
     ~H"""
     <.svg_outline {@rest}>

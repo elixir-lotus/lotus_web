@@ -68,6 +68,22 @@
   the chart's place, at its size, so a dashboard card keeps its size and
   the table scrolls in it. The chart's *Data table* setting puts it there
   (the default), under the chart, or nowhere. From Fude 0.3.
+- **View and edit modes for dashboards.** A dashboard opens to be read:
+  its name, its description, when its data was read ("Updated 2 min ago")
+  and how often it refreshes, with Refresh, Share and Edit. **Edit** opens
+  a bar to add a chart, a text or a filter, change the details and the
+  settings, and **Cancel** (the dashboard as it was) or **Save** (at once,
+  for a dashboard that has its name). Cards are picked and set up only in
+  edit mode; a new dashboard opens in it.
+- **Cards redesigned.** On a light canvas, each card is white with a soft
+  edge and its title inside it; its buttons show on hover (always in edit
+  mode): Maximize, and a ⋯ menu to refresh it, save its chart as PNG, open
+  its query, or, in edit mode, remove it. A heading is its text alone, and
+  a text or a link card has a title bar only when it has a title. The
+  public dashboard has the same look.
+- **Live dashboards, for Lotus Pro.** `Lotus.Web.Pro.watch_dashboard/2`
+  lets Pro send a dashboard, the editor's or the public one, a card's new
+  result as it changes. Without Pro, nothing changes.
 - **Maximize a chart.** A dashboard card's chart opens over the whole page
   from its header, drawn again at that size, and closes with Escape, its
   close button or a click outside it; on a public dashboard too.

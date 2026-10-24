@@ -23,6 +23,7 @@ import DispatchChangeOnUpdate from "./hooks/dispatch_change_on_update";
 import EditorContextMenu from "./hooks/editor_context_menu";
 import EditorForm from "./hooks/editor_form";
 import Flash from "./hooks/flash";
+import RelativeTime from "./hooks/relative_time";
 import MultiSelectSearch from "./hooks/multi_select_search";
 import PlatformScout from "./hooks/platform_scout";
 import ResultsVisibility from "./hooks/results_visibility";
@@ -118,6 +119,7 @@ const hooks = {
   Flash,
   MultiSelectSearch,
   PlatformScout,
+  RelativeTime,
   ResultsVisibility,
   TagInput,
   TagRemove,

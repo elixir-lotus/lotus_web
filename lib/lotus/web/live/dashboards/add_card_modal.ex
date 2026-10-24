@@ -11,6 +11,19 @@ defmodule Lotus.Web.Dashboards.AddCardModal do
     {:ok, assign(socket, selected_type: :query, selected_query_id: nil)}
   end
 
+  # The type it opens on: the one the edit bar's button asked for.
+  @impl Phoenix.LiveComponent
+  def update(assigns, socket) do
+    socket = assign(socket, Map.delete(assigns, :type))
+
+    socket =
+      if Map.has_key?(socket.assigns, :opened),
+        do: socket,
+        else: assign(socket, selected_type: assigns[:type] || :query, opened: true)
+
+    {:ok, socket}
+  end
+
   @impl Phoenix.LiveComponent
   def render(assigns) do
     card_types = [

@@ -88,11 +88,13 @@ defmodule Lotus.Web.AuthorizationIntegrationTest do
       refute has_element?(live, "button", "Add Filter")
       refute has_element?(live, ~s(button[phx-click="show_save_modal"]))
       refute has_element?(live, ~s(button[phx-click="show_delete_modal"]))
+      refute has_element?(live, "#dashboard-edit")
+      refute has_element?(live, ~s(button[phx-click="toggle_settings"]))
 
-      live |> element(~s(button[phx-click="toggle_settings"])) |> render_click()
+      live |> with_target("#dashboard-editor") |> render_click("edit", %{})
 
-      refute has_element?(live, ~s(button[phx-click="enable_sharing"]))
-      refute has_element?(live, "button", "Delete Dashboard")
+      assert render(live) =~ "Restricted: manage_dashboard"
+      refute has_element?(live, "#dashboard-edit-bar")
     end
 
     test "the dashboard editor refuses crafted events" do
@@ -178,10 +180,7 @@ defmodule Lotus.Web.AuthorizationIntegrationTest do
 
       assert render(live) =~ "Restricted: manage_dashboard"
       assert has_element?(live, "#card-#{card.id}")
-
-      live |> element(~s(button[phx-click="toggle_settings"])) |> render_click()
-
-      refute has_element?(live, ~s(select[name="auto_refresh_seconds"]))
+      refute has_element?(live, ~s(button[phx-click="toggle_settings"]))
     end
 
     test "the export route also needs :query on the source" do
@@ -303,7 +302,13 @@ defmodule Lotus.Web.AuthorizationIntegrationTest do
 
       {:ok, live, _html} = live(build_conn(), "/author/dashboards/#{dashboard.id}")
 
-      live |> element(~s(button[phx-click="toggle_settings"])) |> render_click()
+      # No Share for an author who may not share: the settings are in edit mode.
+      refute has_element?(live, "button", "Share")
+      live |> element("#dashboard-edit") |> render_click()
+
+      live
+      |> element(~s(#dashboard-edit-bar button[phx-click="toggle_settings"]))
+      |> render_click()
 
       assert has_element?(live, ~s(select[name="auto_refresh_seconds"]))
       refute has_element?(live, ~s(button[phx-click="enable_sharing"]))
@@ -413,8 +418,16 @@ defmodule Lotus.Web.AuthorizationIntegrationTest do
       dashboard = dashboard_fixture(%{name: "Sales"})
       {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
 
+      assert has_element?(live, "button", "Share")
+      live |> element("#dashboard-edit") |> render_click()
+
       assert has_element?(live, "#add-card-btn")
       assert has_element?(live, ~s(button[phx-click="show_save_modal"]))
+
+      live
+      |> element(~s(#dashboard-edit-bar button[phx-click="toggle_settings"]))
+      |> render_click()
+
       assert has_element?(live, ~s(button[phx-click="show_delete_modal"]))
     end
   end

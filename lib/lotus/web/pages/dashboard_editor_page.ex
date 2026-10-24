@@ -15,12 +15,14 @@ defmodule Lotus.Web.DashboardEditorPage do
   alias Lotus.Web.Dashboards.CardRunner
   alias Lotus.Web.Dashboards.CardSettingsDrawer
   alias Lotus.Web.Dashboards.CardVariables
+  alias Lotus.Web.Dashboards.Components
   alias Lotus.Web.Dashboards.DateTokens
   alias Lotus.Web.Dashboards.FilterBarComponent
   alias Lotus.Web.Dashboards.FilterOptions
   alias Lotus.Web.Dashboards.FilterValues
   alias Lotus.Web.Dashboards.SettingsDrawer
   alias Lotus.Web.Page
+  alias Lotus.Web.Pro
   alias Lotus.Web.RichText
 
   @impl Phoenix.LiveComponent
@@ -34,27 +36,60 @@ defmodule Lotus.Web.DashboardEditorPage do
       )
 
     ~H"""
-    <div id="dashboard-editor" class="flex flex-col h-full overflow-hidden">
+    <div id="dashboard-editor" class={["flex flex-col h-full overflow-hidden", @editing && "lotus-dashboard-editing"]}>
       <div class="mx-auto w-full px-0 sm:px-0 lg:px-6 py-0 sm:py-6 h-full flex flex-col">
-        <div class="bg-white dark:bg-gray-800 shadow rounded-lg h-full flex flex-col overflow-hidden">
+        <div class="lotus-dashboard bg-gray-50 dark:bg-gray-900 shadow-sm ring-1 ring-black/5 dark:ring-white/10 rounded-lg h-full flex flex-col overflow-hidden">
 
-          <%!-- Header Bar --%>
-          <.header_bar
-            dashboard={@dashboard}
-            mode={@page.mode}
-            running={MapSet.size(@running_cards) > 0}
-            parent={@myself}
-            can_manage={@can_manage}
+          <%!-- Edit mode: what can be added, Cancel and Save --%>
+          <Components.edit_bar
+            :if={@editing}
+            name={@page.mode == :edit && @dashboard.name}
+            target={@myself}
           />
+
+          <%!-- Its name and description, when its data was read, and what a
+               viewer may do: refresh, share, edit --%>
+          <Components.dashboard_head
+            dashboard={@dashboard}
+            title={@page.mode == :new && blank?(@dashboard.name) && gettext("New Dashboard")}
+            back={lotus_path("", %{tab: "dashboards"})}
+            refreshed_at={@refreshed_at}
+            running={MapSet.size(@running_cards) > 0}
+          >
+            <:actions :if={not @editing}>
+              <button
+                type="button"
+                phx-click="refresh_all_cards"
+                phx-target={@myself}
+                class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-200/60 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700"
+                title={gettext("Refresh all cards")}
+                aria-label={gettext("Refresh all cards")}
+              >
+                <Icons.rotate_ccw class="h-5 w-5" />
+              </button>
+              <Components.head_button :if={@can_share} phx-click="toggle_settings" phx-target={@myself}>
+                <Icons.share class="h-4 w-4" /> <%= gettext("Share") %>
+              </Components.head_button>
+              <Components.head_button
+                :if={@can_manage}
+                id="dashboard-edit"
+                phx-click="edit"
+                phx-target={@myself}
+              >
+                <Icons.pencil class="h-4 w-4" /> <%= gettext("Edit") %>
+              </Components.head_button>
+            </:actions>
+          </Components.dashboard_head>
 
           <%!-- Filter Bar. `public` hides the controls that edit filters. --%>
           <.live_component
+            :if={@editing or @dashboard.filters != []}
             module={FilterBarComponent}
             id="filter-bar"
             filters={@dashboard.filters}
             filter_values={@filter_values}
             filter_options={@filter_options}
-            public={not @can_manage}
+            public={not @editing}
             parent={@myself}
           />
 
@@ -95,7 +130,7 @@ defmodule Lotus.Web.DashboardEditorPage do
 
             <%!-- Grid Content --%>
             <div class={[
-              "h-full overflow-y-auto p-4 transition-all duration-300",
+              "h-full overflow-y-auto px-4 sm:px-6 pt-2 pb-6 transition-all duration-300",
               (@settings_visible || @card_settings_visible) && "sm:mr-80"
             ]}>
               <%= if @dashboard.cards != [] do %>
@@ -107,14 +142,14 @@ defmodule Lotus.Web.DashboardEditorPage do
                   card_errors={@card_errors}
                   running_cards={@running_cards}
                   selected_card_id={@selected_card && @selected_card.id}
-                  can_manage={@can_manage}
+                  can_manage={@can_manage and @editing}
                   parent={@myself}
                 />
               <% end %>
 
               <%!-- Add Card Button --%>
               <button
-                :if={@can_manage}
+                :if={@can_manage and @editing}
                 id="add-card-btn"
                 phx-click="show_add_card_modal"
                 phx-target={@myself}
@@ -136,6 +171,7 @@ defmodule Lotus.Web.DashboardEditorPage do
         module={AddCardModal}
         id="add-card-modal"
         queries={@available_queries}
+        type={@add_card_type}
         parent={@myself}
       />
 
@@ -169,73 +205,6 @@ defmodule Lotus.Web.DashboardEditorPage do
           data-seconds={@dashboard.auto_refresh_seconds}
         />
       <% end %>
-    </div>
-    """
-  end
-
-  defp header_bar(assigns) do
-    ~H"""
-    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-      <div class="flex items-center gap-3">
-        <.link navigate={lotus_path("", %{tab: "dashboards"})} class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-          <Icons.chevron_left class="h-5 w-5" />
-        </.link>
-        <h2 class="lotus-title text-xl font-semibold text-text-light dark:text-text-dark">
-          <%= if @mode == :new do %>
-            <%= gettext("New Dashboard") %>
-          <% else %>
-            <%= @dashboard.name || gettext("Untitled") %>
-          <% end %>
-        </h2>
-      </div>
-      <div class="flex items-center gap-3">
-        <%= if @running do %>
-          <span class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <.spinner size="16" />
-            <%= gettext("Running...") %>
-          </span>
-        <% end %>
-
-        <button
-          type="button"
-          phx-click="refresh_all_cards"
-          phx-target={@parent}
-          class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-          title={gettext("Refresh all cards")}
-        >
-          <Icons.rotate_ccw class="h-5 w-5" />
-        </button>
-
-        <button
-          type="button"
-          phx-click="toggle_settings"
-          phx-target={@parent}
-          class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-          title={gettext("Dashboard settings")}
-        >
-          <Icons.cog_6_tooth class="h-5 w-5" />
-        </button>
-
-        <%= if @mode == :edit and @can_manage do %>
-          <.button
-            type="button"
-            variant="light"
-            phx-click="show_delete_modal"
-            phx-target={@parent}
-            class="text-red-600 hover:text-red-700 border-transparent hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:border-transparent dark:hover:bg-white/10"
-          >
-            <%= gettext("Delete") %>
-          </.button>
-        <% end %>
-        <.button
-          :if={@can_manage}
-          type="button"
-          phx-click="show_save_modal"
-          phx-target={@parent}
-        >
-          <%= gettext("Save") %>
-        </.button>
-      </div>
     </div>
     """
   end
@@ -569,7 +538,13 @@ defmodule Lotus.Web.DashboardEditorPage do
       delete_modal_open: false,
       available_queries: Lotus.list_queries(),
       auto_refresh_ref: nil,
-      current_uri: nil
+      current_uri: nil,
+      # View mode, unless the dashboard is new; Edit keeps the dashboard as
+      # it was, for Cancel.
+      editing: false,
+      saved_dashboard: nil,
+      add_card_type: :query,
+      refreshed_at: nil
     )
   end
 
@@ -580,8 +555,14 @@ defmodule Lotus.Web.DashboardEditorPage do
     case socket.assigns.page do
       %{mode: :new} ->
         case Authorization.authorize(socket.assigns, :manage_dashboard) do
-          :allow -> {:noreply, assign_dashboard(socket, new_dashboard())}
-          {:deny, reason} -> {:noreply, leave(socket, reason)}
+          :allow ->
+            {:noreply,
+             socket
+             |> assign_dashboard(new_dashboard())
+             |> assign(editing: true, saved_dashboard: nil)}
+
+          {:deny, reason} ->
+            {:noreply, leave(socket, reason)}
         end
 
       %{mode: :edit, id: id} ->
@@ -592,7 +573,9 @@ defmodule Lotus.Web.DashboardEditorPage do
           {:noreply,
            socket
            |> assign_dashboard(dashboard)
-           |> assign(filter_values: filter_values)
+           |> watch()
+           |> assign(filter_values: filter_values, editing: false, saved_dashboard: nil)
+           |> close_editors()
            |> assign_filter_options()
            |> run_all_cards()}
         else
@@ -605,8 +588,52 @@ defmodule Lotus.Web.DashboardEditorPage do
   # Event Handlers
 
   @impl Phoenix.LiveComponent
-  def handle_event("show_add_card_modal", _params, socket) do
-    {:noreply, assign(socket, add_card_modal_open: true)}
+  def handle_event("show_add_card_modal", params, socket) do
+    type = parse_card_type(params["type"] || "query") || :query
+    {:noreply, assign(socket, add_card_modal_open: true, add_card_type: type)}
+  end
+
+  # Edit mode: the dashboard as it is now is kept, for Cancel.
+  @impl Phoenix.LiveComponent
+  def handle_event("edit", _params, socket) do
+    authorize_manage(socket, fn ->
+      {:noreply, assign(socket, editing: true, saved_dashboard: socket.assigns.dashboard)}
+    end)
+  end
+
+  @impl Phoenix.LiveComponent
+  def handle_event("cancel_edit", _params, socket) do
+    case socket.assigns do
+      %{page: %{mode: :new}} ->
+        {:noreply, push_navigate(socket, to: lotus_path("", %{tab: "dashboards"}))}
+
+      %{saved_dashboard: %{} = saved} ->
+        {:noreply,
+         socket
+         |> assign_dashboard(saved)
+         |> assign(editing: false, saved_dashboard: nil)
+         |> close_editors()
+         |> run_all_cards()}
+
+      _ ->
+        {:noreply, assign(socket, editing: false)}
+    end
+  end
+
+  # Save: a new dashboard asks for its name; one that has it saves at once.
+  @impl Phoenix.LiveComponent
+  def handle_event("save", _params, %{assigns: %{page: %{mode: :new}}} = socket) do
+    handle_event("show_save_modal", %{}, socket)
+  end
+
+  def handle_event("save", _params, socket) do
+    %{dashboard: dashboard} = socket.assigns
+
+    handle_event(
+      "save_dashboard",
+      %{"dashboard" => %{"name" => dashboard.name, "description" => dashboard.description}},
+      socket
+    )
   end
 
   @impl Phoenix.LiveComponent
@@ -867,11 +894,9 @@ defmodule Lotus.Web.DashboardEditorPage do
       end
 
     {:noreply,
-     assign(socket,
-       running_cards: running_cards,
-       card_results: card_results,
-       card_errors: card_errors
-     )}
+     socket
+     |> assign(running_cards: running_cards, card_results: card_results, card_errors: card_errors)
+     |> mark_refreshed()}
   end
 
   def handle_info({:card_error, card_id, error}, socket) do
@@ -892,9 +917,34 @@ defmodule Lotus.Web.DashboardEditorPage do
   @impl Phoenix.LiveComponent
   def handle_async({:run_card, card_id}, result, socket) do
     case CardRunner.finish(socket, card_id, &prepare_card/2) do
-      {:ok, socket} -> {:noreply, put_card_result(socket, card_id, result)}
+      {:ok, socket} -> {:noreply, socket |> put_card_result(card_id, result) |> mark_refreshed()}
       :stale -> {:noreply, socket}
     end
+  end
+
+  # Pro's live updates of the dashboard's cards (`Lotus.Web.Pro.watch_dashboard/2`).
+  defp watch(socket) do
+    if connected?(socket), do: Pro.watch_dashboard(socket.assigns.dashboard, self())
+    socket
+  end
+
+  # When the last card running has its result, the dashboard was read.
+  defp mark_refreshed(socket) do
+    if MapSet.size(socket.assigns.running_cards) == 0,
+      do: assign(socket, refreshed_at: DateTime.utc_now()),
+      else: socket
+  end
+
+  # Leaving edit mode closes what edits.
+  defp close_editors(socket) do
+    assign(socket,
+      selected_card: nil,
+      selected_card_columns: [],
+      card_settings_visible: false,
+      settings_visible: false,
+      add_card_modal_open: false,
+      filter_modal_open: false
+    )
   end
 
   @impl Phoenix.LiveComponent
@@ -902,7 +952,8 @@ defmodule Lotus.Web.DashboardEditorPage do
     if socket.assigns[:initialized] do
       # Component already initialized - only accept specific assigns from parent:
       # - Core routing/auth assigns
-      # - Async task results (running_cards, card_results, card_errors) that are
+      # - Async task results (running_cards, card_results, card_errors, and
+      #   refreshed_at, when the last of them came) that are
       #   updated by handle_async on the LiveView level
       keys_from_parent = [
         :page,
@@ -911,7 +962,8 @@ defmodule Lotus.Web.DashboardEditorPage do
         :access,
         :running_cards,
         :card_results,
-        :card_errors
+        :card_errors,
+        :refreshed_at
       ]
 
       {:ok, assign(socket, Map.take(assigns, keys_from_parent))}
@@ -990,7 +1042,8 @@ defmodule Lotus.Web.DashboardEditorPage do
         {:noreply,
          socket
          |> put_flash(:info, gettext("Dashboard saved successfully!"))
-         |> assign(save_modal_open: false)
+         |> assign(save_modal_open: false, editing: false, saved_dashboard: nil)
+         |> close_editors()
          |> push_patch(to: lotus_path(["dashboards", saved_dashboard.id]), replace: true)}
 
       {:error, %Ecto.Changeset{data: %Lotus.Storage.Dashboard{}} = changeset} ->
@@ -1161,6 +1214,8 @@ defmodule Lotus.Web.DashboardEditorPage do
       socket.assigns.run_date
     )
   end
+
+  defp blank?(name), do: name in [nil, ""]
 
   defp new_dashboard do
     %{

@@ -3791,3 +3791,65 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Under the chart"
 msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:32
+#, elixir-autogen, elixir-format
+msgid "All dashboards"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:52
+#, elixir-autogen, elixir-format
+msgid "Reading the data…"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:56
+#, elixir-autogen, elixir-format
+msgid "Updated"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:61
+#, elixir-autogen, elixir-format
+msgid "just now"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:171
+#, elixir-autogen, elixir-format
+msgid "refreshes every %{count} min"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:105
+#, elixir-autogen, elixir-format
+msgid "Editing %{name}"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:114
+#, elixir-autogen, elixir-format
+msgid "Filter"
+msgstr ""
+
+#: lib/lotus/web/pages/dashboard_editor_page.ex:71
+#, elixir-autogen, elixir-format
+msgid "Share"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/card_component.ex:136
+#, elixir-autogen, elixir-format
+msgid "More"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/card_component.ex:168
+#, elixir-autogen, elixir-format
+msgid "Open the query"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/card_component.ex:175
+#, elixir-autogen, elixir-format
+msgid "Remove from dashboard"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:176
+#, elixir-autogen, elixir-format
+msgid "refreshes every hour"
+msgid_plural "refreshes every %{count} hours"
+msgstr[0] ""
+msgstr[1] ""
