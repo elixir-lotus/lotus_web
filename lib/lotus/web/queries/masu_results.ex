@@ -100,7 +100,7 @@ defmodule Lotus.Web.Queries.MasuResults do
     assigns =
       assign(assigns,
         rows: rows(assigns.result),
-        columns: for(name <- assigns.result.columns, do: %{key: name, label: name, raw: true}),
+        columns: card_columns(assigns.result),
         messages: MasuMessages.messages(),
         locale: Gettext.get_locale(Lotus.Web.Gettext)
       )
@@ -116,10 +116,28 @@ defmodule Lotus.Web.Queries.MasuResults do
       messages={@messages}
       locale={@locale}
       label={@label}
-      class="lotus-card-table"
+      class="lotus-results lotus-card-table"
       height="100%"
     />
     """
+  end
+
+  # A card's columns, each as wide as its longest value, or as its name
+  # and its header's menu button (in a card, the columns fit before they
+  # scroll): 7 pixels a character, the cell's padding, from 64 to 240.
+  defp card_columns(%{columns: columns, rows: rows}) do
+    columns
+    |> Enum.with_index()
+    |> Enum.map(fn {name, i} ->
+      value =
+        rows
+        |> Enum.take(200)
+        |> Enum.map(&(&1 |> Enum.at(i) |> cell() |> to_string() |> String.length()))
+        |> Enum.max(fn -> 0 end)
+
+      width = max(value * 7 + 24, String.length(name) * 8 + 72)
+      %{key: name, label: name, raw: true, width: width |> max(64) |> min(240)}
+    end)
   end
 
   # The columns as Lotus names them, of the types of their values, with the
