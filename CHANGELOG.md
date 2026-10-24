@@ -45,6 +45,10 @@
     a token or a secret URL is masked, and Slack has no format to choose
     (it posts a preview of the rows). A channel that does not describe its
     settings takes them as JSON.
+  - "Send a test" on each destination sends sample results there now
+    (Lotus's `Lotus.Delivery.send_test/4`), titled with the report's name
+    and, for an alert, as an alert, and says it was sent or why it was not
+    (a URL that answers 404, a mailer that refuses), without saving.
 
   The query editor and a saved dashboard link to a new report filled in
   with them. Changing a report or an alert asks for the new
