@@ -1,0 +1,75 @@
+# Keeps the v2 branch at main with the assets built and committed, so that
+# apps can follow main as a git dependency before v2 is on Hex:
+#
+#     {:lotus_web, github: "elixir-lotus/lotus_web", branch: "v2"}
+#
+# The branch is main's commit plus one commit of priv/static. It is pushed
+# with force on each push to main: never commit to it.
+name: v2 branch
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v2-branch
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      MIX_ENV: dev
+      TAILWIND_VERSION: "3.4.0"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.19"
+          otp-version: "27.3.2"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: assets/package-lock.json
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: v2-branch-${{ hashFiles('mix.lock') }}
+          restore-keys: v2-branch-
+
+      - run: mix deps.get
+
+      - run: npm ci
+        working-directory: assets
+
+      # The tailwind package downloads with Erlang's httpc, which refuses
+      # GitHub's redirect to release assets (header_too_long).
+      - name: Download Tailwind
+        run: |
+          mkdir -p _build
+          curl -sSfL -o "_build/tailwind-linux-x64-$TAILWIND_VERSION" \
+            "https://github.com/tailwindlabs/tailwindcss/releases/download/v$TAILWIND_VERSION/tailwindcss-linux-x64"
+          chmod +x "_build/tailwind-linux-x64-$TAILWIND_VERSION"
+
+      - run: mix assets.build
+
+      - name: Push the v2 branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B v2
+          git add --force priv/static
+          git commit -m "Assets built from ${GITHUB_SHA::7}"
+          git push --force origin v2
