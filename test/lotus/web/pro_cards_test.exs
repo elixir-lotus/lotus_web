@@ -79,6 +79,20 @@ defmodule Lotus.Web.ProCardsTest do
     end
   end
 
+  test "a Pro card saved while Pro was installed says it needs Lotus Pro" do
+    dashboard = dashboard_fixture(%{name: "Sales"})
+
+    dashboard_card_fixture(dashboard, %{
+      card_type: :pro,
+      title: nil,
+      content: %{"kind" => "action"}
+    })
+
+    {:ok, _live, html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+
+    assert html =~ "This card needs Lotus Pro"
+  end
+
   describe "with Lotus Pro" do
     setup do
       with_pro()
@@ -95,6 +109,16 @@ defmodule Lotus.Web.ProCardsTest do
       html = live |> element(~s(button[phx-click="confirm_add_card"])) |> render_click()
 
       assert html =~ ~s(data-pro-card="action")
+    end
+
+    test "Pro draws a saved Pro card" do
+      dashboard = dashboard_fixture(%{name: "Sales"})
+      dashboard_card_fixture(dashboard, %{card_type: :pro, content: %{"kind" => "action"}})
+
+      {:ok, _live, html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+
+      assert html =~ ~s(data-pro-card="action")
+      refute html =~ "This card needs Lotus Pro"
     end
 
     test "a kind Pro does not offer is not added" do
