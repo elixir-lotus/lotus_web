@@ -1,6 +1,7 @@
 defmodule Lotus.Web.QueriesPage do
   @moduledoc """
-  Landing page with tabs for Queries and Dashboards.
+  Landing page with tabs for Queries and Dashboards, and Schedules with
+  `features: [:schedules]`.
   """
 
   @behaviour Lotus.Web.Page
@@ -17,6 +18,7 @@ defmodule Lotus.Web.QueriesPage do
   alias Lotus.Web.Pro
   alias Lotus.Web.Queries.QueryList
   alias Lotus.Web.RichText
+  alias Lotus.Web.Schedules.Components, as: ScheduleComponents
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
@@ -50,12 +52,42 @@ defmodule Lotus.Web.QueriesPage do
                   <%= length(@dashboards) %>
                 </span>
               </button>
+              <button
+                :if={schedules_on?(assigns)}
+                id="tab-schedules"
+                phx-click="switch_tab"
+                phx-value-tab="schedules"
+                phx-target={@myself}
+                class={tab_class(@active_tab == :schedules)}
+              >
+                <%= gettext("Reports & alerts") %>
+                <span class="ml-2 px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded-full">
+                  <%= length(@schedule_entries) %>
+                </span>
+                <span
+                  :if={Enum.any?(@schedule_entries, &(&1.status == :firing))}
+                  class="ml-1.5 h-1.5 w-1.5 rounded-full bg-red-500"
+                  title={gettext("An alert is firing")}
+                ></span>
+              </button>
             </div>
             <.pro_slot name={:list_toolbar} slot_assigns={Map.put(assigns, :tab, @active_tab)} />
           </div>
 
           <%!-- Content --%>
           <div class="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8">
+            <%= if @active_tab == :schedules and schedules_on?(assigns) do %>
+              <ScheduleComponents.schedules_list
+                entries={shown_schedules(@schedule_entries, @schedule_search, @schedule_filter)}
+                any?={@schedule_entries != []}
+                view={@schedule_view}
+                search={@schedule_search}
+                filter={@schedule_filter}
+                counts={ScheduleComponents.counts(@schedule_entries)}
+                can_manage={Authorization.allowed?(assigns, :manage_schedule)}
+                target={@myself}
+              />
+            <% end %>
             <%= if @active_tab == :queries do %>
               <.queries_list
                 entries={shown_queries(@query_entries, @query_search, @query_source)}
@@ -67,7 +99,8 @@ defmodule Lotus.Web.QueriesPage do
                 can_create={Authorization.allowed?(assigns, :create_query)}
                 target={@myself}
               />
-            <% else %>
+            <% end %>
+            <%= if @active_tab == :dashboards do %>
               <.dashboards_list
                 dashboards={shown_dashboards(@dashboards, @dashboard_search, @dashboard_sort)}
                 any?={@dashboards != []}
@@ -83,6 +116,19 @@ defmodule Lotus.Web.QueriesPage do
       </div>
     </div>
     """
+  end
+
+  defp schedules_on?(assigns), do: :schedules in (assigns[:features] || [])
+
+  defp shown_schedules(entries, search, filter) do
+    words = search |> String.downcase() |> String.split(~r/\s+/, trim: true)
+
+    Enum.filter(entries, fn entry ->
+      text = String.downcase("#{entry.schedule.name} #{entry.target.name} #{entry.sentence}")
+
+      ScheduleComponents.in_filter?(entry, filter) and
+        Enum.all?(words, &String.contains?(text, &1))
+    end)
   end
 
   defp tab_class(active) do
@@ -590,7 +636,7 @@ defmodule Lotus.Web.QueriesPage do
   @impl Page
   def handle_mount(socket) do
     socket
-    |> assign(queries: [], query_entries: [], dashboards: [])
+    |> assign(queries: [], query_entries: [], dashboards: [], schedule_entries: [])
     |> assign(
       query_view: :grid,
       query_search: "",
@@ -598,7 +644,10 @@ defmodule Lotus.Web.QueriesPage do
       active_tab: :queries,
       dashboard_view: :grid,
       dashboard_search: "",
-      dashboard_sort: "updated"
+      dashboard_sort: "updated",
+      schedule_view: :grid,
+      schedule_search: "",
+      schedule_filter: "all"
     )
   end
 
@@ -611,7 +660,10 @@ defmodule Lotus.Web.QueriesPage do
     :dashboard_sort,
     :query_view,
     :query_search,
-    :query_source
+    :query_source,
+    :schedule_view,
+    :schedule_search,
+    :schedule_filter
   ]
 
   @impl Phoenix.LiveComponent
@@ -630,6 +682,8 @@ defmodule Lotus.Web.QueriesPage do
 
     case params do
       %{"tab" => "dashboards"} -> {:noreply, assign(socket, active_tab: :dashboards)}
+      %{"tab" => "schedules"} -> {:noreply, assign(socket, active_tab: :schedules)}
+      %{"page" => "schedules"} -> {:noreply, assign(socket, active_tab: :schedules)}
       _params -> {:noreply, socket}
     end
   end
@@ -640,11 +694,29 @@ defmodule Lotus.Web.QueriesPage do
     info = Pro.request_info(socket.assigns)
     queries = Pro.list_queries(info)
 
-    assign(socket,
+    dashboards = Pro.list_dashboards(info, preload: [:cards])
+
+    socket
+    |> assign(
       queries: queries,
       query_entries: QueryList.entries(queries),
-      dashboards: Pro.list_dashboards(info, preload: [:cards])
+      dashboards: dashboards
     )
+    |> load_schedules()
+  end
+
+  # The schedules, with `features: [:schedules]`.
+  defp load_schedules(socket) do
+    if schedules_on?(socket.assigns) do
+      %{queries: queries, dashboards: dashboards} = socket.assigns
+
+      assign(socket,
+        schedule_entries:
+          ScheduleComponents.entries(Lotus.Schedules.list_schedules(), queries, dashboards)
+      )
+    else
+      socket
+    end
   end
 
   @impl Phoenix.LiveComponent
@@ -653,6 +725,7 @@ defmodule Lotus.Web.QueriesPage do
       case tab do
         "queries" -> :queries
         "dashboards" -> :dashboards
+        "schedules" -> :schedules
         _ -> :queries
       end
 
@@ -660,7 +733,13 @@ defmodule Lotus.Web.QueriesPage do
   end
 
   def handle_event("set_view", %{"view" => view} = params, socket) do
-    key = if params["list"] == "queries", do: :query_view, else: :dashboard_view
+    key =
+      case params["list"] do
+        "queries" -> :query_view
+        "schedules" -> :schedule_view
+        _dashboards -> :dashboard_view
+      end
+
     {:noreply, assign(socket, key, if(view == "list", do: :list, else: :grid))}
   end
 
@@ -682,6 +761,35 @@ defmodule Lotus.Web.QueriesPage do
        dashboard_sort:
          if(params["sort"] in ~w(updated name created), do: params["sort"], else: "updated")
      )}
+  end
+
+  def handle_event("search_schedules", params, socket) do
+    filter = params["filter"] || socket.assigns.schedule_filter
+
+    {:noreply,
+     assign(socket,
+       schedule_search: params["search"] || "",
+       schedule_filter:
+         if(filter in ~w(all reports alerts firing paused), do: filter, else: "all")
+     )}
+  end
+
+  # Pausing or resuming from the list asks for :manage_schedule, in the
+  # handler too, so a crafted event is refused.
+  def handle_event("toggle_schedule", %{"id" => id}, socket) do
+    with :allow <- Authorization.authorize(socket.assigns, :manage_schedule, nil),
+         %Lotus.Storage.Schedule{} = schedule <- Lotus.Schedules.get_schedule(id),
+         {:ok, _schedule} <-
+           Lotus.Schedules.update_schedule(
+             schedule,
+             %{enabled: not schedule.enabled},
+             Actor.opts(socket.assigns)
+           ) do
+      {:noreply, load_schedules(socket)}
+    else
+      {:deny, reason} -> {:noreply, put_flash(socket, :error, reason)}
+      _other -> {:noreply, put_flash(socket, :error, gettext("It could not be changed."))}
+    end
   end
 
   def handle_event("duplicate_dashboard", %{"id" => id}, socket) do

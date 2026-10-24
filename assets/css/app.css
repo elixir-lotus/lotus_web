@@ -343,6 +343,18 @@
     box-shadow: none;
 }
 
+/* The time of a report fills its column, as tall as the time zone beside
+   it. */
+.lotus-time-field .koyomi {
+    --koyomi-field-height: 2.5rem;
+    display: block;
+    padding: 0;
+}
+
+.lotus-time-field .koyomi-control {
+    width: 100%;
+}
+
 /* @tailwindcss/forms styles every text input, as for the palette: give the
    box for typing a date its own look. */
 .koyomi .koyomi-type,

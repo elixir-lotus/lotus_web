@@ -13,19 +13,37 @@
 
 ### Added
 
-- **The Schedules page.** With `features: [:schedules]`, the header links to
-  a page of the schedules and alerts of `Lotus.Schedules`:
-  - each one's query or dashboard, cron and time zone, next run and last run;
-    an alert says whether it is firing, a paused one says so;
-  - a form to create or edit one: what it runs, when, in which time zone,
-    its deliveries (a webhook URL, or another channel's settings as JSON)
-    and an alert rule;
-  - each one's recent runs, with their errors;
-  - pause, resume and delete.
+- **Reports and alerts.** With `features: [:schedules]`, the home page has a
+  "Reports & alerts" tab for the schedules of `Lotus.Schedules`. A report
+  sends a query's results or a dashboard on a schedule; an alert checks a
+  query and sends only when its result crosses a line.
+  - The tab shows each one as a card, like queries and dashboards: when it
+    runs in a sentence ("Every Monday at 08:00"), with the time large and
+    its days, hours or days of the month drawn; its status (active, paused,
+    watching, firing); its next run; and its latest runs as a strip. A
+    switch pauses and resumes it. Filters, search and a table view, as on
+    the other tabs; a firing alert marks the tab.
+  - The editor is a page of its own, in four steps: what to send (searched
+    among the queries and dashboards), when, where to deliver it, and an
+    optional alert rule written as a sentence ("Send when total is above
+    1000"). Beside them, the schedule in a sentence, its next five runs in
+    its time zone and in the viewer's, and the latest runs with their
+    errors.
+  - When it runs is chosen without cron: every few minutes, hourly, daily
+    (or weekdays only), weekly on chosen days, monthly on a day, the last
+    day, or the first to last weekday (the last Friday), at a time picked
+    with Koyomi's time picker. "Custom" takes any cron expression, checked
+    as it is typed, with examples. Lotus stores cron as before; an
+    expression the presets can say opens in them.
+  - The time zone is searched by city, region or offset, with each zone's
+    offset and time now; a new report takes the viewer's zone.
+  - A webhook destination takes its URL and an optional Authorization
+    header.
 
-  The query editor and a saved dashboard link to it, with the form filled
-  in. Changing a schedule asks for the new `:manage_schedule` action
-  (`:all` access by default). Without the feature nothing changes.
+  The query editor and a saved dashboard link to a new report filled in
+  with them. Changing a report or an alert asks for the new
+  `:manage_schedule` action (`:all` access by default). Without the feature
+  nothing changes.
 
 - **Ask AI from the command palette.** On the query editor, "Ask AI" in
   the palette (⌘K) asks for a question and the assistant opens on it, as if

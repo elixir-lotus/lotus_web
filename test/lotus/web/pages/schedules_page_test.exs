@@ -1,7 +1,7 @@
 defmodule Lotus.Web.Pages.SchedulesPageTest do
   @moduledoc """
-  The Schedules page (`features: [:schedules]`): the schedules and alerts,
-  their form and their runs.
+  Schedules (`features: [:schedules]`): their tab on the home page, and the
+  editor of one.
   """
   use Lotus.Web.Case
 
@@ -9,8 +9,6 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
 
   alias Lotus.Schedules
   alias Lotus.Storage.ScheduleRun
-
-  defp page(live), do: with_target(live, "#schedules-page")
 
   defmodule Elixir.Lotus.Web.Test.ChangeCondition do
     @moduledoc false
@@ -29,109 +27,211 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
   end
 
   describe "without the feature" do
-    test "there is no Schedules page or link" do
-      {:ok, _live, html} = live(build_conn(), "/lotus/schedules")
+    test "there is no Schedules tab, and its paths are the home page" do
+      {:ok, live, html} = live(build_conn(), "/lotus/schedules")
 
-      refute html =~ "schedules-page"
-      refute html =~ "nav-schedules"
+      assert html =~ "queries-page"
+      refute has_element?(live, "#tab-schedules")
+
+      {:ok, _live, html} = live(build_conn(), "/lotus/schedules/new")
+      refute html =~ "schedule-form"
     end
   end
 
-  describe "with features: [:schedules]" do
+  describe "the Schedules tab" do
     setup do
       %{query: query_fixture(%{name: "Revenue", statement: "SELECT 1 AS n"})}
     end
 
-    test "the header links to the page, which starts empty" do
-      {:ok, live, html} = live(build_conn(), "/scheduled")
-      assert html =~ "nav-schedules"
+    test "is on the home page, and starts with ways to begin" do
+      {:ok, live, _html} = live(build_conn(), "/scheduled")
+      assert has_element?(live, "#tab-schedules")
 
-      {:ok, _live, html} =
-        live |> element("#nav-schedules") |> render_click() |> follow_redirect(build_conn())
+      html = live |> element("#tab-schedules") |> render_click()
+      assert html =~ "Reports and alerts, delivered"
 
-      assert html =~ "No schedules yet."
+      assert has_element?(
+               live,
+               ~s(#schedules-empty a[href="/scheduled/schedules/new?cron=0+8+%2A+%2A+1"])
+             )
     end
 
-    test "a schedule is created with the form, with a webhook delivery", %{query: query} do
+    test "shows each schedule in a sentence, with its status", %{query: query} do
+      schedule_fixture(query, %{time_zone: "Europe/Lisbon"})
+
+      alert =
+        schedule_fixture(query, %{
+          name: "Too many",
+          cron: "*/15 * * * *",
+          rule: %{condition: "above", threshold: 5}
+        })
+
+      alert |> Ecto.Changeset.change(state: %{"status" => "firing"}) |> Lotus.repo().update!()
+
+      {:ok, live, html} = live(build_conn(), "/scheduled/schedules")
+
+      assert html =~ "Every Monday at 08:00"
+      assert html =~ "Lisbon"
+      assert html =~ "Every 15 minutes"
+      assert has_element?(live, "#schedule-#{alert.id}-status", "Firing")
+
+      html = live |> element("#schedules-filter-firing") |> render_click()
+      refute html =~ "Every Monday at 08:00"
+      assert html =~ "Too many"
+    end
+
+    test "pauses and resumes a schedule", %{query: query} do
+      schedule = schedule_fixture(query)
       {:ok, live, _html} = live(build_conn(), "/scheduled/schedules")
 
-      live |> element("#new-schedule") |> render_click()
+      live |> element("#schedule-#{schedule.id}-toggle") |> render_click()
+      refute Schedules.get_schedule!(schedule.id).enabled
+      assert has_element?(live, "#schedule-#{schedule.id}-status", "Paused")
+
+      live |> element("#schedule-#{schedule.id}-toggle") |> render_click()
+      assert Schedules.get_schedule!(schedule.id).enabled
+    end
+
+    test "has a table view", %{query: query} do
+      schedule = schedule_fixture(query)
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules")
+
+      live |> element("#schedules-view-list") |> render_click()
+      assert has_element?(live, "#schedule-row-#{schedule.id}", "Every Monday at 08:00")
+    end
+  end
+
+  describe "the editor" do
+    setup do
+      %{query: query_fixture(%{name: "Revenue", statement: "SELECT 1 AS n"})}
+    end
+
+    test "creates a weekly schedule with a webhook", %{query: query} do
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/new")
+
+      live |> element("#target-query-#{query.id}") |> render_click()
+      assert has_element?(live, "#schedule-target", "Revenue")
+
       live |> element("#add-delivery") |> render_click()
 
       live
       |> form("#schedule-form",
         draft: %{
-          name: "Weekly revenue",
-          target: "query:#{query.id}",
-          cron: "0 8 * * MON",
-          time_zone: "Europe/Lisbon",
+          cadence: %{frequency: "weekly", days: ["1", "3"], time: "07:30:00"},
           deliveries: %{
-            "0" => %{channel: "webhook", format: "csv", url: "https://hooks.example.com/x"}
+            "0" => %{
+              format: "csv",
+              url: "https://hooks.example.com/x",
+              authorization: "Bearer s3cret"
+            }
           }
         }
       )
-      |> render_submit()
+      |> render_change()
+
+      assert has_element?(live, "#schedule-sentence", "Every Monday and Wednesday at 07:30")
+      assert has_element?(live, "#next-runs li")
+
+      live |> element("#zone-button") |> render_click()
+      live |> form("#schedule-form", zone_search: "lisbon") |> render_change()
+      live |> element("#zone-Europe-Lisbon") |> render_click()
+
+      # Koyomi's field is phx-update="ignore": in the browser its hook keeps
+      # the input's value, here the submit gives it.
+      assert {:error, {:live_redirect, %{to: "/scheduled/schedules"}}} =
+               live
+               |> form("#schedule-form", draft: %{cadence: %{time: "07:30:00"}})
+               |> render_submit()
 
       assert [schedule] = Schedules.list_schedules()
+      assert schedule.name == "Revenue"
+      assert schedule.cron == "30 7 * * 1,3"
       assert schedule.time_zone == "Europe/Lisbon"
 
       assert [
                %{
                  channel: "webhook",
                  format: "csv",
-                 config: %{"url" => "https://hooks.example.com/x"}
+                 config: %{
+                   "url" => "https://hooks.example.com/x",
+                   "headers" => %{"authorization" => "Bearer s3cret"}
+                 }
                }
              ] = schedule.deliveries
-
-      html = render(live)
-      assert html =~ "Weekly revenue"
-      assert html =~ "Revenue"
-      refute html =~ "schedule-form"
     end
 
-    test "what does not validate is shown, and nothing is saved", %{query: query} do
-      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules")
-      live |> element("#new-schedule") |> render_click()
+    test "each frequency writes its cron", %{query: query} do
+      {:ok, live, _html} =
+        live(build_conn(), "/scheduled/schedules/new?query_id=#{query.id}")
 
-      html =
+      for {cadence, sentence} <- [
+            {%{frequency: "minutes", every: "30"}, "Every 30 minutes"},
+            {%{frequency: "hourly", every: "6", minute: "15"}, "Every 6 hours at 15 past"},
+            {%{frequency: "daily", weekdays: "true", time: "09:00:00"}, "Every weekday at 09:00"},
+            {%{
+               frequency: "monthly",
+               month_mode: "weekday",
+               ordinal: "last",
+               weekday: "5",
+               time: "17:00:00"
+             }, "Every month on the last Friday at 17:00"}
+          ] do
         live
-        |> form("#schedule-form",
-          draft: %{name: "x", target: "query:#{query.id}", cron: "every day"}
-        )
-        |> render_submit()
+        |> form("#schedule-form", draft: %{cadence: %{frequency: cadence.frequency}})
+        |> render_change()
 
-      assert html =~ "is not a cron expression"
-      assert Schedules.list_schedules() == []
+        live |> form("#schedule-form", draft: %{cadence: cadence}) |> render_change()
+        assert has_element?(live, "#schedule-sentence", sentence)
+      end
     end
 
-    test "an alert is saved with its rule, and the list says it is one", %{query: query} do
-      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules")
-      live |> element("#new-schedule") |> render_click()
+    test "a custom cron is checked as it is typed, and refused", %{query: query} do
+      {:ok, live, _html} =
+        live(build_conn(), "/scheduled/schedules/new?query_id=#{query.id}")
 
-      live |> form("#schedule-form", draft: %{alert: "true"}) |> render_change()
+      live |> form("#schedule-form", draft: %{cadence: %{frequency: "custom"}}) |> render_change()
+      live |> form("#schedule-form", draft: %{cadence: %{cron: "every day"}}) |> render_change()
+      assert has_element?(live, "#cron-error")
+
+      html = live |> form("#schedule-form", draft: %{name: "x"}) |> render_submit()
+
+      assert html =~ "It could not be saved"
+      assert Schedules.list_schedules() == []
+
+      live |> element(~s(button[phx-value-cron="0 9,17 * * 1-5"])) |> render_click()
+      refute has_element?(live, "#cron-error")
+    end
+
+    test "saves an alert with its rule", %{query: query} do
+      {:ok, live, _html} =
+        live(
+          build_conn(),
+          "/scheduled/schedules/new?query_id=#{query.id}&cron=*/15+*+*+*+*&alert=true"
+        )
 
       live
       |> form("#schedule-form",
-        draft: %{
-          name: "Too many",
-          target: "query:#{query.id}",
-          cron: "*/15 * * * *",
-          alert: "true",
-          condition: "above",
-          column: "n",
-          threshold: "500"
-        }
+        draft: %{name: "Too many", column: "n", condition: "above", threshold: "500"}
       )
       |> render_submit()
 
-      assert [%{rule: %{condition: "above", column: "n"} = rule} = schedule] =
+      assert [%{cron: "*/15 * * * *", rule: %{condition: "above", column: "n"} = rule}] =
                Schedules.list_schedules()
 
       assert Decimal.equal?(rule.threshold, 500)
-      assert has_element?(live, "#schedule-#{schedule.id}-alert", "Alert")
     end
 
-    test "a condition registered by name (Lotus Pro's, or the app's) is offered" do
+    test "a dashboard has no alert" do
+      dashboard = dashboard_fixture(%{name: "Sales"})
+
+      {:ok, live, _html} =
+        live(build_conn(), "/scheduled/schedules/new?dashboard_id=#{dashboard.id}&alert=true")
+
+      assert has_element?(live, "#schedule-target", "Sales")
+      refute has_element?(live, "#schedule-alert-toggle")
+    end
+
+    test "offers a condition registered by name (Lotus Pro's, or the app's)", %{query: query} do
       Application.put_env(:lotus, :alerts,
         conditions: %{"change" => Lotus.Web.Test.ChangeCondition}
       )
@@ -143,38 +243,14 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
         Lotus.Config.reload!()
       end)
 
-      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules")
-      live |> element("#new-schedule") |> render_click()
-      live |> form("#schedule-form", draft: %{alert: "true"}) |> render_change()
+      {:ok, live, _html} =
+        live(build_conn(), "/scheduled/schedules/new?query_id=#{query.id}&alert=true")
 
-      assert has_element?(
-               live,
-               ~s(#schedule-form select[name="draft[condition]"] option[value="change"])
-             )
-
-      assert has_element?(
-               live,
-               ~s(#schedule-form select[name="draft[condition]"] option[value="above"])
-             )
+      assert has_element?(live, ~s(#alert-condition option[value="change"]))
+      assert has_element?(live, ~s(#alert-condition option[value="above"]))
     end
 
-    test "a schedule is edited, paused and deleted", %{query: query} do
-      schedule = schedule_fixture(query)
-      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules")
-
-      live |> element("#schedule-#{schedule.id}-edit") |> render_click()
-      live |> form("#schedule-form", draft: %{name: "Monday revenue"}) |> render_submit()
-      assert Schedules.get_schedule!(schedule.id).name == "Monday revenue"
-
-      live |> element("#schedule-#{schedule.id}-toggle") |> render_click()
-      refute Schedules.get_schedule!(schedule.id).enabled
-      assert render(live) =~ "Paused"
-
-      live |> element("#schedule-#{schedule.id}-delete") |> render_click()
-      assert Schedules.get_schedule(schedule.id) == nil
-    end
-
-    test "a schedule's runs are listed", %{query: query} do
+    test "edits a schedule, shows its runs, and deletes it", %{query: query} do
       schedule = schedule_fixture(query)
 
       {:ok, run} =
@@ -187,19 +263,37 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
         |> ScheduleRun.update_changeset(%{status: "failed", error: "the source is down"})
         |> Lotus.repo().update()
 
-      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules")
-      html = live |> element("#schedule-#{schedule.id}-runs") |> render_click()
+      {:ok, live, html} = live(build_conn(), "/scheduled/schedules/#{schedule.id}")
 
       assert html =~ "2026-10-26 08:00 UTC"
       assert html =~ "the source is down"
+      assert has_element?(live, "#frequency-weekly[checked]")
+
+      live
+      |> form("#schedule-form",
+        draft: %{name: "Monday revenue", cadence: %{days: ["1", "5"]}}
+      )
+      |> render_submit()
+
+      assert %{name: "Monday revenue", cron: "0 8 * * 1,5"} = Schedules.get_schedule!(schedule.id)
+
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/#{schedule.id}")
+      live |> element("#delete-schedule") |> render_click()
+      assert Schedules.get_schedule(schedule.id) == nil
     end
 
-    test "the query editor links here to schedule its query", %{query: query} do
-      {:ok, live, _html} = live(build_conn(), "/scheduled/queries/#{query.id}")
-      assert has_element?(live, "#schedule-query")
+    test "a schedule that does not exist goes back to the list" do
+      assert {:error, {:live_redirect, %{to: "/scheduled/schedules"}}} =
+               live(build_conn(), "/scheduled/schedules/0")
+    end
 
-      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules?query_id=#{query.id}")
-      assert has_element?(live, ~s(#schedule-form option[value="query:#{query.id}"][selected]))
+    test "the query editor and a dashboard link here", %{query: query} do
+      {:ok, live, _html} = live(build_conn(), "/scheduled/queries/#{query.id}")
+
+      assert has_element?(
+               live,
+               ~s(#schedule-query[href="/scheduled/schedules/new?query_id=#{query.id}"])
+             )
     end
   end
 
@@ -212,9 +306,19 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
 
       assert html =~ "Weekly revenue"
       refute has_element?(live, "#new-schedule")
-      refute has_element?(live, "#schedule-#{schedule.id}-delete")
+      refute has_element?(live, "#schedule-#{schedule.id}-toggle")
 
-      render_click(page(live), "delete_schedule", %{"id" => to_string(schedule.id)})
+      render_click(with_target(live, "#queries-page"), "toggle_schedule", %{
+        "id" => to_string(schedule.id)
+      })
+
+      assert Schedules.get_schedule!(schedule.id).enabled
+
+      {:ok, live, _html} = live(build_conn(), "/scheduled_read_only/schedules/#{schedule.id}")
+      refute has_element?(live, "#save-schedule")
+      refute has_element?(live, "#delete-schedule")
+
+      render_click(with_target(live, "#schedules-page"), "delete_schedule", %{})
       assert Schedules.get_schedule(schedule.id)
     end
   end

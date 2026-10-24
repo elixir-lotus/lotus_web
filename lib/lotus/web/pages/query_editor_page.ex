@@ -233,10 +233,10 @@ defmodule Lotus.Web.QueryEditorPage do
         <.link
           :if={@mode == :edit and @can_schedule}
           id="schedule-query"
-          navigate={lotus_path("schedules", %{"query_id" => @query.id})}
-          class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
+          navigate={lotus_path(["schedules", "new"], %{"query_id" => @query.id})}
+          class="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
         >
-          <%= gettext("Schedule") %>
+          <Icons.clock class="h-4 w-4" /> <%= gettext("Report or alert") %>
         </.link>
         <%= if @mode == :edit and @can_delete do %>
           <.button

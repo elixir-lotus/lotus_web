@@ -77,10 +77,10 @@ defmodule Lotus.Web.DashboardEditorPage do
               <.link
                 :if={@dashboard.id && :schedules in (@features || []) && Authorization.allowed?(assigns, :manage_schedule)}
                 id="schedule-dashboard"
-                navigate={lotus_path("schedules", %{"dashboard_id" => @dashboard.id})}
-                class="p-2 rounded-lg text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-200/60 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700"
+                navigate={lotus_path(["schedules", "new"], %{"dashboard_id" => @dashboard.id})}
+                class="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white px-3 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-900 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700 dark:hover:bg-gray-700"
               >
-                <%= gettext("Schedule") %>
+                <Icons.clock class="h-4 w-4" /> <%= gettext("Send on a schedule") %>
               </.link>
               <Components.head_button :if={@can_share} phx-click="toggle_settings" phx-target={@myself}>
                 <Icons.share class="h-4 w-4" /> <%= gettext("Share") %>

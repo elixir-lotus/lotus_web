@@ -35,7 +35,7 @@ msgstr "Explorer les tables"
 #: lib/lotus/web/pages/dashboard_editor_page.ex:537
 #: lib/lotus/web/pages/query_editor_page.ex:297
 #: lib/lotus/web/pages/query_editor_page.ex:325
-#: lib/lotus/web/pages/schedules_page.ex:243
+#: lib/lotus/web/pages/schedules_page.ex:179
 #: lib/lotus/web/queries/masu_messages.ex:23
 #, elixir-autogen, elixir-format
 msgid "Cancel"
@@ -79,7 +79,7 @@ msgstr "Valeur par défaut"
 #: lib/lotus/web/pages/dashboard_editor_page.ex:336
 #: lib/lotus/web/pages/query_editor_page.ex:248
 #: lib/lotus/web/pages/query_editor_page.ex:333
-#: lib/lotus/web/pages/schedules_page.ex:118
+#: lib/lotus/web/pages/schedules_page.ex:173
 #: lib/lotus/web/queries/masu_messages.ex:40
 #, elixir-autogen, elixir-format
 msgid "Delete"
@@ -91,7 +91,7 @@ msgid "Delete query"
 msgstr "Supprimer la requête"
 
 #: lib/lotus/web/pages/dashboard_editor_page.ex:278
-#: lib/lotus/web/pages/queries_page.ex:479
+#: lib/lotus/web/pages/queries_page.ex:525
 #: lib/lotus/web/pages/query_editor_page.ex:286
 #, elixir-autogen, elixir-format
 msgid "Description"
@@ -121,7 +121,6 @@ msgstr "Valeurs déroulantes pour le widget %{variable}"
 #: lib/lotus/web/live/dashboards/card_settings_drawer.ex:110
 #: lib/lotus/web/live/queries/variable_settings_component.ex:147
 #: lib/lotus/web/pages/dashboard_editor_page.ex:103
-#: lib/lotus/web/pages/schedules_page.ex:115
 #, elixir-autogen, elixir-format
 msgid "Edit"
 msgstr "Modifier"
@@ -244,11 +243,10 @@ msgstr "Réduire l'éditeur"
 
 #: lib/lotus/web/pages/dashboard_editor_page.ex:269
 #: lib/lotus/web/pages/dashboard_editor_page.ex:387
-#: lib/lotus/web/pages/queries_page.ex:434
-#: lib/lotus/web/pages/queries_page.ex:468
+#: lib/lotus/web/pages/queries_page.ex:480
+#: lib/lotus/web/pages/queries_page.ex:514
 #: lib/lotus/web/pages/query_editor_page.ex:279
-#: lib/lotus/web/pages/schedules_page.ex:72
-#: lib/lotus/web/pages/schedules_page.ex:163
+#: lib/lotus/web/pages/schedules_page.ex:139
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr "Nom"
@@ -260,6 +258,7 @@ msgstr "Nouvelle requête"
 
 #: lib/lotus/web/live/queries/results_component.ex:138
 #: lib/lotus/web/queries/masu_messages.ex:108
+#: lib/lotus/web/schedules/components.ex:411
 #, elixir-autogen, elixir-format
 msgid "Next"
 msgstr "Suivant"
@@ -270,7 +269,7 @@ msgstr "Suivant"
 msgid "No query results to export"
 msgstr "Aucun résultat de requête à exporter"
 
-#: lib/lotus/web/pages/queries_page.ex:115
+#: lib/lotus/web/pages/queries_page.ex:161
 #, elixir-autogen, elixir-format
 msgid "No saved queries yet."
 msgstr "Aucune requête enregistrée pour le moment."
@@ -304,8 +303,8 @@ msgstr "Aperçu (3 premiers résultats) :"
 
 #: lib/lotus/web/commands.ex:32
 #: lib/lotus/web/commands.ex:53
-#: lib/lotus/web/pages/queries_page.ex:37
-#: lib/lotus/web/pages/schedules_page.ex:171
+#: lib/lotus/web/pages/queries_page.ex:39
+#: lib/lotus/web/pages/schedules_page.ex:290
 #, elixir-autogen, elixir-format
 msgid "Queries"
 msgstr "Requêtes"
@@ -377,7 +376,7 @@ msgstr "SELECT value_column, label_column FROM table_name\n-- OU --\nSELECT valu
 
 #: lib/lotus/web/live/dashboards/components.ex:241
 #: lib/lotus/web/pages/query_editor_page.ex:258
-#: lib/lotus/web/pages/schedules_page.ex:244
+#: lib/lotus/web/pages/schedules_page.ex:189
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr "Sauvegarder"
@@ -400,7 +399,7 @@ msgstr "Schéma"
 msgid "Schema Header"
 msgstr "En-tête du schéma"
 
-#: lib/lotus/web/components/layouts/live.html.heex:34
+#: lib/lotus/web/components/layouts/live.html.heex:26
 #: lib/lotus/web/live/queries/segmented_data_selector_component.ex:51
 #: lib/lotus/web/queries/masu_messages.ex:165
 #, elixir-autogen, elixir-format
@@ -444,7 +443,7 @@ msgstr "Affichage 0"
 
 #: lib/lotus/web/live/queries/chart_options.ex:340
 #: lib/lotus/web/live/queries/segmented_data_selector_component.ex:29
-#: lib/lotus/web/pages/queries_page.ex:150
+#: lib/lotus/web/pages/queries_page.ex:196
 #, elixir-autogen, elixir-format
 msgid "Source"
 msgstr "Source"
@@ -653,7 +652,6 @@ msgstr[1] "%{count} tables"
 #: lib/lotus/web/live/dashboards/card_component.ex:444
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:125
 #: lib/lotus/web/live/queries/schema_diagram_component.ex:61
-#: lib/lotus/web/pages/schedules_page.ex:261
 #, elixir-autogen, elixir-format
 msgid "Close"
 msgstr "Fermer"
@@ -668,7 +666,7 @@ msgstr "Général"
 msgid "Keyboard Shortcuts"
 msgstr "Raccourcis clavier"
 
-#: lib/lotus/web/components/layouts/live.html.heex:83
+#: lib/lotus/web/components/layouts/live.html.heex:75
 #, elixir-autogen, elixir-format
 msgid "Keyboard shortcuts"
 msgstr "Raccourcis clavier"
@@ -719,6 +717,7 @@ msgid "Axis Display"
 msgstr "Affichage des axes"
 
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:316
+#: lib/lotus/web/pages/schedules_page.ex:268
 #, elixir-autogen, elixir-format
 msgid "Change"
 msgstr "Modifier"
@@ -938,6 +937,7 @@ msgstr "Champ de l'axe Y"
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:837
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:896
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:916
+#: lib/lotus/web/pages/schedules_page.ex:830
 #, elixir-autogen, elixir-format
 msgid "optional"
 msgstr "optionnel"
@@ -958,6 +958,7 @@ msgstr "Ajouter un filtre"
 
 #: lib/lotus/web/live/dashboards/filter_bar_component.ex:181
 #: lib/lotus/web/live/queries/widget_component.ex:45
+#: lib/lotus/web/schedules/components.ex:218
 #, elixir-autogen, elixir-format
 msgid "All"
 msgstr "Tout"
@@ -1008,7 +1009,7 @@ msgstr "Paramètres de la carte"
 msgid "Card Title"
 msgstr "Titre de la carte"
 
-#: lib/lotus/web/pages/queries_page.ex:482
+#: lib/lotus/web/pages/queries_page.ex:528
 #, elixir-autogen, elixir-format
 msgid "Cards"
 msgstr "Cartes"
@@ -1033,12 +1034,12 @@ msgstr "Copier l'URL"
 msgid "Create a public link to share this dashboard with anyone. They won't need to log in."
 msgstr "Créer un lien public pour partager ce tableau de bord avec n'importe qui. Aucune connexion requise."
 
-#: lib/lotus/web/pages/queries_page.ex:401
+#: lib/lotus/web/pages/queries_page.ex:447
 #, elixir-autogen, elixir-format
 msgid "Create your first dashboard"
 msgstr "Créer votre premier tableau de bord"
 
-#: lib/lotus/web/pages/queries_page.ex:121
+#: lib/lotus/web/pages/queries_page.ex:167
 #, elixir-autogen, elixir-format
 msgid "Create your first query"
 msgstr "Créer votre première requête"
@@ -1049,7 +1050,8 @@ msgid "Danger Zone"
 msgstr "Zone dangereuse"
 
 #: lib/lotus/web/commands.ex:96
-#: lib/lotus/web/components/layouts/live.html.heex:75
+#: lib/lotus/web/components/layouts/live.html.heex:67
+#: lib/lotus/web/pages/schedules_page.ex:258
 #, elixir-autogen, elixir-format
 msgid "Dashboard"
 msgstr "Tableau de bord"
@@ -1088,8 +1090,8 @@ msgstr "Tableau de bord enregistré avec succès !"
 
 #: lib/lotus/web/commands.ex:37
 #: lib/lotus/web/commands.ex:54
-#: lib/lotus/web/pages/queries_page.ex:48
-#: lib/lotus/web/pages/schedules_page.ex:174
+#: lib/lotus/web/pages/queries_page.ex:50
+#: lib/lotus/web/pages/schedules_page.ex:298
 #, elixir-autogen, elixir-format
 msgid "Dashboards"
 msgstr "Tableaux de bord"
@@ -1179,7 +1181,7 @@ msgstr "Lien"
 msgid "Link URL"
 msgstr "URL du lien"
 
-#: lib/lotus/web/components/layouts/live.html.heex:53
+#: lib/lotus/web/components/layouts/live.html.heex:45
 #, elixir-autogen, elixir-format
 msgid "New"
 msgstr "Nouveau"
@@ -1194,7 +1196,7 @@ msgstr "Nouveau tableau de bord"
 msgid "No dashboard filters configured."
 msgstr "Aucun filtre de tableau de bord configuré."
 
-#: lib/lotus/web/pages/queries_page.ex:395
+#: lib/lotus/web/pages/queries_page.ex:441
 #, elixir-autogen, elixir-format
 msgid "No dashboards yet."
 msgstr "Aucun tableau de bord pour le moment."
@@ -1235,7 +1237,7 @@ msgid "Public link enabled"
 msgstr "Lien public activé"
 
 #: lib/lotus/web/commands.ex:63
-#: lib/lotus/web/components/layouts/live.html.heex:67
+#: lib/lotus/web/components/layouts/live.html.heex:59
 #: lib/lotus/web/live/dashboards/add_card_modal.ex:34
 #: lib/lotus/web/live/dashboards/card_component.ex:516
 #: lib/lotus/web/live/dashboards/card_component.ex:519
@@ -1244,6 +1246,7 @@ msgstr "Lien public activé"
 #: lib/lotus/web/live/dashboards/card_settings_drawer.ex:545
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:512
 #: lib/lotus/web/live/queries/variable_settings_component.ex:251
+#: lib/lotus/web/pages/schedules_page.ex:258
 #, elixir-autogen, elixir-format
 msgid "Query"
 msgstr "Requête"
@@ -1301,9 +1304,12 @@ msgid "Update Dashboard"
 msgstr "Mettre à jour le tableau de bord"
 
 #: lib/lotus/web/live/dashboards/settings_drawer.ex:71
+#: lib/lotus/web/pages/schedules_page.ex:450
 #, elixir-autogen, elixir-format
 msgid "hour"
-msgstr "heure"
+msgid_plural "%{count} hours"
+msgstr[0] "heure"
+msgstr[1] ""
 
 #: lib/lotus/web/live/dashboards/settings_drawer.ex:59
 #, elixir-autogen, elixir-format
@@ -2341,6 +2347,7 @@ msgstr "Effacer"
 msgid "Columns"
 msgstr "Colonnes"
 
+#: lib/lotus/web/pages/schedules_page.ex:931
 #: lib/lotus/web/queries/masu_messages.ex:34
 #, elixir-autogen, elixir-format
 msgid "Condition"
@@ -2508,15 +2515,15 @@ msgstr "Nommer cette vue"
 
 #: lib/lotus/web/commands.ex:120
 #: lib/lotus/web/live/dashboards/components.ex:205
-#: lib/lotus/web/pages/queries_page.ex:444
-#: lib/lotus/web/pages/queries_page.ex:463
+#: lib/lotus/web/pages/queries_page.ex:490
+#: lib/lotus/web/pages/queries_page.ex:509
 #, elixir-autogen, elixir-format
 msgid "New dashboard"
 msgstr "Nouveau tableau de bord"
 
 #: lib/lotus/web/commands.ex:114
-#: lib/lotus/web/pages/queries_page.ex:169
-#: lib/lotus/web/pages/queries_page.ex:188
+#: lib/lotus/web/pages/queries_page.ex:215
+#: lib/lotus/web/pages/queries_page.ex:234
 #, elixir-autogen, elixir-format
 msgid "New query"
 msgstr "Nouvelle requête"
@@ -2669,7 +2676,7 @@ msgstr "Enregistrer la vue"
 msgid "Search queries and dashboards, or run a command"
 msgstr "Rechercher des requêtes et des tableaux de bord, ou lancer une commande"
 
-#: lib/lotus/web/components/layouts/live.html.heex:114
+#: lib/lotus/web/components/layouts/live.html.heex:106
 #, elixir-autogen, elixir-format
 msgid "Search queries and dashboards, or run a command…"
 msgstr "Rechercher des requêtes et des tableaux de bord, ou lancer une commande…"
@@ -3109,6 +3116,7 @@ msgstr "Actions de la ligne"
 msgid "Row history"
 msgstr "Historique de la ligne"
 
+#: lib/lotus/web/pages/schedules_page.ex:184
 #: lib/lotus/web/queries/masu_messages.ex:164
 #, elixir-autogen, elixir-format
 msgid "Saving…"
@@ -3220,6 +3228,7 @@ msgid "As the query returns them"
 msgstr "Dans l’ordre de la requête"
 
 #: lib/lotus/web/live/queries/chart_options.ex:279
+#: lib/lotus/web/pages/schedules_page.ex:397
 #, elixir-autogen, elixir-format
 msgid "At"
 msgstr "À"
@@ -3262,6 +3271,7 @@ msgid "Exact (1,234,567.8)"
 msgstr "Exact (1 234 567,8)"
 
 #: lib/lotus/web/live/queries/chart_options.ex:452
+#: lib/lotus/web/pages/schedules_page.ex:786
 #, elixir-autogen, elixir-format
 msgid "Format"
 msgstr "Format"
@@ -3712,9 +3722,9 @@ msgid "Reading the data…"
 msgstr "Lecture des données…"
 
 #: lib/lotus/web/live/dashboards/components.ex:56
-#: lib/lotus/web/pages/queries_page.ex:255
-#: lib/lotus/web/pages/queries_page.ex:485
-#: lib/lotus/web/pages/queries_page.ex:528
+#: lib/lotus/web/pages/queries_page.ex:301
+#: lib/lotus/web/pages/queries_page.ex:531
+#: lib/lotus/web/pages/queries_page.ex:574
 #, elixir-autogen, elixir-format
 msgid "Updated"
 msgstr "Mis à jour"
@@ -3895,7 +3905,7 @@ msgid "Not connected"
 msgstr "Non relié"
 
 #: lib/lotus/web/live/dashboards/filter_bar_component.ex:110
-#: lib/lotus/web/pages/queries_page.ex:526
+#: lib/lotus/web/pages/queries_page.ex:572
 #, elixir-autogen, elixir-format
 msgid "1 card"
 msgid_plural "%{count} cards"
@@ -3924,7 +3934,7 @@ msgid "A copy of this dashboard, to change on its own"
 msgstr "Une copie de ce tableau de bord, à modifier à part"
 
 #: lib/lotus/web/pages/dashboard_editor_page.ex:95
-#: lib/lotus/web/pages/queries_page.ex:541
+#: lib/lotus/web/pages/queries_page.ex:587
 #, elixir-autogen, elixir-format
 msgid "Duplicate"
 msgstr "Dupliquer"
@@ -3935,7 +3945,7 @@ msgid "A copy of the dashboard, to change on its own."
 msgstr "Une copie du tableau de bord, à modifier à part."
 
 #: lib/lotus/web/pages/dashboard_editor_page.ex:896
-#: lib/lotus/web/pages/queries_page.ex:693
+#: lib/lotus/web/pages/queries_page.ex:801
 #, elixir-autogen, elixir-format
 msgid "The dashboard could not be copied."
 msgstr "Le tableau de bord n'a pas pu être copié."
@@ -3992,84 +4002,87 @@ msgstr "Onglet %{count}"
 msgid "Move to"
 msgstr "Déplacer vers"
 
-#: lib/lotus/web/pages/queries_page.ex:422
+#: lib/lotus/web/pages/queries_page.ex:468
 #, elixir-autogen, elixir-format
 msgid "Search dashboards…"
 msgstr "Chercher des tableaux de bord…"
 
-#: lib/lotus/web/pages/queries_page.ex:424
+#: lib/lotus/web/pages/queries_page.ex:470
 #, elixir-autogen, elixir-format
 msgid "Search dashboards"
 msgstr "Chercher des tableaux de bord"
 
-#: lib/lotus/web/pages/queries_page.ex:430
+#: lib/lotus/web/pages/queries_page.ex:476
 #, elixir-autogen, elixir-format
 msgid "Sort"
 msgstr "Trier"
 
-#: lib/lotus/web/pages/queries_page.ex:433
+#: lib/lotus/web/pages/queries_page.ex:479
 #, elixir-autogen, elixir-format
 msgid "Recently updated"
 msgstr "Modifiés récemment"
 
-#: lib/lotus/web/pages/queries_page.ex:435
+#: lib/lotus/web/pages/queries_page.ex:481
 #, elixir-autogen, elixir-format
 msgid "Recently created"
 msgstr "Créés récemment"
 
-#: lib/lotus/web/pages/queries_page.ex:342
+#: lib/lotus/web/pages/queries_page.ex:388
+#: lib/lotus/web/schedules/components.ex:277
 #, elixir-autogen, elixir-format
 msgid "View"
 msgstr "Vue"
 
-#: lib/lotus/web/pages/queries_page.ex:344
+#: lib/lotus/web/pages/queries_page.ex:390
+#: lib/lotus/web/schedules/components.ex:279
 #, elixir-autogen, elixir-format
 msgid "Gallery"
 msgstr "Galerie"
 
-#: lib/lotus/web/pages/queries_page.ex:344
+#: lib/lotus/web/pages/queries_page.ex:390
+#: lib/lotus/web/schedules/components.ex:279
 #, elixir-autogen, elixir-format
 msgid "Table"
 msgstr "Tableau"
 
-#: lib/lotus/web/pages/queries_page.ex:449
+#: lib/lotus/web/pages/queries_page.ex:495
 #, elixir-autogen, elixir-format
 msgid "No dashboard has these words."
 msgstr "Aucun tableau de bord ne contient ces mots."
 
-#: lib/lotus/web/pages/queries_page.ex:518
+#: lib/lotus/web/pages/queries_page.ex:564
 #, elixir-autogen, elixir-format
 msgid "Public"
 msgstr "Public"
 
-#: lib/lotus/web/pages/queries_page.ex:527
+#: lib/lotus/web/pages/queries_page.ex:573
 #, elixir-autogen, elixir-format
 msgid "1 tab"
 msgid_plural "%{count} tabs"
 msgstr[0] "1 onglet"
 msgstr[1] "%{count} onglets"
 
-#: lib/lotus/web/pages/queries_page.ex:143
+#: lib/lotus/web/pages/queries_page.ex:189
 #, elixir-autogen, elixir-format
 msgid "Search queries…"
 msgstr "Chercher des requêtes…"
 
-#: lib/lotus/web/pages/queries_page.ex:145
+#: lib/lotus/web/pages/queries_page.ex:191
 #, elixir-autogen, elixir-format
 msgid "Search queries"
 msgstr "Chercher des requêtes"
 
-#: lib/lotus/web/pages/queries_page.ex:151
+#: lib/lotus/web/pages/queries_page.ex:197
 #, elixir-autogen, elixir-format
 msgid "All sources"
 msgstr "Toutes les sources"
 
-#: lib/lotus/web/pages/queries_page.ex:174
+#: lib/lotus/web/pages/queries_page.ex:220
 #, elixir-autogen, elixir-format
 msgid "No query has these words."
 msgstr "Aucune requête ne contient ces mots."
 
-#: lib/lotus/web/pages/queries_page.ex:253
+#: lib/lotus/web/pages/queries_page.ex:299
 #, elixir-autogen, elixir-format
 msgid "In 1 dashboard"
 msgid_plural "In %{count} dashboards"
@@ -4147,188 +4160,937 @@ msgstr "Ce tableau de bord n’est pas disponible"
 msgid "This schema has no tables."
 msgstr "Ce schéma n’a aucune table."
 
-#: lib/lotus/web/pages/schedules_page.ex:269
+#: lib/lotus/web/pages/schedules_page.ex:1105
 #, elixir-autogen, elixir-format
 msgid "1 row"
 msgid_plural "%{count} rows"
 msgstr[0] "1 ligne"
 msgstr[1] "%{count} lignes"
 
-#: lib/lotus/web/pages/schedules_page.ex:449
+#: lib/lotus/web/schedules/components.ex:61
 #, elixir-autogen, elixir-format
 msgid "A dashboard"
 msgstr "Un tableau de bord"
 
-#: lib/lotus/web/pages/schedules_page.ex:598
-#, elixir-autogen, elixir-format
-msgid "A delivery's settings must be a JSON object"
-msgstr "Les réglages d’un envoi doivent être un objet JSON"
-
-#: lib/lotus/web/pages/schedules_page.ex:446
+#: lib/lotus/web/schedules/components.ex:50
 #, elixir-autogen, elixir-format
 msgid "A query"
 msgstr "Une requête"
 
-#: lib/lotus/web/pages/schedules_page.ex:218
-#, elixir-autogen, elixir-format
-msgid "Add a delivery"
-msgstr "Ajouter un envoi"
-
-#: lib/lotus/web/pages/schedules_page.ex:291
+#: lib/lotus/web/pages/schedules_page.ex:901
+#: lib/lotus/web/pages/schedules_page.ex:1046
+#: lib/lotus/web/schedules/components.ex:608
 #, elixir-autogen, elixir-format
 msgid "Alert"
 msgstr "Alerte"
 
-#: lib/lotus/web/pages/schedules_page.ex:290
-#, elixir-autogen, elixir-format
-msgid "Alert: firing"
-msgstr "Alerte : déclenchée"
-
-#: lib/lotus/web/pages/schedules_page.ex:226
-#, elixir-autogen, elixir-format
-msgid "Alert: send only when the result crosses a rule"
-msgstr "Alerte : n’envoyer que lorsque le résultat franchit une règle"
-
-#: lib/lotus/web/pages/schedules_page.ex:237
-#, elixir-autogen, elixir-format
-msgid "Also when it recovers"
-msgstr "Aussi lorsqu’elle se rétablit"
-
-#: lib/lotus/web/pages/schedules_page.ex:170
-#, elixir-autogen, elixir-format
-msgid "Choose a query or a dashboard…"
-msgstr "Choisissez une requête ou un tableau de bord…"
-
-#: lib/lotus/web/pages/schedules_page.ex:232
-#, elixir-autogen, elixir-format
-msgid "Column (row count without)"
-msgstr "Colonne (sans : le nombre de lignes)"
-
-#: lib/lotus/web/pages/schedules_page.ex:117
-#, elixir-autogen, elixir-format
-msgid "Delete this schedule and its runs?"
-msgstr "Supprimer cette planification et ses exécutions ?"
-
-#: lib/lotus/web/pages/schedules_page.ex:202
-#, elixir-autogen, elixir-format
-msgid "Deliveries"
-msgstr "Envois"
-
-#: lib/lotus/web/pages/schedules_page.ex:154
-#, elixir-autogen, elixir-format
-msgid "Edit schedule"
-msgstr "Modifier la planification"
-
-#: lib/lotus/web/pages/schedules_page.ex:198
-#, elixir-autogen, elixir-format
-msgid "Enabled"
-msgstr "Activée"
-
-#: lib/lotus/web/pages/schedules_page.ex:263
+#: lib/lotus/web/pages/schedules_page.ex:1095
 #, elixir-autogen, elixir-format
 msgid "It has not run yet."
 msgstr "Elle ne s’est pas encore exécutée."
 
-#: lib/lotus/web/pages/schedules_page.ex:76
-#, elixir-autogen, elixir-format
-msgid "Last run"
-msgstr "Dernière exécution"
-
-#: lib/lotus/web/pages/schedules_page.ex:183
-#, elixir-autogen, elixir-format
-msgid "Minute, hour, day of the month, month, day of the week."
-msgstr "Minute, heure, jour du mois, mois, jour de la semaine."
-
-#: lib/lotus/web/pages/schedules_page.ex:47
-#: lib/lotus/web/pages/schedules_page.ex:154
-#, elixir-autogen, elixir-format
-msgid "New schedule"
-msgstr "Nouvelle planification"
-
-#: lib/lotus/web/pages/schedules_page.ex:75
-#, elixir-autogen, elixir-format
-msgid "Next run"
-msgstr "Prochaine exécution"
-
-#: lib/lotus/web/pages/schedules_page.ex:66
-#, elixir-autogen, elixir-format
-msgid "No schedules yet."
-msgstr "Aucune planification pour l’instant."
-
-#: lib/lotus/web/pages/schedules_page.ex:112
+#: lib/lotus/web/schedules/components.ex:427
 #, elixir-autogen, elixir-format
 msgid "Pause"
 msgstr "Mettre en pause"
 
-#: lib/lotus/web/pages/schedules_page.ex:95
+#: lib/lotus/web/pages/schedules_page.ex:162
+#: lib/lotus/web/schedules/components.ex:222
+#: lib/lotus/web/schedules/components.ex:413
+#: lib/lotus/web/schedules/components.ex:656
 #, elixir-autogen, elixir-format
 msgid "Paused"
 msgstr "En pause"
 
-#: lib/lotus/web/pages/schedules_page.ex:43
-#, elixir-autogen, elixir-format
-msgid "Queries and dashboards run on a schedule, and alerts on query results."
-msgstr "Requêtes et tableaux de bord exécutés selon un calendrier, et alertes sur les résultats des requêtes."
-
-#: lib/lotus/web/live/queries/ai_assistant_component.ex:825
-#: lib/lotus/web/pages/schedules_page.ex:215
-#, elixir-autogen, elixir-format
-msgid "Remove"
-msgstr "Retirer"
-
-#: lib/lotus/web/pages/schedules_page.ex:112
+#: lib/lotus/web/schedules/components.ex:427
 #, elixir-autogen, elixir-format
 msgid "Resume"
 msgstr "Reprendre"
 
-#: lib/lotus/web/pages/schedules_page.ex:73
-#: lib/lotus/web/pages/schedules_page.ex:108
-#: lib/lotus/web/pages/schedules_page.ex:168
-#, elixir-autogen, elixir-format
-msgid "Runs"
-msgstr "Exécutions"
-
-#: lib/lotus/web/pages/schedules_page.ex:259
-#, elixir-autogen, elixir-format
-msgid "Runs of %{name}"
-msgstr "Exécutions de %{name}"
-
-#: lib/lotus/web/pages/dashboard_editor_page.ex:83
-#: lib/lotus/web/pages/query_editor_page.ex:239
-#, elixir-autogen, elixir-format
-msgid "Schedule"
-msgstr "Planifier"
-
-#: lib/lotus/web/components/layouts/live.html.heex:27
-#: lib/lotus/web/pages/schedules_page.ex:40
-#, elixir-autogen, elixir-format
-msgid "Schedules"
-msgstr "Planifications"
-
-#: lib/lotus/web/pages/schedules_page.ex:233
+#: lib/lotus/web/pages/schedules_page.ex:942
 #, elixir-autogen, elixir-format
 msgid "Threshold"
 msgstr "Seuil"
 
-#: lib/lotus/web/pages/schedules_page.ex:187
+#: lib/lotus/web/pages/schedules_page.ex:411
 #, elixir-autogen, elixir-format
 msgid "Time zone"
 msgstr "Fuseau horaire"
 
-#: lib/lotus/web/pages/schedules_page.ex:74
+#: lib/lotus/web/pages/schedules_page.ex:370
 #, elixir-autogen, elixir-format
 msgid "When"
 msgstr "Quand"
 
-#: lib/lotus/web/pages/schedules_page.ex:181
+#: lib/lotus/web/pages/schedules_page.ex:997
 #, elixir-autogen, elixir-format
-msgid "When (cron)"
-msgstr "Quand (cron)"
+msgid "%{city} time (%{offset})"
+msgstr "Heure de %{city} (%{offset})"
 
-#: lib/lotus/web/authorization.ex:207
+#: lib/lotus/web/pages/schedules_page.ex:438
 #, elixir-autogen, elixir-format
-msgid "You don't have permission to manage schedules"
-msgstr "Vous n'avez pas l'autorisation de gérer les planifications"
+msgid "%{count} min"
+msgstr "%{count} min"
+
+#: lib/lotus/web/schedules/cadence.ex:399
+#, elixir-autogen, elixir-format
+msgid "%{list} and %{last}"
+msgstr "%{list} et %{last}"
+
+#: lib/lotus/web/schedules/cadence.ex:403
+#, elixir-autogen, elixir-format
+msgid "%{minute} past"
+msgstr "à la minute %{minute}"
+
+#: lib/lotus/web/pages/schedules_page.ex:670
+#, elixir-autogen, elixir-format
+msgid "%{time} now"
+msgstr "%{time} actuellement"
+
+#: lib/lotus/web/pages/schedules_page.ex:1012
+#, elixir-autogen, elixir-format
+msgid "%{time} your time"
+msgstr "%{time}, votre heure"
+
+#: lib/lotus/web/pages/schedules_page.ex:585
+#, elixir-autogen, elixir-format
+msgid "09:00 and 17:00 on weekdays"
+msgstr "09:00 et 17:00 en semaine"
+
+#: lib/lotus/web/schedules/components.ex:405
+#, elixir-autogen, elixir-format
+msgid "1 destination"
+msgid_plural "%{count} destinations"
+msgstr[0] "1 destination"
+msgstr[1] "%{count} destinations"
+
+#: lib/lotus/web/pages/schedules_page.ex:948
+#, elixir-autogen, elixir-format
+msgid "A column's value in the first row, or the number of rows when no column is named."
+msgstr "La valeur d'une colonne dans la première ligne, ou le nombre de lignes si aucune colonne n'est nommée."
+
+#: lib/lotus/web/pages/schedules_page.ex:1606
+#, elixir-autogen, elixir-format
+msgid "A destination's settings must be a JSON object"
+msgstr "Les paramètres d'une destination doivent être un objet JSON"
+
+#: lib/lotus/web/pages/schedules_page.ex:244
+#, elixir-autogen, elixir-format
+msgid "A query's results, or every card of a dashboard."
+msgstr "Les résultats d'une requête, ou toutes les cartes d'un tableau de bord."
+
+#: lib/lotus/web/schedules/components.ex:317
+#, elixir-autogen, elixir-format
+msgid "A report sends a query's results or a whole dashboard on the days and at the times you choose. An alert checks a query and sends only when a number crosses a line."
+msgstr "Un rapport envoie les résultats d'une requête ou tout un tableau de bord les jours et aux heures de votre choix. Une alerte surveille une requête et n'envoie que lorsqu'un nombre franchit un seuil."
+
+#: lib/lotus/web/pages/schedules_page.ex:162
+#: lib/lotus/web/schedules/components.ex:206
+#: lib/lotus/web/schedules/components.ex:655
+#, elixir-autogen, elixir-format
+msgid "Active"
+msgstr "Actif"
+
+#: lib/lotus/web/pages/schedules_page.ex:866
+#, elixir-autogen, elixir-format
+msgid "Add a destination"
+msgstr "Ajouter une destination"
+
+#: lib/lotus/web/pages/schedules_page.ex:866
+#, elixir-autogen, elixir-format
+msgid "Add another destination"
+msgstr "Ajouter une autre destination"
+
+#: lib/lotus/web/pages/schedules_page.ex:1367
+#, elixir-autogen, elixir-format
+msgid "Alert saved."
+msgstr "Alerte enregistrée."
+
+#: lib/lotus/web/pages/schedules_page.ex:1661
+#, elixir-autogen, elixir-format
+msgid "Alert:"
+msgstr "Alerte :"
+
+#: lib/lotus/web/schedules/components.ex:220
+#, elixir-autogen, elixir-format
+msgid "Alerts"
+msgstr "Alertes"
+
+#: lib/lotus/web/pages/schedules_page.ex:127
+#: lib/lotus/web/pages/schedules_page.ex:128
+#, elixir-autogen, elixir-format
+msgid "All reports and alerts"
+msgstr "Tous les rapports et alertes"
+
+#: lib/lotus/web/pages/schedules_page.ex:954
+#, elixir-autogen, elixir-format
+msgid "Also send when it's back to normal"
+msgstr "Envoyer aussi au retour à la normale"
+
+#: lib/lotus/web/pages/queries_page.ex:70
+#, elixir-autogen, elixir-format
+msgid "An alert is firing"
+msgstr "Une alerte est déclenchée"
+
+#: lib/lotus/web/pages/schedules_page.ex:909
+#, elixir-autogen, elixir-format
+msgid "An alert reads a query's result. Choose a query above to add one."
+msgstr "Une alerte lit le résultat d'une requête. Choisissez une requête ci-dessus pour en ajouter une."
+
+#: lib/lotus/web/pages/schedules_page.ex:453
+#, elixir-autogen, elixir-format
+msgid "At minute"
+msgstr "À la minute"
+
+#: lib/lotus/web/pages/schedules_page.ex:830
+#, elixir-autogen, elixir-format
+msgid "Authorization header"
+msgstr "En-tête Authorization"
+
+#: lib/lotus/web/pages/schedules_page.ex:776
+#, elixir-autogen, elixir-format
+msgid "Channel"
+msgstr "Canal"
+
+#: lib/lotus/web/pages/schedules_page.ex:991
+#, elixir-autogen, elixir-format
+msgid "Checks"
+msgstr "Vérifie"
+
+#: lib/lotus/web/schedules/components.ex:355
+#, elixir-autogen, elixir-format
+msgid "Checks every 15 minutes, sends when it crosses"
+msgstr "Vérifie toutes les 15 minutes, envoie au franchissement"
+
+#: lib/lotus/web/pages/schedules_page.ex:1024
+#, elixir-autogen, elixir-format
+msgid "Choose when it runs to see the next runs."
+msgstr "Choisissez quand il s'exécute pour voir les prochaines exécutions."
+
+#: lib/lotus/web/pages/schedules_page.ex:926
+#, elixir-autogen, elixir-format
+msgid "Column"
+msgstr "Colonne"
+
+#: lib/lotus/web/pages/schedules_page.ex:190
+#, elixir-autogen, elixir-format
+msgid "Create alert"
+msgstr "Créer l'alerte"
+
+#: lib/lotus/web/pages/schedules_page.ex:191
+#, elixir-autogen, elixir-format
+msgid "Create report"
+msgstr "Créer le rapport"
+
+#: lib/lotus/web/pages/schedules_page.ex:147
+#, elixir-autogen, elixir-format
+msgid "Created"
+msgstr "Créé"
+
+#: lib/lotus/web/pages/schedules_page.ex:541
+#, elixir-autogen, elixir-format
+msgid "Cron expression"
+msgstr "Expression cron"
+
+#: lib/lotus/web/pages/schedules_page.ex:427
+#, elixir-autogen, elixir-format
+msgid "Custom"
+msgstr "Personnalisé"
+
+#: lib/lotus/web/pages/schedules_page.ex:424
+#, elixir-autogen, elixir-format
+msgid "Daily"
+msgstr "Quotidien"
+
+#: lib/lotus/web/schedules/components.ex:352
+#, elixir-autogen, elixir-format
+msgid "Daily digest"
+msgstr "Résumé quotidien"
+
+#: lib/lotus/web/pages/schedules_page.ex:511
+#, elixir-autogen, elixir-format
+msgid "Day"
+msgstr "Le jour"
+
+#: lib/lotus/web/pages/schedules_page.ex:512
+#, elixir-autogen, elixir-format
+msgid "Day of the month"
+msgstr "Jour du mois"
+
+#: lib/lotus/web/pages/schedules_page.ex:527
+#, elixir-autogen, elixir-format
+msgid "Day of the week"
+msgstr "Jour de la semaine"
+
+#: lib/lotus/web/pages/schedules_page.ex:479
+#, elixir-autogen, elixir-format
+msgid "Days of the week"
+msgstr "Jours de la semaine"
+
+#: lib/lotus/web/pages/schedules_page.ex:170
+#, elixir-autogen, elixir-format
+msgid "Delete it and the history of its runs?"
+msgstr "Le supprimer avec l'historique de ses exécutions ?"
+
+#: lib/lotus/web/pages/schedules_page.ex:1358
+#, elixir-autogen, elixir-format
+msgid "Deleted."
+msgstr "Supprimé."
+
+#: lib/lotus/web/pages/schedules_page.ex:761
+#, elixir-autogen, elixir-format
+msgid "Deliver to"
+msgstr "Envoyer à"
+
+#: lib/lotus/web/pages/schedules_page.ex:1660
+#, elixir-autogen, elixir-format
+msgid "Destination %{n}:"
+msgstr "Destination %{n} :"
+
+#: lib/lotus/web/pages/schedules_page.ex:588
+#, elixir-autogen, elixir-format
+msgid "Each quarter"
+msgstr "Chaque trimestre"
+
+#: lib/lotus/web/pages/schedules_page.ex:437
+#: lib/lotus/web/pages/schedules_page.ex:446
+#, elixir-autogen, elixir-format
+msgid "Every"
+msgstr "Toutes les"
+
+#: lib/lotus/web/schedules/cadence.ex:331
+#, elixir-autogen, elixir-format
+msgid "Every %{days} at %{time}"
+msgstr "Chaque %{days} à %{time}"
+
+#: lib/lotus/web/schedules/components.ex:350
+#, elixir-autogen, elixir-format
+msgid "Every Monday at 08:00"
+msgstr "Chaque lundi à 08:00"
+
+#: lib/lotus/web/pages/schedules_page.ex:470
+#, elixir-autogen, elixir-format
+msgid "Every day"
+msgstr "Tous les jours"
+
+#: lib/lotus/web/schedules/cadence.ex:311
+#, elixir-autogen, elixir-format
+msgid "Every day at %{time}"
+msgstr "Tous les jours à %{time}"
+
+#: lib/lotus/web/schedules/cadence.ex:303
+#, elixir-autogen, elixir-format
+msgid "Every hour at %{minute}"
+msgid_plural "Every %{count} hours at %{minute}"
+msgstr[0] "Toutes les heures, %{minute}"
+msgstr[1] "Toutes les %{count} heures, %{minute}"
+
+#: lib/lotus/web/pages/schedules_page.ex:586
+#, elixir-autogen, elixir-format
+msgid "Every hour of the working day"
+msgstr "Toutes les heures de la journée de travail"
+
+#: lib/lotus/web/schedules/cadence.ex:296
+#, elixir-autogen, elixir-format
+msgid "Every minute"
+msgid_plural "Every %{count} minutes"
+msgstr[0] "Toutes les minutes"
+msgstr[1] "Toutes les %{count} minutes"
+
+#: lib/lotus/web/schedules/cadence.ex:353
+#, elixir-autogen, elixir-format
+msgid "Every month on day %{day} at %{time}"
+msgstr "Chaque mois le %{day} à %{time}"
+
+#: lib/lotus/web/schedules/cadence.ex:346
+#, elixir-autogen, elixir-format
+msgid "Every month on the %{ordinal} %{weekday} at %{time}"
+msgstr "Chaque mois le %{ordinal} %{weekday} à %{time}"
+
+#: lib/lotus/web/schedules/cadence.ex:343
+#, elixir-autogen, elixir-format
+msgid "Every month on the last day at %{time}"
+msgstr "Chaque mois le dernier jour à %{time}"
+
+#: lib/lotus/web/schedules/cadence.ex:310
+#, elixir-autogen, elixir-format
+msgid "Every weekday at %{time}"
+msgstr "Chaque jour de semaine à %{time}"
+
+#: lib/lotus/web/schedules/components.ex:352
+#, elixir-autogen, elixir-format
+msgid "Every weekday at 09:00"
+msgstr "Chaque jour de semaine à 09:00"
+
+#: lib/lotus/web/pages/schedules_page.ex:566
+#, elixir-autogen, elixir-format
+msgid "Examples:"
+msgstr "Exemples :"
+
+#: lib/lotus/web/pages/schedules_page.ex:1117
+#, elixir-autogen, elixir-format
+msgid "Failed"
+msgstr "Échec"
+
+#: lib/lotus/web/schedules/components.ex:221
+#: lib/lotus/web/schedules/components.ex:653
+#, elixir-autogen, elixir-format
+msgid "Firing"
+msgstr "Déclenchée"
+
+#: lib/lotus/web/schedules/cadence.ex:384
+#, elixir-autogen, elixir-format
+msgid "Fri"
+msgstr "Ven"
+
+#: lib/lotus/web/schedules/cadence.ex:375
+#, elixir-autogen, elixir-format
+msgid "Friday"
+msgstr "vendredi"
+
+#: lib/lotus/web/pages/schedules_page.ex:423
+#, elixir-autogen, elixir-format
+msgid "Hourly"
+msgstr "Toutes les heures"
+
+#: lib/lotus/web/pages/schedules_page.ex:372
+#, elixir-autogen, elixir-format
+msgid "How often"
+msgstr "Fréquence"
+
+#: lib/lotus/web/pages/schedules_page.ex:370
+#, elixir-autogen, elixir-format
+msgid "How often it runs, at what time, and in which time zone."
+msgstr "À quelle fréquence il s'exécute, à quelle heure et dans quel fuseau horaire."
+
+#: lib/lotus/web/pages/queries_page.ex:791
+#, elixir-autogen, elixir-format
+msgid "It could not be changed."
+msgstr "La modification a échoué."
+
+#: lib/lotus/web/pages/schedules_page.ex:64
+#, elixir-autogen, elixir-format
+msgid "It could not be saved"
+msgstr "L'enregistrement a échoué"
+
+#: lib/lotus/web/pages/schedules_page.ex:1092
+#: lib/lotus/web/schedules/components.ex:664
+#, elixir-autogen, elixir-format
+msgid "Latest runs"
+msgstr "Dernières exécutions"
+
+#: lib/lotus/web/pages/schedules_page.ex:825
+#, elixir-autogen, elixir-format
+msgid "Lotus POSTs JSON with the results attached as a %{format} file. Any 2xx answer counts as delivered."
+msgstr "Lotus envoie un POST JSON avec les résultats joints en fichier %{format}. Toute réponse 2xx compte comme livrée."
+
+#: lib/lotus/web/pages/schedules_page.ex:955
+#, elixir-autogen, elixir-format
+msgid "Lotus sends once when the alert starts firing, and once when it recovers; not on every run."
+msgstr "Lotus envoie une fois quand l'alerte se déclenche, et une fois quand elle se rétablit ; pas à chaque exécution."
+
+#: lib/lotus/web/pages/schedules_page.ex:897
+#, elixir-autogen, elixir-format
+msgid "Make it an alert"
+msgstr "En faire une alerte"
+
+#: lib/lotus/web/pages/schedules_page.ex:422
+#, elixir-autogen, elixir-format
+msgid "Minutes"
+msgstr "Minutes"
+
+#: lib/lotus/web/schedules/cadence.ex:380
+#, elixir-autogen, elixir-format
+msgid "Mon"
+msgstr "Lun"
+
+#: lib/lotus/web/schedules/cadence.ex:371
+#, elixir-autogen, elixir-format
+msgid "Monday"
+msgstr "lundi"
+
+#: lib/lotus/web/pages/schedules_page.ex:426
+#, elixir-autogen, elixir-format
+msgid "Monthly"
+msgstr "Mensuel"
+
+#: lib/lotus/web/pages/schedules_page.ex:138
+#, elixir-autogen, elixir-format
+msgid "Name this alert"
+msgstr "Nommer cette alerte"
+
+#: lib/lotus/web/pages/schedules_page.ex:138
+#, elixir-autogen, elixir-format
+msgid "Name this report"
+msgstr "Nommer ce rapport"
+
+#: lib/lotus/web/pages/schedules_page.ex:1662
+#, elixir-autogen, elixir-format
+msgid "Name:"
+msgstr "Nom :"
+
+#: lib/lotus/web/pages/schedules_page.ex:149
+#: lib/lotus/web/schedules/components.ex:139
+#, elixir-autogen, elixir-format
+msgid "New alert"
+msgstr "Nouvelle alerte"
+
+#: lib/lotus/web/pages/schedules_page.ex:149
+#: lib/lotus/web/schedules/components.ex:147
+#: lib/lotus/web/schedules/components.ex:166
+#: lib/lotus/web/schedules/components.ex:342
+#, elixir-autogen, elixir-format
+msgid "New report"
+msgstr "Nouveau rapport"
+
+#: lib/lotus/web/pages/schedules_page.ex:1005
+#, elixir-autogen, elixir-format
+msgid "Next runs"
+msgstr "Prochaines exécutions"
+
+#: lib/lotus/web/schedules/components.ex:152
+#, elixir-autogen, elixir-format
+msgid "No report or alert matches."
+msgstr "Aucun rapport ni alerte ne correspond."
+
+#: lib/lotus/web/schedules/components.ex:665
+#, elixir-autogen, elixir-format
+msgid "No runs yet"
+msgstr "Aucune exécution"
+
+#: lib/lotus/web/pages/schedules_page.ex:713
+#, elixir-autogen, elixir-format
+msgid "No time zone matches. Type an IANA name, such as America/Halifax."
+msgstr "Aucun fuseau horaire ne correspond. Saisissez un nom IANA, comme America/Halifax."
+
+#: lib/lotus/web/pages/schedules_page.ex:1152
+#, elixir-autogen, elixir-format
+msgid "Not a cron expression: %{message}"
+msgstr "Pas une expression cron : %{message}"
+
+#: lib/lotus/web/pages/schedules_page.ex:994
+#, elixir-autogen, elixir-format
+msgid "Not a valid schedule yet"
+msgstr "Planification pas encore valide"
+
+#: lib/lotus/web/pages/schedules_page.ex:1032
+#, elixir-autogen, elixir-format
+msgid "Nothing chosen yet"
+msgstr "Rien de choisi"
+
+#: lib/lotus/web/pages/schedules_page.ex:305
+#, elixir-autogen, elixir-format
+msgid "Nothing has these words. Save a query or a dashboard first, then schedule it."
+msgstr "Rien ne contient ces mots. Enregistrez d'abord une requête ou un tableau de bord, puis planifiez-le."
+
+#: lib/lotus/web/pages/schedules_page.ex:913
+#, elixir-autogen, elixir-format
+msgid "Off: every run sends its results."
+msgstr "Désactivé : chaque exécution envoie ses résultats."
+
+#: lib/lotus/web/pages/schedules_page.ex:466
+#: lib/lotus/web/pages/schedules_page.ex:478
+#: lib/lotus/web/pages/schedules_page.ex:507
+#, elixir-autogen, elixir-format
+msgid "On"
+msgstr "Le"
+
+#: lib/lotus/web/schedules/cadence.ex:291
+#: lib/lotus/web/schedules/cadence.ex:363
+#: lib/lotus/web/schedules/cadence.ex:368
+#, elixir-autogen, elixir-format
+msgid "On a custom schedule"
+msgstr "Selon une planification personnalisée"
+
+#: lib/lotus/web/pages/schedules_page.ex:1072
+#, elixir-autogen, elixir-format
+msgid "Only when %{subject} %{condition} %{threshold}"
+msgstr "Seulement quand %{subject} %{condition} %{threshold}"
+
+#: lib/lotus/web/pages/schedules_page.ex:1081
+#, elixir-autogen, elixir-format
+msgid "Only when the result %{condition}"
+msgstr "Seulement quand le résultat %{condition}"
+
+#: lib/lotus/web/pages/schedules_page.ex:1119
+#, elixir-autogen, elixir-format
+msgid "Pending"
+msgstr "En attente"
+
+#: lib/lotus/web/pages/schedules_page.ex:1040
+#, elixir-autogen, elixir-format
+msgid "Recorded only, sent nowhere"
+msgstr "Enregistré seulement, envoyé nulle part"
+
+#: lib/lotus/web/pages/schedules_page.ex:805
+#: lib/lotus/web/pages/schedules_page.ex:806
+#, elixir-autogen, elixir-format
+msgid "Remove this destination"
+msgstr "Retirer cette destination"
+
+#: lib/lotus/web/schedules/components.ex:608
+#, elixir-autogen, elixir-format
+msgid "Report"
+msgstr "Rapport"
+
+#: lib/lotus/web/pages/query_editor_page.ex:239
+#, elixir-autogen, elixir-format
+msgid "Report or alert"
+msgstr "Rapport ou alerte"
+
+#: lib/lotus/web/pages/schedules_page.ex:1368
+#, elixir-autogen, elixir-format
+msgid "Report saved."
+msgstr "Rapport enregistré."
+
+#: lib/lotus/web/schedules/components.ex:219
+#, elixir-autogen, elixir-format
+msgid "Reports"
+msgstr "Rapports"
+
+#: lib/lotus/web/pages/queries_page.ex:63
+#, elixir-autogen, elixir-format
+msgid "Reports & alerts"
+msgstr "Rapports et alertes"
+
+#: lib/lotus/web/schedules/components.ex:314
+#, elixir-autogen, elixir-format
+msgid "Reports and alerts, delivered"
+msgstr "Rapports et alertes, livrés"
+
+#: lib/lotus/web/pages/schedules_page.ex:1118
+#, elixir-autogen, elixir-format
+msgid "Running"
+msgstr "En cours"
+
+#: lib/lotus/web/schedules/cadence.ex:385
+#, elixir-autogen, elixir-format
+msgid "Sat"
+msgstr "Sam"
+
+#: lib/lotus/web/schedules/cadence.ex:376
+#, elixir-autogen, elixir-format
+msgid "Saturday"
+msgstr "samedi"
+
+#: lib/lotus/web/pages/schedules_page.ex:697
+#, elixir-autogen, elixir-format
+msgid "Search a city, a region or UTC+2…"
+msgstr "Chercher une ville, une région ou UTC+2…"
+
+#: lib/lotus/web/schedules/components.ex:114
+#, elixir-autogen, elixir-format
+msgid "Search reports and alerts"
+msgstr "Chercher des rapports et alertes"
+
+#: lib/lotus/web/schedules/components.ex:112
+#, elixir-autogen, elixir-format
+msgid "Search reports and alerts…"
+msgstr "Chercher des rapports et alertes…"
+
+#: lib/lotus/web/pages/schedules_page.ex:698
+#, elixir-autogen, elixir-format
+msgid "Search time zones"
+msgstr "Chercher un fuseau horaire"
+
+#: lib/lotus/web/pages/schedules_page.ex:281
+#, elixir-autogen, elixir-format
+msgid "Search your queries and dashboards"
+msgstr "Chercher vos requêtes et tableaux de bord"
+
+#: lib/lotus/web/pages/schedules_page.ex:280
+#, elixir-autogen, elixir-format
+msgid "Search your queries and dashboards…"
+msgstr "Chercher vos requêtes et tableaux de bord…"
+
+#: lib/lotus/web/pages/dashboard_editor_page.ex:83
+#, elixir-autogen, elixir-format
+msgid "Send on a schedule"
+msgstr "Envoyer régulièrement"
+
+#: lib/lotus/web/pages/schedules_page.ex:897
+#, elixir-autogen, elixir-format
+msgid "Send only when the result crosses a line, instead of on every run."
+msgstr "N'envoyer que lorsque le résultat franchit un seuil, plutôt qu'à chaque exécution."
+
+#: lib/lotus/web/pages/schedules_page.ex:918
+#, elixir-autogen, elixir-format
+msgid "Send when"
+msgstr "Envoyer quand"
+
+#: lib/lotus/web/pages/schedules_page.ex:991
+#, elixir-autogen, elixir-format
+msgid "Sends"
+msgstr "Envoie"
+
+#: lib/lotus/web/pages/schedules_page.ex:843
+#, elixir-autogen, elixir-format
+msgid "Settings, as JSON"
+msgstr "Paramètres, en JSON"
+
+#: lib/lotus/web/schedules/components.ex:119
+#, elixir-autogen, elixir-format
+msgid "Show"
+msgstr "Afficher"
+
+#: lib/lotus/web/pages/schedules_page.ex:1116
+#, elixir-autogen, elixir-format
+msgid "Succeeded"
+msgstr "Réussie"
+
+#: lib/lotus/web/schedules/cadence.ex:386
+#, elixir-autogen, elixir-format
+msgid "Sun"
+msgstr "Dim"
+
+#: lib/lotus/web/schedules/cadence.ex:377
+#, elixir-autogen, elixir-format
+msgid "Sunday"
+msgstr "dimanche"
+
+#: lib/lotus/web/pages/schedules_page.ex:523
+#, elixir-autogen, elixir-format
+msgid "The"
+msgstr "Le"
+
+#: lib/lotus/web/pages/schedules_page.ex:587
+#, elixir-autogen, elixir-format
+msgid "The 1st and 15th at 07:00"
+msgstr "Le 1er et le 15 à 07:00"
+
+#: lib/lotus/web/pages/schedules_page.ex:999
+#, elixir-autogen, elixir-format
+msgid "The cron expression Lotus stores"
+msgstr "L'expression cron que Lotus enregistre"
+
+#: lib/lotus/web/pages/schedules_page.ex:519
+#, elixir-autogen, elixir-format
+msgid "The last day of the month"
+msgstr "Le dernier jour du mois"
+
+#: lib/lotus/web/pages/schedules_page.ex:1211
+#, elixir-autogen, elixir-format
+msgid "This report or alert does not exist."
+msgstr "Ce rapport ou cette alerte n'existe pas."
+
+#: lib/lotus/web/schedules/components.ex:354
+#, elixir-autogen, elixir-format
+msgid "Threshold alert"
+msgstr "Alerte de seuil"
+
+#: lib/lotus/web/schedules/cadence.ex:383
+#, elixir-autogen, elixir-format
+msgid "Thu"
+msgstr "Jeu"
+
+#: lib/lotus/web/schedules/cadence.ex:374
+#, elixir-autogen, elixir-format
+msgid "Thursday"
+msgstr "jeudi"
+
+#: lib/lotus/web/pages/schedules_page.ex:1659
+#, elixir-autogen, elixir-format
+msgid "Time zone:"
+msgstr "Fuseau horaire :"
+
+#: lib/lotus/web/schedules/cadence.ex:381
+#, elixir-autogen, elixir-format
+msgid "Tue"
+msgstr "Mar"
+
+#: lib/lotus/web/schedules/cadence.ex:372
+#, elixir-autogen, elixir-format
+msgid "Tuesday"
+msgstr "mardi"
+
+#: lib/lotus/web/pages/schedules_page.ex:815
+#, elixir-autogen, elixir-format
+msgid "URL"
+msgstr "URL"
+
+#: lib/lotus/web/pages/schedules_page.ex:682
+#, elixir-autogen, elixir-format
+msgid "Use my time zone (%{city}, %{offset})"
+msgstr "Utiliser mon fuseau horaire (%{city}, %{offset})"
+
+#: lib/lotus/web/schedules/components.ex:654
+#, elixir-autogen, elixir-format
+msgid "Watching"
+msgstr "Surveille"
+
+#: lib/lotus/web/pages/schedules_page.ex:873
+#, elixir-autogen, elixir-format
+msgid "Webhook"
+msgstr "Webhook"
+
+#: lib/lotus/web/schedules/cadence.ex:382
+#, elixir-autogen, elixir-format
+msgid "Wed"
+msgstr "Mer"
+
+#: lib/lotus/web/schedules/cadence.ex:373
+#, elixir-autogen, elixir-format
+msgid "Wednesday"
+msgstr "mercredi"
+
+#: lib/lotus/web/pages/schedules_page.ex:470
+#, elixir-autogen, elixir-format
+msgid "Weekdays only"
+msgstr "En semaine seulement"
+
+#: lib/lotus/web/pages/schedules_page.ex:425
+#, elixir-autogen, elixir-format
+msgid "Weekly"
+msgstr "Hebdomadaire"
+
+#: lib/lotus/web/schedules/components.ex:350
+#, elixir-autogen, elixir-format
+msgid "Weekly report"
+msgstr "Rapport hebdomadaire"
+
+#: lib/lotus/web/pages/schedules_page.ex:1029
+#, elixir-autogen, elixir-format
+msgid "What"
+msgstr "Quoi"
+
+#: lib/lotus/web/pages/schedules_page.ex:851
+#, elixir-autogen, elixir-format
+msgid "What the %{channel} channel needs; its documentation lists them."
+msgstr "Ce dont le canal %{channel} a besoin ; sa documentation les liste."
+
+#: lib/lotus/web/pages/schedules_page.ex:244
+#, elixir-autogen, elixir-format
+msgid "What to send"
+msgstr "Quoi envoyer"
+
+#: lib/lotus/web/pages/schedules_page.ex:1656
+#: lib/lotus/web/pages/schedules_page.ex:1657
+#, elixir-autogen, elixir-format
+msgid "What to send:"
+msgstr "Quoi envoyer :"
+
+#: lib/lotus/web/pages/schedules_page.ex:1658
+#, elixir-autogen, elixir-format
+msgid "When:"
+msgstr "Quand :"
+
+#: lib/lotus/web/pages/schedules_page.ex:1036
+#, elixir-autogen, elixir-format
+msgid "Where"
+msgstr "Où"
+
+#: lib/lotus/web/pages/schedules_page.ex:761
+#, elixir-autogen, elixir-format
+msgid "Where each run's results go. Without a destination, runs are only recorded."
+msgstr "Où vont les résultats de chaque exécution. Sans destination, les exécutions sont seulement enregistrées."
+
+#: lib/lotus/web/pages/schedules_page.ex:524
+#, elixir-autogen, elixir-format
+msgid "Which one"
+msgstr "Lequel"
+
+#: lib/lotus/web/pages/schedules_page.ex:707
+#, elixir-autogen, elixir-format
+msgid "Your time zone"
+msgstr "Votre fuseau horaire"
+
+#: lib/lotus/web/pages/schedules_page.ex:1059
+#, elixir-autogen, elixir-format
+msgid "a webhook"
+msgstr "un webhook"
+
+#: lib/lotus/web/pages/schedules_page.ex:965
+#, elixir-autogen, elixir-format
+msgid "equals"
+msgstr "est égal à"
+
+#: lib/lotus/web/schedules/components.ex:446
+#, elixir-autogen, elixir-format
+msgid "every %{count} minutes"
+msgstr "toutes les %{count} minutes"
+
+#: lib/lotus/web/schedules/components.ex:455
+#, elixir-autogen, elixir-format
+msgid "every hour"
+msgid_plural "every %{count} hours"
+msgstr[0] "toutes les heures"
+msgstr[1] "toutes les %{count} heures"
+
+#: lib/lotus/web/schedules/cadence.ex:393
+#, elixir-autogen, elixir-format
+msgid "first"
+msgstr "premier"
+
+#: lib/lotus/web/schedules/cadence.ex:392
+#, elixir-autogen, elixir-format
+msgid "fourth"
+msgstr "quatrième"
+
+#: lib/lotus/web/pages/schedules_page.ex:966
+#, elixir-autogen, elixir-format
+msgid "has any rows"
+msgstr "a des lignes"
+
+#: lib/lotus/web/pages/schedules_page.ex:967
+#, elixir-autogen, elixir-format
+msgid "has no rows"
+msgstr "n'a aucune ligne"
+
+#: lib/lotus/web/pages/schedules_page.ex:963
+#, elixir-autogen, elixir-format
+msgid "is above"
+msgstr "est supérieur à"
+
+#: lib/lotus/web/pages/schedules_page.ex:964
+#, elixir-autogen, elixir-format
+msgid "is below"
+msgstr "est inférieur à"
+
+#: lib/lotus/web/schedules/cadence.ex:389
+#, elixir-autogen, elixir-format
+msgid "last"
+msgstr "dernier"
+
+#: lib/lotus/web/pages/schedules_page.ex:559
+#, elixir-autogen, elixir-format
+msgid "minute · hour · day of the month · month · day of the week"
+msgstr "minute · heure · jour du mois · mois · jour de la semaine"
+
+#: lib/lotus/web/schedules/cadence.ex:402
+#, elixir-autogen, elixir-format
+msgid "o'clock"
+msgstr "à l'heure pile"
+
+#: lib/lotus/web/schedules/cadence.ex:390
+#, elixir-autogen, elixir-format
+msgid "second"
+msgstr "deuxième"
+
+#: lib/lotus/web/pages/schedules_page.ex:515
+#, elixir-autogen, elixir-format
+msgid "skips the months without it"
+msgstr "les mois sans ce jour sont sautés"
+
+#: lib/lotus/web/pages/schedules_page.ex:930
+#, elixir-autogen, elixir-format
+msgid "the result"
+msgstr "le résultat"
+
+#: lib/lotus/web/pages/schedules_page.ex:925
+#: lib/lotus/web/pages/schedules_page.ex:1070
+#, elixir-autogen, elixir-format
+msgid "the row count"
+msgstr "le nombre de lignes"
+
+#: lib/lotus/web/schedules/cadence.ex:391
+#, elixir-autogen, elixir-format
+msgid "third"
+msgstr "troisième"
+
+#: lib/lotus/web/authorization.ex:209
+#, elixir-autogen, elixir-format
+msgid "You don't have permission to manage reports and alerts"
+msgstr "Vous n'avez pas l'autorisation de gérer les rapports et alertes"
 
 #: lib/lotus/web/queries/ai_steps.ex:96
 #, elixir-autogen, elixir-format
@@ -4494,6 +5256,11 @@ msgstr "Lecture de %{table}"
 #, elixir-autogen, elixir-format
 msgid "Reading the query"
 msgstr "Lecture de la requête"
+
+#: lib/lotus/web/live/queries/ai_assistant_component.ex:825
+#, elixir-autogen, elixir-format
+msgid "Remove"
+msgstr "Retirer"
 
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:978
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:981
