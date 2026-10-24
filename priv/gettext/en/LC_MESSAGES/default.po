@@ -3918,3 +3918,18 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Rich text, headings and filter values"
 msgstr ""
+
+#: lib/lotus/web/queries/masu_messages.ex:18
+#, elixir-autogen, elixir-format
+msgid "Add filter"
+msgstr ""
+
+#: lib/lotus/web/queries/masu_messages.ex:110
+#, elixir-autogen, elixir-format
+msgid "No columns"
+msgstr ""
+
+#: lib/lotus/web/queries/masu_messages.ex:173
+#, elixir-autogen, elixir-format
+msgid "Clear sort"
+msgstr ""

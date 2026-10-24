@@ -45,7 +45,7 @@ defmodule Lotus.Web.MixProject do
       {:jumon, "~> 0.2"},
       {:koyomi, "~> 0.2"},
       {:kotoba, "~> 0.3"},
-      {:masu, "~> 0.5.2"},
+      {:masu, "~> 0.6"},
       # The charts.
       {:fude, "~> 0.4"},
       # The schema diagram.

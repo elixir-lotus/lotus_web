@@ -40,4 +40,18 @@ defmodule Lotus.Web.Case do
 
     :ok
   end
+
+  @doc """
+  The values of every table card on the page, as text: a table card is a
+  Masu grid, whose rows the browser draws (`Masu.Test.rows/3`).
+  """
+  def table_values(live) do
+    ~r/id="(table-\d+)"/
+    |> Regex.scan(Phoenix.LiveViewTest.render(live), capture: :all_but_first)
+    |> List.flatten()
+    |> Enum.uniq()
+    |> Enum.flat_map(&Masu.Test.rows(live, &1))
+    |> Enum.flat_map(&Map.values/1)
+    |> Enum.map(&to_string/1)
+  end
 end

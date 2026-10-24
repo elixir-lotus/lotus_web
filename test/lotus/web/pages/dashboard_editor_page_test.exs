@@ -243,9 +243,9 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
 
       render_async(live)
 
-      assert has_element?(live, "td", "Alice")
-      refute has_element?(live, "td", "Bob")
-      refute has_element?(live, "td", "Charlie")
+      assert "Alice" in table_values(live)
+      refute "Bob" in table_values(live)
+      refute "Charlie" in table_values(live)
     end
 
     test "URL param overrides filter default value", %{dashboard: dashboard} do
@@ -254,9 +254,9 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
 
       render_async(live)
 
-      assert has_element?(live, "td", "Bob")
-      refute has_element?(live, "td", "Alice")
-      refute has_element?(live, "td", "Charlie")
+      assert "Bob" in table_values(live)
+      refute "Alice" in table_values(live)
+      refute "Charlie" in table_values(live)
     end
   end
 

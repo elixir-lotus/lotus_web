@@ -3918,3 +3918,18 @@ msgstr "La valeur d'un filtre s'écrit avec son nom entre accolades :"
 #, elixir-autogen, elixir-format
 msgid "Rich text, headings and filter values"
 msgstr "Texte riche, titres et valeurs des filtres"
+
+#: lib/lotus/web/queries/masu_messages.ex:18
+#, elixir-autogen, elixir-format
+msgid "Add filter"
+msgstr "Ajouter un filtre"
+
+#: lib/lotus/web/queries/masu_messages.ex:110
+#, elixir-autogen, elixir-format
+msgid "No columns"
+msgstr "Aucune colonne"
+
+#: lib/lotus/web/queries/masu_messages.ex:173
+#, elixir-autogen, elixir-format
+msgid "Clear sort"
+msgstr "Effacer le tri"

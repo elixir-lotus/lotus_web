@@ -75,6 +75,13 @@
   settings, and **Cancel** (the dashboard as it was) or **Save** (at once,
   for a dashboard that has its name). Cards are picked and set up only in
   edit mode; a new dashboard opens in it.
+- **Table cards are Masu's grid.** A dashboard card that shows a table is
+  the query editor's grid, read-only and compact, filling the card: every
+  row of the result (not the first 10 rows of 5 columns), each column of
+  its type, sorted and filtered from its header. A card reading its data
+  the first time shows the shape of what comes, a chart's bars or a
+  table's rows, in place of a spinner. Masu 0.6: the query editor's
+  results grid has its filter bar.
 - **One rich text card, written in place.** In edit mode a text card is
   its Kotoba editor, in the card itself (headings, lists, links, quotes,
   code): no more writing it in the settings. `{{region}}` writes a filter's

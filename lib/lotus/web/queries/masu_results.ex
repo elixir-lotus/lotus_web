@@ -86,6 +86,42 @@ defmodule Lotus.Web.Queries.MasuResults do
     """
   end
 
+  @doc """
+  A dashboard card's table: its result in a read-only grid that fills the
+  card, compact, sorted and filtered in the browser's page from its rows (a
+  card's result is in memory), with each column's menu on its header and
+  no bar above it.
+  """
+  attr(:id, :string, required: true)
+  attr(:result, :map, required: true)
+  attr(:label, :string, default: nil)
+
+  def card(assigns) do
+    assigns =
+      assign(assigns,
+        rows: rows(assigns.result),
+        columns: for(name <- assigns.result.columns, do: %{key: name, label: name, raw: true}),
+        messages: MasuMessages.messages(),
+        locale: Gettext.get_locale(Lotus.Web.Gettext)
+      )
+
+    ~H"""
+    <.data_grid
+      id={@id}
+      rows={@rows}
+      columns={@columns}
+      row_id={:position}
+      density={:compact}
+      filter_bar={false}
+      messages={@messages}
+      locale={@locale}
+      label={@label}
+      class="lotus-card-table"
+      height="100%"
+    />
+    """
+  end
+
   # The columns as Lotus names them, of the types of their values, with the
   # filters Lotus runs; their values as Lotus's table shows them (`raw`),
   # not formatted for the locale.
