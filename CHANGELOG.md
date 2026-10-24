@@ -13,6 +13,22 @@
 
 ### Added
 
+- **The AI assistant shows its work, and what a query returns.** While it
+  answers, each step the model takes is listed as it happens (the tables
+  it reads, the values it looks at, the check of the query), folded under
+  the answer once it is done; the editor is no longer covered while it
+  works. An answer's query is highlighted as the editor highlights it,
+  with a copy button, and a refinement shows the lines it adds and
+  removes from the editor's query. A query that needs no variable runs at
+  once, read-only, for its first rows: the answer shows them, and the
+  chart they suggest (a line over dates, bars over names, a number on its
+  own), with a button that puts the query in the editor as that chart.
+  The panel opens on prompts made of the source's own tables, and the
+  optimization suggestions are cards with their impact and statements.
+  Its colours are the theme's. Needs Lotus's `:on_tool_call`
+  (elixir-lotus/lotus); without it the answers come as before, without
+  their steps.
+
 - **Lotus Pro's cards and row actions.** With Pro installed, the "Add card"
   dialog offers the kinds of card Pro adds (`card_type: :pro`, an action
   button for example), and Pro draws them. Pro can also put actions on each

@@ -973,3 +973,650 @@
 .dark .lotus-sketch-number { fill: rgb(var(--lotus-gray-200)); }
 .lotus-sketch-mini .lotus-sketch-card { stroke-width: 0.6; }
 .lotus-sketch-mini .lotus-sketch-line { stroke-width: 0.8; }
+
+/* ── The AI assistant ───────────────────────────────────────
+   The panel of the query editor. Its colours are the theme's: the accent
+   (pink), the grays, and the two of a diff below.
+   ──────────────────────────────────────────────────────────── */
+
+:root {
+    --lotus-diff-added: 22 163 74;
+    --lotus-diff-removed: 225 29 72;
+}
+
+[data-lotus-theme="sumi"] {
+    --lotus-diff-added: 63 122 82;
+    --lotus-diff-removed: 184 64 28;
+}
+
+.lotus-ai-panel {
+    background-image: radial-gradient(
+        120% 260px at 0% 0%,
+        rgb(var(--lotus-pink-500) / 0.07),
+        transparent 70%
+    );
+}
+
+.dark .lotus-ai-panel {
+    background-image: radial-gradient(
+        120% 260px at 0% 0%,
+        rgb(var(--lotus-pink-500) / 0.1),
+        transparent 70%
+    );
+}
+
+/* The mark: the bloom in a soft disc; its side petals open while it works. */
+.lotus-ai-mark {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    color: rgb(var(--lotus-logo-ink));
+    background: linear-gradient(
+        160deg,
+        rgb(var(--lotus-white)),
+        rgb(var(--lotus-pink-50))
+    );
+    box-shadow:
+        inset 0 0 0 1px rgb(var(--lotus-pink-200) / 0.7),
+        0 1px 2px rgb(var(--lotus-pink-900) / 0.06);
+}
+
+.dark .lotus-ai-mark {
+    color: rgb(var(--lotus-logo-ink-dark));
+    background: linear-gradient(
+        160deg,
+        rgb(var(--lotus-gray-700)),
+        rgb(var(--lotus-gray-800))
+    );
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-pink-400) / 0.25);
+}
+
+.lotus-ai-petal {
+    transform-box: view-box;
+    transform-origin: 56px 96px;
+    transition: transform 0.4s ease;
+}
+
+.lotus-ai-mark-busy .lotus-ai-petal-left {
+    animation: lotus-ai-bloom-left 1.6s ease-in-out infinite;
+}
+
+.lotus-ai-mark-busy .lotus-ai-petal-right {
+    animation: lotus-ai-bloom-right 1.6s ease-in-out infinite;
+}
+
+.lotus-ai-mark-busy {
+    animation: lotus-ai-halo 1.6s ease-in-out infinite;
+}
+
+.lotus-ai-mark-hero {
+    box-shadow:
+        inset 0 0 0 1px rgb(var(--lotus-pink-200) / 0.8),
+        0 0 0 8px rgb(var(--lotus-pink-500) / 0.05),
+        0 0 0 18px rgb(var(--lotus-pink-500) / 0.03),
+        0 12px 32px -8px rgb(var(--lotus-pink-600) / 0.25);
+}
+
+.lotus-ai-mark-hero .lotus-ai-petal-left {
+    animation: lotus-ai-open-left 0.9s 0.15s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.lotus-ai-mark-hero .lotus-ai-petal-right {
+    animation: lotus-ai-open-right 0.9s 0.15s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes lotus-ai-bloom-left {
+    50% { transform: rotate(-9deg); }
+}
+
+@keyframes lotus-ai-bloom-right {
+    50% { transform: rotate(9deg); }
+}
+
+@keyframes lotus-ai-open-left {
+    from { transform: rotate(22deg); opacity: 0; }
+}
+
+@keyframes lotus-ai-open-right {
+    from { transform: rotate(-22deg); opacity: 0; }
+}
+
+@keyframes lotus-ai-halo {
+    50% {
+        box-shadow:
+            inset 0 0 0 1px rgb(var(--lotus-pink-300) / 0.9),
+            0 0 0 5px rgb(var(--lotus-pink-500) / 0.1);
+    }
+}
+
+/* What arrives rises in. */
+.lotus-ai-in {
+    animation: lotus-ai-rise 0.36s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes lotus-ai-rise {
+    from { opacity: 0; transform: translateY(6px); }
+}
+
+.lotus-ai-shimmer-text {
+    background: linear-gradient(
+        90deg,
+        rgb(var(--lotus-gray-500)) 0%,
+        rgb(var(--lotus-gray-900)) 40%,
+        rgb(var(--lotus-pink-600)) 50%,
+        rgb(var(--lotus-gray-900)) 60%,
+        rgb(var(--lotus-gray-500)) 100%
+    );
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: lotus-ai-shimmer 2.2s linear infinite;
+}
+
+.dark .lotus-ai-shimmer-text {
+    background-image: linear-gradient(
+        90deg,
+        rgb(var(--lotus-gray-500)) 0%,
+        rgb(var(--lotus-gray-100)) 40%,
+        rgb(var(--lotus-pink-400)) 50%,
+        rgb(var(--lotus-gray-100)) 60%,
+        rgb(var(--lotus-gray-500)) 100%
+    );
+}
+
+.lotus-ai-skeleton {
+    border-radius: var(--lotus-radius);
+    background: linear-gradient(
+        90deg,
+        rgb(var(--lotus-gray-100)) 0%,
+        rgb(var(--lotus-pink-100) / 0.8) 50%,
+        rgb(var(--lotus-gray-100)) 100%
+    );
+    background-size: 250% 100%;
+    animation: lotus-ai-shimmer 1.6s linear infinite;
+}
+
+.dark .lotus-ai-skeleton {
+    background-image: linear-gradient(
+        90deg,
+        rgb(var(--lotus-gray-700) / 0.7) 0%,
+        rgb(var(--lotus-pink-500) / 0.18) 50%,
+        rgb(var(--lotus-gray-700) / 0.7) 100%
+    );
+}
+
+@keyframes lotus-ai-shimmer {
+    from { background-position: 100% 0; }
+    to { background-position: -150% 0; }
+}
+
+/* The steps. */
+.lotus-ai-step-dot {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 9999px;
+}
+
+.lotus-ai-step-running {
+    background: rgb(var(--lotus-pink-500));
+    transform: scale(0.55);
+    animation: lotus-ai-pulse 1.1s ease-in-out infinite;
+}
+
+.lotus-ai-step-done {
+    color: rgb(var(--lotus-pink-600));
+    background: rgb(var(--lotus-pink-100));
+}
+
+.dark .lotus-ai-step-done {
+    color: rgb(var(--lotus-pink-300));
+    background: rgb(var(--lotus-pink-500) / 0.2);
+}
+
+.lotus-ai-step-failed {
+    color: rgb(var(--lotus-diff-removed));
+    background: rgb(var(--lotus-diff-removed) / 0.12);
+}
+
+@keyframes lotus-ai-pulse {
+    50% {
+        box-shadow: 0 0 0 5px rgb(var(--lotus-pink-500) / 0.25);
+    }
+}
+
+.lotus-ai-chip {
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 0.375rem;
+    border-radius: 9999px;
+    font-family: Menlo, Monaco, Consolas, monospace;
+    font-size: 10px;
+    line-height: 1.125rem;
+    color: rgb(var(--lotus-gray-600));
+    background: rgb(var(--lotus-gray-100));
+}
+
+.dark .lotus-ai-chip {
+    color: rgb(var(--lotus-gray-300));
+    background: rgb(var(--lotus-gray-700) / 0.7);
+}
+
+/* The conversation. */
+.lotus-ai-user {
+    padding: 0.5rem 0.875rem;
+    border-radius: 1.125rem 1.125rem 0.375rem 1.125rem;
+    color: rgb(var(--lotus-gray-900));
+    background: rgb(var(--lotus-pink-50));
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-pink-200) / 0.6);
+}
+
+.dark .lotus-ai-user {
+    color: rgb(var(--lotus-gray-50));
+    background: rgb(var(--lotus-pink-500) / 0.14);
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-pink-400) / 0.2);
+}
+
+.lotus-ai-prompt {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--lotus-radius-xl);
+    font-size: 0.8125rem;
+    color: rgb(var(--lotus-gray-700));
+    background: rgb(var(--lotus-white) / 0.7);
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-gray-200));
+    transition: box-shadow 0.15s, background-color 0.15s, transform 0.15s;
+}
+
+.lotus-ai-prompt:hover {
+    background: rgb(var(--lotus-pink-50) / 0.6);
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-pink-300));
+    transform: translateX(2px);
+}
+
+.dark .lotus-ai-prompt {
+    color: rgb(var(--lotus-gray-200));
+    background: rgb(var(--lotus-gray-900) / 0.4);
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-gray-700));
+}
+
+.dark .lotus-ai-prompt:hover {
+    background: rgb(var(--lotus-pink-500) / 0.08);
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-pink-400) / 0.5);
+}
+
+.lotus-ai-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem;
+    border-radius: var(--lotus-radius-md);
+    color: rgb(var(--lotus-gray-400));
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.lotus-ai-icon-button:hover {
+    color: rgb(var(--lotus-gray-700));
+    background: rgb(var(--lotus-gray-100));
+}
+
+.dark .lotus-ai-icon-button:hover {
+    color: rgb(var(--lotus-gray-200));
+    background: rgb(var(--lotus-gray-700));
+}
+
+.lotus-ai-icon-button[data-copied] {
+    color: rgb(var(--lotus-pink-600));
+}
+
+/* A query: the editor's colours, its lines wrapped. */
+.lotus-ai-code {
+    overflow: hidden;
+    border-radius: var(--lotus-radius-xl);
+    background: rgb(var(--lotus-editor-light));
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-gray-200) / 0.8);
+}
+
+.dark .lotus-ai-code {
+    background: rgb(var(--lotus-gray-900) / 0.6);
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-gray-700) / 0.8);
+}
+
+.lotus-ai-sql {
+    margin: 0;
+    padding: 0.125rem 0 0.625rem;
+    font-family: Monaco, Menlo, "Ubuntu Mono", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: rgb(var(--lotus-gray-800));
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.dark .lotus-ai-sql {
+    color: rgb(var(--lotus-gray-200));
+}
+
+.lotus-ai-line {
+    display: block;
+    min-height: 1.6em;
+    padding: 0 0.75rem;
+}
+
+.lotus-ai-line-added {
+    background: rgb(var(--lotus-diff-added) / 0.1);
+    box-shadow: inset 2px 0 rgb(var(--lotus-diff-added));
+}
+
+.lotus-ai-line-added::before {
+    content: "+";
+    margin-left: -0.5rem;
+    width: 0.5rem;
+    display: inline-block;
+    color: rgb(var(--lotus-diff-added));
+}
+
+.lotus-ai-line-removed {
+    background: rgb(var(--lotus-diff-removed) / 0.08);
+    box-shadow: inset 2px 0 rgb(var(--lotus-diff-removed));
+    text-decoration: line-through;
+    text-decoration-color: rgb(var(--lotus-diff-removed) / 0.5);
+    opacity: 0.75;
+}
+
+.lotus-ai-line-removed::before {
+    content: "−";
+    margin-left: -0.5rem;
+    width: 0.5rem;
+    display: inline-block;
+    color: rgb(var(--lotus-diff-removed));
+}
+
+.lotus-ai-diff-count-added { color: rgb(var(--lotus-diff-added)); }
+.lotus-ai-diff-count-removed { color: rgb(var(--lotus-diff-removed)); }
+
+.lotus-ai-sql .tok-keyword { color: var(--lotus-syntax-keyword, #708); }
+.lotus-ai-sql :is(.tok-string, .tok-string2) { color: var(--lotus-syntax-string, #a11); }
+.lotus-ai-sql :is(.tok-number, .tok-literal, .tok-bool, .tok-atom) { color: var(--lotus-syntax-number, #164); }
+.lotus-ai-sql :is(.tok-typeName, .tok-namespace) { color: var(--lotus-syntax-type, #085); }
+.lotus-ai-sql .tok-comment { color: var(--lotus-syntax-comment, #940); }
+
+.dark .lotus-ai-sql .tok-keyword { color: var(--lotus-syntax-keyword, #c792ea); }
+.dark .lotus-ai-sql :is(.tok-string, .tok-string2) { color: var(--lotus-syntax-string, #c3e88d); }
+.dark .lotus-ai-sql :is(.tok-number, .tok-literal, .tok-bool, .tok-atom) { color: var(--lotus-syntax-number, #f78c6c); }
+.dark .lotus-ai-sql :is(.tok-typeName, .tok-namespace) { color: var(--lotus-syntax-type, #82aaff); }
+.dark .lotus-ai-sql .tok-comment { color: var(--lotus-syntax-comment, #7f848e); }
+
+/* What a query returns. */
+.lotus-ai-preview {
+    padding: 0.75rem;
+    border-radius: var(--lotus-radius-xl);
+    background: rgb(var(--lotus-white));
+    box-shadow:
+        inset 0 0 0 1px rgb(var(--lotus-gray-200) / 0.8),
+        0 1px 2px rgb(var(--lotus-black) / 0.03);
+}
+
+.dark .lotus-ai-preview {
+    background: rgb(var(--lotus-gray-900) / 0.35);
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-gray-700) / 0.8);
+}
+
+.lotus-ai-chart-line {
+    stroke-dasharray: 1200;
+    stroke-dashoffset: 1200;
+    animation: lotus-ai-draw 1.1s 0.1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.lotus-ai-chart-area {
+    animation: lotus-ai-fade 0.8s 0.5s ease both;
+}
+
+.lotus-ai-chart-dot {
+    animation: lotus-ai-fade 0.3s 1.1s ease both;
+}
+
+.lotus-ai-chart-bar {
+    transform-box: fill-box;
+    transform-origin: bottom;
+    animation: lotus-ai-grow 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes lotus-ai-draw { to { stroke-dashoffset: 0; } }
+@keyframes lotus-ai-fade { from { opacity: 0; } }
+@keyframes lotus-ai-grow { from { transform: scaleY(0); } }
+
+/* Buttons. */
+.lotus-ai-primary,
+.lotus-ai-secondary,
+.lotus-ai-chip-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: background-color 0.15s, box-shadow 0.15s, color 0.15s, transform 0.1s;
+}
+
+.lotus-ai-primary:active,
+.lotus-ai-secondary:active,
+.lotus-ai-chip-button:active {
+    transform: scale(0.97);
+}
+
+.lotus-ai-primary {
+    padding: 0.375rem 0.875rem;
+    color: rgb(var(--lotus-white));
+    background: rgb(var(--lotus-pink-600));
+    box-shadow: 0 1px 2px rgb(var(--lotus-pink-900) / 0.2), inset 0 1px rgb(var(--lotus-white) / 0.15);
+}
+
+.lotus-ai-primary:hover {
+    background: rgb(var(--lotus-pink-700));
+}
+
+.lotus-ai-secondary {
+    padding: 0.375rem 0.75rem;
+    color: rgb(var(--lotus-gray-700));
+    background: rgb(var(--lotus-white));
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-gray-300));
+}
+
+.lotus-ai-secondary:hover {
+    color: rgb(var(--lotus-pink-700));
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-pink-300));
+}
+
+.dark .lotus-ai-secondary {
+    color: rgb(var(--lotus-gray-200));
+    background: rgb(var(--lotus-gray-800));
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-gray-600));
+}
+
+.dark .lotus-ai-secondary:hover {
+    color: rgb(var(--lotus-pink-300));
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-pink-400) / 0.6);
+}
+
+.lotus-ai-chip-button {
+    padding: 0.25rem 0.625rem;
+    color: rgb(var(--lotus-gray-600));
+    background: rgb(var(--lotus-white) / 0.8);
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-gray-200));
+}
+
+.lotus-ai-chip-button:not(:disabled):hover {
+    color: rgb(var(--lotus-pink-700));
+    background: rgb(var(--lotus-pink-50));
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-pink-200));
+}
+
+.lotus-ai-chip-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.dark .lotus-ai-chip-button {
+    color: rgb(var(--lotus-gray-300));
+    background: rgb(var(--lotus-gray-900) / 0.4);
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-gray-700));
+}
+
+.dark .lotus-ai-chip-button:not(:disabled):hover {
+    color: rgb(var(--lotus-pink-300));
+    background: rgb(var(--lotus-pink-500) / 0.1);
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-pink-400) / 0.4);
+}
+
+/* The composer. */
+.lotus-ai-composer {
+    border-radius: 1rem;
+    background: rgb(var(--lotus-white));
+    box-shadow:
+        inset 0 0 0 1px rgb(var(--lotus-gray-200)),
+        0 4px 16px -6px rgb(var(--lotus-black) / 0.08);
+    transition: box-shadow 0.2s;
+}
+
+.lotus-ai-composer:focus-within {
+    box-shadow:
+        inset 0 0 0 1px rgb(var(--lotus-pink-400)),
+        0 0 0 4px rgb(var(--lotus-pink-500) / 0.1),
+        0 8px 24px -8px rgb(var(--lotus-pink-600) / 0.2);
+}
+
+.dark .lotus-ai-composer {
+    background: rgb(var(--lotus-gray-900) / 0.6);
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-gray-700));
+}
+
+.dark .lotus-ai-composer:focus-within {
+    box-shadow:
+        inset 0 0 0 1px rgb(var(--lotus-pink-400) / 0.7),
+        0 0 0 4px rgb(var(--lotus-pink-500) / 0.12);
+}
+
+.lotus-ai-send {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    color: rgb(var(--lotus-white));
+    background: rgb(var(--lotus-pink-600));
+    transition: background-color 0.15s, transform 0.1s;
+}
+
+.lotus-ai-send:hover:not(:disabled) {
+    background: rgb(var(--lotus-pink-700));
+}
+
+.lotus-ai-send:active:not(:disabled) {
+    transform: scale(0.94);
+}
+
+.lotus-ai-send:disabled {
+    background: rgb(var(--lotus-pink-300));
+}
+
+.dark .lotus-ai-send:disabled {
+    background: rgb(var(--lotus-pink-500) / 0.35);
+}
+
+.lotus-ai-send-busy {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 2px;
+    background: rgb(var(--lotus-white));
+    animation: lotus-ai-fade 0.6s ease-in-out infinite alternate;
+}
+
+/* Alerts, suggestions, explanations. */
+.lotus-ai-alert {
+    padding: 0.75rem;
+    border-radius: var(--lotus-radius-xl);
+}
+
+.lotus-ai-alert-error {
+    color: rgb(var(--lotus-rose-900));
+    background: rgb(var(--lotus-rose-50));
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-rose-200));
+}
+
+.dark .lotus-ai-alert-error {
+    color: rgb(var(--lotus-rose-100));
+    background: rgb(var(--lotus-rose-500) / 0.1);
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-rose-500) / 0.3);
+}
+
+.lotus-ai-alert-muted {
+    color: rgb(var(--lotus-gray-700));
+    background: rgb(var(--lotus-gray-50));
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-gray-200));
+}
+
+.dark .lotus-ai-alert-muted {
+    color: rgb(var(--lotus-gray-200));
+    background: rgb(var(--lotus-gray-900) / 0.4);
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-gray-700));
+}
+
+.lotus-ai-suggestion {
+    padding: 0.75rem;
+    border-radius: var(--lotus-radius-xl);
+    background: rgb(var(--lotus-white));
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-gray-200) / 0.9);
+}
+
+.lotus-ai-suggestion[open] {
+    box-shadow:
+        inset 0 0 0 1px rgb(var(--lotus-pink-200)),
+        0 4px 14px -6px rgb(var(--lotus-pink-600) / 0.15);
+}
+
+.dark .lotus-ai-suggestion {
+    background: rgb(var(--lotus-gray-900) / 0.35);
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-gray-700));
+}
+
+.dark .lotus-ai-suggestion[open] {
+    box-shadow: inset 0 0 0 1px rgb(var(--lotus-pink-400) / 0.35);
+}
+
+.lotus-ai-suggestion summary::-webkit-details-marker,
+.lotus-ai-panel summary::-webkit-details-marker {
+    display: none;
+}
+
+.lotus-ai-explanation {
+    padding-left: 0.875rem;
+    border-left: 2px solid rgb(var(--lotus-pink-300));
+}
+
+.dark .lotus-ai-explanation {
+    border-left-color: rgb(var(--lotus-pink-400) / 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lotus-ai-panel *,
+    .lotus-ai-panel {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .lotus-ai-chart-line { stroke-dashoffset: 0; }
+}

@@ -212,6 +212,93 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
       assert html =~ "select"
     end
 
+    test "the steps the model takes show while it answers" do
+      {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
+
+      conversation =
+        build_ai_conversation([
+          %{
+            role: :user,
+            content: "Revenue by month",
+            statement: nil,
+            timestamp: DateTime.utc_now()
+          }
+        ])
+
+      Phoenix.LiveView.send_update(live.pid, Lotus.Web.QueryEditorPage,
+        id: "page",
+        ai_conversation: conversation,
+        ai_generating: true,
+        ai_action: :generate,
+        left_drawer: :ai_assistant
+      )
+
+      for event <- [
+            %{phase: :start, id: 1, tool: "describe_table", args: %{"table_name" => "orders"}},
+            %{
+              phase: :stop,
+              id: 1,
+              result: ~s({"columns":[{"name":"id"},{"name":"total"}]}),
+              duration: 0
+            }
+          ] do
+        Phoenix.LiveView.send_update(live.pid, Lotus.Web.QueryEditorPage,
+          id: "page",
+          action: :ai_tool_call,
+          event: event
+        )
+      end
+
+      html = render(live)
+      assert html =~ "Writing the query"
+      assert html =~ "Reading orders"
+      assert html =~ "2 columns"
+    end
+
+    test "a previewed answer's chart goes into the editor as that chart" do
+      {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
+
+      conversation =
+        build_ai_conversation([
+          %{
+            role: :user,
+            content: "Users by status",
+            statement: nil,
+            timestamp: DateTime.utc_now()
+          },
+          %{
+            role: :assistant,
+            content: "Here's your query:",
+            statement: "SELECT status, count(*) AS users FROM users GROUP BY 1",
+            variables: [],
+            timestamp: DateTime.utc_now(),
+            preview: %{
+              status: :ok,
+              columns: ["status", "users"],
+              rows: [["active", 3], ["inactive", 1]],
+              error: nil,
+              chart: %{
+                type: "bar",
+                x: "status",
+                y: "users",
+                points: [{"active", 3}, {"inactive", 1}]
+              }
+            }
+          }
+        ])
+
+      html = set_ai_conversation(live, conversation)
+      assert html =~ "Use as bar chart"
+      assert html =~ "users by status"
+
+      live
+      |> element(~s(button[phx-click="use_ai_chart"]))
+      |> render_click()
+
+      html = render_async(live)
+      assert html =~ "SELECT status, count(*) AS users FROM users GROUP BY 1"
+    end
+
     test "variables_detected without pending AI variables uses defaults" do
       {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
 

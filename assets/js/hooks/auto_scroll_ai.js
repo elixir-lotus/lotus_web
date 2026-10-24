@@ -1,19 +1,24 @@
 /**
  * AutoScrollAI Hook
  *
- * Automatically scrolls the AI conversation history to the bottom
- * when new messages are added.
+ * Keeps the AI conversation at its newest message as messages and steps
+ * arrive, unless the reader has scrolled up to read an earlier one.
  */
 export default {
   mounted() {
-    this.scrollToBottom();
+    this.pinned = true;
+    this.el.addEventListener("scroll", () => {
+      const { scrollTop, scrollHeight, clientHeight } = this.el;
+      this.pinned = scrollHeight - scrollTop - clientHeight < 48;
+    });
+    this.scrollToBottom("auto");
   },
 
   updated() {
-    this.scrollToBottom();
+    if (this.pinned) this.scrollToBottom("smooth");
   },
 
-  scrollToBottom() {
-    this.el.scrollTop = this.el.scrollHeight;
-  }
+  scrollToBottom(behavior) {
+    this.el.scrollTo({ top: this.el.scrollHeight, behavior });
+  },
 };

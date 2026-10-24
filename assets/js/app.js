@@ -17,6 +17,7 @@ import AIMessageInput from "./hooks/ai_message_input";
 import AIPromptInput from "./hooks/ai_prompt_input";
 import AutoRefresh from "./hooks/auto_refresh";
 import AutoScrollAI from "./hooks/auto_scroll_ai";
+import { AiSql, AiCopy } from "./hooks/ai_sql";
 import Clipboard from "./hooks/clipboard";
 import DashboardGrid from "./hooks/dashboard_grid";
 import ColumnStats from "./hooks/column_stats";
@@ -124,6 +125,8 @@ const hooks = {
   AIPromptInput,
   AutoRefresh,
   AutoScrollAI,
+  AiSql,
+  AiCopy,
   Clipboard,
   DashboardGrid,
   DispatchChangeOnUpdate,
