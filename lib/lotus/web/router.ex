@@ -55,10 +55,10 @@ defmodule Lotus.Web.Router do
   * `:features` — a list of optional feature flags to enable. Defaults to `[]`.
     Supported features:
     * `:timeout_options` — shows a per-query timeout selector in the query editor toolbar.
-    * `:schedules` — the Schedules page: queries and dashboards run
-      on a schedule, and alerts on query results, with their deliveries and runs. Changing them
-      asks for `:manage_schedule`. Lotus runs them only with its scheduler enabled; see
-      `Lotus.Schedules`.
+    * `:schedules` — reports and alerts: a "Reports & alerts" tab on the home page
+      and an editor, for queries and dashboards sent on a schedule and alerts on query
+      results, with their deliveries and runs. Changing them asks for `:manage_schedule`.
+      Lotus runs them only with its scheduler enabled; see `Lotus.Schedules`.
 
   * `:theme` — the look of the dashboard: `:lotus` (the default) or `:sumi`, the design system
     of Hattori AI. A person can pick the other theme in the appearance menu; their choice is

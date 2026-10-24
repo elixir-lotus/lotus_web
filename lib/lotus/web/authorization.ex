@@ -28,7 +28,7 @@ defmodule Lotus.Web.Authorization do
   | `:manage_dashboard` | `nil` for a new dashboard, else the `%Lotus.Storage.Dashboard{}` |
   | `:manage_source` | `nil` |
   | `:manage_cache` | `nil` |
-  | `:manage_schedule` | `nil`: creating, editing, pausing and deleting schedules and alerts |
+  | `:manage_schedule` | `nil`: creating, editing, pausing and deleting reports and alerts (`Lotus.Schedules`) |
 
   ## Cost
 
@@ -204,7 +204,9 @@ defmodule Lotus.Web.Authorization do
   def reason(:ai_generate), do: gettext("You don't have permission to use the AI assistant")
   def reason(:manage_source), do: gettext("You don't have permission to manage data sources")
   def reason(:manage_cache), do: gettext("You don't have permission to manage the cache")
-  def reason(:manage_schedule), do: gettext("You don't have permission to manage schedules")
+
+  def reason(:manage_schedule),
+    do: gettext("You don't have permission to manage reports and alerts")
 
   defp access(%{resolver: _resolver, access: access}), do: access
 
