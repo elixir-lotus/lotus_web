@@ -13,6 +13,16 @@
 
 ### Added
 
+- **Telemetry for what people do in the dashboard** (`Lotus.Web.Telemetry`),
+  each event with the resolver's `:context`:
+  - `[:lotus_web, :dashboard, :view]` when a dashboard is opened, with
+    `public: true` through its share link;
+  - `[:lotus_web, :card, :run, ...]` around each query card's run, with its
+    result;
+  - `[:lotus_web, :export, ...]` around a CSV download, with the bytes sent;
+  - `[:lotus_web, :ai, ...]` around each AI action of the query editor
+    (generate, optimize, explain), around core's `[:lotus, :ai, ...]`.
+
 - **The queries, as a gallery.** The Queries tab shows a tile for each
   query: the chart it is saved with, sketched, or the first lines of its
   SQL (its keywords and variables marked); its source; its name and

@@ -81,7 +81,7 @@ defmodule Lotus.Web.ExportController do
       |> put_resp_content_type("text/csv")
       |> put_resp_header("content-disposition", ~s(attachment; filename="#{filename}"))
       |> send_chunked(200)
-      |> stream_chunks(query, export_params, Actor.resolve(resolver, user))
+      |> stream_export(query, export_params, Actor.resolve(resolver, user))
     else
       {:deny, reason} ->
         conn
@@ -134,6 +134,16 @@ defmodule Lotus.Web.ExportController do
 
   defp build_variables(_), do: []
 
+  # The download runs in an `[:lotus_web, :export]` span (`Lotus.Web.Telemetry`).
+  defp stream_export(conn, query, export_params, {context, _scope} = actor) do
+    metadata = %{query: query, source: export_params["repo"], format: :csv, context: context}
+
+    :telemetry.span([:lotus_web, :export], metadata, fn ->
+      {conn, bytes, status} = stream_chunks(conn, query, export_params, actor)
+      {conn, %{bytes: bytes}, Map.put(metadata, :status, status)}
+    end)
+  end
+
   defp stream_chunks(conn, query, export_params, actor) do
     repo = export_params["repo"]
     vars = export_params["vars"] || %{}
@@ -156,10 +166,10 @@ defmodule Lotus.Web.ExportController do
 
     query
     |> Export.stream_csv(opts)
-    |> Enum.reduce_while(conn, fn chunk, conn ->
-      case chunk(conn, chunk) do
-        {:ok, conn} -> {:cont, conn}
-        {:error, :closed} -> {:halt, conn}
+    |> Enum.reduce_while({conn, 0, :ok}, fn data, {conn, bytes, :ok} ->
+      case chunk(conn, data) do
+        {:ok, conn} -> {:cont, {conn, bytes + IO.iodata_length(data), :ok}}
+        {:error, :closed} -> {:halt, {conn, bytes, :closed}}
       end
     end)
   end
