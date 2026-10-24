@@ -170,7 +170,7 @@ defmodule Lotus.Web.PublicDashboardPage do
 
   def handle_info(_msg, socket), do: {:noreply, socket}
 
-  # A package may refuse the link (`Lotus.Web.Pro.authorize_public_dashboard/2`).
+  # Lotus Pro may refuse the link (`Lotus.Web.Pro.authorize_public_dashboard/2`).
   defp open(socket, dashboard, params) do
     case Pro.authorize_public_dashboard(dashboard, params) do
       :allow ->

@@ -22,12 +22,11 @@
   colours over the router's. A public dashboard's "Powered by Lotus" footer
   always shows, with Pro too.
 
-- **A package can refuse a share link.** Before a public dashboard is shown,
-  the integration bridge asks `authorize_public_dashboard(dashboard,
-  params)`, with the URL's params, on every load of the link. `{:deny,
-  message}` shows the message instead of the dashboard, for a link that
-  expired or was revoked. Without a package that answers, every link works
-  as before.
+- **Lotus Pro can refuse a share link.** Before a public dashboard is shown,
+  the dashboard asks Pro's `authorize_public_dashboard(dashboard, params)`,
+  with the URL's params, on every load of the link. `{:deny, message}` shows
+  the message instead of the dashboard, for a link that expired or was
+  revoked. Without Pro, every link works as before.
 
 - **Telemetry for what people do in the dashboard** (`Lotus.Web.Telemetry`),
   each event with the resolver's `:context`:

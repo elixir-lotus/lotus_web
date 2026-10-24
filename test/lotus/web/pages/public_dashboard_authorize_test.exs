@@ -1,14 +1,15 @@
 defmodule Lotus.Web.Pages.PublicDashboardAuthorizeTest do
   @moduledoc """
-  A package decides whether a share link shows its dashboard
-  (`Lotus.Web.Pro.authorize_public_dashboard/2`). The package is stood in
-  for through a setting, so these tests run alone.
+  Lotus Pro decides whether a share link shows its dashboard
+  (`Lotus.Web.Pro.authorize_public_dashboard/2`); without Pro every link
+  works. `ProWeb` stands in for `Lotus.Pro.Web` through a setting, so these
+  tests run alone.
   """
   use Lotus.Web.Case, async: false
 
   import Phoenix.LiveViewTest
 
-  defmodule Package do
+  defmodule ProWeb do
     @moduledoc false
 
     def pages, do: []
@@ -27,16 +28,16 @@ defmodule Lotus.Web.Pages.PublicDashboardAuthorizeTest do
   end
 
   setup do
-    Application.put_env(:lotus_web, :__pro_web__, Package)
-    :persistent_term.put({Package, :test}, self())
+    Application.put_env(:lotus_web, :__pro_web__, ProWeb)
+    :persistent_term.put({ProWeb, :test}, self())
 
     on_exit(fn ->
       Application.delete_env(:lotus_web, :__pro_web__)
-      :persistent_term.erase({Package, :test})
+      :persistent_term.erase({ProWeb, :test})
     end)
   end
 
-  test "an allowed link shows the dashboard, and the package sees the URL's params" do
+  test "an allowed link shows the dashboard, and Pro sees the URL's params" do
     dashboard = public_dashboard_fixture(%{name: "Sales", description: "Shared view"})
 
     {:ok, _live, html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}?key=abc")
@@ -46,7 +47,7 @@ defmodule Lotus.Web.Pages.PublicDashboardAuthorizeTest do
     assert_received {:asked, ^id, %{"key" => "abc", "token" => _}}
   end
 
-  test "a denied link shows the package's message, not the dashboard" do
+  test "a denied link shows Pro's message, not the dashboard" do
     dashboard = public_dashboard_fixture(%{name: "Expired", description: "Secret numbers"})
     dashboard_card_fixture(dashboard, %{title: "Revenue note"})
 
@@ -58,7 +59,7 @@ defmodule Lotus.Web.Pages.PublicDashboardAuthorizeTest do
     refute html =~ "Revenue note"
   end
 
-  test "an answer the package should not give denies" do
+  test "an answer Pro should not give denies" do
     dashboard = public_dashboard_fixture(%{name: "Odd", description: "Secret numbers"})
 
     {:ok, _live, html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
