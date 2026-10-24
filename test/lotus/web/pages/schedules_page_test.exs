@@ -12,6 +12,13 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
 
   defp page(live), do: with_target(live, "#schedules-page")
 
+  defmodule Elixir.Lotus.Web.Test.ChangeCondition do
+    @moduledoc false
+    def validate(_rule), do: :ok
+    def evaluate(_rule, _result, _state), do: {:ok, false, nil}
+    def describe(_rule, _status, _value), do: ""
+  end
+
   defp schedule_fixture(query, attrs \\ %{}) do
     {:ok, schedule} =
       Schedules.create_schedule(
@@ -122,6 +129,33 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
 
       assert Decimal.equal?(rule.threshold, 500)
       assert has_element?(live, "#schedule-#{schedule.id}-alert", "Alert")
+    end
+
+    test "a condition registered by name (Lotus Pro's, or the app's) is offered" do
+      Application.put_env(:lotus, :alerts,
+        conditions: %{"change" => Lotus.Web.Test.ChangeCondition}
+      )
+
+      Lotus.Config.reload!()
+
+      on_exit(fn ->
+        Application.delete_env(:lotus, :alerts)
+        Lotus.Config.reload!()
+      end)
+
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules")
+      live |> element("#new-schedule") |> render_click()
+      live |> form("#schedule-form", draft: %{alert: "true"}) |> render_change()
+
+      assert has_element?(
+               live,
+               ~s(#schedule-form select[name="draft[condition]"] option[value="change"])
+             )
+
+      assert has_element?(
+               live,
+               ~s(#schedule-form select[name="draft[condition]"] option[value="above"])
+             )
     end
 
     test "a schedule is edited, paused and deleted", %{query: query} do

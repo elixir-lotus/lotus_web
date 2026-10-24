@@ -14,6 +14,7 @@ defmodule Lotus.Web.SchedulesPage do
   use Lotus.Web, :live_component
 
   alias Lotus.Schedules
+  alias Lotus.Schedules.Alert
 
   alias Lotus.Storage.Schedule
   alias Lotus.Web.{Actor, Authorization, Page, Pro}
@@ -309,7 +310,7 @@ defmodule Lotus.Web.SchedulesPage do
       time_zones: @time_zones,
       channels: Lotus.Delivery.channels() |> Map.keys() |> Enum.sort(),
       formats: Lotus.Delivery.formats() |> Map.keys() |> Enum.sort(),
-      conditions: Lotus.Storage.ScheduleRule.conditions()
+      conditions: Alert.conditions()
     )
   end
 
