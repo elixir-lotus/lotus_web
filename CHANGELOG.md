@@ -75,6 +75,13 @@
   settings, and **Cancel** (the dashboard as it was) or **Save** (at once,
   for a dashboard that has its name). Cards are picked and set up only in
   edit mode; a new dashboard opens in it.
+- **One rich text card, written in place.** In edit mode a text card is
+  its Kotoba editor, in the card itself (headings, lists, links, quotes,
+  code): no more writing it in the settings. `{{region}}` writes a filter's
+  value in the text, as a reader reads it (a date token's words, a range's
+  two dates, a dash for none). A text card with no title and one heading
+  is a heading, with no frame; the heading cards from before become such
+  text cards in edit mode, and Add Card offers a chart, a text and a link.
 - **A dashboard grid that moves, folds and fits.** In edit mode a card
   moves by its title and resizes by its corner, snapping from slot to slot
   as to a magnet: to the row's edges, beside the cards of its rows, and to

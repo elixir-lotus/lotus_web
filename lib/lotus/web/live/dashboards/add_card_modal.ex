@@ -1,7 +1,7 @@
 defmodule Lotus.Web.Dashboards.AddCardModal do
   @moduledoc """
   Modal component for adding new cards to a dashboard.
-  Supports query, text, heading, and link card types.
+  Supports query, text and link card types (a heading is a text card).
   """
 
   use Lotus.Web, :live_component
@@ -37,13 +37,7 @@ defmodule Lotus.Web.Dashboards.AddCardModal do
         type: :text,
         icon: :document_text,
         label: gettext("Text"),
-        desc: gettext("Markdown text content")
-      },
-      %{
-        type: :heading,
-        icon: :heading,
-        label: gettext("Heading"),
-        desc: gettext("Section heading")
+        desc: gettext("Rich text, headings and filter values")
       },
       %{type: :link, icon: :link_icon, label: gettext("Link"), desc: gettext("External link")}
     ]

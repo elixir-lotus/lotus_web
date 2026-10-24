@@ -297,17 +297,20 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
       assert html =~ "<ul>"
     end
 
-    test "edits the text in a rich text editor and saves it as Markdown", %{
+    test "edits the text in place, in a rich text editor, and saves it as Markdown", %{
       dashboard: dashboard,
       card: card
     } do
       {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
       editor = with_target(live, "#dashboard-editor")
 
-      render_click(editor, "open_card_settings", %{"card-id" => to_string(card.id)})
+      refute has_element?(live, "#card-text-#{card.id}")
+      edit(live)
 
-      assert has_element?(live, "#card-text-#{card.id}[phx-hook='Kotoba']")
-      refute has_element?(live, "#card-content-form-#{card.id}")
+      # In the card itself, not in its settings.
+      assert has_element?(live, "#card-#{card.id} #card-text-#{card.id}[phx-hook='Kotoba']")
+      render_click(editor, "open_card_settings", %{"card-id" => to_string(card.id)})
+      refute has_element?(live, "#card-settings-drawer #card-text-#{card.id}")
 
       doc = Content.from_markdown("**Hello** _world_\n\n- one\n- two").doc
 

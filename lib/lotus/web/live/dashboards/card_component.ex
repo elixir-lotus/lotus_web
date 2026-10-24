@@ -8,6 +8,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
 
   alias Lotus.Web.CellFormatter
   alias Lotus.Web.Charts
+  alias Lotus.Web.Dashboards.TextCard
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
@@ -16,15 +17,18 @@ defmodule Lotus.Web.Dashboards.CardComponent do
     # manage the dashboard (the page passes `can_manage` only then).
     can_manage = Map.get(assigns, :can_manage, true)
     card_type = assigns.card.card_type
+    heading = TextCard.heading?(assigns.card)
 
     assigns =
       assign(assigns,
         is_public: is_public,
         can_manage: can_manage,
+        heading: heading,
+        values: Map.get(assigns, :values, %{}),
         # A heading is its text, with no frame; a text or a link has a
         # title bar when it has a title. A card being edited always has one,
         # for its settings.
-        framed: can_manage or card_type != :heading,
+        framed: can_manage or not heading,
         show_header:
           can_manage or card_type == :query or
             (card_type in [:text, :link] and present?(assigns.card.title)),
@@ -33,7 +37,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
             Charts.valid_config?(assigns.card.visualization_config),
         maximized: Map.get(assigns, :maximized, false),
         place: place(assigns.card.layout),
-        folds?: card_type != :heading,
+        folds?: not heading,
         folded: layout_value(assigns.card.layout || %{}, :folded, false) == true
       )
 
@@ -50,6 +54,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
       aria-roledescription={@can_manage && gettext("card: Alt and the arrow keys move it, with Shift resize it")}
       data-card-id={@card.id}
       data-card-type={@card.card_type}
+      data-heading={to_string(@heading)}
       data-x={@place.x}
       data-y={@place.y}
       data-w={@place.w}
@@ -120,13 +125,14 @@ defmodule Lotus.Web.Dashboards.CardComponent do
           <% :query -> %>
             <.query_content card={@card} result={@result} error={@error} running={@running} />
           <% :text -> %>
-            <.text_content content={@card.content} public={@is_public} />
+            <TextCard.editor :if={@can_manage} card={@card} target={@parent} />
+            <.text_content :if={not @can_manage} card={@card} values={@values} heading={@heading} />
           <% :heading -> %>
             <.heading_content content={@card.content} public={@is_public} />
           <% :link -> %>
             <.link_content content={@card.content} />
           <% _ -> %>
-            <.text_content content={@card.content} public={@is_public} />
+            <.text_content card={@card} values={@values} heading={false} />
         <% end %>
       </div>
 
@@ -460,11 +466,20 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   defp format_cell(nil), do: "-"
   defp format_cell(value), do: CellFormatter.format(value)
 
+  # Its Markdown, with the dashboard's filter values in it. A heading sits at
+  # the foot of its row, over the cards it names.
   defp text_content(assigns) do
-    assigns = assign(assigns, html: render_markdown(get_content_text(assigns.content)))
+    assigns =
+      assign(assigns,
+        html:
+          assigns.card |> TextCard.text() |> TextCard.fill(assigns.values) |> render_markdown()
+      )
 
     ~H"""
-    <div class="prose prose-sm dark:prose-invert max-w-none prose-headings:tracking-tight prose-p:text-gray-600 dark:prose-p:text-gray-300">
+    <div class={[
+      "prose prose-sm dark:prose-invert max-w-none prose-headings:tracking-tight prose-p:text-gray-600 dark:prose-p:text-gray-300",
+      @heading && "flex h-full items-end prose-headings:m-0 prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg"
+    ]}>
       <%= @html %>
     </div>
     """

@@ -8,7 +8,6 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
 
   alias Lotus.Web.Charts
   alias Lotus.Web.Queries.ChartOptions
-  alias Lotus.Web.RichText
 
   @impl Phoenix.LiveComponent
   def mount(socket) do
@@ -43,7 +42,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
               <.visualization_section card={@card} columns={@available_columns} parent={@parent} />
               <.filter_mapping_section card={@card} filters={@filters} parent={@parent} />
             <% else %>
-              <.content_section card={@card} parent={@parent} />
+              <.content_section card={@card} filters={@filters} parent={@parent} />
             <% end %>
 
             <.danger_section card={@card} parent={@parent} />
@@ -438,65 +437,31 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
       >
         <%= content_label(@card.card_type) %>
       </label>
-      <.text_editor :if={@card.card_type == :text} card={@card} text={@content_value} parent={@parent} />
+      <%!-- A text is written in the card itself, in edit mode. --%>
+      <div :if={@card.card_type == :text} class="space-y-2 text-xs text-gray-500 dark:text-gray-400">
+        <p><%= gettext("Write the text in the card itself: # for a heading, and the toolbar for the rest. A card with no title and one heading is a heading over the cards under it.") %></p>
+        <p :if={@filters != []}>
+          <%= gettext("A filter's value goes in with its name in braces:") %>
+          <code :for={filter <- @filters} class="mr-1 rounded bg-gray-100 px-1 py-0.5 text-gray-700 dark:bg-gray-700 dark:text-gray-200">{"{{#{filter.name}}}"}</code>
+        </p>
+      </div>
       <form
-        :if={@card.card_type != :text}
+        :if={@card.card_type == :link}
         id="card-content-form"
         phx-change="update_card_content"
         phx-target={@parent}
       >
         <input type="hidden" name="card_id" value={@card.id} />
         <input type="hidden" name="card_type" value={@card.card_type} />
-        <%= if @card.card_type == :link do %>
-          <input
-            type="url"
-            name="content"
-            value={@content_value}
-            phx-debounce="150"
-            placeholder="https://example.com"
-            class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
-          />
-        <% end %>
-        <%= if @card.card_type == :heading do %>
-          <textarea
-            name="content"
-            phx-debounce="150"
-            rows="4"
-            placeholder={content_placeholder(:heading)}
-            class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
-          ><%= @content_value %></textarea>
-        <% end %>
+        <input
+          type="url"
+          name="content"
+          value={@content_value}
+          phx-debounce="150"
+          placeholder="https://example.com"
+          class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
+        />
       </form>
-    </div>
-    """
-  end
-
-  # The text of a text card, in a Kotoba editor: it loads the card's
-  # Markdown and pushes each change (`kotoba:change`), which the dashboard
-  # editor saves as Markdown.
-  defp text_editor(assigns) do
-    features = RichText.features(:text_card, assigns.text)
-
-    assigns =
-      assign(assigns,
-        id: "card-text-#{assigns.card.id}",
-        features: features,
-        field:
-          Phoenix.Component.to_form(%{"text" => RichText.content(assigns.text, features)})[:text]
-      )
-
-    ~H"""
-    <div class="lotus-card-text">
-      <Kotoba.Components.kotoba
-        field={@field}
-        id={@id}
-        label_id={"card-content-label-#{@card.id}"}
-        placeholder={content_placeholder(:text)}
-        features={@features}
-        change
-        debounce={300}
-        phx-target={@parent}
-      />
     </div>
     """
   end
@@ -527,9 +492,6 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
   defp content_label(:heading), do: gettext("Heading Text")
   defp content_label(:link), do: gettext("Link URL")
   defp content_label(_), do: gettext("Content")
-
-  defp content_placeholder(:text), do: gettext("Write the text of the card…")
-  defp content_placeholder(:heading), do: gettext("Enter heading text...")
 
   defp danger_section(assigns) do
     ~H"""

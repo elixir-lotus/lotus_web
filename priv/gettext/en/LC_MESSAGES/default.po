@@ -3898,3 +3898,23 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Drag the card by its title to move it, and by its corner to resize it; or, with the card focused, Alt and the arrow keys (with Shift to resize). Its chevron sets whether it starts folded."
 msgstr ""
+
+#: lib/lotus/web/dashboards/text_card.ex:126
+#, elixir-autogen, elixir-format
+msgid "Write here. # for a heading; {{filter}} for a filter's value."
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/card_settings_drawer.ex:442
+#, elixir-autogen, elixir-format
+msgid "Write the text in the card itself: # for a heading, and the toolbar for the rest. A card with no title and one heading is a heading over the cards under it."
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/card_settings_drawer.ex:444
+#, elixir-autogen, elixir-format
+msgid "A filter's value goes in with its name in braces:"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/add_card_modal.ex:40
+#, elixir-autogen, elixir-format
+msgid "Rich text, headings and filter values"
+msgstr ""
