@@ -34,6 +34,7 @@ defmodule Lotus.Web.Dashboards.CardGridComponent do
           public={Map.get(assigns, :public, false)}
           can_manage={Map.get(assigns, :can_manage, not Map.get(assigns, :public, false))}
           values={Map.get(assigns, :values, %{})}
+          connecting={Map.get(assigns, :connecting)}
           parent={@parent}
         />
       <% end %>

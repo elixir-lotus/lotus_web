@@ -7,6 +7,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
   use Lotus.Web, :live_component
 
   alias Lotus.Web.Charts
+  alias Lotus.Web.Dashboards.FilterConnections
   alias Lotus.Web.Queries.ChartOptions
 
   @impl Phoenix.LiveComponent
@@ -380,7 +381,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
   defp filter_mapping_row(assigns) do
     query = assigns.card.query
     variables = if query, do: query.variables || [], else: []
-    entries = mapping_entries(assigns.card.filter_mappings, assigns.filter)
+    entries = FilterConnections.entries(assigns.card.filter_mappings, assigns.filter)
 
     assigns =
       assign(assigns,
@@ -509,19 +510,6 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
     </div>
     """
   end
-
-  # filter_mappings can be a list of Ecto structs (from DB) or a map of
-  # %{filter_name => [%{variable_name: _, transform: _}]} (from editor updates)
-  defp mapping_entries(mappings, filter) when is_list(mappings) do
-    for mapping <- mappings,
-        mapping.filter_id == filter.id,
-        do: %{variable_name: mapping.variable_name, transform: mapping.transform}
-  end
-
-  defp mapping_entries(mappings, filter) when is_map(mappings),
-    do: Map.get(mappings, filter.name, [])
-
-  defp mapping_entries(_, _), do: []
 
   defp split_description(entries) do
     Enum.map_join(entries, ", ", fn entry ->
