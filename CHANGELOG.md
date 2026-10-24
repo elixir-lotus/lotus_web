@@ -13,6 +13,11 @@
 
 ### Added
 
+- **Ask AI from the command palette.** On the query editor, "Ask AI" in
+  the palette (⌘K) asks for a question and the assistant opens on it, as if
+  it had been typed in its panel. "Ask AI…", which opened the panel, is
+  "Open AI assistant".
+
 - **Point at the page to ask the AI assistant about it.** "Point at", in
   the assistant's composer, outlines and names what is under the pointer:
   a column or a row of the results, a line or the selection in the editor,

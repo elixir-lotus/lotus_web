@@ -59,7 +59,7 @@ defmodule Lotus.Web.Commands do
   The actions of the page in view, for `Jumon.Live.put_actions/2`.
   """
   @spec page_actions(atom(), map()) :: [Jumon.Action.t()]
-  def page_actions(:query_editor, _assigns) do
+  def page_actions(:query_editor, assigns) do
     section = gettext("Query")
 
     [
@@ -86,7 +86,7 @@ defmodule Lotus.Web.Commands do
         section: section,
         icon: "clipboard_copy"
       )
-    ] ++ ai_actions(section)
+    ] ++ ai_actions(section, assigns)
   end
 
   def page_actions(:dashboard_editor, assigns) do
@@ -126,12 +126,30 @@ defmodule Lotus.Web.Commands do
     |> Enum.filter(& &1)
   end
 
-  # The assistant's button shows only where the user may use it on the
-  # query's source; the action clicks it, so it does nothing elsewhere.
-  defp ai_actions(section) do
-    if Lotus.AI.enabled?() do
+  # A question for the assistant, asked from the palette: the panel opens on
+  # it, as if typed there; the page asks for permission on the query's source
+  # again. And the assistant's button, which shows only where the user may
+  # use it on the query's source; the action clicks it, so it does nothing
+  # elsewhere.
+  defp ai_actions(section, assigns) do
+    if Lotus.AI.enabled?() and Authorization.allowed?(assigns, :ai_generate) do
       [
-        click(:ai_assistant, gettext("Ask AI…"), "#ai-assistant-btn",
+        action(:ask_ai, gettext("Ask AI"),
+          section: section,
+          icon: "sparkles",
+          keywords: ~w(question assistant generate chat),
+          priority: 1,
+          args: [
+            question: [
+              type: :text,
+              label: gettext("Question"),
+              placeholder: gettext("What would you like to know?"),
+              max_length: 1000
+            ]
+          ],
+          run: &ask_ai/2
+        ),
+        click(:ai_assistant, gettext("Open AI assistant"), "#ai-assistant-btn",
           section: section,
           icon: "sparkles",
           keywords: ~w(assistant generate)
@@ -140,6 +158,16 @@ defmodule Lotus.Web.Commands do
     else
       []
     end
+  end
+
+  defp ask_ai(%{question: question}, socket) do
+    Phoenix.LiveView.send_update(Lotus.Web.QueryEditorPage,
+      id: "page",
+      action: :ai_ask,
+      question: question
+    )
+
+    socket
   end
 
   # Light, dark or system: the options of the appearance menu.

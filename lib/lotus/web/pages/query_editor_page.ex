@@ -1256,6 +1256,18 @@ defmodule Lotus.Web.QueryEditorPage do
     {:ok, update(socket, :ai_steps, &AiSteps.track(&1, event))}
   end
 
+  # A question from the command palette: the assistant opens and answers it.
+  def update(%{action: :ai_ask, question: question}, socket) do
+    {:noreply, socket} =
+      authorize_ai(socket, fn ->
+        socket
+        |> assign(left_drawer: :ai_assistant)
+        |> ai_send_message(String.trim(question), [])
+      end)
+
+    {:ok, socket}
+  end
+
   def update(%{action: :ai_text, text: text}, socket) do
     {:ok, update(socket, :ai_draft, &((&1 || "") <> text))}
   end
