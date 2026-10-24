@@ -86,7 +86,7 @@ defmodule Lotus.Web.SchedulesPage do
                   viewer_zone={@viewer_zone}
                   target={@myself}
                 />
-                <.deliver_section deliveries={@draft["deliveries"]} specs={@channel_specs} adding={@adding_delivery} target={@myself} />
+                <.deliver_section deliveries={@draft["deliveries"]} specs={@channel_specs} adding={@adding_delivery} tests={@delivery_tests} target={@myself} />
                 <.alert_section draft={@draft} conditions={@conditions} target_entry={@target_entry} />
               </fieldset>
 
@@ -755,6 +755,7 @@ defmodule Lotus.Web.SchedulesPage do
   attr(:deliveries, :list, required: true)
   attr(:specs, :list, required: true)
   attr(:adding, :boolean, required: true)
+  attr(:tests, :map, required: true)
   attr(:target, :any, required: true)
 
   defp deliver_section(assigns) do
@@ -767,6 +768,7 @@ defmodule Lotus.Web.SchedulesPage do
           index={index}
           delivery={delivery}
           spec={Deliveries.spec(@specs, delivery["channel"])}
+          test={@tests[index]}
           target={@target}
         />
 
@@ -1090,6 +1092,7 @@ defmodule Lotus.Web.SchedulesPage do
       dashboards: Pro.list_dashboards(info),
       channel_specs: Deliveries.specs(),
       adding_delivery: false,
+      delivery_tests: %{},
       conditions: Alert.conditions()
     )
   end
@@ -1143,7 +1146,8 @@ defmodule Lotus.Web.SchedulesPage do
     :zone_search,
     :schedule,
     :runs,
-    :adding_delivery
+    :adding_delivery,
+    :delivery_tests
   ]
 
   @impl Phoenix.LiveComponent
@@ -1226,7 +1230,10 @@ defmodule Lotus.Web.SchedulesPage do
         deliveries = draft["deliveries"] ++ [Deliveries.new(spec)]
 
         {:noreply,
-         assign(socket, draft: %{draft | "deliveries" => deliveries}, adding_delivery: false)}
+         assign(socket,
+           draft: %{draft | "deliveries" => deliveries},
+           adding_delivery: false
+         )}
     end
   end
 
@@ -1250,7 +1257,15 @@ defmodule Lotus.Web.SchedulesPage do
   def handle_event("remove_delivery", %{"index" => index}, socket) do
     draft = socket.assigns.draft
     deliveries = List.delete_at(draft["deliveries"], String.to_integer(index))
-    {:noreply, assign(socket, draft: %{draft | "deliveries" => deliveries})}
+
+    # The tests said of a destination by its place; the places move.
+    {:noreply, assign(socket, draft: %{draft | "deliveries" => deliveries}, delivery_tests: %{})}
+  end
+
+  # Sends sample results to a destination as it stands in the form, in the
+  # background: a slow webhook or mailer does not hold the page.
+  def handle_event("test_delivery", %{"index" => index}, socket) do
+    manage(socket, fn -> test_delivery(socket, String.to_integer(index)) end)
   end
 
   def handle_event("save_schedule", params, socket) do
@@ -1284,6 +1299,39 @@ defmodule Lotus.Web.SchedulesPage do
       end
     end)
   end
+
+  defp test_delivery(socket, index) do
+    %{draft: draft, channel_specs: specs} = socket.assigns
+
+    with %{} = delivery <- Enum.at(draft["deliveries"], index),
+         {:ok, attrs} <- Deliveries.to_attrs(delivery, specs) do
+      opts = [title: blank(draft["name"]), alert: draft["alert"] == "true"]
+
+      socket
+      |> put_test(index, :sending)
+      |> start_async({:test_delivery, index}, fn ->
+        Lotus.Delivery.send_test(attrs.channel, attrs.format, attrs.config, opts)
+      end)
+    else
+      nil -> socket
+      {:error, message} -> put_test(socket, index, {:error, message})
+    end
+  end
+
+  @impl Phoenix.LiveComponent
+  def handle_async({:test_delivery, index}, {:ok, :ok}, socket),
+    do: {:noreply, put_test(socket, index, :sent)}
+
+  def handle_async({:test_delivery, index}, {:ok, {:error, message}}, socket),
+    do: {:noreply, put_test(socket, index, {:error, message})}
+
+  def handle_async({:test_delivery, index}, {:exit, _reason}, socket),
+    do:
+      {:noreply,
+       put_test(socket, index, {:error, gettext("The test stopped before it was sent.")})}
+
+  defp put_test(socket, index, result),
+    do: assign(socket, delivery_tests: Map.put(socket.assigns.delivery_tests, index, result))
 
   defp saved_message(%{"alert" => "true"}), do: gettext("Alert saved.")
   defp saved_message(_draft), do: gettext("Report saved.")
