@@ -987,18 +987,14 @@
 .lotus-sketch-mini .lotus-sketch-line { stroke-width: 0.8; }
 
 /* ── The AI assistant ───────────────────────────────────────
-   The panel of the query editor. Its colours are the theme's: the accent
-   (pink), the grays, and the two of a diff below.
+   The panel of the query editor. Its colours are the theme's (the accent,
+   the grays), but for a diff's green and red, which carry meaning and stay
+   the same in every theme, as the other status colours do.
    ──────────────────────────────────────────────────────────── */
 
 :root {
     --lotus-diff-added: 22 163 74;
     --lotus-diff-removed: 225 29 72;
-}
-
-[data-lotus-theme="sumi"] {
-    --lotus-diff-added: 63 122 82;
-    --lotus-diff-removed: 184 64 28;
 }
 
 .lotus-ai-panel {
