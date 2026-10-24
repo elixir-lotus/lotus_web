@@ -165,6 +165,7 @@ defmodule Lotus.Web.MixProject do
         "README.md",
         "guides/installation.md",
         "guides/getting-started.md",
+        "guides/upgrading-to-v2.md",
         "guides/upgrading-to-v1.md",
         "guides/ai-assistant.md",
         "guides/visualizations.md",
