@@ -4307,7 +4307,7 @@ msgstr "Ajouter une autre destination"
 msgid "Alert saved."
 msgstr "Alerte enregistrée."
 
-#: lib/lotus/web/pages/schedules_page.ex:1525
+#: lib/lotus/web/pages/schedules_page.ex:1529
 #, elixir-autogen, elixir-format
 msgid "Alert:"
 msgstr "Alerte :"
@@ -4438,7 +4438,7 @@ msgstr "Supprimé."
 msgid "Deliver to"
 msgstr "Envoyer à"
 
-#: lib/lotus/web/pages/schedules_page.ex:1524
+#: lib/lotus/web/pages/schedules_page.ex:1528
 #, elixir-autogen, elixir-format
 msgid "Destination %{n}:"
 msgstr "Destination %{n} :"
@@ -4615,7 +4615,7 @@ msgstr "Nommer cette alerte"
 msgid "Name this report"
 msgstr "Nommer ce rapport"
 
-#: lib/lotus/web/pages/schedules_page.ex:1526
+#: lib/lotus/web/pages/schedules_page.ex:1530
 #, elixir-autogen, elixir-format
 msgid "Name:"
 msgstr "Nom :"
@@ -4879,7 +4879,7 @@ msgstr "Jeu"
 msgid "Thursday"
 msgstr "jeudi"
 
-#: lib/lotus/web/pages/schedules_page.ex:1523
+#: lib/lotus/web/pages/schedules_page.ex:1527
 #, elixir-autogen, elixir-format
 msgid "Time zone:"
 msgstr "Fuseau horaire :"
@@ -4954,13 +4954,13 @@ msgstr "Ce dont le canal %{channel} a besoin ; sa documentation les liste."
 msgid "What to send"
 msgstr "Quoi envoyer"
 
-#: lib/lotus/web/pages/schedules_page.ex:1520
-#: lib/lotus/web/pages/schedules_page.ex:1521
+#: lib/lotus/web/pages/schedules_page.ex:1524
+#: lib/lotus/web/pages/schedules_page.ex:1525
 #, elixir-autogen, elixir-format
 msgid "What to send:"
 msgstr "Quoi envoyer :"
 
-#: lib/lotus/web/pages/schedules_page.ex:1522
+#: lib/lotus/web/pages/schedules_page.ex:1526
 #, elixir-autogen, elixir-format
 msgid "When:"
 msgstr "Quand :"

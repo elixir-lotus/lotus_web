@@ -284,6 +284,14 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
       refute has_element?(live, "#delivery-0")
     end
 
+    test "email is offered, and says what it needs until the app has a mailer", %{query: query} do
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/new?query_id=#{query.id}")
+      live |> element("#add-delivery") |> render_click()
+
+      assert has_element?(live, "#add-email[disabled]", "Not set up:")
+      assert has_element?(live, "#add-email", "Swoosh")
+    end
+
     test "a channel that does not describe its settings takes them as JSON", %{query: query} do
       put_channels(%{"plain" => Lotus.Web.Test.PlainChannel})
 
