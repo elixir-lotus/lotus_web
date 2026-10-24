@@ -8,7 +8,7 @@
       <div class="flex h-16 justify-between">
         <div class="flex items-center gap-6">
           <div class="flex items-center">
-            <.logo />
+            <.logo branding={assigns[:branding] || Lotus.Web.Branding.default()} />
           </div>
           <.link
             :for={item <- Lotus.Web.Pro.nav_items(assigns)}

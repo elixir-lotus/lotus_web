@@ -12,7 +12,7 @@
     <meta name="lotus-map-world" content={asset_path(:world)} />
     <meta name="lotus-map-us-states" content={asset_path(:us_states)} />
 
-    <title>{assigns[:page_title] || "Lotus"}</title>
+    <title>{assigns[:page_title] || product_name(assigns)}</title>
     <link rel="icon" href={asset_path(:svg)} type="image/svg+xml" />
     <link rel="icon" href={asset_path(:ico)} sizes="any" />
 

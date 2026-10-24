@@ -108,6 +108,7 @@ defmodule Lotus.Web.QueryEditorPage do
               generating={@ai_generating}
               conversation={@ai_conversation}
               current_statement={@query_form[:statement].value}
+              assistant_name={@branding.assistant_name}
             />
 
             <div class={[

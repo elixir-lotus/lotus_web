@@ -1,7 +1,7 @@
 defmodule Lotus.Web.DashboardLive do
   use Lotus.Web, :live_view
 
-  alias Lotus.Web.{Actor, Assets, Authorization}
+  alias Lotus.Web.{Actor, Assets, Authorization, Branding}
   alias Lotus.Web.{DashboardEditorPage, PublicDashboardPage, QueriesPage, QueryEditorPage}
 
   @impl Phoenix.LiveView
@@ -41,12 +41,26 @@ defmodule Lotus.Web.DashboardLive do
       |> assign(:themes, Map.get(session, "themes", Lotus.Web.Theme.names()))
       |> assign(:theme_colors, Map.get(session, "theme_colors", %{}))
       |> assign(:public_view, page.name == :public_dashboard)
+      |> Branding.assign_branding(%{
+        user: user,
+        context: context,
+        scope: scope,
+        public: page.name == :public_dashboard,
+        dashboard: nil
+      })
+      |> title_with_product()
       |> assign_permissions()
       |> mount_palette()
       |> page.comp.handle_mount()
 
     {:ok, socket}
   end
+
+  # "Lotus Dashboard" names the product the branding gives.
+  defp title_with_product(%{assigns: %{page_title: "Lotus Dashboard"}} = socket),
+    do: assign(socket, :page_title, socket.assigns.branding.product_name <> " Dashboard")
+
+  defp title_with_product(socket), do: socket
 
   # The command palette (⌘K), for the signed-in dashboard only: a public
   # dashboard has no actions to offer.

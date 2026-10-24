@@ -13,6 +13,15 @@
 
 ### Added
 
+- **A package can brand the dashboard per request.** The integration bridge
+  is asked for the branding when the dashboard mounts and when a public
+  dashboard loads (with the user, the actor and, on a public dashboard, the
+  dashboard): the product name (in the title and in place of the Lotus
+  mark), a logo, the assistant's name, and a theme and colours over the
+  router's. A public dashboard's "Powered by Lotus" footer always shows.
+  Without a package that answers, the dashboard is Lotus as before; the
+  router takes no branding options.
+
 - **A package can refuse a share link.** Before a public dashboard is shown,
   the integration bridge asks `authorize_public_dashboard(dashboard,
   params)`, with the URL's params, on every load of the link. `{:deny,

@@ -4,6 +4,7 @@ defmodule Lotus.Web.Layouts do
   use Lotus.Web, :html
 
   alias Lotus.Web.Assets
+  alias Lotus.Web.Branding
 
   embed_templates("layouts/*")
 
@@ -18,6 +19,29 @@ defmodule Lotus.Web.Layouts do
   defp asset_path(:ico), do: lotus_path("ico-#{Assets.current_hash(:ico)}")
   defp asset_path(:world), do: lotus_path("world-#{Assets.current_hash(:world)}")
   defp asset_path(:us_states), do: lotus_path("us-states-#{Assets.current_hash(:us_states)}")
+
+  defp product_name(assigns), do: (assigns[:branding] || Branding.default()).product_name
+
+  attr(:branding, Branding, required: true)
+
+  # The branding's logo, or its name; the Lotus mark and wordmark for Lotus.
+  def logo(%{branding: %Branding{logo: url}} = assigns) when is_binary(url) do
+    ~H"""
+    <a href={lotus_path("")} title={@branding.product_name} class="flex items-center gap-3">
+      <img src={@branding.logo} alt={@branding.product_name} class="h-10 w-auto" />
+    </a>
+    """
+  end
+
+  def logo(%{branding: %Branding{product_name: name}} = assigns) when name != "Lotus" do
+    ~H"""
+    <a href={lotus_path("")} title={@branding.product_name} class="flex items-center gap-3">
+      <span class="text-lg font-semibold text-gray-950 dark:text-gray-50">
+        {@branding.product_name}
+      </span>
+    </a>
+    """
+  end
 
   def logo(assigns) do
     ~H"""
