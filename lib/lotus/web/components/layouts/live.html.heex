@@ -18,6 +18,14 @@
           >
             <%= item.label %>
           </.link>
+          <.link
+            :if={not Map.get(assigns, :public_view, false) and :schedules in (assigns[:features] || [])}
+            id="nav-schedules"
+            navigate={lotus_path("schedules")}
+            class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <%= gettext("Schedules") %>
+          </.link>
           <.pro_slot :if={not Map.get(assigns, :public_view, false)} name={:nav} slot_assigns={assigns} />
         </div>
         <div class="flex items-center space-x-2 sm:space-x-4">

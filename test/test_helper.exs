@@ -143,6 +143,14 @@ defmodule Lotus.Web.Test.Router do
     lotus_dashboard("/serial", as: :serial_dashboard, card_concurrency: 1)
 
     lotus_dashboard("/one_theme", as: :one_theme_dashboard, themes: [:lotus])
+
+    lotus_dashboard("/scheduled", as: :scheduled_dashboard, features: [:schedules])
+
+    lotus_dashboard("/scheduled_read_only",
+      as: :scheduled_read_only_dashboard,
+      features: [:schedules],
+      resolver: Lotus.Web.Test.ReadOnlyResolver
+    )
   end
 end
 

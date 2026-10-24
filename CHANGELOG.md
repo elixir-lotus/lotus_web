@@ -13,6 +13,20 @@
 
 ### Added
 
+- **The Schedules page.** With `features: [:schedules]`, the header links to
+  a page of the schedules and alerts of `Lotus.Schedules`:
+  - each one's query or dashboard, cron and time zone, next run and last run;
+    an alert says whether it is firing, a paused one says so;
+  - a form to create or edit one: what it runs, when, in which time zone,
+    its deliveries (a webhook URL, or another channel's settings as JSON)
+    and an alert rule;
+  - each one's recent runs, with their errors;
+  - pause, resume and delete.
+
+  The query editor and a saved dashboard link to it, with the form filled
+  in. Changing a schedule asks for the new `:manage_schedule` action
+  (`:all` access by default). Without the feature nothing changes.
+
 - **Lotus Pro's cards and row actions.** With Pro installed, the "Add card"
   dialog offers the kinds of card Pro adds (`card_type: :pro`, an action
   button for example), and Pro draws them. Pro can also put actions on each

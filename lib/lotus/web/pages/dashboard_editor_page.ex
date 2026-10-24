@@ -74,6 +74,14 @@ defmodule Lotus.Web.DashboardEditorPage do
                 <Icons.rotate_ccw class="h-5 w-5" />
               </button>
               <Components.fullscreen_button :if={@dashboard.cards != []} />
+              <.link
+                :if={@dashboard.id && :schedules in (@features || []) && Authorization.allowed?(assigns, :manage_schedule)}
+                id="schedule-dashboard"
+                navigate={lotus_path("schedules", %{"dashboard_id" => @dashboard.id})}
+                class="p-2 rounded-lg text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-200/60 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700"
+              >
+                <%= gettext("Schedule") %>
+              </.link>
               <Components.head_button :if={@can_share} phx-click="toggle_settings" phx-target={@myself}>
                 <Icons.share class="h-4 w-4" /> <%= gettext("Share") %>
               </Components.head_button>

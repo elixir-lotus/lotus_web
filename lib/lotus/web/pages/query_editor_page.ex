@@ -58,6 +58,7 @@ defmodule Lotus.Web.QueryEditorPage do
             mode={@page.mode}
             can_save={@can_save}
             can_delete={@can_delete}
+            can_schedule={:schedules in (@features || []) and Authorization.allowed?(assigns, :manage_schedule)}
           />
 
           <div class="relative flex-1 sm:overflow-hidden">
@@ -223,6 +224,14 @@ defmodule Lotus.Web.QueryEditorPage do
         <.pro_slot :if={@mode == :edit} name={:query_editor_header} slot_assigns={%{query: @query}} />
       </div>
       <div class="flex gap-3">
+        <.link
+          :if={@mode == :edit and @can_schedule}
+          id="schedule-query"
+          navigate={lotus_path("schedules", %{"query_id" => @query.id})}
+          class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
+        >
+          <%= gettext("Schedule") %>
+        </.link>
         <%= if @mode == :edit and @can_delete do %>
           <.button
             type="button"

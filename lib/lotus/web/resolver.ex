@@ -29,6 +29,7 @@ defmodule Lotus.Web.Resolver do
           | :ai_generate
           | :manage_source
           | :manage_cache
+          | :manage_schedule
 
   @doc """
   Extract the current user from a Plug.Conn when the dashboard mounts.
