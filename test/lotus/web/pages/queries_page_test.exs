@@ -1,6 +1,8 @@
 defmodule Lotus.Web.Pages.QueriesPageTest do
   use Lotus.Web.Case
 
+  doctest Lotus.Web.Queries.QueryList
+
   import Phoenix.LiveViewTest
 
   describe "navbar" do
@@ -43,6 +45,105 @@ defmodule Lotus.Web.Pages.QueriesPageTest do
 
       assert render(query_live) =~ query1.name
       assert render(query_live) =~ query1.statement
+    end
+  end
+
+  describe "a query's SQL, as its list shows it" do
+    alias Lotus.Web.Queries.QueryList
+
+    test "a one-line statement has its clauses on lines; a JOIN stays with its kind" do
+      sql =
+        "SELECT u.name FROM posts p LEFT JOIN users u ON u.id = p.user_id JOIN tags t ON true WHERE p.id = 1"
+
+      lines =
+        sql
+        |> QueryList.tokens(5)
+        |> Enum.chunk_by(&(&1 == :newline))
+        |> Enum.reject(&(&1 == [:newline]))
+        |> Enum.map(fn tokens -> Enum.map_join(tokens, fn {_kind, text} -> text end) end)
+
+      assert lines == [
+               "SELECT u.name",
+               "FROM posts p",
+               "LEFT JOIN users u ON u.id = p.user_id",
+               "JOIN tags t ON true",
+               "WHERE p.id = 1"
+             ]
+
+      refute :newline in QueryList.tokens(sql, :one_line)
+    end
+  end
+
+  describe "queries gallery" do
+    setup do
+      chart =
+        query_fixture(%{
+          name: "Orders by status",
+          description: "Orders per status",
+          statement: "SELECT status, COUNT(*) AS n FROM orders GROUP BY status"
+        })
+
+      {:ok, _} =
+        Lotus.create_visualization(chart, %{
+          name: "Chart",
+          position: 0,
+          config: %{"chart_type" => "bar", "x_field" => "status", "y_field" => "n"}
+        })
+
+      plain =
+        query_fixture(%{
+          name: "Users",
+          statement: "SELECT name, '<b>x</b>' AS tag FROM users\nWHERE name = {{name}}",
+          variables: [%{name: "name", type: :text}],
+          data_source: "reporting"
+        })
+
+      dashboard = dashboard_fixture(%{name: "Sales"})
+      query_card_fixture(dashboard, chart, %{title: "Orders"})
+
+      {:ok, chart: chart, plain: plain}
+    end
+
+    test "a tile sketches the chart a query is saved with, or shows its SQL", %{
+      chart: chart,
+      plain: plain
+    } do
+      {:ok, live, _html} = live(build_conn(), "/lotus")
+
+      assert has_element?(live, "#query-tile-#{chart.id} svg.lotus-sketch rect.lotus-sketch-mark")
+      assert has_element?(live, "#query-tile-#{chart.id}", "In 1 dashboard")
+      refute has_element?(live, "#query-tile-#{chart.id} pre")
+
+      assert has_element?(live, "#query-tile-#{plain.id} pre span", "SELECT")
+      assert has_element?(live, "#query-tile-#{plain.id} pre span", "{{name}}")
+      assert has_element?(live, "#query-tile-#{plain.id} span", "{{name}}")
+      assert has_element?(live, "#query-tile-#{plain.id}", "reporting")
+
+      # The SQL is text: its markup is escaped, never rendered.
+      html = live |> element("#query-tile-#{plain.id} pre") |> render()
+      assert html =~ "&lt;b&gt;x&lt;/b&gt;"
+      refute html =~ "<b>x</b>"
+    end
+
+    test "the list, search and the source chips", %{chart: chart, plain: plain} do
+      {:ok, live, _html} = live(build_conn(), "/lotus")
+
+      live |> element("#queries-view-list") |> render_click()
+      assert has_element?(live, "#query-row-#{chart.id}", "Orders by status")
+      assert has_element?(live, "#query-row-#{plain.id} code span", "SELECT")
+
+      live |> element("button[phx-value-source=reporting]") |> render_click()
+      assert has_element?(live, "#query-row-#{plain.id}")
+      refute has_element?(live, "#query-row-#{chart.id}")
+
+      live |> element("button[phx-value-source='']") |> render_click()
+
+      live
+      |> element("#queries-search")
+      |> render_change(%{"search" => "per status", "source" => ""})
+
+      assert has_element?(live, "#query-row-#{chart.id}")
+      refute has_element?(live, "#query-row-#{plain.id}")
     end
   end
 
@@ -130,6 +231,6 @@ defmodule Lotus.Web.Pages.QueriesPageTest do
   end
 
   defp has_query?(live, query_name) do
-    has_element?(live, "#queries-table", query_name)
+    has_element?(live, "#queries-list", query_name)
   end
 end

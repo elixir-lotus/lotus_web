@@ -7,7 +7,7 @@ export default {
     const key = this.el.dataset.store;
     const chosen = load(key);
     if (chosen && chosen !== this.el.dataset.view) {
-      this.pushEventTo(this.el, "set_view", { view: chosen });
+      this.pushEventTo(this.el, "set_view", { view: chosen, list: this.el.dataset.list });
     }
     this.el.addEventListener("click", (event) => {
       const choice = event.target.closest("[data-view-choice]");

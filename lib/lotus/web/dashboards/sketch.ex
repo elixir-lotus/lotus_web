@@ -12,6 +12,49 @@ defmodule Lotus.Web.Dashboards.Sketch do
   alias Lotus.Web.Dashboards.TextCard
 
   @doc """
+  One chart, sketched as what it shows, filling its box: a saved query's
+  chart (`chart_type`, as a visualization has it) in the list of queries.
+  `:tile` for the gallery, `:icon` beside a name.
+  """
+  attr(:type, :string, required: true)
+  attr(:size, :atom, default: :tile, values: [:tile, :icon])
+  attr(:class, :any, default: nil)
+
+  def chart_sketch(assigns) do
+    small = assigns.size == :icon
+    {w, h} = if small, do: {24, 24}, else: {240, 74}
+    box = %{x: 1, y: 1, w: w - 2, h: h - 2}
+
+    assigns =
+      assign(assigns,
+        w: w,
+        h: h,
+        small: small,
+        marks: draw(chart(assigns.type), box, small)
+      )
+
+    ~H"""
+    <svg
+      viewBox={"0 0 #{@w} #{@h}"}
+      class={["lotus-sketch block h-full w-full", @small && "lotus-sketch-mini", @class]}
+      role="img"
+      aria-hidden="true"
+    >
+      <%= for mark <- @marks do %>
+        <%= case mark do %>
+          <% {:rect, a} -> %>
+            <rect x={a.x} y={a.y} width={a.w} height={a.h} rx={a.r} class={a.class} />
+          <% {:path, a} -> %>
+            <path d={a.d} class={a.class} />
+          <% {:circle, a} -> %>
+            <circle cx={a.cx} cy={a.cy} r={a.r} class={a.class} />
+        <% end %>
+      <% end %>
+    </svg>
+    """
+  end
+
+  @doc """
   The sketch of a dashboard (with its cards): `:tile` for the gallery,
   `:mini` beside a name in the table.
   """
