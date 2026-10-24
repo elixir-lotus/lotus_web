@@ -37,8 +37,14 @@
     expression the presets can say opens in them.
   - The time zone is searched by city, region or offset, with each zone's
     offset and time now; a new report takes the viewer's zone.
-  - A webhook destination takes its URL and an optional Authorization
-    header.
+  - Each destination is a form drawn from its channel (Lotus's
+    `Lotus.Delivery.channel_specs/0`): adding one offers the channels as
+    tiles (email, Slack, webhook, and any your app or Lotus Pro adds), a
+    channel that cannot send in the app (email without a mailer, for one)
+    shown with why and not offered; email recipients are entered as chips,
+    a token or a secret URL is masked, and Slack has no format to choose
+    (it posts a preview of the rows). A channel that does not describe its
+    settings takes them as JSON.
 
   The query editor and a saved dashboard link to a new report filled in
   with them. Changing a report or an alert asks for the new

@@ -19,7 +19,7 @@ defmodule Lotus.Web.SchedulesPage do
   alias Lotus.Schedules.{Alert, Cron}
   alias Lotus.Storage.Schedule
   alias Lotus.Web.{Actor, Authorization, Page, Pro}
-  alias Lotus.Web.Schedules.{Cadence, TimeZones}
+  alias Lotus.Web.Schedules.{Cadence, Deliveries, TimeZones}
   alias Lotus.Web.Schedules.Components, as: Parts
 
   @runs 20
@@ -86,7 +86,7 @@ defmodule Lotus.Web.SchedulesPage do
                   viewer_zone={@viewer_zone}
                   target={@myself}
                 />
-                <.deliver_section deliveries={@draft["deliveries"]} channels={@channels} formats={@formats} target={@myself} />
+                <.deliver_section deliveries={@draft["deliveries"]} specs={@channel_specs} adding={@adding_delivery} target={@myself} />
                 <.alert_section draft={@draft} conditions={@conditions} target_entry={@target_entry} />
               </fieldset>
 
@@ -99,6 +99,7 @@ defmodule Lotus.Web.SchedulesPage do
                   next_runs={@next_runs}
                   viewer_zone={@viewer_zone}
                   target_entry={@target_entry}
+                  specs={@channel_specs}
                 />
                 <.runs :if={@schedule} schedule={@schedule} runs={@runs} />
               </aside>
@@ -752,113 +753,30 @@ defmodule Lotus.Web.SchedulesPage do
   ## 3. Deliver to
 
   attr(:deliveries, :list, required: true)
-  attr(:channels, :list, required: true)
-  attr(:formats, :list, required: true)
+  attr(:specs, :list, required: true)
+  attr(:adding, :boolean, required: true)
   attr(:target, :any, required: true)
 
   defp deliver_section(assigns) do
     ~H"""
     <.section id="schedule-deliver" step={3} title={gettext("Deliver to")} subtitle={gettext("Where each run's results go. Without a destination, runs are only recorded.")}>
       <div class="space-y-3">
-        <div
+        <Deliveries.destination
           :for={{delivery, index} <- Enum.with_index(@deliveries)}
           id={"delivery-#{index}"}
-          class="rounded-lg border border-gray-200 dark:border-gray-700"
-        >
-          <div class="flex flex-wrap items-center gap-3 border-b border-gray-100 px-3 py-2 dark:border-gray-700">
-            <span class="flex h-7 w-7 items-center justify-center rounded-md bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-              <Icons.link_icon :if={delivery["channel"] == "webhook"} class="h-4 w-4" />
-              <Icons.send :if={delivery["channel"] != "webhook"} class="h-4 w-4" />
-            </span>
-            <select
-              :if={length(@channels) > 1}
-              name={"draft[deliveries][#{index}][channel]"}
-              aria-label={gettext("Channel")}
-              class="rounded-md border-0 bg-transparent py-1 pl-1 pr-7 text-sm font-medium text-gray-900 focus:ring-2 focus:ring-pink-500 dark:text-white"
-            >
-              <option :for={channel <- @channels} value={channel} selected={delivery["channel"] == channel}><%= channel_label(channel) %></option>
-            </select>
-            <span :if={length(@channels) <= 1} class="text-sm font-medium text-gray-900 dark:text-white">
-              <input type="hidden" name={"draft[deliveries][#{index}][channel]"} value={delivery["channel"]} />
-              <%= channel_label(delivery["channel"]) %>
-            </span>
-            <div class="flex-1"></div>
-            <div class="inline-flex rounded-md bg-gray-100 p-0.5 dark:bg-gray-900" role="radiogroup" aria-label={gettext("Format")}>
-              <label
-                :for={format <- @formats}
-                class={[
-                  "cursor-pointer rounded px-2.5 py-1 font-mono text-xs uppercase",
-                  delivery["format"] == format && "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white",
-                  delivery["format"] != format && "text-gray-500 hover:text-gray-800 dark:text-gray-400"
-                ]}
-              >
-                <input type="radio" name={"draft[deliveries][#{index}][format]"} value={format} checked={delivery["format"] == format} class="sr-only" />
-                <%= format %>
-              </label>
-            </div>
-            <button
-              type="button"
-              id={"remove-delivery-#{index}"}
-              phx-click="remove_delivery"
-              phx-value-index={index}
-              phx-target={@target}
-              aria-label={gettext("Remove this destination")}
-              title={gettext("Remove this destination")}
-              class="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
-            >
-              <Icons.trash class="h-4 w-4" />
-            </button>
-          </div>
-          <div class="space-y-3 p-3">
-            <%= if delivery["channel"] == "webhook" do %>
-              <label class="block">
-                <span class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300"><%= gettext("URL") %></span>
-                <input
-                  type="url"
-                  name={"draft[deliveries][#{index}][url]"}
-                  value={delivery["url"]}
-                  placeholder="https://"
-                  autocomplete="off"
-                  class={input_class()}
-                />
-                <span class="mt-1 block text-xs text-gray-500 dark:text-gray-400">
-                  <%= gettext("Lotus POSTs JSON with the results attached as a %{format} file. Any 2xx answer counts as delivered.", format: String.upcase(delivery["format"] || "")) %>
-                </span>
-              </label>
-              <label class="block">
-                <span class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                  <%= gettext("Authorization header") %> <span class="font-normal text-gray-400"><%= gettext("optional") %></span>
-                </span>
-                <input
-                  type="text"
-                  name={"draft[deliveries][#{index}][authorization]"}
-                  value={delivery["authorization"]}
-                  placeholder="Bearer …"
-                  autocomplete="off"
-                  class={[input_class(), "font-mono"]}
-                />
-              </label>
-            <% else %>
-              <label class="block">
-                <span class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300"><%= gettext("Settings, as JSON") %></span>
-                <textarea
-                  name={"draft[deliveries][#{index}][config]"}
-                  rows="3"
-                  placeholder={~s({"to": ["team@example.com"]})}
-                  class={[input_class(), "font-mono text-xs"]}
-                ><%= delivery["config"] %></textarea>
-                <span class="mt-1 block text-xs text-gray-500 dark:text-gray-400">
-                  <%= gettext("What the %{channel} channel needs; its documentation lists them.", channel: channel_label(delivery["channel"])) %>
-                </span>
-              </label>
-            <% end %>
-          </div>
-        </div>
+          index={index}
+          delivery={delivery}
+          spec={Deliveries.spec(@specs, delivery["channel"])}
+          target={@target}
+        />
+
+        <Deliveries.channel_picker :if={@adding} specs={@specs} target={@target} />
 
         <button
+          :if={not @adding}
           type="button"
           id="add-delivery"
-          phx-click="add_delivery"
+          phx-click="pick_channel"
           phx-target={@target}
           class="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 px-4 py-3 text-sm font-medium text-gray-600 hover:border-pink-400 hover:bg-pink-50/40 hover:text-pink-600 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-pink-950/20"
         >
@@ -869,15 +787,6 @@ defmodule Lotus.Web.SchedulesPage do
     </.section>
     """
   end
-
-  defp channel_label("webhook"), do: gettext("Webhook")
-
-  defp channel_label(channel),
-    do: channel |> to_string() |> String.replace("_", " ") |> String.capitalize()
-
-  defp input_class,
-    do:
-      "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-500"
 
   ## 4. Alert
 
@@ -976,6 +885,7 @@ defmodule Lotus.Web.SchedulesPage do
   attr(:next_runs, :list, required: true)
   attr(:viewer_zone, :any, required: true)
   attr(:target_entry, :any, required: true)
+  attr(:specs, :list, required: true)
 
   defp summary(assigns) do
     assigns =
@@ -1038,7 +948,7 @@ defmodule Lotus.Web.SchedulesPage do
           <dd class="min-w-0 text-gray-700 dark:text-gray-300">
             <%= case @draft["deliveries"] do %>
               <% [] -> %><span class="text-gray-400"><%= gettext("Recorded only, sent nowhere") %></span>
-              <% deliveries -> %><%= deliveries |> Enum.map(&delivery_label/1) |> Enum.join(", ") %>
+              <% deliveries -> %><%= Enum.map_join(deliveries, ", ", &Deliveries.label(&1, @specs)) %>
             <% end %>
           </dd>
         </div>
@@ -1051,19 +961,6 @@ defmodule Lotus.Web.SchedulesPage do
     </section>
     """
   end
-
-  defp delivery_label(%{"channel" => "webhook", "url" => url, "format" => format}) do
-    host =
-      case URI.parse(url || "") do
-        %URI{host: host} when is_binary(host) and host != "" -> host
-        _ -> gettext("a webhook")
-      end
-
-    "#{host} (#{String.upcase(format || "")})"
-  end
-
-  defp delivery_label(%{"channel" => channel, "format" => format}),
-    do: "#{channel_label(channel)} (#{String.upcase(format || "")})"
 
   defp alert_sentence(%{"condition" => condition} = draft)
        when condition in ~w(above below equals) do
@@ -1191,8 +1088,8 @@ defmodule Lotus.Web.SchedulesPage do
       viewer_zone: viewer_zone,
       queries: Pro.list_queries(info),
       dashboards: Pro.list_dashboards(info),
-      channels: Lotus.Delivery.channels() |> Map.keys() |> Enum.sort(),
-      formats: Lotus.Delivery.formats() |> Map.keys() |> Enum.sort(),
+      channel_specs: Deliveries.specs(),
+      adding_delivery: false,
       conditions: Alert.conditions()
     )
   end
@@ -1215,7 +1112,7 @@ defmodule Lotus.Web.SchedulesPage do
             {:noreply,
              assign(socket,
                schedule: schedule,
-               draft: draft(schedule),
+               draft: draft(schedule, socket.assigns.channel_specs),
                runs: Schedules.list_runs(schedule, limit: @runs),
                errors: []
              )}
@@ -1237,7 +1134,17 @@ defmodule Lotus.Web.SchedulesPage do
 
   # The draft is the page's own once mounted: a render of the LiveView does
   # not put it back.
-  @owned [:draft, :errors, :picking, :target_search, :zone_open, :zone_search, :schedule, :runs]
+  @owned [
+    :draft,
+    :errors,
+    :picking,
+    :target_search,
+    :zone_open,
+    :zone_search,
+    :schedule,
+    :runs,
+    :adding_delivery
+  ]
 
   @impl Phoenix.LiveComponent
   def update(assigns, socket) do
@@ -1302,28 +1209,42 @@ defmodule Lotus.Web.SchedulesPage do
     {:noreply, assign(socket, draft: %{socket.assigns.draft | "cadence" => cadence})}
   end
 
-  def handle_event("add_delivery", _params, socket) do
+  def handle_event("pick_channel", _params, socket),
+    do: {:noreply, assign(socket, adding_delivery: true)}
+
+  def handle_event("cancel_add_delivery", _params, socket),
+    do: {:noreply, assign(socket, adding_delivery: false)}
+
+  def handle_event("add_delivery", %{"channel" => channel}, socket) do
     draft = socket.assigns.draft
 
-    format =
-      if "csv" in socket.assigns.formats, do: "csv", else: List.first(socket.assigns.formats)
+    case Enum.find(socket.assigns.channel_specs, &(&1.name == channel and &1.available == :ok)) do
+      nil ->
+        {:noreply, socket}
 
-    channel =
-      if "webhook" in socket.assigns.channels,
-        do: "webhook",
-        else: List.first(socket.assigns.channels)
+      spec ->
+        deliveries = draft["deliveries"] ++ [Deliveries.new(spec)]
 
-    delivery = %{
-      "channel" => channel,
-      "format" => format,
-      "url" => "",
-      "authorization" => "",
-      "config" => "",
-      "extra" => %{}
-    }
+        {:noreply,
+         assign(socket, draft: %{draft | "deliveries" => deliveries}, adding_delivery: false)}
+    end
+  end
 
-    {:noreply,
-     assign(socket, draft: %{draft | "deliveries" => draft["deliveries"] ++ [delivery]})}
+  def handle_event(
+        "remove_address",
+        %{"index" => index, "key" => key, "address" => address},
+        socket
+      ) do
+    draft = socket.assigns.draft
+
+    deliveries =
+      List.update_at(
+        draft["deliveries"],
+        String.to_integer(index),
+        &Deliveries.remove_address(&1, key, address)
+      )
+
+    {:noreply, assign(socket, draft: %{draft | "deliveries" => deliveries})}
   end
 
   def handle_event("remove_delivery", %{"index" => index}, socket) do
@@ -1436,7 +1357,7 @@ defmodule Lotus.Web.SchedulesPage do
     }
   end
 
-  defp draft(%Schedule{} = schedule) do
+  defp draft(%Schedule{} = schedule, specs) do
     Map.merge(
       %{
         "name" => schedule.name,
@@ -1444,7 +1365,7 @@ defmodule Lotus.Web.SchedulesPage do
         "cadence" => Cadence.from_cron(schedule.cron),
         "time_zone" => schedule.time_zone,
         "enabled" => to_string(schedule.enabled),
-        "deliveries" => Enum.map(schedule.deliveries, &draft_delivery/1)
+        "deliveries" => Enum.map(schedule.deliveries, &Deliveries.from_delivery(&1, specs))
       },
       draft_rule(schedule.rule)
     )
@@ -1452,21 +1373,6 @@ defmodule Lotus.Web.SchedulesPage do
 
   defp draft_target(%Schedule{query_id: nil, dashboard_id: id}), do: "dashboard:#{id}"
   defp draft_target(%Schedule{query_id: id}), do: "query:#{id}"
-
-  defp draft_delivery(delivery) do
-    config = delivery.config || %{}
-    headers = config["headers"] || %{}
-
-    %{
-      "channel" => delivery.channel,
-      "format" => delivery.format,
-      "url" => config["url"] || "",
-      "authorization" => headers["authorization"] || headers["Authorization"] || "",
-      "config" => if(config == %{}, do: "", else: Lotus.JSON.encode!(config)),
-      # A webhook's settings that the form does not show are kept.
-      "extra" => Map.drop(config, ["url"])
-    }
-  end
 
   defp draft_rule(nil),
     do: %{
@@ -1493,14 +1399,7 @@ defmodule Lotus.Web.SchedulesPage do
         %{} = by_index ->
           by_index
           |> Enum.sort_by(fn {index, _delivery} -> String.to_integer(index) end)
-          |> Enum.map(fn {index, delivery} ->
-            previous = Enum.at(draft["deliveries"], String.to_integer(index)) || %{}
-
-            Map.merge(
-              %{"url" => "", "authorization" => "", "config" => "", "extra" => %{}},
-              Map.merge(previous, delivery)
-            )
-          end)
+          |> Enum.flat_map(&merge_delivery(draft["deliveries"], &1))
 
         _none ->
           draft["deliveries"]
@@ -1523,8 +1422,17 @@ defmodule Lotus.Web.SchedulesPage do
     |> Map.put("cadence", cadence)
   end
 
+  # A posted destination merged into the one at its index; none for an
+  # index the draft does not have.
+  defp merge_delivery(deliveries, {index, params}) do
+    case Enum.at(deliveries, String.to_integer(index)) do
+      nil -> []
+      delivery -> [Deliveries.merge(delivery, params)]
+    end
+  end
+
   defp save(draft, assigns) do
-    with {:ok, attrs} <- attrs(draft) do
+    with {:ok, attrs} <- attrs(draft, assigns.channel_specs) do
       result =
         case assigns.schedule do
           nil -> Schedules.create_schedule(attrs, Actor.opts(assigns))
@@ -1539,8 +1447,8 @@ defmodule Lotus.Web.SchedulesPage do
     end
   end
 
-  defp attrs(draft) do
-    with {:ok, deliveries} <- deliveries(draft["deliveries"]) do
+  defp attrs(draft, specs) do
+    with {:ok, deliveries} <- deliveries(draft["deliveries"], specs) do
       {query_id, dashboard_id} = target(draft["target"])
 
       {:ok,
@@ -1561,54 +1469,14 @@ defmodule Lotus.Web.SchedulesPage do
   defp target("dashboard:" <> id), do: {nil, id}
   defp target(_none), do: {nil, nil}
 
-  defp deliveries(deliveries) do
+  defp deliveries(deliveries, specs) do
     Enum.reduce_while(deliveries, {:ok, []}, fn delivery, {:ok, acc} ->
-      case config(delivery) do
-        {:ok, config} ->
-          {:cont,
-           {:ok,
-            acc ++ [%{channel: delivery["channel"], format: delivery["format"], config: config}]}}
-
-        {:error, message} ->
-          {:halt, {:error, [message]}}
+      case Deliveries.to_attrs(delivery, specs) do
+        {:ok, attrs} -> {:cont, {:ok, acc ++ [attrs]}}
+        {:error, message} -> {:halt, {:error, [message]}}
       end
     end)
   end
-
-  defp config(%{"channel" => "webhook"} = delivery) do
-    extra = delivery["extra"] || %{}
-    headers = Map.drop(extra["headers"] || %{}, ["authorization", "Authorization"])
-
-    headers =
-      case blank(delivery["authorization"]) do
-        nil -> headers
-        value -> Map.put(headers, "authorization", value)
-      end
-
-    config =
-      extra
-      |> Map.put("url", String.trim(delivery["url"] || ""))
-      |> then(
-        &if(headers == %{}, do: Map.delete(&1, "headers"), else: Map.put(&1, "headers", headers))
-      )
-
-    {:ok, config}
-  end
-
-  defp config(%{"config" => json}) do
-    case blank(json) do
-      nil ->
-        {:ok, %{}}
-
-      json ->
-        case Lotus.JSON.decode(json) do
-          {:ok, %{} = config} -> {:ok, config}
-          _other -> {:error, gettext("A destination's settings must be a JSON object")}
-        end
-    end
-  end
-
-  defp config(_delivery), do: {:ok, %{}}
 
   defp rule(%{"alert" => "true"} = draft, query_id) when not is_nil(query_id) do
     %{
