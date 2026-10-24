@@ -18,7 +18,8 @@
   name, or one that sets a variable of that name in the card's query),
   and a click on it again clears it. Its series (the chart's color) sets
   its filter too. Out of edit mode, on the dashboard and its public link;
-  the chart says which filters a click sets. Fude 0.6's `select`.
+  the chart says which filters a click sets, and the bar a filter picks
+  stands out, the others faded. Fude's `select` and `selected`.
 
 - **Filters connect to cards on the dashboard.** In edit mode each filter
   says how many cards it is connected to (or that it is connected to none),

@@ -306,6 +306,11 @@ defmodule Lotus.Web.Charts do
     doc: "the event a click on a mark sends (Fude's `select`), where `phx-target` says"
   )
 
+  attr(:selected, :map,
+    default: nil,
+    doc: "the marks that stand out, the others faded (Fude's `selected`), by channel"
+  )
+
   attr(:class, :any, default: nil)
   attr(:rest, :global, include: ~w(phx-target))
 
@@ -328,6 +333,7 @@ defmodule Lotus.Web.Charts do
           export={@export}
           table={@table}
           select={@select}
+          selected={@selected}
           class={["lotus-chart", @class]}
           {@rest}
         />

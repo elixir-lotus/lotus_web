@@ -7,6 +7,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   use Lotus.Web, :live_component
 
   alias Lotus.Web.Charts
+  alias Lotus.Web.Dashboards.ChartFilters
   alias Lotus.Web.Dashboards.FilterConnections
   alias Lotus.Web.Dashboards.TextCard
   alias Lotus.Web.Queries.MasuResults
@@ -132,6 +133,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
               error={@error}
               running={@running}
               click_filters={@click_filters}
+              values={@values}
               parent={@parent}
             />
           <% :text -> %>
@@ -516,6 +518,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
             height={:fill}
             export
             select={@click_filters != %{} && "chart_select"}
+            selected={ChartFilters.selected(@click_filters, @values)}
             phx-target={@parent}
             title={click_hint(@click_filters)}
             class="lotus-card-chart"

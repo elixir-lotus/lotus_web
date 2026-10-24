@@ -53,6 +53,8 @@ defmodule Lotus.Web.Pages.DashboardChartFilterTest do
     })
 
     assert has_element?(live, ~s(#filter-bar input[name="filter[region]"][value="North"]))
+    # Its bar stands out, the others faded.
+    assert has_element?(live, ~s(#chart-#{chart.id}[data-fude-selected='{"x":"North"}']))
 
     render_hook(chart_el, "chart_select", %{
       "id" => "chart-#{chart.id}",
@@ -61,6 +63,7 @@ defmodule Lotus.Web.Pages.DashboardChartFilterTest do
     })
 
     refute has_element?(live, ~s(#filter-bar input[name="filter[region]"][value="North"]))
+    refute has_element?(live, "#chart-#{chart.id}[data-fude-selected]")
   end
 
   test "a chart with no filter of its fields, and a chart in edit mode, send no click", %{

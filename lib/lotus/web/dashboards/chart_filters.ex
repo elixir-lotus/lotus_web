@@ -78,6 +78,29 @@ defmodule Lotus.Web.Dashboards.ChartFilters do
 
   def click(_cards, _filters, _filter_values, _params), do: :none
 
+  @doc """
+  The marks of a chart that stand out (Fude's `selected`): the value of
+  each target's filter, by its channel. `nil` when no target has one.
+
+      iex> targets = %{"x" => %{name: "region"}, "color" => %{name: "channel"}}
+      iex> Lotus.Web.Dashboards.ChartFilters.selected(targets, %{"region" => "North", "channel" => ""})
+      %{"x" => "North"}
+      iex> Lotus.Web.Dashboards.ChartFilters.selected(targets, %{})
+      nil
+  """
+  @spec selected(%{optional(String.t()) => map()}, map()) ::
+          %{optional(String.t()) => term()} | nil
+  def selected(targets, values) do
+    selected =
+      for {channel, filter} <- targets,
+          value = Map.get(values, filter.name),
+          value not in [nil, ""],
+          into: %{},
+          do: {channel, value}
+
+    if selected == %{}, do: nil, else: selected
+  end
+
   # The channels of the mark that carry each field, by chart type.
   defp channels(%{"chart_type" => type} = c) when type in ~w(bar line area combo),
     do: [{"x", c["x_field"]}, {"color", c["series_field"]}]
