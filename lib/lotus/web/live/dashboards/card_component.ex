@@ -138,6 +138,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
               running={@running}
               click_filters={@click_filters}
               values={@values}
+              row_actions={Lotus.Web.Pro.row_actions(@card, Map.get(assigns, :pro_info, %{}))}
               parent={@parent}
             />
           <% :text -> %>
@@ -147,6 +148,8 @@ defmodule Lotus.Web.Dashboards.CardComponent do
             <.heading_content content={@card.content} public={@is_public} />
           <% :link -> %>
             <.link_content content={@card.content} />
+          <% :pro -> %>
+            <.pro_content card={@card} info={Map.get(assigns, :pro_info, %{})} public={@is_public} can_manage={@can_manage} />
           <% _ -> %>
             <.text_content card={@card} values={@values} heading={false} />
         <% end %>
@@ -517,7 +520,32 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   defp default_title(%{card_type: :text}), do: gettext("Text")
   defp default_title(%{card_type: :heading}), do: gettext("Heading")
   defp default_title(%{card_type: :link}), do: gettext("Link")
+  defp default_title(%{card_type: :pro}), do: gettext("Lotus Pro")
   defp default_title(_), do: gettext("Card")
+
+  # A Lotus Pro card: Pro draws it (`Lotus.Web.Pro.render_card/2`). Without
+  # Pro, or a kind Pro does not draw, it says so.
+  defp pro_content(assigns) do
+    assigns =
+      assign(assigns,
+        drawn:
+          Lotus.Web.Pro.render_card(assigns.card, %{
+            info: assigns.info,
+            public: assigns.public,
+            can_manage: assigns.can_manage
+          })
+      )
+
+    ~H"""
+    <%= if @drawn do %>
+      {@drawn}
+    <% else %>
+      <div class="flex h-full items-center justify-center text-sm text-gray-400">
+        <%= gettext("This card needs Lotus Pro") %>
+      </div>
+    <% end %>
+    """
+  end
 
   defp query_content(assigns) do
     ~H"""
@@ -550,7 +578,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
 
       <% @result -> %>
         <div class={["h-full transition-opacity", @running && "opacity-50"]} aria-busy={to_string(@running)}>
-          <MasuResults.card id={"table-#{@card.id}"} result={@result} label={@card.title} />
+          <MasuResults.card id={"table-#{@card.id}"} result={@result} label={@card.title} row_actions={@row_actions} />
         </div>
 
       <% true -> %>

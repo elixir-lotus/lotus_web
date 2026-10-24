@@ -136,4 +136,57 @@ defmodule Lotus.Web.Pro do
       options -> Lotus.list_dashboards_by(opts ++ options)
     end
   end
+
+  @doc """
+  The kinds of card Lotus Pro adds to a dashboard (`card_type: :pro`), for
+  the request: maps with `:kind`, `:label` and `:description`. A card of a
+  kind keeps it in its `content` (`%{"kind" => kind}`). `[]` without Pro:
+  the free version adds no Pro cards.
+  """
+  @spec card_kinds(map()) :: [%{kind: String.t(), label: String.t(), description: String.t()}]
+  def card_kinds(info) do
+    with true <- available?() and function_exported?(pro_web(), :card_kinds, 1),
+         kinds when is_list(kinds) <- apply(pro_web(), :card_kinds, [info]) do
+      for %{kind: kind, label: label} = given <- kinds,
+          is_binary(kind) and kind != "",
+          is_binary(label),
+          do: %{kind: kind, label: label, description: text(given[:description])}
+    else
+      _ -> []
+    end
+  end
+
+  @doc """
+  Lotus Pro's drawing of a Pro card, given the card and `assigns` (`:info`,
+  as `request_info/1`, `:public`, `:can_manage`). `nil` without Pro, or
+  when Pro does not draw it: the card then says it needs Lotus Pro.
+  """
+  @spec render_card(map(), map()) :: term() | nil
+  def render_card(card, assigns) do
+    if available?() and function_exported?(pro_web(), :render_card, 2),
+      do: apply(pro_web(), :render_card, [card, assigns])
+  end
+
+  @doc """
+  The actions Lotus Pro offers on each row of a query card's table, for the
+  request: maps with a `:label` and either `:on_action`, a function of the
+  row's context called in the LiveView (`Masu.Action`), or `:navigate`, a
+  function of the row giving a path. `[]` without Pro.
+  """
+  @spec row_actions(map(), map()) :: [map()]
+  def row_actions(card, info) do
+    with true <- available?() and function_exported?(pro_web(), :row_actions, 2),
+         actions when is_list(actions) <- apply(pro_web(), :row_actions, [card, info]) do
+      Enum.filter(actions, fn
+        %{label: label, on_action: fun} when is_binary(label) -> is_function(fun, 1)
+        %{label: label, navigate: fun} when is_binary(label) -> is_function(fun, 1)
+        _other -> false
+      end)
+    else
+      _ -> []
+    end
+  end
+
+  defp text(value) when is_binary(value), do: value
+  defp text(_value), do: ""
 end

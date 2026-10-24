@@ -13,6 +13,14 @@
 
 ### Added
 
+- **Lotus Pro's cards and row actions.** With Pro installed, the "Add card"
+  dialog offers the kinds of card Pro adds (`card_type: :pro`, an action
+  button for example), and Pro draws them. Pro can also put actions on each
+  row of a query card's table ("Contact", "Open in CRM"), in the row's menu,
+  run with the row's values. The free version offers no Pro card and its
+  tables have no row actions; a Pro card saved while Pro was installed says
+  it needs Lotus Pro.
+
 - **Lotus Pro scopes the lists and fills named slots.** With Pro installed,
   the lists of queries and dashboards (the Queries page, the command palette
   and the dashboard editor's query picker) take the `owner_id` and
