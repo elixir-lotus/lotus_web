@@ -26,4 +26,10 @@ defmodule Lotus.Web.ProTest do
       assert Pro.render_slot(:header, %{}) == nil
     end
   end
+
+  describe "authorize_public_dashboard/2" do
+    test "allows every link when Pro is not available" do
+      assert Pro.authorize_public_dashboard(%{id: 1}, %{}) == :allow
+    end
+  end
 end
