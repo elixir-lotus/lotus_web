@@ -23,6 +23,17 @@ defmodule Lotus.Web do
     end
   end
 
+  # The embed routes' LiveView: a page with no header, nav or palette.
+  def embed_live_view do
+    quote do
+      @moduledoc false
+
+      use Phoenix.LiveView, layout: {Lotus.Web.Layouts, :embed}
+
+      unquote(html_helpers())
+    end
+  end
+
   def live_component do
     quote do
       @moduledoc false

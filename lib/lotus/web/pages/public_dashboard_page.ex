@@ -7,6 +7,7 @@ defmodule Lotus.Web.PublicDashboardPage do
 
   use Lotus.Web, :live_component
 
+  alias Lotus.Web.Actor
   alias Lotus.Web.Branding
   alias Lotus.Web.Dashboards.CardGridComponent
   alias Lotus.Web.Dashboards.CardRunner
@@ -28,6 +29,7 @@ defmodule Lotus.Web.PublicDashboardPage do
       <div class="mx-auto w-full px-0 sm:px-0 lg:px-6 py-0 sm:py-6 h-full flex flex-col">
         <div class="lotus-dashboard bg-gray-50 dark:bg-gray-900 shadow-sm ring-1 ring-black/5 dark:ring-white/10 rounded-lg h-full flex flex-col overflow-hidden">
           <Components.dashboard_head
+            :if={is_nil(@single_card)}
             dashboard={@dashboard}
             refreshed_at={@refreshed_at}
             running={MapSet.size(@running_cards) > 0}
@@ -39,7 +41,7 @@ defmodule Lotus.Web.PublicDashboardPage do
 
           <%!-- Filter Bar --%>
           <.live_component
-            :if={@dashboard.filters != []}
+            :if={@dashboard.filters != [] and is_nil(@single_card)}
             module={FilterBarComponent}
             id="filter-bar"
             filters={@dashboard.filters}
@@ -50,6 +52,7 @@ defmodule Lotus.Web.PublicDashboardPage do
           />
 
           <Components.tab_bar
+            :if={is_nil(@single_card)}
             tabs={Tabs.list(@dashboard)}
             current={Tabs.current(@dashboard, @tab)}
             target={@myself}
@@ -70,7 +73,7 @@ defmodule Lotus.Web.PublicDashboardPage do
                 selected_card_id={nil}
                 public={true}
                 filters={@dashboard.filters}
-                pro_info={Lotus.Web.Pro.request_info(%{})}
+                pro_info={Lotus.Web.Pro.request_info(%{context: @context, scope: @scope})}
                 parent={@myself}
               />
             <% else %>
@@ -105,7 +108,8 @@ defmodule Lotus.Web.PublicDashboardPage do
       card_errors: %{},
       running_cards: MapSet.new(),
       card_runner: CardRunner.new(socket.assigns.card_concurrency, public: true),
-      refreshed_at: nil
+      refreshed_at: nil,
+      single_card: nil
     )
   end
 
@@ -123,6 +127,9 @@ defmodule Lotus.Web.PublicDashboardPage do
           dashboard ->
             open(socket, dashboard, params)
         end
+
+      %{grant: grant} ->
+        open_embed(socket, grant, params)
 
       _ ->
         {:noreply, assign(socket, dashboard: empty_dashboard())}
@@ -185,11 +192,32 @@ defmodule Lotus.Web.PublicDashboardPage do
     end
   end
 
-  defp show(socket, dashboard, params) do
+  # An embed (`Lotus.Web.EmbedLive`): the dashboard, or the one card, of the
+  # grant Lotus Pro gave. Its cards run as the grant's viewer, with the
+  # host's filters first and the viewer's changes over them.
+  defp open_embed(socket, %{resource: {:dashboard, id}} = grant, params) do
+    case Lotus.get_dashboard(id) do
+      nil -> {:noreply, assign(socket, dashboard: empty_dashboard())}
+      dashboard -> show(socket, dashboard, params, grant)
+    end
+  end
+
+  defp open_embed(socket, %{resource: {:card, id}} = grant, params) do
+    with %{} = card <- Lotus.get_dashboard_card(id),
+         %{} = dashboard <- Lotus.get_dashboard(card.dashboard_id) do
+      show(assign(socket, single_card: card.id), dashboard, params, grant)
+    else
+      _ -> {:noreply, assign(socket, dashboard: empty_dashboard())}
+    end
+  end
+
+  defp show(socket, dashboard, params, grant \\ nil) do
     cards = Lotus.list_dashboard_cards(dashboard.id, preload: [:query, :filter_mappings])
     filters = Lotus.list_dashboard_filters(dashboard.id)
-    dashboard = %{dashboard | cards: cards, filters: filters}
-    filter_values = extract_filter_values(params, filters)
+    dashboard = %{dashboard | cards: only(cards, socket.assigns.single_card), filters: filters}
+
+    filter_values =
+      Map.merge(host_filters(grant, filters), extract_filter_values(params, filters))
 
     report_view(socket, dashboard)
 
@@ -197,8 +225,8 @@ defmodule Lotus.Web.PublicDashboardPage do
      socket
      |> Branding.assign_branding(%{
        user: nil,
-       context: nil,
-       scope: nil,
+       context: socket.assigns.context,
+       scope: socket.assigns.scope,
        public: true,
        dashboard: dashboard
      })
@@ -208,10 +236,26 @@ defmodule Lotus.Web.PublicDashboardPage do
      |> run_all_cards()}
   end
 
+  # The one card of a card embed, across the whole width.
+  defp only(cards, nil), do: cards
+
+  defp only(cards, card_id) do
+    for %{id: ^card_id} = card <- cards,
+        do: %{card | layout: Map.merge(card.layout || %{}, %{x: 0, w: 12, tab: nil})}
+  end
+
+  # The filter values an embed's host sets, for the dashboard's filters.
+  defp host_filters(nil, _filters), do: %{}
+
+  defp host_filters(grant, filters) do
+    names = MapSet.new(filters, & &1.name)
+    Map.filter(grant.filters, fn {name, _value} -> MapSet.member?(names, name) end)
+  end
+
   # A view is counted once per connected page load, not on each patch.
   defp report_view(socket, %{id: id} = dashboard) do
     if connected?(socket) and not match?(%{id: ^id}, socket.assigns.dashboard),
-      do: Telemetry.dashboard_view(dashboard, true, nil)
+      do: Telemetry.dashboard_view(dashboard, true, socket.assigns.context)
   end
 
   # Pro's live updates of the dashboard's cards (`Lotus.Web.Pro.watch_dashboard/2`).
@@ -308,19 +352,23 @@ defmodule Lotus.Web.PublicDashboardPage do
     card = Enum.find(socket.assigns.dashboard.cards, &(&1.id == card_id))
 
     if card && card.card_type == :query && card.query do
-      vars = build_card_variables(socket, card)
+      opts = Actor.merge([vars: build_card_variables(socket, card)], socket.assigns)
       query = card.query
-      {:run, fn -> Lotus.run_query(query, vars: vars) end}
+      {:run, fn -> Lotus.run_query(query, opts) end}
     else
       {:skip, socket}
     end
   end
 
-  # A public dashboard has no actor, so the source queries run like its cards:
-  # with no :context or :scope.
+  # The source queries run like the cards: a public dashboard has no actor,
+  # an embed has the one Lotus Pro gave.
   defp assign_filter_options(socket) do
     {filter_options, filter_values} =
-      FilterOptions.resolve(socket.assigns.dashboard.filters, socket.assigns.filter_values)
+      FilterOptions.resolve(
+        socket.assigns.dashboard.filters,
+        socket.assigns.filter_values,
+        Actor.opts(socket.assigns)
+      )
 
     assign(socket, filter_options: filter_options, filter_values: filter_values)
   end

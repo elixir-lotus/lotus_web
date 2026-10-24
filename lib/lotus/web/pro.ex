@@ -189,4 +189,43 @@ defmodule Lotus.Web.Pro do
 
   defp text(value) when is_binary(value), do: value
   defp text(_value), do: ""
+
+  @doc """
+  Lotus Pro's check of an embed token, asked on every load of an embed
+  route (`Lotus.Web.Router.lotus_embed/2`) and by `Lotus.Web.EmbedFrame`.
+  `info` has the route's `:kind` (`:dashboard` or `:card`) and the URL's
+  `:params`.
+
+  Pro answers `{:ok, grant}` or `{:error, message}`. A grant has the
+  `:resource` the token opens, `{:dashboard, id}` or `{:card, id}` (of the
+  route's kind), and may have the viewer's `:context` and `:scope`, the
+  `:filters` the host sets (`%{"region" => "north"}`), and the
+  `:frame_ancestors` that may frame the page (`["https://app.example.com"]`).
+  Without Pro, `{:error, :no_pro}`: embedding is a Lotus Pro feature.
+  """
+  @spec verify_embed(String.t(), map()) :: {:ok, map()} | {:error, String.t() | :no_pro | nil}
+  def verify_embed(token, %{kind: kind} = info) when kind in [:dashboard, :card] do
+    if available?() and function_exported?(pro_web(), :verify_embed, 2) do
+      case apply(pro_web(), :verify_embed, [token, info]) do
+        {:ok, %{resource: {^kind, id}} = grant} when not is_nil(id) -> {:ok, grant(grant)}
+        {:error, message} when is_binary(message) -> {:error, message}
+        _other -> {:error, nil}
+      end
+    else
+      {:error, :no_pro}
+    end
+  end
+
+  defp grant(grant) do
+    filters = if is_map(grant[:filters]), do: grant[:filters], else: %{}
+    ancestors = for origin <- List.wrap(grant[:frame_ancestors]), is_binary(origin), do: origin
+
+    %{
+      resource: grant.resource,
+      context: grant[:context],
+      scope: grant[:scope],
+      filters: Map.new(filters, fn {name, value} -> {to_string(name), value} end),
+      frame_ancestors: ancestors
+    }
+  end
 end
