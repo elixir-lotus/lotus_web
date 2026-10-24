@@ -277,7 +277,7 @@ defmodule Lotus.Web.SchedulesPage do
 
   defp input_class,
     do:
-      "mt-1 w-full rounded-lg border border-gray-300 bg-white p-2 text-sm focus:border-pink-500 focus:ring-pink-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+      "mt-1 w-full rounded-lg border border-gray-300 bg-white p-2 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
 
   defp status_class("succeeded"), do: "text-green-700 dark:text-green-400"
   defp status_class("failed"), do: "text-red-600"
