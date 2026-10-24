@@ -60,7 +60,7 @@ defmodule Lotus.Web.Queries.AiPreview do
   end
 
   @doc "A preview that is still running."
-  @spec loading() :: t()
+  @spec loading() :: %{status: :loading, columns: [], rows: [], error: nil, chart: nil}
   def loading, do: %{status: :loading, columns: [], rows: [], error: nil, chart: nil}
 
   @doc false
