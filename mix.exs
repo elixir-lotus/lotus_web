@@ -44,12 +44,12 @@ defmodule Lotus.Web.MixProject do
       {:phoenix_live_view, ">= 1.1.0 and < 1.3.0"},
       {:jumon, "~> 0.2"},
       {:koyomi, "~> 0.2"},
-      {:kotoba, "~> 0.3"},
-      {:masu, "~> 0.6"},
+      {:kotoba, "~> 0.8"},
+      {:masu, "~> 0.7"},
       # The charts.
       {:fude, "~> 0.7"},
       # The schema diagram.
-      {:hakushi, "~> 0.5"},
+      {:hakushi, "~> 0.6"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_ecto, "~> 4.5"},
       {:gettext, "~> 0.26 or ~> 1.0"},
