@@ -3,6 +3,7 @@ defmodule Lotus.Web.DashboardLive do
 
   alias Lotus.Web.{Actor, Assets, Authorization, Branding}
   alias Lotus.Web.{DashboardEditorPage, PublicDashboardPage, QueriesPage, QueryEditorPage}
+  alias Lotus.Web.SchedulesPage
 
   @impl Phoenix.LiveView
   def mount(params, session, socket) do
@@ -10,7 +11,7 @@ defmodule Lotus.Web.DashboardLive do
     %{"live_path" => live_path, "live_transport" => live_transport} = session
     %{"csp_nonces" => csp_nonces, "card_concurrency" => card_concurrency} = session
 
-    page = resolve_page(params)
+    page = resolve_page(params, session["features"])
     {resolver, user, access, features, page_title} = mount_defaults(page, session)
     {context, scope} = actor = Actor.resolve(resolver, user)
 
@@ -115,7 +116,7 @@ defmodule Lotus.Web.DashboardLive do
   end
 
   def handle_params(params, uri, socket) do
-    page = resolve_page(params)
+    page = resolve_page(params, socket.assigns.features)
     socket = assign(socket, page: page)
 
     case socket.assigns.page.comp.handle_params(params, uri, socket) do
@@ -178,4 +179,14 @@ defmodule Lotus.Web.DashboardLive do
   end
 
   defp resolve_page(_params), do: %{name: :home, comp: QueriesPage}
+
+  # The schedules page is shown with `features: [:schedules]`; without it, the
+  # home page.
+  defp resolve_page(%{"page" => "schedules"} = params, features) do
+    if :schedules in (features || []),
+      do: %{name: :schedules, comp: SchedulesPage},
+      else: resolve_page(Map.delete(params, "page"))
+  end
+
+  defp resolve_page(params, _features), do: resolve_page(params)
 end

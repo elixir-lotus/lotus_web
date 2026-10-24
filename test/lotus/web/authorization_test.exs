@@ -192,7 +192,8 @@ defmodule Lotus.Web.AuthorizationTest do
                create_query: false,
                manage_dashboard: false,
                manage_source: false,
-               manage_cache: false
+               manage_cache: false,
+               manage_schedule: false
              }
     end
 

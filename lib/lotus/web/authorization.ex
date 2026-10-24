@@ -28,6 +28,7 @@ defmodule Lotus.Web.Authorization do
   | `:manage_dashboard` | `nil` for a new dashboard, else the `%Lotus.Storage.Dashboard{}` |
   | `:manage_source` | `nil` |
   | `:manage_cache` | `nil` |
+  | `:manage_schedule` | `nil`: creating, editing, pausing and deleting schedules and alerts |
 
   ## Cost
 
@@ -57,12 +58,19 @@ defmodule Lotus.Web.Authorization do
     :manage_dashboard,
     :ai_generate,
     :manage_source,
-    :manage_cache
+    :manage_cache,
+    :manage_schedule
   ]
 
   @read_only_actions [:query, :export, :discover, :view_dashboard]
 
-  @resourceless_actions [:create_query, :manage_dashboard, :manage_source, :manage_cache]
+  @resourceless_actions [
+    :create_query,
+    :manage_dashboard,
+    :manage_source,
+    :manage_cache,
+    :manage_schedule
+  ]
 
   @typedoc "A decision: allow, or deny with a reason the dashboard shows the user."
   @type decision :: :allow | {:deny, String.t()}
@@ -196,6 +204,7 @@ defmodule Lotus.Web.Authorization do
   def reason(:ai_generate), do: gettext("You don't have permission to use the AI assistant")
   def reason(:manage_source), do: gettext("You don't have permission to manage data sources")
   def reason(:manage_cache), do: gettext("You don't have permission to manage the cache")
+  def reason(:manage_schedule), do: gettext("You don't have permission to manage schedules")
 
   defp access(%{resolver: _resolver, access: access}), do: access
 
