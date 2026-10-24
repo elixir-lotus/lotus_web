@@ -180,12 +180,16 @@ defmodule Lotus.Web.DashboardLive do
 
   defp resolve_page(_params), do: %{name: :home, comp: QueriesPage}
 
-  # The schedules page is shown with `features: [:schedules]`; without it, the
-  # home page.
+  # The schedules are shown with `features: [:schedules]`: their list on the
+  # home page's Schedules tab, and the editor of one. Without the feature,
+  # the home page.
   defp resolve_page(%{"page" => "schedules"} = params, features) do
-    if :schedules in (features || []),
-      do: %{name: :schedules, comp: SchedulesPage},
-      else: resolve_page(Map.delete(params, "page"))
+    cond do
+      :schedules not in (features || []) -> resolve_page(Map.drop(params, ["page", "id"]))
+      params["id"] == "new" -> %{name: :schedule_new, comp: SchedulesPage, mode: :new}
+      params["id"] -> %{name: :schedule_edit, comp: SchedulesPage, mode: :edit, id: params["id"]}
+      true -> %{name: :schedules, comp: QueriesPage}
+    end
   end
 
   defp resolve_page(params, _features), do: resolve_page(params)

@@ -160,7 +160,8 @@ const livePath = document
 
 const liveSocket = new LiveView.LiveSocket(livePath, Phoenix.Socket, {
   transport: liveTran === "longpoll" ? Phoenix.LongPoll : WebSocket,
-  params: { _csrf_token: csrfToken },
+  // The viewer's time zone: a new schedule runs in it.
+  params: { _csrf_token: csrfToken, time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone },
   hooks: hooks,
 });
 
