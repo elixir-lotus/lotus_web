@@ -3933,3 +3933,60 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Clear sort"
 msgstr ""
+
+#: lib/lotus/web/live/dashboards/card_component.ex:205
+#, elixir-autogen, elixir-format
+msgid "%{filter} sets"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/card_component.ex:212
+#, elixir-autogen, elixir-format
+msgid "Nothing in this card"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/card_component.ex:190
+#, elixir-autogen, elixir-format
+msgid "Its query has no variables for a filter to set."
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/card_component.ex:218
+#, elixir-autogen, elixir-format
+msgid "Its start and end set two variables; a choice here sets one."
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/card_component.ex:224
+#, elixir-autogen, elixir-format
+msgid "A text shows the filter's value where it says %{name}."
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/card_component.ex:230
+#, elixir-autogen, elixir-format
+msgid "A filter sets nothing in this card."
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/filter_bar_component.ex:61
+#, elixir-autogen, elixir-format
+msgid "Choose on each card what %{filter} sets in it."
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/filter_bar_component.ex:105
+#, elixir-autogen, elixir-format
+msgid "Choose what it sets in each card"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/filter_bar_component.ex:109
+#, elixir-autogen, elixir-format
+msgid "Not connected"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/filter_bar_component.ex:110
+#, elixir-autogen, elixir-format
+msgid "1 card"
+msgid_plural "%{count} cards"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/lotus/web/pages/dashboard_editor_page.ex:1582
+#, elixir-autogen, elixir-format
+msgid "is the name of another filter"
+msgstr ""

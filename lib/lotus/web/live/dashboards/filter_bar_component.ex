@@ -10,7 +10,15 @@ defmodule Lotus.Web.Dashboards.FilterBarComponent do
 
   @impl Phoenix.LiveComponent
   def mount(socket) do
-    {:ok, assign(socket, filters: [], filter_values: %{}, filter_options: %{}, public: false)}
+    {:ok,
+     assign(socket,
+       filters: [],
+       filter_values: %{},
+       filter_options: %{},
+       public: false,
+       connecting: nil,
+       connections: %{}
+     )}
   end
 
   @impl Phoenix.LiveComponent
@@ -26,6 +34,8 @@ defmodule Lotus.Web.Dashboards.FilterBarComponent do
             public={@public}
             parent={@parent}
             locale={@locale}
+            connecting={@connecting == filter.name}
+            connections={Map.get(@connections, filter.name, 0)}
           />
         <% end %>
 
@@ -40,13 +50,38 @@ defmodule Lotus.Web.Dashboards.FilterBarComponent do
           <%= gettext("Add Filter") %>
         </button>
       </form>
+      <div
+        :if={!@public and @connecting}
+        id="filter-connect-hint"
+        class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-pink-50 px-3 py-2 text-sm text-pink-900 dark:bg-pink-950/50 dark:text-pink-100"
+        role="status"
+      >
+        <Icons.link_icon class="h-4 w-4 shrink-0" />
+        <span class="flex-1">
+          <%= gettext("Choose on each card what %{filter} sets in it.",
+            filter: connecting_label(@filters, @connecting)
+          ) %>
+        </span>
+        <button
+          id="filter-connect-done"
+          type="button"
+          phx-click="stop_connecting"
+          phx-target={@parent}
+          class="rounded-md bg-pink-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-pink-500"
+        >
+          <%= gettext("Done") %>
+        </button>
+      </div>
     </div>
     """
   end
 
   defp filter_widget(assigns) do
     ~H"""
-    <div class="min-w-[150px]">
+    <div class={[
+      "min-w-[150px] rounded-lg",
+      @connecting && "ring-2 ring-pink-500 ring-offset-4 dark:ring-offset-gray-900"
+    ]}>
       <div class="flex items-center justify-between mb-1">
         <label
           id={"filter-#{@filter.name}-label"}
@@ -55,6 +90,25 @@ defmodule Lotus.Web.Dashboards.FilterBarComponent do
           <%= @filter.label || @filter.name %>
         </label>
         <div :if={!@public} class="flex items-center gap-0.5">
+          <button
+            id={"filter-#{@filter.name}-connect"}
+            type="button"
+            phx-click="connect_filter"
+            phx-value-filter-name={@filter.name}
+            phx-target={@parent}
+            aria-pressed={to_string(@connecting)}
+            class={[
+              "inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[11px] font-medium",
+              @connections == 0 && "text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/30",
+              @connections > 0 && "text-gray-500 hover:bg-gray-100 hover:text-pink-600 dark:text-gray-400 dark:hover:bg-gray-700"
+            ]}
+            title={gettext("Choose what it sets in each card")}
+          >
+            <Icons.link_icon class="h-3 w-3" />
+            <%= if @connections == 0,
+              do: gettext("Not connected"),
+              else: ngettext("1 card", "%{count} cards", @connections) %>
+          </button>
           <button
             type="button"
             phx-click="edit_filter"
@@ -185,6 +239,13 @@ defmodule Lotus.Web.Dashboards.FilterBarComponent do
       locale={@locale}
     />
     """
+  end
+
+  defp connecting_label(filters, name) do
+    case Enum.find(filters, &(&1.name == name)) do
+      %{label: label} when label not in [nil, ""] -> label
+      _ -> name
+    end
   end
 
   defp input_type(:text), do: "text"

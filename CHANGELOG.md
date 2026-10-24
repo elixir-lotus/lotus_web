@@ -13,6 +13,15 @@
 
 ### Added
 
+- **Filters connect to cards on the dashboard.** In edit mode each filter
+  says how many cards it is connected to (or that it is connected to none),
+  and its button shows, over each card, what the filter sets in it: a
+  choice of the card's query variables, a note on a text card (where it
+  says `{{name}}`), and nothing on the others. A new filter connects by
+  itself to the cards with a variable of its name (a date range, to their
+  `<name>_start` and `<name>_end`, or `start_date` and `end_date`), and
+  opens on the cards, for the others.
+
 - **A schema diagram.** For a SQL source (PostgreSQL, MySQL, SQLite), the
   schema explorer's **Diagram** opens the tables of the active schema and
   their foreign keys on a canvas over the page: laid out before it shows,

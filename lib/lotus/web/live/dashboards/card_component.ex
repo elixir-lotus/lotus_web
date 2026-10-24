@@ -7,6 +7,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   use Lotus.Web, :live_component
 
   alias Lotus.Web.Charts
+  alias Lotus.Web.Dashboards.FilterConnections
   alias Lotus.Web.Dashboards.TextCard
   alias Lotus.Web.Queries.MasuResults
 
@@ -38,7 +39,8 @@ defmodule Lotus.Web.Dashboards.CardComponent do
         maximized: Map.get(assigns, :maximized, false),
         place: place(assigns.card.layout),
         folds?: not heading,
-        folded: layout_value(assigns.card.layout || %{}, :folded, false) == true
+        folded: layout_value(assigns.card.layout || %{}, :folded, false) == true,
+        connecting: can_manage && Map.get(assigns, :connecting)
       )
 
     ~H"""
@@ -136,6 +138,8 @@ defmodule Lotus.Web.Dashboards.CardComponent do
         <% end %>
       </div>
 
+      <.connect :if={@connecting} card={@card} filter={@connecting} parent={@parent} />
+
       <%!-- Its corner: drag it to resize the card (edit mode). --%>
       <span
         :if={@can_manage}
@@ -146,6 +150,86 @@ defmodule Lotus.Web.Dashboards.CardComponent do
       </span>
 
       <.maximized :if={@maximized and @chart?} id={@id} card={@card} result={@result} target={@myself} />
+    </div>
+    """
+  end
+
+  # Over the card while a filter is being connected: what the filter sets in
+  # the card's query. Its clicks stay in it (they do not pick the card).
+  attr(:card, :map, required: true)
+  attr(:filter, :map, required: true)
+  attr(:parent, :any, required: true)
+
+  defp connect(assigns) do
+    query = assigns.card.query
+    entries = FilterConnections.entries(assigns.card.filter_mappings, assigns.filter)
+
+    assigns =
+      assign(assigns,
+        variables: (query && query.variables) || [],
+        current: Enum.find_value(entries, & &1.variable_name),
+        split: Enum.any?(entries, & &1.transform),
+        label: assigns.filter.label || assigns.filter.name
+      )
+
+    ~H"""
+    <div
+      id={"card-#{@card.id}-connect"}
+      class={[
+        "lotus-card-connect absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg p-4 text-center backdrop-blur-[2px]",
+        @current && "bg-pink-50/90 ring-2 ring-pink-500 dark:bg-pink-950/80",
+        !@current && "bg-white/85 dark:bg-gray-900/85"
+      ]}
+      phx-click={%JS{}}
+      data-connected={to_string(@current != nil)}
+    >
+      <%= case @card.card_type do %>
+        <% :query -> %>
+          <%= if @variables == [] do %>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              <%= gettext("Its query has no variables for a filter to set.") %>
+            </p>
+          <% else %>
+            <form
+              id={"card-#{@card.id}-connect-form"}
+              phx-change="update_filter_mapping"
+              phx-target={@parent}
+              class="w-full max-w-[14rem]"
+            >
+              <input type="hidden" name="card-id" value={@card.id} />
+              <input type="hidden" name="filter-name" value={@filter.name} />
+              <label
+                for={"card-#{@card.id}-connect-select"}
+                class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300"
+              >
+                <%= gettext("%{filter} sets", filter: @label) %>
+              </label>
+              <select
+                id={"card-#{@card.id}-connect-select"}
+                name={"filter_mapping[#{@filter.name}]"}
+                class="w-full rounded-md border border-gray-300 bg-white p-1.5 text-sm focus:border-pink-500 focus:ring-pink-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                <option value=""><%= gettext("Nothing in this card") %></option>
+                <option :for={var <- @variables} value={var.name} selected={@current == var.name}>
+                  <%= var.label || var.name %>
+                </option>
+              </select>
+              <p :if={@split} class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <%= gettext("Its start and end set two variables; a choice here sets one.") %>
+              </p>
+            </form>
+          <% end %>
+        <% :text -> %>
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            <%= gettext("A text shows the filter's value where it says %{name}.",
+              name: "{{#{@filter.name}}}"
+            ) %>
+          </p>
+        <% _ -> %>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            <%= gettext("A filter sets nothing in this card.") %>
+          </p>
+      <% end %>
     </div>
     """
   end

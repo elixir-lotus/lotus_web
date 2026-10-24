@@ -18,6 +18,7 @@ defmodule Lotus.Web.DashboardEditorPage do
   alias Lotus.Web.Dashboards.Components
   alias Lotus.Web.Dashboards.DateTokens
   alias Lotus.Web.Dashboards.FilterBarComponent
+  alias Lotus.Web.Dashboards.FilterConnections
   alias Lotus.Web.Dashboards.FilterOptions
   alias Lotus.Web.Dashboards.FilterValues
   alias Lotus.Web.Dashboards.SettingsDrawer
@@ -91,6 +92,8 @@ defmodule Lotus.Web.DashboardEditorPage do
             filter_values={@filter_values}
             filter_options={@filter_options}
             public={not @editing}
+            connecting={@connecting}
+            connections={FilterConnections.counts(@dashboard.filters, @dashboard.cards)}
             parent={@myself}
           />
 
@@ -146,6 +149,7 @@ defmodule Lotus.Web.DashboardEditorPage do
                   running_cards={@running_cards}
                   selected_card_id={@selected_card && @selected_card.id}
                   can_manage={@can_manage and @editing}
+                  connecting={@editing && Enum.find(@dashboard.filters, &(&1.name == @connecting))}
                   parent={@myself}
                 />
               <% end %>
@@ -361,6 +365,7 @@ defmodule Lotus.Web.DashboardEditorPage do
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               <%= gettext("Used as the URL parameter name (e.g. ?region=US)") %>
             </p>
+            <.filter_field_error errors={@errors} field={:name} />
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -547,7 +552,9 @@ defmodule Lotus.Web.DashboardEditorPage do
       editing: false,
       saved_dashboard: nil,
       add_card_type: :query,
-      refreshed_at: nil
+      refreshed_at: nil,
+      # The filter being connected to the cards, by name.
+      connecting: nil
     )
   end
 
@@ -786,6 +793,24 @@ defmodule Lotus.Web.DashboardEditorPage do
     authorize_manage(socket, fn -> do_add_filter(socket) end)
   end
 
+  # Connecting a filter: each card shows what the filter sets in it.
+  @impl Phoenix.LiveComponent
+  def handle_event("connect_filter", %{"filter-name" => name}, socket) do
+    authorize_manage(socket, fn ->
+      connecting = if socket.assigns.connecting == name, do: nil, else: name
+
+      {:noreply,
+       socket
+       |> close_editors()
+       |> assign(connecting: connecting)}
+    end)
+  end
+
+  @impl Phoenix.LiveComponent
+  def handle_event("stop_connecting", _params, socket) do
+    {:noreply, assign(socket, connecting: nil)}
+  end
+
   @impl Phoenix.LiveComponent
   def handle_event("edit_filter", %{"filter-id" => filter_id}, socket) do
     authorize_manage(socket, fn -> do_edit_filter(socket, filter_id) end)
@@ -963,7 +988,8 @@ defmodule Lotus.Web.DashboardEditorPage do
       card_settings_visible: false,
       settings_visible: false,
       add_card_modal_open: false,
-      filter_modal_open: false
+      filter_modal_open: false,
+      connecting: nil
     )
   end
 
@@ -1470,18 +1496,26 @@ defmodule Lotus.Web.DashboardEditorPage do
     filter = build_editing_filter(socket.assigns.editing_filter, filter_params)
 
     errors =
-      Map.merge(filter_dependency_errors(filter, dashboard.filters), default_value_errors(filter))
+      filter
+      |> filter_dependency_errors(dashboard.filters)
+      |> Map.merge(default_value_errors(filter))
+      |> Map.merge(name_errors(filter, dashboard.filters))
 
     case errors do
       errors when errors == %{} ->
+        new? = not Enum.any?(dashboard.filters, &(&1.id == filter.id))
         dashboard = %{dashboard | filters: upsert_filter(dashboard.filters, filter)}
+        # A new filter connects to the cards with a variable of its name, and
+        # shows them, for the others.
+        dashboard = if new?, do: auto_connect(dashboard, filter), else: dashboard
 
         {:noreply,
          socket
          |> assign(
            dashboard: dashboard,
            filter_modal_open: false,
-           editing_filter: nil
+           editing_filter: nil,
+           connecting: if(new?, do: filter.name, else: socket.assigns.connecting)
          )
          |> assign_filter_options()
          |> run_all_cards()}
@@ -1540,6 +1574,14 @@ defmodule Lotus.Web.DashboardEditorPage do
   end
 
   defp default_value_errors(_filter), do: %{}
+
+  # Core checks it when the dashboard saves; a card's connections and the
+  # URL name a filter by its name.
+  defp name_errors(filter, filters) do
+    if Enum.any?(filters, &(&1.id != filter.id and &1.name == filter.name)),
+      do: %{name: gettext("is the name of another filter")},
+      else: %{}
+  end
 
   # A new type picks the first widget it accepts when the current widget does
   # not fit, so a Date Range filter gets the picker with its presets.
@@ -1652,9 +1694,12 @@ defmodule Lotus.Web.DashboardEditorPage do
 
     filter_values = Map.drop(socket.assigns.filter_values, [filter_name])
 
+    connecting =
+      if socket.assigns.connecting == filter_name, do: nil, else: socket.assigns.connecting
+
     {:noreply,
      socket
-     |> assign(dashboard: dashboard, filter_values: filter_values)
+     |> assign(dashboard: dashboard, filter_values: filter_values, connecting: connecting)
      |> assign_filter_options()
      |> run_all_cards()}
   end
@@ -2088,6 +2133,24 @@ defmodule Lotus.Web.DashboardEditorPage do
   end
 
   defp normalize_mappings(_, _), do: %{}
+
+  defp auto_connect(dashboard, filter) do
+    cards =
+      Enum.map(dashboard.cards, fn card ->
+        variables = (card.card_type == :query && card.query && card.query.variables) || []
+
+        case FilterConnections.suggest(filter, variables) do
+          [] ->
+            card
+
+          entries ->
+            mappings = normalize_mappings(card.filter_mappings, dashboard.filters)
+            %{card | filter_mappings: Map.put(mappings, filter.name, entries)}
+        end
+      end)
+
+    %{dashboard | cards: cards}
+  end
 
   defp mapping_entries(variable_name) when variable_name in [nil, ""], do: []
   defp mapping_entries(variable_name), do: [%{variable_name: variable_name, transform: nil}]
