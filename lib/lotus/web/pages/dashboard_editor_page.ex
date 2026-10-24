@@ -568,7 +568,7 @@ defmodule Lotus.Web.DashboardEditorPage do
       editing_filter: nil,
       save_modal_open: false,
       delete_modal_open: false,
-      available_queries: Lotus.list_queries(),
+      available_queries: socket.assigns |> Pro.request_info() |> Pro.list_queries(),
       auto_refresh_ref: nil,
       current_uri: nil,
       # View mode, unless the dashboard is new; Edit keeps the dashboard as

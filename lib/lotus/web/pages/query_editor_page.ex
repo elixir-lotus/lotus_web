@@ -220,6 +220,7 @@ defmodule Lotus.Web.QueryEditorPage do
           <%= @query.name || gettext("Untitled") %>
         <% end %>
       </h2>
+        <.pro_slot :if={@mode == :edit} name={:query_editor_header} slot_assigns={%{query: @query}} />
       </div>
       <div class="flex gap-3">
         <%= if @mode == :edit and @can_delete do %>

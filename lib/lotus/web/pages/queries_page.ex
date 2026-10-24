@@ -14,6 +14,7 @@ defmodule Lotus.Web.QueriesPage do
   alias Lotus.Web.Dashboards.Tabs
   alias Lotus.Web.Dashboards.TextCard
   alias Lotus.Web.Page
+  alias Lotus.Web.Pro
   alias Lotus.Web.Queries.QueryList
   alias Lotus.Web.RichText
 
@@ -50,6 +51,7 @@ defmodule Lotus.Web.QueriesPage do
                 </span>
               </button>
             </div>
+            <.pro_slot name={:list_toolbar} slot_assigns={Map.put(assigns, :tab, @active_tab)} />
           </div>
 
           <%!-- Content --%>
@@ -198,7 +200,10 @@ defmodule Lotus.Web.QueriesPage do
               <Sketch.chart_sketch type={entry.chart || "table"} size={:icon} />
             </span>
             <span class="min-w-0">
-              <span class="block truncate font-medium text-indigo-600 dark:text-indigo-400"><%= entry.query.name %></span>
+              <span class="flex items-center gap-1.5">
+                <span class="truncate font-medium text-indigo-600 dark:text-indigo-400"><%= entry.query.name %></span>
+                <.pro_slot name={:query_badges} slot_assigns={%{query: entry.query}} />
+              </span>
               <span class="block truncate text-xs text-gray-500 dark:text-gray-400"><%= entry.query.description %></span>
             </span>
             <code class="truncate rounded-md border border-gray-100 bg-gray-50 px-2 py-1 font-mono text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
@@ -248,6 +253,7 @@ defmodule Lotus.Web.QueriesPage do
             <%= ngettext("In 1 dashboard", "In %{count} dashboards", @entry.dashboards) %>
           </span>
           <span><%= gettext("Updated") %> <.updated id={"query-#{@entry.query.id}-updated"} at={to_datetime(@entry.query.updated_at)} /></span>
+          <.pro_slot name={:query_badges} slot_assigns={%{query: @entry.query}} />
         </p>
       </div>
     </.link>
@@ -467,6 +473,7 @@ defmodule Lotus.Web.QueriesPage do
               <span class="font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
                 <%= dashboard.name %>
               </span>
+              <.pro_slot name={:dashboard_badges} slot_assigns={%{dashboard: dashboard}} />
             </.link>
           </:col>
           <:col :let={dashboard} label={gettext("Description")}>
@@ -510,6 +517,7 @@ defmodule Lotus.Web.QueriesPage do
             >
               <%= gettext("Public") %>
             </span>
+            <.pro_slot name={:dashboard_badges} slot_assigns={%{dashboard: @dashboard}} />
           </div>
           <p class="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
             <%= RichText.plain_text(@dashboard.description) || " " %>
@@ -581,17 +589,12 @@ defmodule Lotus.Web.QueriesPage do
 
   @impl Page
   def handle_mount(socket) do
-    queries = Lotus.list_queries()
-    dashboards = Lotus.list_dashboards(preload: [:cards])
-
     socket
+    |> assign(queries: [], query_entries: [], dashboards: [])
     |> assign(
-      queries: queries,
-      query_entries: QueryList.entries(queries),
       query_view: :grid,
       query_search: "",
       query_source: "",
-      dashboards: dashboards,
       active_tab: :queries,
       dashboard_view: :grid,
       dashboard_search: "",
@@ -622,11 +625,27 @@ defmodule Lotus.Web.QueriesPage do
   end
 
   @impl Page
-  def handle_params(%{"tab" => "dashboards"}, _uri, socket) do
-    {:noreply, assign(socket, active_tab: :dashboards)}
+  def handle_params(params, _uri, socket) do
+    socket = socket |> assign(params: params) |> load_lists()
+
+    case params do
+      %{"tab" => "dashboards"} -> {:noreply, assign(socket, active_tab: :dashboards)}
+      _params -> {:noreply, socket}
+    end
   end
 
-  def handle_params(_params, _uri, socket), do: {:noreply, socket}
+  # Every query and dashboard, or those Lotus Pro lists for the request
+  # (`Lotus.Web.Pro.list_options/2`, which may read the URL's params).
+  defp load_lists(socket) do
+    info = Pro.request_info(socket.assigns)
+    queries = Pro.list_queries(info)
+
+    assign(socket,
+      queries: queries,
+      query_entries: QueryList.entries(queries),
+      dashboards: Pro.list_dashboards(info, preload: [:cards])
+    )
+  end
 
   @impl Phoenix.LiveComponent
   def handle_event("switch_tab", %{"tab" => tab}, socket) do

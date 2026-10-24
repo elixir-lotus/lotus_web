@@ -87,4 +87,53 @@ defmodule Lotus.Web.Pro do
       _ -> %{}
     end
   end
+
+  @doc """
+  The request as Lotus Pro sees it in `list_options/2` and the slots: the
+  `:user`, `:context`, `:scope` and URL `:params` of the assigns.
+  """
+  @spec request_info(map()) :: map()
+  def request_info(assigns) do
+    %{
+      user: assigns[:user],
+      context: assigns[:context],
+      scope: assigns[:scope],
+      params: assigns[:params] || %{}
+    }
+  end
+
+  @doc """
+  The options Lotus Pro adds to a list of `:queries` or `:dashboards` for a
+  request (`request_info/1`): `:owner_id` and `:tenant_id`, as
+  `Lotus.Storage.list_queries_by/1` and `Lotus.list_dashboards_by/1` take
+  them, for a tenant's content or "mine". Other keys are ignored. `[]`
+  without Pro: every query and dashboard is listed.
+  """
+  @spec list_options(:queries | :dashboards, map()) :: keyword()
+  def list_options(kind, info) when kind in [:queries, :dashboards] do
+    with true <- available?() and function_exported?(pro_web(), :list_options, 2),
+         options when is_list(options) <- apply(pro_web(), :list_options, [kind, info]) do
+      options |> Keyword.take([:owner_id, :tenant_id]) |> Enum.reject(&is_nil(elem(&1, 1)))
+    else
+      _ -> []
+    end
+  end
+
+  @doc "The queries listed for the request: all of them without Pro."
+  @spec list_queries(map()) :: [Lotus.Storage.Query.t()]
+  def list_queries(info) do
+    case list_options(:queries, info) do
+      [] -> Lotus.list_queries()
+      options -> Lotus.Storage.list_queries_by(options)
+    end
+  end
+
+  @doc "The dashboards listed for the request, with `opts` (`:preload`): all of them without Pro."
+  @spec list_dashboards(map(), keyword()) :: [Lotus.Storage.Dashboard.t()]
+  def list_dashboards(info, opts \\ []) do
+    case list_options(:dashboards, info) do
+      [] -> Lotus.list_dashboards(opts)
+      options -> Lotus.list_dashboards_by(opts ++ options)
+    end
+  end
 end

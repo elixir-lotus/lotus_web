@@ -13,6 +13,16 @@
 
 ### Added
 
+- **Lotus Pro scopes the lists and fills named slots.** With Pro installed,
+  the lists of queries and dashboards (the Queries page, the command palette
+  and the dashboard editor's query picker) take the `owner_id` and
+  `tenant_id` Pro gives for the request and its URL params, so a person sees
+  their tenant's content, or their own. Pro also fills six slots: the
+  header (`:nav`), above the lists (`:list_toolbar`), each query's and
+  dashboard's tile and row (`:query_badges`, `:dashboard_badges`), the query
+  editor's header and each card's header. The free version lists every
+  query and dashboard, and its slots stay empty.
+
 - **Lotus Pro can brand the dashboard per request.** Only Pro brands it: the
   free version is always Lotus, and the router takes no branding options.
   With Pro installed, the dashboard asks it for the branding when it mounts
