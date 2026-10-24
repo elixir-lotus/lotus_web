@@ -13,12 +13,20 @@
 
 ### Added
 
-- **A package can refuse a share link.** Before a public dashboard is shown,
-  the integration bridge asks `authorize_public_dashboard(dashboard,
-  params)`, with the URL's params, on every load of the link. `{:deny,
-  message}` shows the message instead of the dashboard, for a link that
-  expired or was revoked. Without a package that answers, every link works
-  as before.
+- **Lotus Pro can brand the dashboard per request.** Only Pro brands it: the
+  free version is always Lotus, and the router takes no branding options.
+  With Pro installed, the dashboard asks it for the branding when it mounts
+  and when a public dashboard loads (with the user, the actor and, on a
+  public dashboard, the dashboard): the product name (in the title and in
+  place of the Lotus mark), a logo, the assistant's name, and a theme and
+  colours over the router's. A public dashboard's "Powered by Lotus" footer
+  always shows, with Pro too.
+
+- **Lotus Pro can refuse a share link.** Before a public dashboard is shown,
+  the dashboard asks Pro's `authorize_public_dashboard(dashboard, params)`,
+  with the URL's params, on every load of the link. `{:deny, message}` shows
+  the message instead of the dashboard, for a link that expired or was
+  revoked. Without Pro, every link works as before.
 
 - **Telemetry for what people do in the dashboard** (`Lotus.Web.Telemetry`),
   each event with the resolver's `:context`:

@@ -68,4 +68,23 @@ defmodule Lotus.Web.Pro do
       :allow
     end
   end
+
+  @doc """
+  The branding of a request, asked when the dashboard mounts and when a
+  public dashboard is loaded. `info` has the `:user`, `:context` and
+  `:scope` of the request, `:public` and, on a public dashboard, the
+  `:dashboard`. Pro answers a map with any of `:product_name`, `:logo` (an
+  image URL), `:assistant_name`, `:theme` and `:theme_colors`. The
+  "Powered by Lotus" footer is not part of it: it always shows. `%{}` without Pro: the dashboard
+  is Lotus.
+  """
+  @spec branding(map()) :: map()
+  def branding(info) do
+    with true <- available?() and function_exported?(pro_web(), :branding, 1),
+         %{} = branding <- apply(pro_web(), :branding, [info]) do
+      branding
+    else
+      _ -> %{}
+    end
+  end
 end

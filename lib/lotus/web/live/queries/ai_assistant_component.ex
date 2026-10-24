@@ -32,10 +32,10 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
       <%= cond do %>
         <% not @visible -> %>
         <% Lotus.Web.AI.missing_dependency?() -> %>
-          <.header parent={@parent} conversation={@conversation} />
+          <.header parent={@parent} conversation={@conversation} assistant_name={assigns[:assistant_name]} />
           <.missing_dependency />
         <% true -> %>
-          <.header parent={@parent} conversation={@conversation} />
+          <.header parent={@parent} conversation={@conversation} assistant_name={assigns[:assistant_name]} />
           <.conversation_history
             conversation={@conversation}
             parent={@parent}
@@ -71,6 +71,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
 
   attr(:parent, :any, required: true)
   attr(:conversation, :map, required: true)
+  attr(:assistant_name, :string, default: nil)
 
   defp header(assigns) do
     ~H"""
@@ -78,7 +79,7 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
       <div class="flex items-center justify-between">
         <div class="flex-1">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            <%= gettext("AI Assistant") %>
+            <%= @assistant_name || gettext("AI Assistant") %>
           </h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             <%= if length(@conversation.messages) == 0 do %>

@@ -7,6 +7,7 @@ defmodule Lotus.Web.PublicDashboardPage do
 
   use Lotus.Web, :live_component
 
+  alias Lotus.Web.Branding
   alias Lotus.Web.Dashboards.CardGridComponent
   alias Lotus.Web.Dashboards.CardRunner
   alias Lotus.Web.Dashboards.CardVariables
@@ -169,7 +170,7 @@ defmodule Lotus.Web.PublicDashboardPage do
 
   def handle_info(_msg, socket), do: {:noreply, socket}
 
-  # A package may refuse the link (`Lotus.Web.Pro.authorize_public_dashboard/2`).
+  # Lotus Pro may refuse the link (`Lotus.Web.Pro.authorize_public_dashboard/2`).
   defp open(socket, dashboard, params) do
     case Pro.authorize_public_dashboard(dashboard, params) do
       :allow ->
@@ -193,6 +194,13 @@ defmodule Lotus.Web.PublicDashboardPage do
 
     {:noreply,
      socket
+     |> Branding.assign_branding(%{
+       user: nil,
+       context: nil,
+       scope: nil,
+       public: true,
+       dashboard: dashboard
+     })
      |> assign(dashboard: dashboard, filter_values: filter_values)
      |> watch()
      |> assign_filter_options()
