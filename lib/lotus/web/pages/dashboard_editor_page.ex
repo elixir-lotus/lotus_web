@@ -29,6 +29,7 @@ defmodule Lotus.Web.DashboardEditorPage do
   alias Lotus.Web.Page
   alias Lotus.Web.Pro
   alias Lotus.Web.RichText
+  alias Lotus.Web.Telemetry
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
@@ -604,6 +605,7 @@ defmodule Lotus.Web.DashboardEditorPage do
         with %{} = dashboard <- load_dashboard(id),
              :allow <- Authorization.authorize(socket.assigns, :view_dashboard, dashboard) do
           filter_values = extract_filter_values(params, dashboard.filters)
+          report_view(socket, dashboard)
 
           {:noreply,
            socket
@@ -1053,6 +1055,12 @@ defmodule Lotus.Web.DashboardEditorPage do
       {:ok, socket} -> {:noreply, socket |> put_card_result(card_id, result) |> mark_refreshed()}
       :stale -> {:noreply, socket}
     end
+  end
+
+  # A view is counted once per connected page load, not on each patch.
+  defp report_view(socket, %{id: id} = dashboard) do
+    if connected?(socket) and not match?(%{id: ^id}, socket.assigns.dashboard),
+      do: Telemetry.dashboard_view(dashboard, false, socket.assigns[:context])
   end
 
   # Pro's live updates of the dashboard's cards (`Lotus.Web.Pro.watch_dashboard/2`).

@@ -12,24 +12,30 @@ defmodule Lotus.Web.Dashboards.CardRunner do
   # free: `prepare.(socket, card_id)` returns `{:run, fun}` to start the card
   # or `{:skip, socket}` when the card must not run (it was removed, or the
   # user may not query its source).
+  #
+  # Each card runs in a `[:lotus_web, :card, :run]` span (`Lotus.Web.Telemetry`).
 
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [start_async: 3, cancel_async: 2]
 
+  alias Lotus.Web.Telemetry
   alias Phoenix.LiveView.Socket
 
-  defstruct limit: 1, queue: [], active: MapSet.new()
+  defstruct limit: 1, queue: [], active: MapSet.new(), public: false
 
   @type t :: %__MODULE__{
           limit: pos_integer(),
           queue: [term()],
-          active: MapSet.t()
+          active: MapSet.t(),
+          public: boolean()
         }
 
   @type prepare :: (Socket.t(), term() -> {:run, (-> term())} | {:skip, Socket.t()})
 
-  @spec new(pos_integer()) :: t()
-  def new(limit) when is_integer(limit) and limit > 0, do: %__MODULE__{limit: limit}
+  @doc "A runner of `limit` cards at a time. `public: true` on a public dashboard."
+  @spec new(pos_integer(), keyword()) :: t()
+  def new(limit, opts \\ []) when is_integer(limit) and limit > 0,
+    do: %__MODULE__{limit: limit, public: Keyword.get(opts, :public, false)}
 
   @doc """
   Starts a new run of `card_ids`. The active cards of the previous run are
@@ -118,12 +124,27 @@ defmodule Lotus.Web.Dashboards.CardRunner do
       {:run, fun} ->
         runner = socket.assigns.card_runner
 
+        metadata = span_metadata(socket, runner, card_id)
+
         socket
         |> assign(:card_runner, %{runner | active: MapSet.put(runner.active, card_id)})
-        |> start_async({:run_card, card_id}, fun)
+        |> start_async({:run_card, card_id}, fn -> Telemetry.card_span(metadata, fun) end)
 
       {:skip, socket} ->
         assign(socket, :running_cards, MapSet.delete(socket.assigns.running_cards, card_id))
     end
+  end
+
+  defp span_metadata(socket, runner, card_id) do
+    dashboard = socket.assigns[:dashboard] || %{id: nil, cards: []}
+    card = Enum.find(dashboard.cards, &(&1.id == card_id))
+
+    %{
+      dashboard_id: dashboard.id,
+      card_id: card_id,
+      query: card && card.query,
+      public: runner.public,
+      context: if(runner.public, do: nil, else: socket.assigns[:context])
+    }
   end
 end

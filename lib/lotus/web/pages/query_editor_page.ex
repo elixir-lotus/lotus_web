@@ -25,6 +25,7 @@ defmodule Lotus.Web.QueryEditorPage do
   alias Lotus.Web.QueryEditor.Variables
   alias Lotus.Web.SchemaBuilder
   alias Lotus.Web.SourcesMap
+  alias Lotus.Web.Telemetry
 
   import Lotus.Web.Queries.EditorComponent
   import Lotus.Web.Queries.ResultsComponent
@@ -1745,7 +1746,7 @@ defmodule Lotus.Web.QueryEditorPage do
         socket
         |> assign(ai_generating: true)
         |> assign(ai_conversation: conversation)
-        |> start_async(:ai_generation, fn ->
+        |> start_ai(:ai_generation, :generate, data_source, fn ->
           Lotus.AI.generate_query_with_context(
             [
               prompt: message,
@@ -1758,6 +1759,12 @@ defmodule Lotus.Web.QueryEditorPage do
 
       {:noreply, socket}
     end
+  end
+
+  # An AI action runs in a `[:lotus_web, :ai]` span (`Lotus.Web.Telemetry`).
+  defp start_ai(socket, name, action, data_source, fun) do
+    metadata = %{action: action, source: data_source, context: socket.assigns[:context]}
+    start_async(socket, name, fn -> Telemetry.span([:lotus_web, :ai], metadata, fun) end)
   end
 
   defp ai_optimize_query(socket) do
@@ -1777,7 +1784,7 @@ defmodule Lotus.Web.QueryEditorPage do
         |> assign(left_drawer: :ai_assistant)
         |> assign(ai_generating: true)
         |> assign(ai_conversation: conversation)
-        |> start_async(:ai_optimization, fn ->
+        |> start_ai(:ai_optimization, :optimize, data_source, fn ->
           Lotus.AI.suggest_optimizations(
             [
               statement: Statement.new(sql),
@@ -1807,7 +1814,7 @@ defmodule Lotus.Web.QueryEditorPage do
         |> assign(left_drawer: :ai_assistant)
         |> assign(ai_generating: true)
         |> assign(ai_conversation: conversation)
-        |> start_async(:ai_explanation, fn ->
+        |> start_ai(:ai_explanation, :explain, data_source, fn ->
           Lotus.AI.explain_query(
             [
               statement: sql,
@@ -1840,7 +1847,7 @@ defmodule Lotus.Web.QueryEditorPage do
         |> assign(left_drawer: :ai_assistant)
         |> assign(ai_generating: true)
         |> assign(ai_conversation: conversation)
-        |> start_async(:ai_explanation, fn ->
+        |> start_ai(:ai_explanation, :explain_fragment, data_source, fn ->
           Lotus.AI.explain_query(
             [
               statement: sql,
