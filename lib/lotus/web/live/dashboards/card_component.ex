@@ -118,6 +118,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
             can_manage={@can_manage}
             running={@running}
             query_vars={@query_vars}
+            other_tabs={Enum.reject(Map.get(assigns, :tabs, []), &(&1["id"] == Map.get(assigns, :tab)))}
             parent={@parent}
           />
         </div>
@@ -273,6 +274,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   attr(:can_manage, :boolean, required: true)
   attr(:running, :boolean, required: true)
   attr(:query_vars, :map, default: %{})
+  attr(:other_tabs, :list, default: [])
   attr(:parent, :any, required: true)
 
   defp card_menu(assigns) do
@@ -341,6 +343,19 @@ defmodule Lotus.Web.Dashboards.CardComponent do
               <%= label %>
             </button>
           </div>
+        </div>
+        <%!-- The other tabs, in edit mode: the card moves to one. --%>
+        <div :if={@can_manage and @other_tabs != []} class="border-t border-gray-100 py-1 dark:border-gray-700">
+          <p class="px-3 pb-0.5 text-xs text-gray-500 dark:text-gray-400"><%= gettext("Move to") %></p>
+          <.menu_item
+            :for={tab <- @other_tabs}
+            phx-click={
+              @close
+              |> JS.push("move_card_to_tab", value: %{"card-id" => @card.id, "tab" => tab["id"]}, target: @parent)
+            }
+          >
+            <Icons.corner_down_right class="h-4 w-4" /> <%= tab["name"] %>
+          </.menu_item>
         </div>
         <.menu_item
           :if={@can_manage}

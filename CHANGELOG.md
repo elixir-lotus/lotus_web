@@ -13,6 +13,14 @@
 
 ### Added
 
+- **Tabs.** A dashboard's cards can be on tabs, each with its own grid. In
+  edit mode, *Tab* adds one (a dashboard's first tab holds its cards), the
+  tab shown takes a new name in place and is removed by its ×, and a card's
+  menu moves it to another tab. Out of edit mode, the tabs show for two or
+  more, on the dashboard and its public link; a copy keeps them. The tabs
+  are the dashboard's `settings`, a card's tab its layout's (Lotus'
+  `tab`).
+
 - **Full screen, for a wall or a TV.** A dashboard's *Full screen* (on the
   dashboard and its public link) shows it over the whole screen with no
   buttons: its cards, its filters and when its data was read; with its

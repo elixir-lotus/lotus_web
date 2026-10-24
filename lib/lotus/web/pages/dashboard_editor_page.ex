@@ -24,6 +24,7 @@ defmodule Lotus.Web.DashboardEditorPage do
   alias Lotus.Web.Dashboards.FilterOptions
   alias Lotus.Web.Dashboards.FilterValues
   alias Lotus.Web.Dashboards.SettingsDrawer
+  alias Lotus.Web.Dashboards.Tabs
   alias Lotus.Web.Dashboards.TextCard
   alias Lotus.Web.Page
   alias Lotus.Web.Pro
@@ -109,6 +110,13 @@ defmodule Lotus.Web.DashboardEditorPage do
             parent={@myself}
           />
 
+          <Components.tab_bar
+            tabs={Tabs.list(@dashboard)}
+            current={Tabs.current(@dashboard, @tab)}
+            editing={@editing}
+            target={@myself}
+          />
+
           <%!-- Main Content Area --%>
           <div class="relative flex-1 min-h-0 overflow-hidden">
             <%!-- Overlay for mobile drawers --%>
@@ -149,13 +157,15 @@ defmodule Lotus.Web.DashboardEditorPage do
               "h-full overflow-y-auto px-4 sm:px-6 pt-2 pb-6 transition-all duration-300",
               (@settings_visible || @card_settings_visible) && "sm:mr-80"
             ]}>
-              <%= if @dashboard.cards != [] do %>
+              <%= if Tabs.cards(@dashboard, Tabs.current(@dashboard, @tab)) != [] do %>
                 <.live_component
                   module={CardGridComponent}
                   id="card-grid"
                   dashboard_id={@dashboard.id}
                   values={text_values(@dashboard.filters, @filter_values)}
-                  cards={@dashboard.cards}
+                  cards={Tabs.cards(@dashboard, Tabs.current(@dashboard, @tab))}
+                  tabs={Tabs.list(@dashboard)}
+                  tab={Tabs.current(@dashboard, @tab)}
                   card_results={@card_results}
                   card_errors={@card_errors}
                   running_cards={@running_cards}
@@ -567,7 +577,9 @@ defmodule Lotus.Web.DashboardEditorPage do
       add_card_type: :query,
       refreshed_at: nil,
       # The filter being connected to the cards, by name.
-      connecting: nil
+      connecting: nil,
+      # The tab shown, by its id: the first when nil.
+      tab: nil
     )
   end
 
@@ -815,6 +827,42 @@ defmodule Lotus.Web.DashboardEditorPage do
   @impl Phoenix.LiveComponent
   def handle_event("add_filter", _params, socket) do
     authorize_manage(socket, fn -> do_add_filter(socket) end)
+  end
+
+  # Tabs: a tab shows its cards; in edit mode they are added, renamed,
+  # removed, and a card moves to another.
+  @impl Phoenix.LiveComponent
+  def handle_event("select_tab", %{"tab" => tab}, socket) do
+    {:noreply, socket |> close_editors() |> assign(tab: tab)}
+  end
+
+  def handle_event("add_tab", _params, socket) do
+    authorize_manage(socket, fn ->
+      {dashboard, tab} = Tabs.add(socket.assigns.dashboard)
+      {:noreply, socket |> close_editors() |> assign(dashboard: dashboard, tab: tab)}
+    end)
+  end
+
+  def handle_event("rename_tab", %{"tab" => tab, "name" => name}, socket) do
+    authorize_manage(socket, fn ->
+      {:noreply, assign(socket, dashboard: Tabs.rename(socket.assigns.dashboard, tab, name))}
+    end)
+  end
+
+  def handle_event("delete_tab", %{"tab" => tab}, socket) do
+    authorize_manage(socket, fn ->
+      {:noreply,
+       socket
+       |> close_editors()
+       |> assign(dashboard: Tabs.delete(socket.assigns.dashboard, tab), tab: nil)}
+    end)
+  end
+
+  def handle_event("move_card_to_tab", %{"card-id" => card_id, "tab" => tab}, socket) do
+    authorize_manage(socket, fn ->
+      dashboard = Tabs.move_card(socket.assigns.dashboard, parse_id(card_id), tab)
+      {:noreply, socket |> close_editors() |> assign(dashboard: dashboard)}
+    end)
   end
 
   # A copy of the saved dashboard, opened at once.
@@ -1118,7 +1166,8 @@ defmodule Lotus.Web.DashboardEditorPage do
       # No "public_token": only the sharing handlers, which ask for
       # :share_dashboard, write it. A save from a page opened before the link was
       # turned off must not turn it back on.
-      "auto_refresh_seconds" => dashboard.auto_refresh_seconds
+      "auto_refresh_seconds" => dashboard.auto_refresh_seconds,
+      "settings" => Map.get(dashboard, :settings) || %{}
     }
 
     result = perform_save_dashboard(socket, attrs, dashboard)
@@ -1317,6 +1366,7 @@ defmodule Lotus.Web.DashboardEditorPage do
       cards: [],
       filters: [],
       auto_refresh_seconds: nil,
+      settings: %{},
       public_token: nil,
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now()
@@ -1787,8 +1837,14 @@ defmodule Lotus.Web.DashboardEditorPage do
     # Calculate next position index
     next_position = length(dashboard.cards)
 
-    # Find the next available layout position that doesn't overlap
-    layout = find_next_available_position(dashboard.cards, card_type)
+    # The next free place on the tab shown, where the card goes
+    tab = Tabs.current(dashboard, socket.assigns.tab)
+
+    layout =
+      dashboard
+      |> Tabs.cards(tab)
+      |> find_next_available_position(card_type)
+      |> Map.put(:tab, tab)
 
     query =
       if query_id do
@@ -2153,7 +2209,14 @@ defmodule Lotus.Web.DashboardEditorPage do
   defp layout_to_map(nil), do: nil
 
   defp layout_to_map(%{x: x, y: y, w: w, h: h} = layout),
-    do: %{x: x, y: y, w: w, h: h, folded: Map.get(layout, :folded, false)}
+    do: %{
+      x: x,
+      y: y,
+      w: w,
+      h: h,
+      folded: Map.get(layout, :folded, false),
+      tab: Map.get(layout, :tab)
+    }
 
   # The editor keeps a changed card's mappings as
   # %{filter_name => [%{variable_name: _, transform: _}]}. A filter can map to

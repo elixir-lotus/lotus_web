@@ -4035,3 +4035,38 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Full screen"
 msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:124
+#, elixir-autogen, elixir-format
+msgid "Tabs"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:141
+#, elixir-autogen, elixir-format
+msgid "Name of the tab"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:149
+#, elixir-autogen, elixir-format
+msgid "Remove this tab? Its cards go to the first tab."
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:151
+#, elixir-autogen, elixir-format
+msgid "Remove the tab"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/components.ex:124
+#, elixir-autogen, elixir-format
+msgid "Tab"
+msgstr ""
+
+#: lib/lotus/web/dashboards/tabs.ex:60
+#, elixir-autogen, elixir-format
+msgid "Tab %{count}"
+msgstr ""
+
+#: lib/lotus/web/live/dashboards/card_component.ex:349
+#, elixir-autogen, elixir-format
+msgid "Move to"
+msgstr ""

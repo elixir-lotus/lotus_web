@@ -15,6 +15,7 @@ defmodule Lotus.Web.PublicDashboardPage do
   alias Lotus.Web.Dashboards.FilterBarComponent
   alias Lotus.Web.Dashboards.FilterOptions
   alias Lotus.Web.Dashboards.FilterValues
+  alias Lotus.Web.Dashboards.Tabs
   alias Lotus.Web.Page
   alias Lotus.Web.Pro
 
@@ -46,6 +47,12 @@ defmodule Lotus.Web.PublicDashboardPage do
             public={true}
           />
 
+          <Components.tab_bar
+            tabs={Tabs.list(@dashboard)}
+            current={Tabs.current(@dashboard, @tab)}
+            target={@myself}
+          />
+
           <%!-- Grid Content --%>
           <div class="flex-1 overflow-y-auto px-4 sm:px-6 pt-2 pb-6">
             <%= if @dashboard.cards != [] do %>
@@ -54,7 +61,7 @@ defmodule Lotus.Web.PublicDashboardPage do
                 id="card-grid"
                 dashboard_id={@dashboard.id}
                 values={Map.new(@dashboard.filters, &{&1.name, Map.get(@filter_values, &1.name, &1.default_value)})}
-                cards={@dashboard.cards}
+                cards={Tabs.cards(@dashboard, Tabs.current(@dashboard, @tab))}
                 card_results={@card_results}
                 card_errors={@card_errors}
                 running_cards={@running_cards}
@@ -91,6 +98,7 @@ defmodule Lotus.Web.PublicDashboardPage do
       filter_values: %{},
       filter_options: %{},
       card_results: %{},
+      tab: nil,
       card_errors: %{},
       running_cards: MapSet.new(),
       card_runner: CardRunner.new(socket.assigns.card_concurrency),
@@ -142,6 +150,10 @@ defmodule Lotus.Web.PublicDashboardPage do
     card_id = parse_id(card_id)
     {:noreply, run_card(socket, card_id)}
   end
+
+  @impl Phoenix.LiveComponent
+  def handle_event("select_tab", %{"tab" => tab}, socket),
+    do: {:noreply, assign(socket, tab: tab)}
 
   # A click on a chart's mark filters the dashboard by it.
   @impl Phoenix.LiveComponent
