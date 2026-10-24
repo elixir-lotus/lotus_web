@@ -877,18 +877,16 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
     old = base |> String.trim() |> String.split("\n")
     new = statement |> String.trim() |> String.split("\n")
 
-    if String.trim(base) == "" or old == new do
-      nil
-    else
-      ops = List.myers_difference(old, new)
-
-      if Keyword.has_key?(ops, :eq) do
-        Enum.flat_map(ops, fn {op, lines} -> Enum.map(lines, &{op, &1}) end)
-      end
-    end
+    if String.trim(base) != "" and old != new, do: line_ops(List.myers_difference(old, new))
   end
 
   def diff(_base, _statement), do: nil
+
+  # A new query that keeps none of the editor's lines is not a change of it.
+  defp line_ops(ops) do
+    if Keyword.has_key?(ops, :eq),
+      do: Enum.flat_map(ops, fn {op, lines} -> Enum.map(lines, &{op, &1}) end)
+  end
 
   defp count(diff, op), do: Enum.count(diff, &(elem(&1, 0) == op))
 
