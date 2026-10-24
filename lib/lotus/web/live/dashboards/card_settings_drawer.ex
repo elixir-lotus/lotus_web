@@ -119,86 +119,13 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
     """
   end
 
+  # Where a card goes and how big it is: on the dashboard itself.
   defp layout_section(assigns) do
-    layout = assigns.card.layout || %{x: 0, y: 0, w: 6, h: 4}
-
-    assigns =
-      assign(assigns,
-        layout_x: get_layout_value(layout, :x, 0),
-        layout_y: get_layout_value(layout, :y, 0),
-        layout_w: get_layout_value(layout, :w, 6),
-        layout_h: get_layout_value(layout, :h, 4)
-      )
-
     ~H"""
-    <div>
-      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        <%= gettext("Layout Position") %>
-      </label>
-      <form id="card-layout-form" phx-change="update_card_layout" phx-target={@parent}>
-        <input type="hidden" name="card_id" value={@card.id} />
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-              <%= gettext("X (0-11)") %>
-            </label>
-            <input
-              type="number"
-              name="layout[x]"
-              value={@layout_x}
-              min="0"
-              max="11"
-              class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
-            />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-              <%= gettext("Y Position") %>
-            </label>
-            <input
-              type="number"
-              name="layout[y]"
-              value={@layout_y}
-              min="0"
-              class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
-            />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-              <%= gettext("Width (1-12)") %>
-            </label>
-            <input
-              type="number"
-              name="layout[w]"
-              value={@layout_w}
-              min="1"
-              max="12"
-              class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
-            />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-              <%= gettext("Height") %>
-            </label>
-            <input
-              type="number"
-              name="layout[h]"
-              value={@layout_h}
-              min="1"
-              class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
-            />
-          </div>
-        </div>
-      </form>
-      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-        <%= gettext("Grid uses 12 columns. Cards are positioned by column (X) and row (Y).") %>
-      </p>
-    </div>
+    <p class="text-xs text-gray-500 dark:text-gray-400">
+      <%= gettext("Drag the card by its title to move it, and by its corner to resize it; or, with the card focused, Alt and the arrow keys (with Shift to resize). Its chevron sets whether it starts folded.") %>
+    </p>
     """
-  end
-
-  defp get_layout_value(layout, key, default) when is_atom(key) do
-    Map.get(layout, key, Map.get(layout, to_string(key), default))
   end
 
   defp visualization_section(assigns) do

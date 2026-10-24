@@ -31,23 +31,58 @@ defmodule Lotus.Web.Dashboards.CardComponent do
         chart?:
           card_type == :query and assigns.result != nil and
             Charts.valid_config?(assigns.card.visualization_config),
-        maximized: Map.get(assigns, :maximized, false)
+        maximized: Map.get(assigns, :maximized, false),
+        place: place(assigns.card.layout),
+        folds?: card_type != :heading,
+        folded: layout_value(assigns.card.layout || %{}, :folded, false) == true
       )
 
     ~H"""
     <div
       id={@id}
       class={card_classes(@selected, @framed, @can_manage)}
-      style={grid_position(@card.layout, @framed)}
+      style={grid_position(@place, @framed)}
       phx-click={@can_manage && "select_card"}
       phx-value-card-id={@card.id}
       phx-target={@parent}
+      phx-mounted={JS.ignore_attributes(["style", "data-folded"])}
+      tabindex={@can_manage && "0"}
+      aria-roledescription={@can_manage && gettext("card: Alt and the arrow keys move it, with Shift resize it")}
+      data-card-id={@card.id}
       data-card-type={@card.card_type}
+      data-x={@place.x}
+      data-y={@place.y}
+      data-w={@place.w}
+      data-h={@place.h}
+      data-folded-default={to_string(@folded)}
+      data-folded={to_string(@folded and not @can_manage)}
     >
-      <div :if={@show_header} class="flex items-center gap-2 pl-4 pr-2 pt-2.5 pb-0.5 min-h-[2.5rem]">
-        <h3 class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+      <div
+        :if={@show_header}
+        class={["flex items-center gap-1.5 pl-2 pr-2 pt-2.5 pb-0.5 min-h-[2.5rem]", @can_manage && "cursor-grab"]}
+        data-card-handle={@can_manage}
+      >
+        <button
+          :if={@folds?}
+          type="button"
+          class="p-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700"
+          data-card-fold
+          aria-expanded="true"
+          aria-controls={"#{@id}-body"}
+          title={if @can_manage, do: gettext("Starts folded or open"), else: gettext("Fold or open")}
+          aria-label={if @can_manage, do: gettext("Starts folded or open"), else: gettext("Fold or open")}
+        >
+          <Icons.chevron_down class="h-4 w-4 transition-transform" />
+        </button>
+        <h3 class={["min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-gray-100", not @folds? && "pl-2"]}>
           <%= @card.title || default_title(@card) %>
         </h3>
+        <span
+          :if={@can_manage and @folded}
+          class="shrink-0 rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-medium text-pink-700 dark:bg-pink-900/30 dark:text-pink-300"
+        >
+          <%= gettext("Starts folded") %>
+        </span>
         <div class={[
           "lotus-card-actions flex items-center gap-0.5 transition-opacity",
           not @can_manage && "opacity-0 group-hover/card:opacity-100 focus-within:opacity-100"
@@ -77,7 +112,10 @@ defmodule Lotus.Web.Dashboards.CardComponent do
         </div>
       </div>
 
-      <div class={["flex-1 min-h-0 overflow-hidden", @show_header && "px-4 pt-1 pb-3", not @show_header && @framed && "p-4"]}>
+      <div
+        id={"#{@id}-body"}
+        class={["lotus-card-body flex-1 min-h-0 overflow-hidden", @show_header && "px-4 pt-1 pb-3", not @show_header && @framed && "p-4"]}
+      >
         <%= case @card.card_type do %>
           <% :query -> %>
             <.query_content card={@card} result={@result} error={@error} running={@running} />
@@ -91,6 +129,15 @@ defmodule Lotus.Web.Dashboards.CardComponent do
             <.text_content content={@card.content} public={@is_public} />
         <% end %>
       </div>
+
+      <%!-- Its corner: drag it to resize the card (edit mode). --%>
+      <span
+        :if={@can_manage}
+        class="absolute right-1 bottom-1 h-4 w-4 cursor-se-resize rounded-br-lg border-r-2 border-b-2 border-gray-300 hover:border-pink-500 dark:border-gray-500"
+        data-card-resize
+        aria-hidden="true"
+      >
+      </span>
 
       <.maximized :if={@maximized and @chart?} id={@id} card={@card} result={@result} target={@myself} />
     </div>
@@ -126,7 +173,11 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   attr(:parent, :any, required: true)
 
   defp card_menu(assigns) do
-    assigns = assign(assigns, close: JS.hide(to: "##{assigns.id}-items"))
+    assigns =
+      assign(assigns,
+        close: JS.hide(to: "##{assigns.id}-items"),
+        width: place(assigns.card.layout).w
+      )
 
     ~H"""
     <div class="relative">
@@ -142,7 +193,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
       <div
         id={"#{@id}-items"}
         role="menu"
-        class="absolute right-0 top-full z-30 mt-1 hidden w-48 rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/10 dark:bg-gray-800 dark:ring-white/10"
+        class="absolute right-0 top-full z-30 mt-1 hidden w-56 rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/10 dark:bg-gray-800 dark:ring-white/10"
         phx-click-away={@close}
         phx-window-keydown={@close}
         phx-key="Escape"
@@ -167,6 +218,27 @@ defmodule Lotus.Web.Dashboards.CardComponent do
         >
           <Icons.code_braces class="h-4 w-4" /> <%= gettext("Open the query") %>
         </.link>
+        <%!-- Its width, in edit mode: the slots it snaps to. --%>
+        <div :if={@can_manage} class="px-3 py-1.5">
+          <p class="mb-1 text-xs text-gray-500 dark:text-gray-400"><%= gettext("Size") %></p>
+          <div class="grid grid-cols-6 gap-1" role="group" aria-label={gettext("Size")}>
+            <button
+              :for={{w, label} <- [{3, "¼"}, {4, "⅓"}, {6, "½"}, {8, "⅔"}, {9, "¾"}, {12, "1"}]}
+              type="button"
+              role="menuitem"
+              class={[
+                "rounded px-1 py-0.5 text-xs font-medium",
+                @width == w && "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300",
+                @width != w && "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+              ]}
+              aria-pressed={to_string(@width == w)}
+              title={gettext("%{count} of 12 columns", count: w)}
+              phx-click={@close |> JS.dispatch("lotus:size", to: "#dashboard-grid", detail: %{card: @card.id, w: w})}
+            >
+              <%= label %>
+            </button>
+          </div>
+        </div>
         <.menu_item
           :if={@can_manage}
           class="text-red-600 dark:text-red-400"
@@ -266,34 +338,24 @@ defmodule Lotus.Web.Dashboards.CardComponent do
     """
   end
 
-  # Its place on the 12 columns, and its height (a row is 100px). A heading,
-  # with no frame, is as high as its text.
-  defp grid_position(nil, _framed), do: "grid-column: span 6; min-height: 400px;"
+  # Its place on the 12 columns: x, y, w and h (a row is 100px).
+  defp place(nil), do: %{x: 0, y: 0, w: 6, h: 4}
 
-  defp grid_position(layout, framed) when is_map(layout) do
-    [x, y, w, h] =
-      for {key, default} <- [x: 0, y: 0, w: 6, h: 4], do: layout_value(layout, key, default)
+  defp place(layout) when is_map(layout) do
+    Map.new([x: 0, y: 0, w: 6, h: 4], fn {key, default} ->
+      {key, layout_value(layout, key, default)}
+    end)
+  end
 
-    min_height = if framed, do: " min-height: #{h * 100}px;"
-
+  # Its place on a CSS grid, before the DashboardGrid hook places it, and
+  # with no JavaScript. A heading, with no frame, is as high as its text.
+  defp grid_position(%{x: x, y: y, w: w, h: h}, framed) do
+    min_height = if framed, do: " min-height: #{h * 100 - 16}px;"
     "grid-column: #{x + 1} / span #{w}; grid-row: #{y + 1} / span #{h};#{min_height}"
   end
 
   defp layout_value(layout, key, default),
     do: Map.get(layout, key, Map.get(layout, Atom.to_string(key), default))
-
-  # The plot's height: the card's (a row is 100px) less its header, its
-  # padding and the chart's title.
-  defp chart_height(layout) do
-    h =
-      case layout do
-        %{h: h} -> h
-        %{} = layout -> Map.get(layout, "h", 4)
-        _ -> 4
-      end
-
-    max(h * 100 - 96, 120)
-  end
 
   # A card on the dashboard's canvas: white, with a soft edge. A heading is
   # its text alone. In edit mode a card is picked by a click, and the picked
@@ -342,7 +404,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
             id={"chart-#{@card.id}"}
             result={@result}
             config={@card.visualization_config}
-            height={chart_height(@card.layout)}
+            height={:fill}
             export
             class="lotus-card-chart"
           />

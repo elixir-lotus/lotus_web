@@ -47,6 +47,7 @@ defmodule Lotus.Web.PublicDashboardPage do
               <.live_component
                 module={CardGridComponent}
                 id="card-grid"
+                dashboard_id={@dashboard.id}
                 cards={@dashboard.cards}
                 card_results={@card_results}
                 card_errors={@card_errors}

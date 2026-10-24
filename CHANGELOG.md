@@ -75,6 +75,22 @@
   settings, and **Cancel** (the dashboard as it was) or **Save** (at once,
   for a dashboard that has its name). Cards are picked and set up only in
   edit mode; a new dashboard opens in it.
+- **A dashboard grid that moves, folds and fits.** In edit mode a card
+  moves by its title and resizes by its corner, snapping from slot to slot
+  as to a magnet: to the row's edges, beside the cards of its rows, and to
+  the slots of its width; its width to a quarter, a third, a half, two
+  thirds, three quarters or the row, which its ⋯ menu's **Size** also sets.
+  The cards it covers make room, and the cards fall up to fill the gaps;
+  two cards of a size swap. **Tidy up** packs the cards into full rows, in
+  reading order, each row split evenly and its cards of one height. With
+  the keyboard, Alt and the arrow keys move the focused card, with Shift
+  they resize it. Every card but a heading folds to its title: a viewer's
+  choice stays in their browser, and in edit mode the chevron sets how it
+  starts for everyone (the layout's `folded`, elixir-lotus/lotus#351). On a phone the
+  cards stack in one column, each as high as what it shows. Charts fill
+  their card and draw again when it is resized (Fude 0.4's
+  `height={:fill}`). The number boxes of a card's place and size are gone
+  from its settings.
 - **Cards redesigned.** On a light canvas, each card is white with a soft
   edge and its title inside it; its buttons show on hover (always in edit
   mode): Maximize, and a ⋯ menu to refresh it, save its chart as PNG, open

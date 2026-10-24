@@ -293,7 +293,12 @@ defmodule Lotus.Web.Charts do
   attr(:id, :string, required: true)
   attr(:result, :map, required: true)
   attr(:config, :map, required: true)
-  attr(:height, :integer, default: nil, doc: "the plot's height, in pixels")
+
+  attr(:height, :any,
+    default: nil,
+    doc: "the plot's height, in pixels, or `:fill`: the height of its box (a card)"
+  )
+
   attr(:export, :boolean, default: false, doc: "whether the chart has buttons that save it")
   attr(:class, :any, default: nil)
 

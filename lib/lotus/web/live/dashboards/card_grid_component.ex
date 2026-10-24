@@ -1,6 +1,7 @@
 defmodule Lotus.Web.Dashboards.CardGridComponent do
   @moduledoc """
-  Renders the dashboard card grid using a 12-column CSS grid layout.
+  Renders the dashboard card grid: 12 columns, which the DashboardGrid hook
+  lays out (see assets/js/hooks/dashboard_grid.js).
   """
 
   use Lotus.Web, :live_component
@@ -10,9 +11,16 @@ defmodule Lotus.Web.Dashboards.CardGridComponent do
   @impl Phoenix.LiveComponent
   def render(assigns) do
     ~H"""
+    <%!-- The DashboardGrid hook places the cards, folds them and, in edit
+         mode, moves and resizes them; it owns the grid's class and style. --%>
     <div
       id="dashboard-grid"
       class="grid grid-cols-12 gap-4 auto-rows-min"
+      phx-hook="DashboardGrid"
+      phx-mounted={JS.ignore_attributes(["class", "style"])}
+      data-dashboard-id={Map.get(assigns, :dashboard_id) || "new"}
+      data-editing={to_string(Map.get(assigns, :can_manage, false))}
+      data-target="#dashboard-editor"
     >
       <%= for card <- Enum.sort_by(@cards, & &1.position) do %>
         <.live_component

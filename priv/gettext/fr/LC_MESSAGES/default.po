@@ -3853,3 +3853,48 @@ msgid "refreshes every hour"
 msgid_plural "refreshes every %{count} hours"
 msgstr[0] "actualisé toutes les heures"
 msgstr[1] "actualisé toutes les %{count} heures"
+
+#: lib/lotus/web/live/dashboards/card_component.ex:50
+#, elixir-autogen, elixir-format
+msgid "card: Alt and the arrow keys move it, with Shift resize it"
+msgstr "carte : Alt et les flèches la déplacent, avec Maj la redimensionnent"
+
+#: lib/lotus/web/live/dashboards/card_component.ex:72
+#, elixir-autogen, elixir-format
+msgid "Starts folded or open"
+msgstr "Commence repliée ou ouverte"
+
+#: lib/lotus/web/live/dashboards/card_component.ex:72
+#, elixir-autogen, elixir-format
+msgid "Fold or open"
+msgstr "Replier ou ouvrir"
+
+#: lib/lotus/web/live/dashboards/card_component.ex:72
+#, elixir-autogen, elixir-format
+msgid "Starts folded"
+msgstr "Commence repliée"
+
+#: lib/lotus/web/live/dashboards/card_component.ex:223
+#, elixir-autogen, elixir-format
+msgid "Size"
+msgstr "Taille"
+
+#: lib/lotus/web/live/dashboards/card_component.ex:235
+#, elixir-autogen, elixir-format
+msgid "%{count} of 12 columns"
+msgstr "%{count} colonnes sur 12"
+
+#: lib/lotus/web/live/dashboards/components.ex:122
+#, elixir-autogen, elixir-format
+msgid "Tidy up"
+msgstr "Ranger"
+
+#: lib/lotus/web/live/dashboards/components.ex:120
+#, elixir-autogen, elixir-format
+msgid "Put the cards in full rows, with no gaps"
+msgstr "Ranger les cartes en rangées pleines, sans vides"
+
+#: lib/lotus/web/live/dashboards/card_settings_drawer.ex:126
+#, elixir-autogen, elixir-format
+msgid "Drag the card by its title to move it, and by its corner to resize it; or, with the card focused, Alt and the arrow keys (with Shift to resize). Its chevron sets whether it starts folded."
+msgstr "Faites glisser la carte par son titre pour la déplacer, et par son coin pour la redimensionner ; ou, la carte sélectionnée, Alt et les flèches (avec Maj pour redimensionner). Son chevron indique si elle commence repliée."

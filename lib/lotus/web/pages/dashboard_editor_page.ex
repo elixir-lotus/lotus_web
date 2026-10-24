@@ -137,6 +137,7 @@ defmodule Lotus.Web.DashboardEditorPage do
                 <.live_component
                   module={CardGridComponent}
                   id="card-grid"
+                  dashboard_id={@dashboard.id}
                   cards={@dashboard.cards}
                   card_results={@card_results}
                   card_errors={@card_errors}
@@ -713,9 +714,21 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   def handle_event("kotoba:change", _params, socket), do: {:noreply, socket}
 
+  # The grid moved or resized cards (`DashboardGrid`): their new places.
   @impl Phoenix.LiveComponent
-  def handle_event("update_card_layout", %{"card_id" => card_id, "layout" => layout}, socket) do
-    authorize_manage(socket, fn -> do_update_card_layout(socket, card_id, layout) end)
+  def handle_event("update_layouts", %{"layouts" => layouts}, socket) when is_map(layouts) do
+    authorize_manage(socket, fn -> {:noreply, update_layouts(socket, layouts)} end)
+  end
+
+  # How a card starts, folded to its title or open, for everyone.
+  @impl Phoenix.LiveComponent
+  def handle_event("fold_card", %{"card_id" => card_id, "folded" => folded}, socket) do
+    authorize_manage(socket, fn ->
+      {:noreply,
+       update_card_and_selection(socket, parse_id(card_id), fn card ->
+         %{card | layout: Map.put(card_layout(card), :folded, folded == true)}
+       end)}
+    end)
   end
 
   @impl Phoenix.LiveComponent
@@ -1325,17 +1338,35 @@ defmodule Lotus.Web.DashboardEditorPage do
     end
   end
 
-  defp do_update_card_layout(socket, card_id, layout) do
-    layout = %{
-      x: parse_int(layout["x"], 0),
-      y: parse_int(layout["y"], 0),
-      w: parse_int(layout["w"], 6),
-      h: parse_int(layout["h"], 4)
-    }
+  defp update_layouts(socket, layouts) do
+    Enum.reduce(layouts, socket, fn {card_id, place}, socket ->
+      update_card(socket, parse_id(card_id), fn card ->
+        layout = card_layout(card)
 
-    {:noreply,
-     update_card_and_selection(socket, parse_id(card_id), fn card -> %{card | layout: layout} end)}
+        %{
+          card
+          | layout:
+              Map.merge(layout, %{
+                x: parse_int(place["x"], layout.x) |> clamp(0, 11),
+                y: parse_int(place["y"], layout.y) |> max(0),
+                w: parse_int(place["w"], layout.w) |> clamp(1, 12),
+                h: parse_int(place["h"], layout.h) |> clamp(1, 24)
+              })
+        }
+      end)
+    end)
   end
+
+  # A card's layout with atom keys: its place, and whether it starts folded.
+  defp card_layout(%{layout: layout}) do
+    layout = layout || %{}
+
+    for {key, default} <- [x: 0, y: 0, w: 6, h: 4, folded: false], into: %{} do
+      {key, Map.get(layout, key, Map.get(layout, Atom.to_string(key), default))}
+    end
+  end
+
+  defp clamp(value, low, high), do: value |> max(low) |> min(high)
 
   defp do_update_card_visualization(socket, card_id, viz) do
     socket =
@@ -2022,7 +2053,9 @@ defmodule Lotus.Web.DashboardEditorPage do
   end
 
   defp layout_to_map(nil), do: nil
-  defp layout_to_map(%{x: x, y: y, w: w, h: h}), do: %{x: x, y: y, w: w, h: h}
+
+  defp layout_to_map(%{x: x, y: y, w: w, h: h} = layout),
+    do: %{x: x, y: y, w: w, h: h, folded: Map.get(layout, :folded, false)}
 
   # The editor keeps a changed card's mappings as
   # %{filter_name => [%{variable_name: _, transform: _}]}. A filter can map to

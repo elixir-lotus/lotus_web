@@ -23,7 +23,7 @@ defmodule Lotus.Web.Dashboards.Components do
   def dashboard_head(assigns) do
     ~H"""
     <div class="lotus-dashboard-head flex flex-wrap items-start gap-x-4 gap-y-3 px-4 sm:px-6 pt-5">
-      <div class="min-w-0 flex-1">
+      <div class="min-w-0 basis-full sm:basis-0 flex-1">
         <div class="flex items-center gap-2">
           <.link
             :if={@back}
@@ -113,6 +113,14 @@ defmodule Lotus.Web.Dashboards.Components do
       <.bar_button phx-click="add_filter" phx-target={@target} icon="filter">
         <%= gettext("Filter") %>
       </.bar_button>
+      <.bar_button
+        id="dashboard-tidy"
+        phx-click={JS.dispatch("lotus:tidy", to: "#dashboard-grid")}
+        icon="tidy"
+        title={gettext("Put the cards in full rows, with no gaps")}
+      >
+        <%= gettext("Tidy up") %>
+      </.bar_button>
       <div class="flex-1"></div>
       <.bar_button phx-click="show_save_modal" phx-target={@target} icon="details">
         <%= gettext("Details") %>
@@ -137,7 +145,7 @@ defmodule Lotus.Web.Dashboards.Components do
   end
 
   attr(:icon, :string, default: nil)
-  attr(:rest, :global, include: ~w(id))
+  attr(:rest, :global, include: ~w(id title))
   slot(:inner_block, required: true)
 
   defp bar_button(assigns) do
@@ -158,6 +166,7 @@ defmodule Lotus.Web.Dashboards.Components do
   defp bar_icon(%{name: "chart"} = assigns), do: ~H|<Icons.chart_bar class="h-4 w-4" />|
   defp bar_icon(%{name: "text"} = assigns), do: ~H|<Icons.document_text class="h-4 w-4" />|
   defp bar_icon(%{name: "filter"} = assigns), do: ~H|<Icons.funnel class="h-4 w-4" />|
+  defp bar_icon(%{name: "tidy"} = assigns), do: ~H|<Icons.blocks class="h-4 w-4" />|
   defp bar_icon(%{name: "details"} = assigns), do: ~H|<Icons.pencil class="h-4 w-4" />|
   defp bar_icon(%{name: "settings"} = assigns), do: ~H|<Icons.cog_6_tooth class="h-4 w-4" />|
 
