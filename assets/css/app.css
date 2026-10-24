@@ -759,6 +759,15 @@
     --masu-radius: var(--lotus-radius-md);
 }
 
+/* A dashboard card's table: the results grid, smaller, its header in the
+   card's quiet words. */
+.lotus-card-table {
+    --masu-font-size: 0.8125rem;
+    --masu-header-height: 32px;
+    --masu-header-text: rgb(var(--lotus-gray-500));
+    --masu-cell-padding: 0 0.5rem;
+}
+
 /* The active cell shows where the focus is; no ring around the whole
    grid as well. */
 .lotus-results > .masu-grid:focus-visible {

@@ -242,9 +242,9 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
       render_async(live)
 
       # Should show filtered results
-      assert has_element?(live, "td", "Alice")
-      refute has_element?(live, "td", "Bob")
-      refute has_element?(live, "td", "Charlie")
+      assert "Alice" in table_values(live)
+      refute "Bob" in table_values(live)
+      refute "Charlie" in table_values(live)
     end
 
     test "shows filter bar when dashboard has filters", %{dashboard: dashboard} do
@@ -280,8 +280,8 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
       render_async(live)
 
       # Unrecognized param is ignored; the filter still uses the matched user_name param
-      assert has_element?(live, "td", "Alice")
-      refute has_element?(live, "td", "Bob")
+      assert "Alice" in table_values(live)
+      refute "Bob" in table_values(live)
     end
 
     test "filter widgets reflect pre-filled values", %{dashboard: dashboard} do
@@ -327,9 +327,9 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
 
       render_async(live)
 
-      assert has_element?(live, "td", "Alice")
-      refute has_element?(live, "td", "Bob")
-      refute has_element?(live, "td", "Charlie")
+      assert "Alice" in table_values(live)
+      refute "Bob" in table_values(live)
+      refute "Charlie" in table_values(live)
     end
 
     test "URL param overrides filter default value", %{dashboard: dashboard} do
@@ -338,9 +338,9 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
 
       render_async(live)
 
-      assert has_element?(live, "td", "Bob")
-      refute has_element?(live, "td", "Alice")
-      refute has_element?(live, "td", "Charlie")
+      assert "Bob" in table_values(live)
+      refute "Alice" in table_values(live)
+      refute "Charlie" in table_values(live)
     end
   end
 
@@ -370,8 +370,8 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
 
       render_async(live)
 
-      assert has_element?(live, "td", "2026-01-01")
-      assert has_element?(live, "td", "2026-03-31")
+      assert "2026-01-01" in table_values(live)
+      assert "2026-03-31" in table_values(live)
     end
 
     test "a token default stays a token in the picker", %{dashboard: dashboard} do
@@ -414,7 +414,7 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
 
       assert has_element?(live, "#filter-period-picker[data-value*='2026-02-01']")
       render_async(live)
-      assert has_element?(live, "td", "2026-02-28")
+      assert "2026-02-28" in table_values(live)
     end
 
     test "a token in the URL stays a token", %{dashboard: dashboard} do

@@ -6,9 +6,9 @@ defmodule Lotus.Web.Dashboards.CardComponent do
 
   use Lotus.Web, :live_component
 
-  alias Lotus.Web.CellFormatter
   alias Lotus.Web.Charts
   alias Lotus.Web.Dashboards.TextCard
+  alias Lotus.Web.Queries.MasuResults
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
@@ -393,9 +393,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
     ~H"""
     <%= cond do %>
       <% @running and is_nil(@result) -> %>
-        <div class="flex items-center justify-center h-full">
-          <.spinner size="32" />
-        </div>
+        <.placeholder chart?={Charts.valid_config?(@card.visualization_config)} />
 
       <% @error -> %>
         <div class="flex items-center justify-center h-full text-red-500 dark:text-red-400 text-sm p-4">
@@ -417,7 +415,9 @@ defmodule Lotus.Web.Dashboards.CardComponent do
         </div>
 
       <% @result -> %>
-        <.mini_table result={@result} />
+        <div class={["h-full transition-opacity", @running && "opacity-50"]} aria-busy={to_string(@running)}>
+          <MasuResults.card id={"table-#{@card.id}"} result={@result} label={@card.title} />
+        </div>
 
       <% true -> %>
         <div class="flex items-center justify-center h-full text-gray-400 text-sm">
@@ -427,47 +427,36 @@ defmodule Lotus.Web.Dashboards.CardComponent do
     """
   end
 
-  defp mini_table(assigns) do
+  # Its Markdown, with the dashboard's filter values in it. A heading sits at
+  # the foot of its row, over the cards it names.
+  # While a card reads its data the first time: the shape of what comes, a
+  # chart's bars or a table's rows, softly pulsing (still with reduced
+  # motion), in place of a spinner.
+  attr(:chart?, :boolean, required: true)
+
+  defp placeholder(assigns) do
     ~H"""
-    <div class="overflow-auto h-full text-xs">
-      <table class="min-w-full">
-        <thead class="bg-gray-50 dark:bg-gray-600 sticky top-0">
-          <tr>
-            <%= for col <- Enum.take(@result.columns, 5) do %>
-              <th class="px-2 py-1 text-left font-medium text-gray-500 dark:text-gray-300 truncate max-w-[100px]">
-                <%= col %>
-              </th>
-            <% end %>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-600">
-          <%= for row <- Enum.take(@result.rows, 10) do %>
-            <tr>
-              <%= for {_col, idx} <- Enum.take(Enum.with_index(@result.columns), 5) do %>
-                <td class="px-2 py-1 text-gray-600 dark:text-gray-300 truncate max-w-[100px]">
-                  <%= format_cell(Enum.at(row, idx)) %>
-                </td>
-              <% end %>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-      <%= if length(@result.rows) > 10 do %>
-        <div class="text-center py-2 text-gray-400">
-          <%= gettext("+ %{count} more rows", count: length(@result.rows) - 10) %>
+    <div
+      class="lotus-card-placeholder h-full motion-safe:animate-pulse"
+      role="status"
+      aria-label={gettext("Reading the data…")}
+    >
+      <div :if={@chart?} class="flex h-full items-end gap-3 border-b border-gray-200 pb-1 pl-1 dark:border-gray-700">
+        <div
+          :for={height <- [55, 80, 40, 95, 65, 30, 75]}
+          class="flex-1 rounded-t bg-gray-200/80 dark:bg-gray-700"
+          style={"height: #{height}%"}
+        >
         </div>
-      <% end %>
+      </div>
+      <div :if={not @chart?} class="space-y-2.5 pt-1">
+        <div class="h-3 w-full rounded bg-gray-200 dark:bg-gray-700"></div>
+        <div :for={width <- [92, 78, 85, 64, 88, 72]} class="h-3 rounded bg-gray-100 dark:bg-gray-700/60" style={"width: #{width}%"}></div>
+      </div>
     </div>
     """
   end
 
-  # The same formatter as the query editor's results table, so a Decimal, a
-  # map from jsonb or a time renders as a value and never as its inspect form.
-  defp format_cell(nil), do: "-"
-  defp format_cell(value), do: CellFormatter.format(value)
-
-  # Its Markdown, with the dashboard's filter values in it. A heading sits at
-  # the foot of its row, over the cards it names.
   defp text_content(assigns) do
     assigns =
       assign(assigns,
