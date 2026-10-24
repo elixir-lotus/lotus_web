@@ -143,7 +143,7 @@ See the [variables and widgets guide](guides/variables-and-widgets.md) for advan
 
 ### AI Query Assistant
 
-Ask your data questions in plain English. The AI assistant discovers your schema, respects table visibility rules, and supports multi-turn conversations for iterative refinement — no other embeddable BI tool does this. Click "Explain query" for a plain-language breakdown of what your query does, or "Optimize query" for AI-powered performance suggestions based on query plan analysis. Highlight any portion of the query in the editor and click "Explain fragment" to get a focused explanation of just that selection. Bring your own API key for any provider supported by [ReqLLM](https://github.com/agentjido/req_llm). Open it with Cmd/Ctrl+J.
+Ask your data questions in plain English. The AI assistant discovers your schema, respects table visibility rules, and supports multi-turn conversations for iterative refinement — no other embeddable BI tool does this. It shows its work as it goes (the tables it reads, the values it checks), and each answer previews what its query returns, with the chart the result suggests; a follow-up shows exactly what it changes. Click **Point at** to show it a column, a row or a line of the query you mean. Click "Explain query" for a plain-language breakdown of what your query does, or "Optimize query" for AI-powered performance suggestions based on query plan analysis. Highlight any portion of the query in the editor and click "Explain fragment" to get a focused explanation of just that selection. Bring your own API key for any provider supported by [ReqLLM](https://github.com/agentjido/req_llm). Open it with Cmd/Ctrl+J.
 
 Each source describes itself to the model through its adapter — its language, an example query, syntax notes — and an adapter can decline generation, optimization or explanation, or opt out of AI entirely.
 
@@ -151,7 +151,7 @@ See the [AI assistant guide](guides/ai-assistant.md) for setup and configuration
 
 ### Command Palette
 
-Press Cmd/Ctrl+K anywhere in the dashboard to search saved queries and dashboards, jump between pages, create a query or a dashboard, switch the appearance and the theme, or run the actions of the page in view: run the query, open the schema explorer, the variables or the visualization settings, or ask the AI assistant. Built with [Jumon](https://hex.pm/packages/jumon); it remembers what each person ran, in their browser.
+Press Cmd/Ctrl+K anywhere in the dashboard to search saved queries and dashboards, jump between pages, create a query or a dashboard, switch the appearance and the theme, or run the actions of the page in view: run the query, open the schema explorer, the variables or the visualization settings, or ask the AI assistant a question ("Ask AI"). Built with [Jumon](https://hex.pm/packages/jumon); it remembers what each person ran, in their browser.
 
 ### Themes
 
