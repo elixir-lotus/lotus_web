@@ -129,6 +129,7 @@ defmodule Lotus.Web.PublicDashboardPage do
         case Lotus.get_dashboard_by_token(token) do
           nil ->
             {title, message} = missing(token)
+            report_refused(socket, token, nil, message)
             {:noreply, assign(socket, dashboard: empty_dashboard(title), unavailable: message)}
 
           dashboard ->
@@ -198,6 +199,8 @@ defmodule Lotus.Web.PublicDashboardPage do
         show(socket, dashboard, params)
 
       {:deny, message} ->
+        report_refused(socket, dashboard.public_token, dashboard, message)
+
         {:noreply,
          assign(socket,
            dashboard: empty_dashboard(gettext("Dashboard Unavailable")),
@@ -233,7 +236,13 @@ defmodule Lotus.Web.PublicDashboardPage do
   # A view is counted once per connected page load, not on each patch.
   defp report_view(socket, %{id: id} = dashboard) do
     if connected?(socket) and not match?(%{id: ^id}, socket.assigns.dashboard),
-      do: Telemetry.dashboard_view(dashboard, true, nil)
+      do: Telemetry.dashboard_view(dashboard, true, nil, socket.assigns[:client])
+  end
+
+  # A link that opened nothing, once per connected page load.
+  defp report_refused(socket, token, dashboard, message) do
+    if connected?(socket) and is_nil(socket.assigns.unavailable),
+      do: Telemetry.public_link_refused(token, dashboard, message, socket.assigns[:client])
   end
 
   # Pro's live updates of the dashboard's cards (`Lotus.Web.Pro.watch_dashboard/2`).

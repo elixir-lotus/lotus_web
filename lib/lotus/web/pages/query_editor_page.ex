@@ -363,6 +363,7 @@ defmodule Lotus.Web.QueryEditorPage do
           %Query{} = query ->
             {:noreply,
              socket
+             |> report_view(query)
              |> ensure_query_repo_default(query)
              |> prefill_variables(query, params["vars"])
              |> assign_query_changeset(query)
@@ -380,6 +381,17 @@ defmodule Lotus.Web.QueryEditorPage do
         }
 
         {:noreply, assign_query_changeset(socket, query)}
+    end
+  end
+
+  # A saved query's view is reported once per connected page load, not on
+  # each patch (`Lotus.Web.Telemetry`).
+  defp report_view(socket, %Query{id: id} = query) do
+    if connected?(socket) and socket.assigns[:viewed_query_id] != id do
+      Telemetry.query_view(query, socket.assigns[:context], socket.assigns[:client])
+      assign(socket, viewed_query_id: id)
+    else
+      socket
     end
   end
 
@@ -1914,7 +1926,13 @@ defmodule Lotus.Web.QueryEditorPage do
   # `fun` takes the options that tell this process about each tool the model
   # calls, so that the panel shows the work as it happens.
   defp start_ai(socket, name, action, data_source, fun) do
-    metadata = %{action: action, source: data_source, context: socket.assigns[:context]}
+    metadata = %{
+      action: action,
+      source: data_source,
+      context: socket.assigns[:context],
+      client: socket.assigns[:client]
+    }
+
     view = self()
     myself = socket.assigns.myself
     ai_opts = [on_tool_call: &send_update(view, myself, %{action: :ai_tool_call, event: &1})]

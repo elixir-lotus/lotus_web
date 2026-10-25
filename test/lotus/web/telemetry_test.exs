@@ -101,6 +101,66 @@ defmodule Lotus.Web.TelemetryTest do
     end
   end
 
+  test "a saved query opened in the editor: one view" do
+    attach([[:lotus_web, :query, :view]])
+    query = query_fixture(%{statement: "SELECT 1 AS n"})
+
+    {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{query.id}")
+    render_async(live)
+
+    query_id = query.id
+
+    assert_receive {[:lotus_web, :query, :view], %{system_time: _},
+                    %{query: %{id: ^query_id}, client: %{ip: _, user_agent: _}}}
+
+    refute_receive {[:lotus_web, :query, :view], _, _}
+  end
+
+  test "a public link to no dashboard is refused, once" do
+    attach([[:lotus_web, :public_link, :refused]])
+
+    {:ok, _live, _html} = live(build_conn(), "/lotus/public/no-such-token")
+
+    assert_receive {[:lotus_web, :public_link, :refused], %{system_time: _},
+                    %{token: "no-such-token", dashboard: nil, message: message}}
+
+    assert is_binary(message)
+    refute_receive {[:lotus_web, :public_link, :refused], _, _}
+  end
+
+  describe "the client" do
+    test "of a request: the forwarded address, else the peer's, and the browser" do
+      conn =
+        build_conn()
+        |> Map.put(:remote_ip, {10, 0, 0, 1})
+        |> Plug.Conn.put_req_header("user-agent", "Firefox")
+
+      assert Lotus.Web.Telemetry.client(conn) == %{ip: "10.0.0.1", user_agent: "Firefox"}
+
+      forwarded = Plug.Conn.put_req_header(conn, "x-forwarded-for", "203.0.113.7, 10.0.0.2")
+      assert %{ip: "203.0.113.7"} = Lotus.Web.Telemetry.client(forwarded)
+    end
+
+    test "is on an export" do
+      attach([[:lotus_web, :export, :start]])
+      query = query_fixture(%{statement: "SELECT 1 AS n"})
+
+      token =
+        ExportController.generate_token(Lotus.Web.Endpoint, %{
+          "query_id" => query.id,
+          "repo" => "public",
+          "vars" => %{},
+          "filename" => "n.csv"
+        })
+
+      build_conn()
+      |> Plug.Conn.put_req_header("user-agent", "curl/8")
+      |> get(~p"/lotus/export/csv?token=#{token}")
+
+      assert_receive {[:lotus_web, :export, :start], _, %{client: %{user_agent: "curl/8"}}}
+    end
+  end
+
   test "an export is a span with the bytes sent" do
     attach([[:lotus_web, :export, :start], [:lotus_web, :export, :stop]])
     query = query_fixture(%{statement: "SELECT 1 AS n"})
