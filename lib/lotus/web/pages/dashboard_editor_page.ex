@@ -152,6 +152,7 @@ defmodule Lotus.Web.DashboardEditorPage do
               uri={@current_uri}
               can_share={@can_share}
               can_manage={@can_manage}
+              info={Pro.request_info(assigns)}
               parent={@myself}
             />
 

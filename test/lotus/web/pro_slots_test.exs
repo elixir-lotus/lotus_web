@@ -123,6 +123,14 @@ defmodule Lotus.Web.ProSlotsTest do
       assert render(live) =~ ~s(data-pro-slot="dashboard_header:#{board.id}:info")
     end
 
+    test "Pro fills the public link's box, given the request", %{board: board} do
+      {:ok, board} = Lotus.enable_public_sharing(board)
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{board.id}")
+
+      html = live |> element("button", "Share") |> render_click()
+      assert html =~ ~s(data-pro-slot="public_link:#{board.id}:info")
+    end
+
     test "Pro fills each card's header", %{board: board} do
       card = dashboard_card_fixture(board, %{title: "Notes"})
 

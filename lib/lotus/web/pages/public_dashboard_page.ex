@@ -8,6 +8,7 @@ defmodule Lotus.Web.PublicDashboardPage do
   use Lotus.Web, :live_component
 
   alias Lotus.Web.Branding
+  alias Lotus.Web.Components.Icons
   alias Lotus.Web.Dashboards.CardGridComponent
   alias Lotus.Web.Dashboards.CardRunner
   alias Lotus.Web.Dashboards.CardVariables
@@ -74,7 +75,18 @@ defmodule Lotus.Web.PublicDashboardPage do
                 parent={@myself}
               />
             <% else %>
-              <div class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+              <div
+                :if={@unavailable}
+                id="public-dashboard-unavailable"
+                class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center"
+              >
+                <Icons.globe class="h-10 w-10 text-gray-300 dark:text-gray-600" />
+                <p class="text-base font-medium text-gray-900 dark:text-white"><%= @unavailable %></p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  <%= gettext("Ask whoever shared it with you for a new link.") %>
+                </p>
+              </div>
+              <div :if={!@unavailable} class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
                 <p><%= gettext("This dashboard has no cards.") %></p>
               </div>
             <% end %>
@@ -98,6 +110,7 @@ defmodule Lotus.Web.PublicDashboardPage do
     socket
     |> assign(
       dashboard: nil,
+      unavailable: nil,
       filter_values: %{},
       filter_options: %{},
       card_results: %{},
@@ -115,10 +128,8 @@ defmodule Lotus.Web.PublicDashboardPage do
       %{token: token} ->
         case Lotus.get_dashboard_by_token(token) do
           nil ->
-            {:noreply,
-             socket
-             |> put_flash(:error, gettext("Dashboard not found or no longer public"))
-             |> assign(dashboard: empty_dashboard())}
+            {title, message} = missing(token)
+            {:noreply, assign(socket, dashboard: empty_dashboard(title), unavailable: message)}
 
           dashboard ->
             open(socket, dashboard, params)
@@ -171,6 +182,15 @@ defmodule Lotus.Web.PublicDashboardPage do
 
   def handle_info(_msg, socket), do: {:noreply, socket}
 
+  # A link to no dashboard: Lotus Pro's words when it knows the link
+  # (`Lotus.Web.Pro.public_link_message/1`), else not found.
+  defp missing(token) do
+    case Pro.public_link_message(token) do
+      nil -> {gettext("Dashboard Not Found"), gettext("Dashboard not found or no longer public")}
+      message -> {gettext("Dashboard Unavailable"), message}
+    end
+  end
+
   # Lotus Pro may refuse the link (`Lotus.Web.Pro.authorize_public_dashboard/2`).
   defp open(socket, dashboard, params) do
     case Pro.authorize_public_dashboard(dashboard, params) do
@@ -179,9 +199,10 @@ defmodule Lotus.Web.PublicDashboardPage do
 
       {:deny, message} ->
         {:noreply,
-         socket
-         |> put_flash(:error, message || gettext("This dashboard is not available"))
-         |> assign(dashboard: empty_dashboard(gettext("Dashboard Unavailable")))}
+         assign(socket,
+           dashboard: empty_dashboard(gettext("Dashboard Unavailable")),
+           unavailable: message || gettext("This dashboard is not available")
+         )}
     end
   end
 
@@ -195,6 +216,7 @@ defmodule Lotus.Web.PublicDashboardPage do
 
     {:noreply,
      socket
+     |> assign(unavailable: nil)
      |> Branding.assign_branding(%{
        user: nil,
        context: nil,

@@ -10,7 +10,14 @@ defmodule Lotus.Web.Dashboards.SettingsDrawer do
   def mount(socket) do
     # The parent passes what the user may do. Until it does, show nothing that
     # writes.
-    {:ok, assign(socket, visible: false, dashboard: nil, can_share: false, can_manage: false)}
+    {:ok,
+     assign(socket,
+       visible: false,
+       dashboard: nil,
+       can_share: false,
+       can_manage: false,
+       info: %{}
+     )}
   end
 
   @impl Phoenix.LiveComponent
@@ -108,6 +115,7 @@ defmodule Lotus.Web.Dashboards.SettingsDrawer do
                       <Icons.clipboard_copy class="h-4 w-4" />
                     </button>
                   </div>
+                  <.pro_slot name={:public_link} slot_assigns={%{dashboard: @dashboard, info: @info}} />
                   <button
                     :if={@can_share}
                     type="button"
