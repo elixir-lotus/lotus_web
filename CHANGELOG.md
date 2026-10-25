@@ -13,6 +13,8 @@
 
 ### Added
 
+- **Erabi's pickers.** The dashboard loads [Erabi](https://hex.pm/packages/erabi): its hook is in the LiveSocket and its style sheet in the bundle, mapped to the Lotus tokens in the Lotus theme (light and dark) and to Sumi's in the Sumi theme, as Koyomi's date pickers are. Pages, Lotus Pro's among them, can use `Erabi.Components.select/1` and the other pickers; without them nothing changes.
+
 - **Reports and alerts.** With `features: [:schedules]`, the home page has a
   "Reports & alerts" tab for the schedules of `Lotus.Schedules`. A report
   sends a query's results or a dashboard on a schedule; an alert checks a

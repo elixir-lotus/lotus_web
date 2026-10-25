@@ -1,10 +1,12 @@
-/* The command palette (Jumon), the date pickers (Koyomi) and the rich text
-   editor (Kotoba). Their Sumi mappings apply in the Sumi theme; in the
+/* The command palette (Jumon), the date pickers (Koyomi), the pickers
+   (Erabi) and the rich text editor (Kotoba). Their Sumi mappings apply in the Sumi theme; in the
    Lotus theme the rules below restyle them from the Lotus tokens. */
 @import "../../deps/jumon/priv/static/jumon.css";
 @import "../../deps/jumon/priv/static/jumon-sumi.css";
 @import "../../deps/koyomi/priv/static/koyomi.css";
 @import "../../deps/koyomi/priv/static/koyomi-sumi.css";
+@import "../../deps/erabi/priv/static/erabi.css";
+@import "../../deps/erabi/priv/static/erabi-sumi.css";
 @import "../../deps/kotoba/priv/static/kotoba.css";
 @import "../../deps/kotoba/priv/static/kotoba-sumi.css";
 /* The results grid. */
@@ -433,6 +435,47 @@
     --koyomi-floating-text: rgb(var(--lotus-gray-100));
     --koyomi-floating-border: rgb(var(--lotus-gray-700));
     --koyomi-backdrop: rgb(0 0 0 / 0.5);
+}
+
+/* ── The pickers ────────────────────────────────────────────
+   As the date pickers: erabi-sumi.css maps the pickers to Sumi on :root,
+   and in the Lotus theme they take every property from the Lotus tokens,
+   on their own elements and on their popups. */
+[data-lotus-theme="lotus"] :is(.erabi, .erabi-popup) {
+    --erabi-font: var(--lotus-font-sans);
+    --erabi-font-size: 0.875rem;
+    --erabi-small: 0.8125rem;
+    --erabi-text: rgb(var(--lotus-gray-900));
+    --erabi-muted: rgb(var(--lotus-gray-500));
+    --erabi-background: rgb(var(--lotus-white));
+    --erabi-surface: rgb(var(--lotus-gray-50));
+    --erabi-border: rgb(var(--lotus-gray-300));
+    --erabi-border-hover: rgb(var(--lotus-gray-400));
+    --erabi-accent: rgb(var(--lotus-pink-600));
+    --erabi-accent-text: rgb(var(--lotus-white));
+    --erabi-active: rgb(var(--lotus-pink-50));
+    --erabi-match: rgb(var(--lotus-pink-600));
+    --erabi-invalid: #b91c1c;
+    --erabi-focus-ring: 0 0 0 2px rgb(var(--lotus-white)), 0 0 0 4px rgb(var(--lotus-pink-500));
+    --erabi-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --erabi-radius: var(--lotus-radius-lg);
+    --erabi-inner-radius: var(--lotus-radius-md);
+}
+
+[data-lotus-theme="lotus"].dark :is(.erabi, .erabi-popup) {
+    --erabi-text: rgb(var(--lotus-white));
+    --erabi-muted: rgb(var(--lotus-gray-400));
+    --erabi-background: rgb(var(--lotus-gray-700));
+    --erabi-surface: rgb(var(--lotus-gray-800));
+    --erabi-border: rgb(var(--lotus-gray-600));
+    --erabi-border-hover: rgb(var(--lotus-gray-500));
+    --erabi-accent: rgb(var(--lotus-pink-500));
+    --erabi-accent-text: rgb(var(--lotus-white));
+    --erabi-active: rgb(var(--lotus-pink-500) / 0.15);
+    --erabi-match: rgb(var(--lotus-pink-400));
+    --erabi-invalid: #f87171;
+    --erabi-focus-ring: 0 0 0 2px rgb(var(--lotus-gray-800)), 0 0 0 4px rgb(var(--lotus-pink-400));
+    --erabi-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.06);
 }
 
 /* ── The rich text editor ───────────────────────────────────
