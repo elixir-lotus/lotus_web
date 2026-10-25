@@ -8,11 +8,11 @@ defmodule Lotus.Web.PublicDashboardPage do
   use Lotus.Web, :live_component
 
   alias Lotus.Web.Branding
+  alias Lotus.Web.Components.Icons
   alias Lotus.Web.Dashboards.CardGridComponent
   alias Lotus.Web.Dashboards.CardRunner
   alias Lotus.Web.Dashboards.CardVariables
   alias Lotus.Web.Dashboards.ChartFilters
-  alias Lotus.Web.Components.Icons
   alias Lotus.Web.Dashboards.Components
   alias Lotus.Web.Dashboards.FilterBarComponent
   alias Lotus.Web.Dashboards.FilterOptions
@@ -128,16 +128,7 @@ defmodule Lotus.Web.PublicDashboardPage do
       %{token: token} ->
         case Lotus.get_dashboard_by_token(token) do
           nil ->
-            {title, message} =
-              case Pro.public_link_message(token) do
-                nil ->
-                  {gettext("Dashboard Not Found"),
-                   gettext("Dashboard not found or no longer public")}
-
-                message ->
-                  {gettext("Dashboard Unavailable"), message}
-              end
-
+            {title, message} = missing(token)
             {:noreply, assign(socket, dashboard: empty_dashboard(title), unavailable: message)}
 
           dashboard ->
@@ -190,6 +181,15 @@ defmodule Lotus.Web.PublicDashboardPage do
   end
 
   def handle_info(_msg, socket), do: {:noreply, socket}
+
+  # A link to no dashboard: Lotus Pro's words when it knows the link
+  # (`Lotus.Web.Pro.public_link_message/1`), else not found.
+  defp missing(token) do
+    case Pro.public_link_message(token) do
+      nil -> {gettext("Dashboard Not Found"), gettext("Dashboard not found or no longer public")}
+      message -> {gettext("Dashboard Unavailable"), message}
+    end
+  end
 
   # Lotus Pro may refuse the link (`Lotus.Web.Pro.authorize_public_dashboard/2`).
   defp open(socket, dashboard, params) do
