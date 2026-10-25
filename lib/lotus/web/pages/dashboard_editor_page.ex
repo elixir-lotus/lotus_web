@@ -63,6 +63,11 @@ defmodule Lotus.Web.DashboardEditorPage do
             running={MapSet.size(@running_cards) > 0}
           >
             <:actions :if={not @editing}>
+              <.pro_slot
+                :if={@page.mode == :edit}
+                name={:dashboard_header}
+                slot_assigns={%{dashboard: @dashboard, info: Lotus.Web.Pro.request_info(assigns)}}
+              />
               <button
                 type="button"
                 phx-click="refresh_all_cards"

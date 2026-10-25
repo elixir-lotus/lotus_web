@@ -21,10 +21,12 @@ defmodule Lotus.Web.ProSlotsTest do
     def pages, do: []
     def nav_items(_assigns), do: []
 
-    # Every slot shows its name, and the record it was given.
+    # Every slot shows its name, the record it was given, and whether it was
+    # given the request (`:info`).
     def render_slot(name, assigns) do
       record = assigns[:query] || assigns[:dashboard] || assigns[:card]
       label = if record, do: "#{name}:#{record.id}", else: "#{name}"
+      label = if is_map(assigns[:info]), do: label <> ":info", else: label
       Phoenix.HTML.raw(~s(<span data-pro-slot="#{label}"></span>))
     end
 
@@ -103,10 +105,16 @@ defmodule Lotus.Web.ProSlotsTest do
       assert html =~ ~s(data-pro-slot="list_toolbar")
     end
 
-    test "Pro fills the query editor's header", %{acme: acme} do
+    test "Pro fills the query editor's header, given the request", %{acme: acme} do
       {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{acme.id}")
 
-      assert render(live) =~ ~s(data-pro-slot="query_editor_header:#{acme.id}")
+      assert render(live) =~ ~s(data-pro-slot="query_editor_header:#{acme.id}:info")
+    end
+
+    test "Pro fills a dashboard's header, given the request", %{board: board} do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{board.id}")
+
+      assert render(live) =~ ~s(data-pro-slot="dashboard_header:#{board.id}:info")
     end
 
     test "Pro fills each card's header", %{board: board} do

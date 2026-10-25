@@ -11,9 +11,12 @@ defmodule Lotus.Web.CoreComponents do
   # Lotus Pro's content for the slot `name` (`Lotus.Web.Pro.render_slot/2`),
   # given `slot_assigns`. Nothing without Pro.
   #
-  # The slots: `:nav` (the header), `:list_toolbar` (above the lists of
-  # queries and dashboards), `:query_badges` and `:dashboard_badges` (on each
-  # tile and row), `:query_editor_header` and `:card_header`.
+  # The slots: `:nav` (the header), `:list_toolbar` (in the row of a list of
+  # queries or dashboards, by its search, with the request and `:tab`),
+  # `:query_badges` and `:dashboard_badges` (on each tile and row),
+  # `:query_editor_header` and `:dashboard_header` (by the name of a saved
+  # query or dashboard, with the request as `:info`,
+  # `Lotus.Web.Pro.request_info/1`) and `:card_header`.
   @doc false
   attr(:name, :atom, required: true)
   attr(:slot_assigns, :map, default: %{})

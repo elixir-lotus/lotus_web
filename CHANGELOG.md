@@ -13,6 +13,10 @@
 
 ### Added
 
+- **The lists' Pro toolbar sits by the search.** `:list_toolbar` now renders in the row of a list of queries or dashboards, beside its search (and above the empty state), given the request and its `:tab`, instead of in a row of its own under the tabs.
+
+- **A slot by a dashboard's name.** Lotus Pro fills `:dashboard_header`, by a saved dashboard's name, as it fills `:query_editor_header` by a saved query's. Both are given the request (`:info`: the viewer's `:user`, `:context`, `:scope` and `:params`), so what Pro shows there can depend on who is looking.
+
 - **What a viewer may read.** Every list and lookup of saved queries and dashboards passes the viewer's `:context` and `:scope` to Lotus, so a `:list_content` middleware (elixir-lotus/lotus#376) decides what they see: the home page, the command palette, the schedules page, the dashboard editor's query list, the query and dashboard pages, CSV export and duplicating a dashboard. What it hides is not listed, and opening it reads as not found. Without such middleware, every query and dashboard is listed, as before.
 
 - **Erabi's pickers.** The dashboard loads [Erabi](https://hex.pm/packages/erabi): its hook is in the LiveSocket and its style sheet in the bundle, mapped to the Lotus tokens in the Lotus theme (light and dark) and to Sumi's in the Sumi theme, as Koyomi's date pickers are. Pages, Lotus Pro's among them, can use `Erabi.Components.select/1` and the other pickers; without them nothing changes.

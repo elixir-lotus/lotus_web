@@ -71,7 +71,6 @@ defmodule Lotus.Web.QueriesPage do
                 ></span>
               </button>
             </div>
-            <.pro_slot name={:list_toolbar} slot_assigns={Map.put(assigns, :tab, @active_tab)} />
           </div>
 
           <%!-- Content --%>
@@ -97,6 +96,7 @@ defmodule Lotus.Web.QueriesPage do
                 search={@query_search}
                 source={@query_source}
                 can_create={Authorization.allowed?(assigns, :create_query)}
+                toolbar={assigns |> Pro.request_info() |> Map.put(:tab, :queries)}
                 target={@myself}
               />
             <% end %>
@@ -108,6 +108,7 @@ defmodule Lotus.Web.QueriesPage do
                 search={@dashboard_search}
                 sort={@dashboard_sort}
                 can_create={Authorization.allowed?(assigns, :manage_dashboard)}
+                toolbar={assigns |> Pro.request_info() |> Map.put(:tab, :dashboards)}
                 target={@myself}
               />
             <% end %>
@@ -151,11 +152,15 @@ defmodule Lotus.Web.QueriesPage do
   attr(:search, :string, required: true)
   attr(:source, :string, required: true)
   attr(:can_create, :boolean, required: true)
+  attr(:toolbar, :map, required: true)
   attr(:target, :any, required: true)
 
   defp queries_list(assigns) do
+    assigns = assign(assigns, :pro_toolbar, Pro.render_slot(:list_toolbar, assigns.toolbar))
+
     ~H"""
     <%= if not @any? do %>
+      <div :if={@pro_toolbar} class="flex pt-6">{@pro_toolbar}</div>
       <div class="py-12 text-center text-gray-500 dark:text-gray-400">
         <Icons.terminal class="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
         <p><%= gettext("No saved queries yet.") %></p>
@@ -205,6 +210,7 @@ defmodule Lotus.Web.QueriesPage do
               target={@target}
             />
           </div>
+          {@pro_toolbar}
           <div class="flex-1"></div>
           <.view_toggle list="queries" view={@view} target={@target} />
           <.link
@@ -431,11 +437,15 @@ defmodule Lotus.Web.QueriesPage do
   attr(:search, :string, required: true)
   attr(:sort, :string, required: true)
   attr(:can_create, :boolean, required: true)
+  attr(:toolbar, :map, required: true)
   attr(:target, :any, required: true)
 
   defp dashboards_list(assigns) do
+    assigns = assign(assigns, :pro_toolbar, Pro.render_slot(:list_toolbar, assigns.toolbar))
+
     ~H"""
     <%= if not @any? do %>
+      <div :if={@pro_toolbar} class="flex pt-6">{@pro_toolbar}</div>
       <div class="py-12 text-center text-gray-500 dark:text-gray-400">
         <Icons.squares_2x2 class="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
         <p><%= gettext("No dashboards yet.") %></p>
@@ -458,8 +468,8 @@ defmodule Lotus.Web.QueriesPage do
         class="pb-8"
       >
         <div class="flex flex-wrap items-center gap-3 pt-6 pb-5">
-          <form id="dashboards-search" phx-change="search_dashboards" phx-submit="search_dashboards" phx-target={@target} class="flex flex-1 flex-wrap items-center gap-3">
-            <div class="relative w-full max-w-xs">
+          <form id="dashboards-search" phx-change="search_dashboards" phx-submit="search_dashboards" phx-target={@target} class="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+            <div class="relative w-full sm:w-80">
               <Icons.magnifying_glass class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 type="search"
@@ -481,6 +491,8 @@ defmodule Lotus.Web.QueriesPage do
               <option value="created" selected={@sort == "created"}><%= gettext("Recently created") %></option>
             </select>
           </form>
+          {@pro_toolbar}
+          <div class="flex-1"></div>
           <.view_toggle list="dashboards" view={@view} target={@target} />
           <.link
             :if={@can_create}
