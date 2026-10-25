@@ -13,7 +13,7 @@
 
 ### Added
 
-- **The lists' Pro toolbar sits by the view toggle.** `:list_toolbar` now renders in the row of a list of queries or dashboards, beside the view toggle (and above the empty state), given the request and its `:tab`, instead of in a row of its own under the tabs.
+- **The lists' Pro toolbar sits by the search.** `:list_toolbar` now renders in the row of a list of queries or dashboards, beside its search (and above the empty state), given the request and its `:tab`, instead of in a row of its own under the tabs.
 
 - **A slot by a dashboard's name.** Lotus Pro fills `:dashboard_header`, by a saved dashboard's name, as it fills `:query_editor_header` by a saved query's. Both are given the request (`:info`: the viewer's `:user`, `:context`, `:scope` and `:params`), so what Pro shows there can depend on who is looking.
 

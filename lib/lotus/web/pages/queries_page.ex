@@ -160,7 +160,7 @@ defmodule Lotus.Web.QueriesPage do
 
     ~H"""
     <%= if not @any? do %>
-      <div :if={@pro_toolbar} class="flex justify-end pt-6">{@pro_toolbar}</div>
+      <div :if={@pro_toolbar} class="flex pt-6">{@pro_toolbar}</div>
       <div class="py-12 text-center text-gray-500 dark:text-gray-400">
         <Icons.terminal class="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
         <p><%= gettext("No saved queries yet.") %></p>
@@ -210,8 +210,8 @@ defmodule Lotus.Web.QueriesPage do
               target={@target}
             />
           </div>
-          <div class="flex-1"></div>
           {@pro_toolbar}
+          <div class="flex-1"></div>
           <.view_toggle list="queries" view={@view} target={@target} />
           <.link
             :if={@can_create}
@@ -445,7 +445,7 @@ defmodule Lotus.Web.QueriesPage do
 
     ~H"""
     <%= if not @any? do %>
-      <div :if={@pro_toolbar} class="flex justify-end pt-6">{@pro_toolbar}</div>
+      <div :if={@pro_toolbar} class="flex pt-6">{@pro_toolbar}</div>
       <div class="py-12 text-center text-gray-500 dark:text-gray-400">
         <Icons.squares_2x2 class="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
         <p><%= gettext("No dashboards yet.") %></p>
@@ -468,8 +468,8 @@ defmodule Lotus.Web.QueriesPage do
         class="pb-8"
       >
         <div class="flex flex-wrap items-center gap-3 pt-6 pb-5">
-          <form id="dashboards-search" phx-change="search_dashboards" phx-submit="search_dashboards" phx-target={@target} class="flex flex-1 flex-wrap items-center gap-3">
-            <div class="relative w-full max-w-xs">
+          <form id="dashboards-search" phx-change="search_dashboards" phx-submit="search_dashboards" phx-target={@target} class="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+            <div class="relative w-full sm:w-80">
               <Icons.magnifying_glass class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 type="search"
@@ -492,6 +492,7 @@ defmodule Lotus.Web.QueriesPage do
             </select>
           </form>
           {@pro_toolbar}
+          <div class="flex-1"></div>
           <.view_toggle list="dashboards" view={@view} target={@target} />
           <.link
             :if={@can_create}
