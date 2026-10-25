@@ -10,12 +10,15 @@ defmodule Lotus.Web.Dashboards.Duplicate do
 
   @doc """
   Copies the dashboard `id` in one transaction. `opts` are the actor's, for
-  each write.
+  each write and to read the dashboard: one the actor may not read is
+  `{:error, :not_found}`.
   """
   @spec copy(integer(), keyword()) :: {:ok, struct()} | {:error, term()}
   def copy(id, opts \\ []) do
     Lotus.repo().transaction(fn ->
-      with %{} = dashboard <- Lotus.get_dashboard(id) || {:error, :not_found},
+      with %{} = dashboard <-
+             Lotus.get_dashboard(id, Keyword.take(opts, [:context, :scope])) ||
+               {:error, :not_found},
            {:ok, copy} <- Lotus.create_dashboard(dashboard_attrs(dashboard), opts),
            {:ok, filters} <- copy_filters(dashboard.id, copy, opts),
            :ok <- copy_cards(dashboard.id, copy, filters, opts) do

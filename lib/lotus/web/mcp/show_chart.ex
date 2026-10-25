@@ -41,7 +41,7 @@ if Code.ensure_loaded?(Sake.Server) do
       window = Support.window(args[:limit] || 500, 0)
       actor = Support.actor_opts(ctx)
 
-      with {:ok, title, run, saved} <- source(args),
+      with {:ok, title, run, saved} <- source(args, ctx),
            {:ok, result} <- run.([read_only: true, window: window] ++ actor),
            {:ok, config} <- config(args, saved, result.columns) do
         shaped = Support.result(result, window)
@@ -61,21 +61,21 @@ if Code.ensure_loaded?(Sake.Server) do
     end
 
     # What runs, its title, and the saved query's own chart (or nil).
-    defp source(%{query_id: id} = args) when is_integer(id) do
-      with {:ok, query} <- Support.fetch_query(id) do
+    defp source(%{query_id: id} = args, ctx) when is_integer(id) do
+      with {:ok, query} <- Support.fetch_query(id, ctx) do
         run = fn opts -> Lotus.run_query(query, [vars: Support.vars(args[:vars])] ++ opts) end
         {:ok, query.name, run, saved_chart(query)}
       end
     end
 
-    defp source(%{data_source: ds, statement: statement})
+    defp source(%{data_source: ds, statement: statement}, _ctx)
          when is_binary(ds) and is_binary(statement) do
       with {:ok, ds} <- Support.data_source(ds) do
         {:ok, nil, &Lotus.run_statement(statement, [], [repo: ds] ++ &1), nil}
       end
     end
 
-    defp source(_args),
+    defp source(_args, _ctx),
       do: {:error, "Give query_id, or data_source and statement"}
 
     defp saved_chart(query) do

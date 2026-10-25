@@ -1,6 +1,8 @@
 defmodule Lotus.Web.Pro do
   @moduledoc false
 
+  alias Lotus.Web.Actor
+
   # The module, a setting only so that tests can stand in for it.
   defp pro_web, do: Application.get_env(:lotus_web, :__pro_web__, Lotus.Pro.Web)
 
@@ -119,23 +121,36 @@ defmodule Lotus.Web.Pro do
     end
   end
 
-  @doc "The queries listed for the request: all of them without Pro."
+  @doc """
+  The queries listed for the request: those its `:context` may read, as
+  the `:list_content` middleware narrows them. All of them without Pro or
+  such middleware.
+  """
   @spec list_queries(map()) :: [Lotus.Storage.Query.t()]
   def list_queries(info) do
+    actor = actor_opts(info)
+
     case list_options(:queries, info) do
-      [] -> Lotus.list_queries()
-      options -> Lotus.Storage.list_queries_by(options)
+      [] -> Lotus.list_queries(actor)
+      options -> Lotus.Storage.list_queries_by(options ++ actor)
     end
   end
 
-  @doc "The dashboards listed for the request, with `opts` (`:preload`): all of them without Pro."
+  @doc """
+  The dashboards listed for the request, with `opts` (`:preload`), narrowed
+  as `list_queries/1`.
+  """
   @spec list_dashboards(map(), keyword()) :: [Lotus.Storage.Dashboard.t()]
   def list_dashboards(info, opts \\ []) do
+    opts = opts ++ actor_opts(info)
+
     case list_options(:dashboards, info) do
       [] -> Lotus.list_dashboards(opts)
       options -> Lotus.list_dashboards_by(opts ++ options)
     end
   end
+
+  defp actor_opts(info), do: Actor.opts({info[:context], info[:scope]})
 
   @doc """
   The kinds of card Lotus Pro adds to a dashboard (`card_type: :pro`), for

@@ -13,6 +13,8 @@
 
 ### Added
 
+- **What a viewer may read.** Every list and lookup of saved queries and dashboards passes the viewer's `:context` and `:scope` to Lotus, so a `:list_content` middleware (elixir-lotus/lotus#376) decides what they see: the home page, the command palette, the schedules page, the dashboard editor's query list, the query and dashboard pages, CSV export and duplicating a dashboard. What it hides is not listed, and opening it reads as not found. Without such middleware, every query and dashboard is listed, as before.
+
 - **Erabi's pickers.** The dashboard loads [Erabi](https://hex.pm/packages/erabi): its hook is in the LiveSocket and its style sheet in the bundle, mapped to the Lotus tokens in the Lotus theme (light and dark) and to Sumi's in the Sumi theme, as Koyomi's date pickers are. Pages, Lotus Pro's among them, can use `Erabi.Components.select/1` and the other pickers; without them nothing changes.
 
 - **Reports and alerts.** With `features: [:schedules]`, the home page has a
