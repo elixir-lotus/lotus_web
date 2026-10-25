@@ -109,6 +109,7 @@ defmodule Lotus.Web.ProSlotsTest do
 
       assert html =~ ~s(data-pro-slot="nav")
       assert html =~ ~s(data-pro-slot="list_toolbar")
+      assert html =~ ~s(data-pro-slot="list_header")
     end
 
     test "Pro fills the query editor's header, given the request", %{acme: acme} do

@@ -13,6 +13,7 @@ defmodule Lotus.Web.CoreComponents do
   #
   # The slots: `:nav` (the header), `:list_toolbar` (in the row of a list of
   # queries or dashboards, by its search, with the request and `:tab`),
+  # `:list_header` (between that row and the list, as `:list_toolbar`),
   # `:query_badges` and `:dashboard_badges` (on each tile and row),
   # `:query_editor_header` and `:dashboard_header` (by the name of a saved
   # query or dashboard, with the request as `:info`,
