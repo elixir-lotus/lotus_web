@@ -108,14 +108,17 @@ defmodule Lotus.Web.Pro do
   The options Lotus Pro adds to a list of `:queries` or `:dashboards` for a
   request (`request_info/1`): `:owner_id` and `:tenant_id`, as
   `Lotus.Storage.list_queries_by/1` and `Lotus.list_dashboards_by/1` take
-  them, for a tenant's content or "mine". Other keys are ignored. `[]`
-  without Pro: every query and dashboard is listed.
+  them, for a tenant's content or "mine", and `:filter`, which Lotus hands
+  to Pro's `:list_content` plug ("shared with me"). Other keys are ignored.
+  `[]` without Pro: every query and dashboard is listed.
   """
   @spec list_options(:queries | :dashboards, map()) :: keyword()
   def list_options(kind, info) when kind in [:queries, :dashboards] do
     with true <- available?() and function_exported?(pro_web(), :list_options, 2),
          options when is_list(options) <- apply(pro_web(), :list_options, [kind, info]) do
-      options |> Keyword.take([:owner_id, :tenant_id]) |> Enum.reject(&is_nil(elem(&1, 1)))
+      options
+      |> Keyword.take([:owner_id, :tenant_id, :filter])
+      |> Enum.reject(&is_nil(elem(&1, 1)))
     else
       _ -> []
     end
