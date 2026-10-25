@@ -3,10 +3,10 @@ defmodule Lotus.Web.ProDownloadController do
   A file Lotus Pro makes for a page of its own, such as the audit log's
   CSV: `GET /pro/download?token=…`.
 
-  A Pro page signs the request with `Lotus.Web.Pro.download_path/3`; the
-  route resolves the user as the CSV export does, and Lotus Pro answers
-  `Lotus.Web.Pro.download/3` as that user, so the token says what to make,
-  never who may have it.
+  A Pro page signs the request (the Pro bridge's `download_path/3`); the
+  route resolves the user as the CSV export does, and Lotus Pro makes the
+  file as that user, so the token says what to make, never who may have
+  it.
   """
 
   use Phoenix.Controller, formats: []

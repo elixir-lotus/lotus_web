@@ -52,7 +52,7 @@ defmodule Lotus.Web.Telemetry do
 
   A public dashboard link opened nothing: no dashboard has it (never, or no
   longer: sharing was turned off or the link changed), or Lotus Pro refused
-  it (`Lotus.Web.Pro.authorize_public_dashboard/2`, an expired link). Once
+  it (an expired link). Once
   per page load of a connected LiveView.
 
   **Measurements:** `:system_time`.
