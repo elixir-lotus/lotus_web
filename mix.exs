@@ -44,6 +44,7 @@ defmodule Lotus.Web.MixProject do
       {:phoenix_live_view, ">= 1.1.0 and < 1.3.0"},
       {:jumon, "~> 0.2"},
       {:koyomi, "~> 0.2"},
+      {:erabi, "~> 0.2"},
       {:kotoba, "~> 0.8"},
       {:masu, "~> 0.7"},
       # The charts.

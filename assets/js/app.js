@@ -2,6 +2,7 @@ import topbar from "topbar";
 import { applyPalette, tokenColor } from "./lib/palette";
 import { Jumon } from "jumon";
 import { Koyomi } from "koyomi";
+import { Erabi } from "erabi";
 import { Kotoba } from "kotoba";
 import { Masu } from "masu";
 import { Fude, registerMap } from "fude";
@@ -145,6 +146,7 @@ const hooks = {
   ThemeSelector,
   Jumon,
   Koyomi,
+  Erabi,
   Kotoba,
   Masu,
   Fude,
