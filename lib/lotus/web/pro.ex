@@ -220,6 +220,51 @@ defmodule Lotus.Web.Pro do
     end
   end
 
+  @download_salt "lotus_pro_download"
+  @download_max_age 300
+
+  @doc """
+  The path of a file Lotus Pro makes (`download/3`), for a page of its
+  own: `name` says which, `params` (a map with string keys) what to put in
+  it. The path holds both, signed; it is good for five minutes, and only
+  for whoever Pro lets have the file.
+  """
+  @spec download_path(module(), String.t(), map()) :: String.t()
+  def download_path(endpoint, name, params \\ %{}) when is_binary(name) do
+    token = Phoenix.Token.encrypt(endpoint, @download_salt, %{"name" => name, "params" => params})
+    Lotus.Web.Helpers.lotus_path("pro/download", %{token: token})
+  end
+
+  @doc false
+  @spec verify_download(module(), String.t()) ::
+          {:ok, String.t(), map()} | {:error, :expired | :invalid}
+  def verify_download(endpoint, token) do
+    case Phoenix.Token.decrypt(endpoint, @download_salt, token, max_age: @download_max_age) do
+      {:ok, %{"name" => name, "params" => params}} -> {:ok, name, params}
+      {:error, :expired} -> {:error, :expired}
+      _invalid -> {:error, :invalid}
+    end
+  end
+
+  @doc """
+  A file Lotus Pro makes, by the `name` and `params` of `download_path/3`,
+  for the request's `info` (`:user`, `:context`, `:scope` and the
+  `:params`): `{:ok, %{filename: String.t(), content_type: String.t(),
+  body: iodata()}}`, `{:error, :forbidden}`, or `nil` for a file it does not
+  make (and without Pro).
+  """
+  @spec download(String.t(), map(), map()) :: {:ok, map()} | {:error, :forbidden} | nil
+  def download(name, params, info) do
+    with true <- available?() and function_exported?(pro_web(), :download, 3),
+         {:ok, %{filename: _, content_type: _, body: _}} = file <-
+           apply(pro_web(), :download, [name, params, info]) do
+      file
+    else
+      {:error, :forbidden} -> {:error, :forbidden}
+      _ -> nil
+    end
+  end
+
   defp text(value) when is_binary(value), do: value
   defp text(_value), do: ""
 end

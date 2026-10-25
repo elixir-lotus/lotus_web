@@ -118,6 +118,10 @@ defmodule Lotus.Web.Router do
         # resolver in the route's private data to resolve the actor itself.
         get("/export/csv", Lotus.Web.ExportController, :csv, export_opts)
 
+        # A file a Lotus Pro page makes (`Lotus.Web.Pro.download/3`), as the
+        # export: the resolver in the route's private data.
+        get("/pro/download", Lotus.Web.ProDownloadController, :download, export_opts)
+
         # Public dashboard - separate live_session without authentication
         live_session :"#{session_name}_public", public_session_opts do
           live("/public/:token", Lotus.Web.DashboardLive, :show)
