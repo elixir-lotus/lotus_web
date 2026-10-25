@@ -635,17 +635,19 @@ defmodule Lotus.Web.QueriesPage do
 
   @impl Page
   def handle_mount(socket) do
+    views = Map.get(socket.assigns, :list_views, %{})
+
     socket
     |> assign(queries: [], query_entries: [], dashboards: [], schedule_entries: [])
     |> assign(
-      query_view: :grid,
+      query_view: Map.get(views, :queries, :grid),
       query_search: "",
       query_source: "",
       active_tab: :queries,
-      dashboard_view: :grid,
+      dashboard_view: Map.get(views, :dashboards, :grid),
       dashboard_search: "",
       dashboard_sort: "updated",
-      schedule_view: :grid,
+      schedule_view: Map.get(views, :schedules, :grid),
       schedule_search: "",
       schedule_filter: "all"
     )

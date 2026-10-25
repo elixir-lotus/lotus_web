@@ -1,5 +1,6 @@
 // A list's view (a gallery or a table), as the viewer last chose it: kept
-// in this browser, and asked of the server when the list mounts.
+// in this browser. The server renders it from the first frame (the
+// socket's `views` param); should the two differ, the list asks for it.
 import { load, store } from "../lib/settings";
 
 export default {
