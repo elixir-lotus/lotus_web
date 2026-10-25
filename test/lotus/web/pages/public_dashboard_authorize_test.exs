@@ -1,8 +1,9 @@
 defmodule Lotus.Web.Pages.PublicDashboardAuthorizeTest do
   @moduledoc """
   Lotus Pro decides whether a share link shows its dashboard
-  (`Lotus.Web.Pro.authorize_public_dashboard/2`); without Pro every link
-  works. `ProWeb` stands in for `Lotus.Pro.Web` through a setting, so these
+  (`Lotus.Web.Pro.authorize_public_dashboard/2`), and what a link to no
+  dashboard says (`Lotus.Web.Pro.public_link_message/1`); without Pro every
+  link works. `ProWeb` stands in for `Lotus.Pro.Web` through a setting, so these
   tests run alone.
   """
   use Lotus.Web.Case, async: false
@@ -25,6 +26,9 @@ defmodule Lotus.Web.Pages.PublicDashboardAuthorizeTest do
         _ -> :allow
       end
     end
+
+    def public_link_message("turned-off"), do: "Its owner turned this link off"
+    def public_link_message(_token), do: nil
   end
 
   setup do
@@ -66,6 +70,13 @@ defmodule Lotus.Web.Pages.PublicDashboardAuthorizeTest do
 
     assert html =~ "This dashboard is not available"
     refute html =~ "Secret numbers"
+  end
+
+  test "a link Pro knows says what Pro says" do
+    {:ok, _live, html} = live(build_conn(), "/lotus/public/turned-off")
+
+    assert html =~ "Its owner turned this link off"
+    refute html =~ "Dashboard not found"
   end
 
   test "an unknown token is not asked about" do

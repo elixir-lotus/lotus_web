@@ -72,6 +72,21 @@ defmodule Lotus.Web.Pro do
   end
 
   @doc """
+  What to tell whoever opens a public link to no dashboard, given its
+  token: Lotus Pro's words when it knows the link (one its owner turned
+  off), or `nil` for the free version's "not found or no longer public".
+  """
+  @spec public_link_message(String.t()) :: String.t() | nil
+  def public_link_message(token) do
+    with true <- available?() and function_exported?(pro_web(), :public_link_message, 1),
+         message when is_binary(message) <- apply(pro_web(), :public_link_message, [token]) do
+      message
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
   The branding of a request, asked when the dashboard mounts and when a
   public dashboard is loaded. `info` has the `:user`, `:context` and
   `:scope` of the request, `:public` and, on a public dashboard, the

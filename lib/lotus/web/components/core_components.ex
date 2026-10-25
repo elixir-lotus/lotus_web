@@ -16,7 +16,8 @@ defmodule Lotus.Web.CoreComponents do
   # `:query_badges` and `:dashboard_badges` (on each tile and row),
   # `:query_editor_header` and `:dashboard_header` (by the name of a saved
   # query or dashboard, with the request as `:info`,
-  # `Lotus.Web.Pro.request_info/1`) and `:card_header`.
+  # `Lotus.Web.Pro.request_info/1`), `:public_link` (in the settings' public
+  # link box, with the dashboard and `:info`) and `:card_header`.
   @doc false
   attr(:name, :atom, required: true)
   attr(:slot_assigns, :map, default: %{})

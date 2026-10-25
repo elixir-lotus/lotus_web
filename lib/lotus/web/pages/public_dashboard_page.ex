@@ -115,9 +115,13 @@ defmodule Lotus.Web.PublicDashboardPage do
       %{token: token} ->
         case Lotus.get_dashboard_by_token(token) do
           nil ->
+            message =
+              Pro.public_link_message(token) ||
+                gettext("Dashboard not found or no longer public")
+
             {:noreply,
              socket
-             |> put_flash(:error, gettext("Dashboard not found or no longer public"))
+             |> put_flash(:error, message)
              |> assign(dashboard: empty_dashboard())}
 
           dashboard ->
