@@ -36,10 +36,9 @@ defmodule Lotus.Web.SchemaBuilder do
 
   defp default_schemas_for_database(database, data_repo) do
     if database.supports_schemas do
-      case Lotus.Config.data_sources()[data_repo] do
-        nil -> ["public"]
-        _repo -> Lotus.Source.Adapter.default_schemas(Lotus.Source.get_source!(data_repo))
-      end
+      if data_repo in Lotus.list_data_source_names(),
+        do: Lotus.Source.Adapter.default_schemas(Lotus.Source.get_source!(data_repo)),
+        else: ["public"]
     else
       Enum.map(database.schemas, & &1.name)
     end
