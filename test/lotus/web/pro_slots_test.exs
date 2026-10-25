@@ -33,6 +33,11 @@ defmodule Lotus.Web.ProSlotsTest do
     # The tenant of the request, or "mine" when the URL asks for it.
     def list_options(_kind, %{params: %{"owner" => "me"}}), do: [owner_id: "u1"]
     def list_options(_kind, %{params: %{"owner" => "shared"}}), do: [filter: :shared, page: 2]
+
+    def list_options(_kind, %{params: %{"home" => "only"}, list: :home}),
+      do: [tenant_id: "globex"]
+
+    def list_options(_kind, %{params: %{"home" => "only"}}), do: []
     def list_options(_kind, _info), do: [tenant_id: "acme"]
   end
 
@@ -104,11 +109,18 @@ defmodule Lotus.Web.ProSlotsTest do
                [filter: :shared]
     end
 
+    test "Pro tells the home page's lists from the palette's" do
+      {:ok, _live, html} = live(build_conn(), "/lotus?home=only")
+      assert html =~ "Globex revenue"
+      refute html =~ "Acme revenue"
+    end
+
     test "Pro fills the header and the list toolbar" do
       {:ok, _live, html} = live(build_conn(), "/lotus")
 
       assert html =~ ~s(data-pro-slot="nav")
       assert html =~ ~s(data-pro-slot="list_toolbar")
+      assert html =~ ~s(data-pro-slot="list_header")
     end
 
     test "Pro fills the query editor's header, given the request", %{acme: acme} do

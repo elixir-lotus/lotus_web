@@ -96,7 +96,7 @@ defmodule Lotus.Web.QueriesPage do
                 search={@query_search}
                 source={@query_source}
                 can_create={Authorization.allowed?(assigns, :create_query)}
-                toolbar={assigns |> Pro.request_info() |> Map.put(:tab, :queries)}
+                toolbar={assigns |> Pro.request_info() |> Map.merge(%{tab: :queries, list: :home})}
                 target={@myself}
               />
             <% end %>
@@ -108,7 +108,7 @@ defmodule Lotus.Web.QueriesPage do
                 search={@dashboard_search}
                 sort={@dashboard_sort}
                 can_create={Authorization.allowed?(assigns, :manage_dashboard)}
-                toolbar={assigns |> Pro.request_info() |> Map.put(:tab, :dashboards)}
+                toolbar={assigns |> Pro.request_info() |> Map.merge(%{tab: :dashboards, list: :home})}
                 target={@myself}
               />
             <% end %>
@@ -156,14 +156,20 @@ defmodule Lotus.Web.QueriesPage do
   attr(:target, :any, required: true)
 
   defp queries_list(assigns) do
-    assigns = assign(assigns, :pro_toolbar, Pro.render_slot(:list_toolbar, assigns.toolbar))
+    assigns =
+      assign(assigns,
+        pro_toolbar: Pro.render_slot(:list_toolbar, assigns.toolbar),
+        pro_header: Pro.render_slot(:list_header, assigns.toolbar)
+      )
 
     ~H"""
     <%= if not @any? do %>
       <div :if={@pro_toolbar} class="flex pt-6">{@pro_toolbar}</div>
+      <div :if={@pro_header} class="pt-6">{@pro_header}</div>
       <div class="py-12 text-center text-gray-500 dark:text-gray-400">
         <Icons.terminal class="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
-        <p><%= gettext("No saved queries yet.") %></p>
+        <p :if={!@pro_header}><%= gettext("No saved queries yet.") %></p>
+        <p :if={@pro_header}><%= gettext("No queries here yet.") %></p>
         <.link
           :if={@can_create}
           navigate={lotus_path(["queries", "new"])}
@@ -221,6 +227,8 @@ defmodule Lotus.Web.QueriesPage do
             <Icons.plus class="h-4 w-4" /> <%= gettext("New query") %>
           </.link>
         </div>
+
+        <div :if={@pro_header} class="pb-5">{@pro_header}</div>
 
         <p :if={@entries == []} class="py-12 text-center text-sm text-gray-500 dark:text-gray-400">
           <%= gettext("No query has these words.") %>
@@ -441,14 +449,20 @@ defmodule Lotus.Web.QueriesPage do
   attr(:target, :any, required: true)
 
   defp dashboards_list(assigns) do
-    assigns = assign(assigns, :pro_toolbar, Pro.render_slot(:list_toolbar, assigns.toolbar))
+    assigns =
+      assign(assigns,
+        pro_toolbar: Pro.render_slot(:list_toolbar, assigns.toolbar),
+        pro_header: Pro.render_slot(:list_header, assigns.toolbar)
+      )
 
     ~H"""
     <%= if not @any? do %>
       <div :if={@pro_toolbar} class="flex pt-6">{@pro_toolbar}</div>
+      <div :if={@pro_header} class="pt-6">{@pro_header}</div>
       <div class="py-12 text-center text-gray-500 dark:text-gray-400">
         <Icons.squares_2x2 class="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
-        <p><%= gettext("No dashboards yet.") %></p>
+        <p :if={!@pro_header}><%= gettext("No dashboards yet.") %></p>
+        <p :if={@pro_header}><%= gettext("No dashboards here yet.") %></p>
         <.link
           :if={@can_create}
           navigate={lotus_path(["dashboards", "new"])}
@@ -502,6 +516,8 @@ defmodule Lotus.Web.QueriesPage do
             <Icons.plus class="h-4 w-4" /> <%= gettext("New dashboard") %>
           </.link>
         </div>
+
+        <div :if={@pro_header} class="pb-5">{@pro_header}</div>
 
         <p :if={@dashboards == []} class="py-12 text-center text-sm text-gray-500 dark:text-gray-400">
           <%= gettext("No dashboard has these words.") %>
@@ -704,8 +720,10 @@ defmodule Lotus.Web.QueriesPage do
 
   # Every query and dashboard, or those Lotus Pro lists for the request
   # (`Lotus.Web.Pro.list_options/2`, which may read the URL's params).
+  # `:list` tells Pro these are the home page's lists, which it may narrow
+  # to the open collection; the palette and pickers list everything.
   defp load_lists(socket) do
-    info = Pro.request_info(socket.assigns)
+    info = socket.assigns |> Pro.request_info() |> Map.put(:list, :home)
     queries = Pro.list_queries(info)
 
     dashboards = Pro.list_dashboards(info, preload: [:cards])
