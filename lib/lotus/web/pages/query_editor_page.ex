@@ -61,6 +61,7 @@ defmodule Lotus.Web.QueryEditorPage do
             can_save={@can_save}
             can_delete={@can_delete}
             can_schedule={:schedules in (@features || []) and Authorization.allowed?(assigns, :manage_schedule)}
+            info={Lotus.Web.Pro.request_info(assigns)}
           />
 
           <div class="relative flex-1 sm:overflow-hidden">
@@ -227,7 +228,11 @@ defmodule Lotus.Web.QueryEditorPage do
           <%= @query.name || gettext("Untitled") %>
         <% end %>
       </h2>
-        <.pro_slot :if={@mode == :edit} name={:query_editor_header} slot_assigns={%{query: @query}} />
+        <.pro_slot
+          :if={@mode == :edit}
+          name={:query_editor_header}
+          slot_assigns={%{query: @query, info: @info}}
+        />
       </div>
       <div class="flex gap-3">
         <.link

@@ -13,7 +13,9 @@ defmodule Lotus.Web.CoreComponents do
   #
   # The slots: `:nav` (the header), `:list_toolbar` (above the lists of
   # queries and dashboards), `:query_badges` and `:dashboard_badges` (on each
-  # tile and row), `:query_editor_header` and `:card_header`.
+  # tile and row), `:query_editor_header` and `:dashboard_header` (by the
+  # name of a saved query or dashboard, with the request as `:info`,
+  # `Lotus.Web.Pro.request_info/1`) and `:card_header`.
   @doc false
   attr(:name, :atom, required: true)
   attr(:slot_assigns, :map, default: %{})
