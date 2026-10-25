@@ -11,6 +11,12 @@ defmodule Lotus.Web.Pages.QueriesPageTest do
 
       assert has_element?(live, "#new-item-dropdown button", "New")
     end
+
+    test "the mark goes home within the LiveView, as the nav's links do" do
+      {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
+
+      assert has_element?(live, ~s|nav a[title="Lotus Web"][data-phx-link=redirect]|)
+    end
   end
 
   describe "empty state" do
@@ -227,6 +233,42 @@ defmodule Lotus.Web.Pages.QueriesPageTest do
 
       [_, id] = Regex.run(~r{/dashboards/(\d+)$}, to)
       assert Lotus.get_dashboard!(String.to_integer(id)).name == "Sales (copy)"
+    end
+  end
+
+  describe "the views the viewer chose" do
+    setup do
+      query_fixture(%{name: "Users"})
+      dashboard_fixture(%{name: "Sales"})
+      :ok
+    end
+
+    defp mount_with_views(views, path \\ "/lotus") do
+      {:ok, live, _html} = build_conn() |> put_connect_params(%{"views" => views}) |> live(path)
+      live
+    end
+
+    test "each list opens in the view its browser keeps, with no switch after it shows" do
+      live = mount_with_views(%{"queries" => "list", "dashboards" => "list"})
+
+      assert has_element?(live, "#queries-list[data-view=list]")
+      assert has_element?(live, "#queries-table")
+      refute has_element?(live, "#queries-gallery")
+
+      live =
+        mount_with_views(%{"queries" => "list", "dashboards" => "list"}, "/lotus?tab=dashboards")
+
+      assert has_element?(live, "#dashboards-list[data-view=list]")
+    end
+
+    test "a list the browser keeps no view for, or an odd value, opens as a gallery" do
+      for views <- [%{}, %{"queries" => "grid"}, %{"queries" => "tiles"}, "list", ["list"]] do
+        live = mount_with_views(views)
+        assert has_element?(live, "#queries-list[data-view=grid]"), inspect(views)
+      end
+
+      live = mount_with_views(%{"queries" => "list"}, "/lotus?tab=dashboards")
+      assert has_element?(live, "#dashboards-list[data-view=grid]")
     end
   end
 

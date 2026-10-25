@@ -359,6 +359,13 @@
 
 ### Fixed
 
+- **A list opens as the viewer left it, without a flash of the other
+  view.** Queries, dashboards and reports opened as a gallery and switched
+  to a table once the browser told the page which one the viewer had
+  chosen. The browser now sends the choice as the page connects, so the
+  first render is right; and the logo goes home within the LiveView, as the
+  header's links do, rather than loading the page again.
+
 - **A card's Data stays open.** Opening the Data of a card that was not
   selected closed it again as the click selected the card. From Fude 0.3.
 

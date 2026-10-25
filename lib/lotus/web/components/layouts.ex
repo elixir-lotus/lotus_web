@@ -25,27 +25,29 @@ defmodule Lotus.Web.Layouts do
   attr(:branding, Branding, required: true)
 
   # The branding's logo, or its name; the Lotus mark and wordmark for Lotus.
+  # It goes home within the LiveView, as the nav's links do, so the page
+  # comes as the viewer left it rather than rendered afresh first.
   def logo(%{branding: %Branding{logo: url}} = assigns) when is_binary(url) do
     ~H"""
-    <a href={lotus_path("")} title={@branding.product_name} class="flex items-center gap-3">
+    <.link navigate={lotus_path("")} title={@branding.product_name} class="flex items-center gap-3">
       <img src={@branding.logo} alt={@branding.product_name} class="h-10 w-auto" />
-    </a>
+    </.link>
     """
   end
 
   def logo(%{branding: %Branding{product_name: name}} = assigns) when name != "Lotus" do
     ~H"""
-    <a href={lotus_path("")} title={@branding.product_name} class="flex items-center gap-3">
+    <.link navigate={lotus_path("")} title={@branding.product_name} class="flex items-center gap-3">
       <span class="text-lg font-semibold text-gray-950 dark:text-gray-50">
         {@branding.product_name}
       </span>
-    </a>
+    </.link>
     """
   end
 
   def logo(assigns) do
     ~H"""
-    <a href={lotus_path("")} title="Lotus Web" class="flex items-center gap-3">
+    <.link navigate={lotus_path("")} title="Lotus Web" class="flex items-center gap-3">
       <svg
         class="h-10 w-auto text-[rgb(var(--lotus-logo-ink))] dark:text-[rgb(var(--lotus-logo-ink-dark))]"
         viewBox="0 0 112 112"
@@ -69,7 +71,7 @@ defmodule Lotus.Web.Layouts do
         </g>
       </svg>
       <span class="lotus-wordmark text-gray-950 dark:text-gray-50">LO<span>TUS</span></span>
-    </a>
+    </.link>
     """
   end
 

@@ -6,6 +6,7 @@ import { Kotoba } from "kotoba";
 import { Masu } from "masu";
 import { Fude, registerMap } from "fude";
 import { Hakushi } from "hakushi";
+import { listViews } from "./lib/settings";
 
 // Fude's maps, served by Lotus.Web.Assets: fetched when a map chart first draws.
 for (const name of ["world", "us-states"]) {
@@ -165,8 +166,13 @@ const livePath = document
 
 const liveSocket = new LiveView.LiveSocket(livePath, Phoenix.Socket, {
   transport: liveTran === "longpoll" ? Phoenix.LongPoll : WebSocket,
-  // The viewer's time zone: a new schedule runs in it.
-  params: { _csrf_token: csrfToken, time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+  // The viewer's time zone (a new schedule runs in it) and the lists' views
+  // they chose, read again at each mount, so a list opens as they left it.
+  params: () => ({
+    _csrf_token: csrfToken,
+    time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    views: listViews(),
+  }),
   hooks: hooks,
 });
 

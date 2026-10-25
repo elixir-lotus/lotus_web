@@ -26,6 +26,7 @@ defmodule Lotus.Web.DashboardLive do
     socket =
       socket
       |> assign(:assets_stale?, assets_stale?)
+      |> assign(:list_views, list_views(socket))
       |> assign(params: params, page: page)
       |> assign(live_path: live_path, live_transport: live_transport)
       |> assign(:page_title, page_title)
@@ -55,6 +56,25 @@ defmodule Lotus.Web.DashboardLive do
       |> page.comp.handle_mount()
 
     {:ok, socket}
+  end
+
+  # The lists' views (a gallery or a table) the viewer chose, which the
+  # browser keeps and sends at each mount, so a list renders as they left
+  # it instead of switching after it shows. Before the socket connects,
+  # none.
+  @lists %{"queries" => :queries, "dashboards" => :dashboards, "schedules" => :schedules}
+
+  defp list_views(socket) do
+    case connected?(socket) && get_connect_params(socket)["views"] do
+      views when is_map(views) ->
+        for {list, "list"} <- views,
+            Map.has_key?(@lists, list),
+            into: %{},
+            do: {@lists[list], :list}
+
+      _none ->
+        %{}
+    end
   end
 
   # "Lotus Dashboard" names the product the branding gives.
