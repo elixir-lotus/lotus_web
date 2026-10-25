@@ -348,7 +348,7 @@ defmodule Lotus.Web.QueryEditorPage do
   def handle_params(params, _uri, socket) do
     case socket.assigns.page do
       %{mode: :edit, id: id} ->
-        case Lotus.get_query(id) do
+        case Lotus.get_query(id, Actor.opts(socket.assigns)) do
           nil ->
             {:noreply,
              socket
@@ -1757,7 +1757,8 @@ defmodule Lotus.Web.QueryEditorPage do
   # carries the user's unsaved changes. Returns the stored query, or nil for a
   # new one.
   defp authorize_save(%{assigns: %{page: %{mode: :edit, id: id}}} = socket) do
-    with %Query{} = query <- Lotus.get_query(id) || {:error, :not_found},
+    with %Query{} = query <-
+           Lotus.get_query(id, Actor.opts(socket.assigns)) || {:error, :not_found},
          :allow <- Authorization.authorize(socket.assigns, :update_query, query) do
       {:ok, query}
     end
@@ -2208,7 +2209,7 @@ defmodule Lotus.Web.QueryEditorPage do
   # Only a saved query's page has one to delete. The new query page has no id,
   # so a crafted event there does nothing.
   defp delete_query(%{assigns: %{page: %{mode: :edit, id: query_id}}} = socket) do
-    case Lotus.get_query(query_id) do
+    case Lotus.get_query(query_id, Actor.opts(socket.assigns)) do
       nil ->
         {:noreply,
          socket

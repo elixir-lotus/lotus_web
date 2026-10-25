@@ -612,7 +612,7 @@ defmodule Lotus.Web.DashboardEditorPage do
         end
 
       %{mode: :edit, id: id} ->
-        with %{} = dashboard <- load_dashboard(id),
+        with %{} = dashboard <- load_dashboard(id, Actor.opts(socket.assigns)),
              :allow <- Authorization.authorize(socket.assigns, :view_dashboard, dashboard) do
           filter_values = extract_filter_values(params, dashboard.filters)
           report_view(socket, dashboard)
@@ -1137,7 +1137,7 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   defp do_enable_sharing(socket) do
     with %{mode: :edit, id: id} <- socket.assigns.page,
-         %{} = existing <- Lotus.get_dashboard(id),
+         %{} = existing <- Lotus.get_dashboard(id, Actor.opts(socket.assigns)),
          {:ok, saved} <- Lotus.enable_public_sharing(existing, Actor.opts(socket.assigns)) do
       sharing_changed(socket, saved.public_token, gettext("Public sharing enabled"))
     else
@@ -1147,7 +1147,7 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   defp do_disable_sharing(socket) do
     with %{mode: :edit, id: id} <- socket.assigns.page,
-         %{} = existing <- Lotus.get_dashboard(id),
+         %{} = existing <- Lotus.get_dashboard(id, Actor.opts(socket.assigns)),
          {:ok, saved} <- Lotus.disable_public_sharing(existing, Actor.opts(socket.assigns)) do
       sharing_changed(socket, saved.public_token, gettext("Public sharing disabled"))
     else
@@ -1259,7 +1259,7 @@ defmodule Lotus.Web.DashboardEditorPage do
   end
 
   defp write_dashboard(%{mode: :edit, id: id}, attrs, dashboard, opts) do
-    with %{} = existing <- Lotus.get_dashboard(id) || {:error, :not_found},
+    with %{} = existing <- Lotus.get_dashboard(id, opts) || {:error, :not_found},
          {:ok, saved} <- Lotus.update_dashboard(existing, attrs, opts),
          :ok <- sync_contents(saved, dashboard, opts),
          do: {:ok, saved}
@@ -1274,7 +1274,7 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   defp do_delete_dashboard(socket) do
     with %{mode: :edit, id: id} <- socket.assigns.page,
-         %{} = dashboard <- Lotus.get_dashboard(id),
+         %{} = dashboard <- Lotus.get_dashboard(id, Actor.opts(socket.assigns)),
          {:ok, _} <- Lotus.delete_dashboard(dashboard, Actor.opts(socket.assigns)) do
       {:noreply,
        socket
@@ -1773,7 +1773,7 @@ defmodule Lotus.Web.DashboardEditorPage do
   defp authorize_source_query(socket, query_id) do
     query =
       Enum.find(socket.assigns.available_queries, &(&1.id == query_id)) ||
-        Lotus.get_query(query_id)
+        Lotus.get_query(query_id, Actor.opts(socket.assigns))
 
     case query do
       nil ->
@@ -1823,8 +1823,8 @@ defmodule Lotus.Web.DashboardEditorPage do
     {:noreply, assign(socket, dashboard: dashboard)}
   end
 
-  defp load_dashboard(id) do
-    case Lotus.get_dashboard(id) do
+  defp load_dashboard(id, opts) do
+    case Lotus.get_dashboard(id, opts) do
       nil ->
         nil
 
@@ -1881,7 +1881,7 @@ defmodule Lotus.Web.DashboardEditorPage do
 
     query =
       if query_id do
-        Lotus.get_query(query_id)
+        Lotus.get_query(query_id, Actor.opts(socket.assigns))
       else
         nil
       end

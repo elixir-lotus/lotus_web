@@ -68,10 +68,11 @@ defmodule Lotus.Web.ExportController do
     user = Resolver.call_with_fallback(resolver, :resolve_user, [conn])
     access = Resolver.call_with_fallback(resolver, :resolve_access, [user])
     source = export_params["repo"]
+    actor = Actor.resolve(resolver, user)
 
     with :allow <- Authorization.decide(resolver, user, access, :query, source),
          :allow <- Authorization.decide(resolver, user, access, :export, source),
-         %Query{} = query <- build_query(export_params) do
+         %Query{} = query <- build_query(export_params, actor) do
       filename =
         export_params
         |> Map.get("filename", "export.csv")
@@ -81,7 +82,7 @@ defmodule Lotus.Web.ExportController do
       |> put_resp_content_type("text/csv")
       |> put_resp_header("content-disposition", ~s(attachment; filename="#{filename}"))
       |> send_chunked(200)
-      |> stream_export(query, export_params, Actor.resolve(resolver, user))
+      |> stream_export(query, export_params, actor)
     else
       {:deny, reason} ->
         conn
@@ -110,11 +111,11 @@ defmodule Lotus.Web.ExportController do
 
   defp sanitize_filename(_), do: "export.csv"
 
-  defp build_query(%{"query_id" => query_id}) when not is_nil(query_id) do
-    Lotus.get_query(query_id)
+  defp build_query(%{"query_id" => query_id}, actor) when not is_nil(query_id) do
+    Lotus.get_query(query_id, Actor.opts(actor))
   end
 
-  defp build_query(%{"query_attrs" => attrs} = params) do
+  defp build_query(%{"query_attrs" => attrs} = params, _actor) do
     # Build query struct from attributes (for unsaved queries)
     %Query{
       statement: attrs["statement"],
@@ -124,7 +125,7 @@ defmodule Lotus.Web.ExportController do
     }
   end
 
-  defp build_query(_), do: nil
+  defp build_query(_params, _actor), do: nil
 
   defp build_variables(variables) when is_list(variables) do
     Enum.map(variables, fn var ->
