@@ -96,7 +96,7 @@ defmodule Lotus.Web.QueriesPage do
                 search={@query_search}
                 source={@query_source}
                 can_create={Authorization.allowed?(assigns, :create_query)}
-                toolbar={assigns |> Pro.request_info() |> Map.put(:tab, :queries)}
+                toolbar={assigns |> Pro.request_info() |> Map.merge(%{tab: :queries, list: :home})}
                 target={@myself}
               />
             <% end %>
@@ -108,7 +108,7 @@ defmodule Lotus.Web.QueriesPage do
                 search={@dashboard_search}
                 sort={@dashboard_sort}
                 can_create={Authorization.allowed?(assigns, :manage_dashboard)}
-                toolbar={assigns |> Pro.request_info() |> Map.put(:tab, :dashboards)}
+                toolbar={assigns |> Pro.request_info() |> Map.merge(%{tab: :dashboards, list: :home})}
                 target={@myself}
               />
             <% end %>
@@ -720,8 +720,10 @@ defmodule Lotus.Web.QueriesPage do
 
   # Every query and dashboard, or those Lotus Pro lists for the request
   # (`Lotus.Web.Pro.list_options/2`, which may read the URL's params).
+  # `:list` tells Pro these are the home page's lists, which it may narrow
+  # to the open collection; the palette and pickers list everything.
   defp load_lists(socket) do
-    info = Pro.request_info(socket.assigns)
+    info = socket.assigns |> Pro.request_info() |> Map.put(:list, :home)
     queries = Pro.list_queries(info)
 
     dashboards = Pro.list_dashboards(info, preload: [:cards])

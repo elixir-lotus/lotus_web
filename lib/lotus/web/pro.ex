@@ -121,7 +121,7 @@ defmodule Lotus.Web.Pro do
 
   @doc """
   The options Lotus Pro adds to a list of `:queries` or `:dashboards` for a
-  request (`request_info/1`): `:owner_id` and `:tenant_id`, as
+  request (`request_info/1`; the home page's lists add `list: :home`): `:owner_id` and `:tenant_id`, as
   `Lotus.Storage.list_queries_by/1` and `Lotus.list_dashboards_by/1` take
   them, for a tenant's content or "mine", and `:filter`, which Lotus hands
   to Pro's `:list_content` plug ("shared with me"). Other keys are ignored.

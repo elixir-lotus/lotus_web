@@ -33,6 +33,11 @@ defmodule Lotus.Web.ProSlotsTest do
     # The tenant of the request, or "mine" when the URL asks for it.
     def list_options(_kind, %{params: %{"owner" => "me"}}), do: [owner_id: "u1"]
     def list_options(_kind, %{params: %{"owner" => "shared"}}), do: [filter: :shared, page: 2]
+
+    def list_options(_kind, %{params: %{"home" => "only"}, list: :home}),
+      do: [tenant_id: "globex"]
+
+    def list_options(_kind, %{params: %{"home" => "only"}}), do: []
     def list_options(_kind, _info), do: [tenant_id: "acme"]
   end
 
@@ -102,6 +107,12 @@ defmodule Lotus.Web.ProSlotsTest do
     test "Pro's filter reaches core, and keys it does not know do not" do
       assert Lotus.Web.Pro.list_options(:queries, %{params: %{"owner" => "shared"}}) ==
                [filter: :shared]
+    end
+
+    test "Pro tells the home page's lists from the palette's" do
+      {:ok, _live, html} = live(build_conn(), "/lotus?home=only")
+      assert html =~ "Globex revenue"
+      refute html =~ "Acme revenue"
     end
 
     test "Pro fills the header and the list toolbar" do
