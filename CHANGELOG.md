@@ -15,6 +15,8 @@
 
 - **Pro on public links.** A `:public_link` slot in the dashboard settings' public link box (given the dashboard and the request as `:info`), for Lotus Pro's link expiry; and `Lotus.Web.Pro.public_link_message/1`, Pro's words for a link to no dashboard (one its owner turned off) in place of "not found or no longer public". A public link that does not show its dashboard says why in the page, with a line on asking for a new link, rather than "This dashboard has no cards."
 
+- **Pro's list filter.** `Lotus.Web.Pro.list_options/2` lets through `:filter` as well as `:owner_id` and `:tenant_id`, and Lotus hands it to the `:list_content` middleware (elixir-lotus/lotus#377): Lotus Pro's "Shared with me".
+
 - **The lists' Pro toolbar sits by the search.** `:list_toolbar` now renders in the row of a list of queries or dashboards, beside its search (and above the empty state), given the request and its `:tab`, instead of in a row of its own under the tabs.
 
 - **A slot by a dashboard's name.** Lotus Pro fills `:dashboard_header`, by a saved dashboard's name, as it fills `:query_editor_header` by a saved query's. Both are given the request (`:info`: the viewer's `:user`, `:context`, `:scope` and `:params`), so what Pro shows there can depend on who is looking.
