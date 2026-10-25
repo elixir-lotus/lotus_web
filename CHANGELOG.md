@@ -13,7 +13,7 @@
 
 ### Added
 
-- **Pro on public links.** A `:public_link` slot in the dashboard settings' public link box (given the dashboard and the request as `:info`), for Lotus Pro's link expiry; and `Lotus.Web.Pro.public_link_message/1`, Pro's words for a link to no dashboard (one its owner turned off) in place of "not found or no longer public".
+- **Pro on public links.** A `:public_link` slot in the dashboard settings' public link box (given the dashboard and the request as `:info`), for Lotus Pro's link expiry; and `Lotus.Web.Pro.public_link_message/1`, Pro's words for a link to no dashboard (one its owner turned off) in place of "not found or no longer public". A public link that does not show its dashboard says why in the page, with a line on asking for a new link, rather than "This dashboard has no cards."
 
 - **The lists' Pro toolbar sits by the search.** `:list_toolbar` now renders in the row of a list of queries or dashboards, beside its search (and above the empty state), given the request and its `:tab`, instead of in a row of its own under the tabs.
 
