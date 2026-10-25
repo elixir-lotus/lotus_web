@@ -11,6 +11,7 @@ defmodule Lotus.Web.ExportController do
   alias Lotus.Web.Actor
   alias Lotus.Web.Authorization
   alias Lotus.Web.Resolver
+  alias Lotus.Web.Telemetry
   alias Lotus.Storage.Query
 
   plug(:fetch_query_params)
@@ -137,7 +138,13 @@ defmodule Lotus.Web.ExportController do
 
   # The download runs in an `[:lotus_web, :export]` span (`Lotus.Web.Telemetry`).
   defp stream_export(conn, query, export_params, {context, _scope} = actor) do
-    metadata = %{query: query, source: export_params["repo"], format: :csv, context: context}
+    metadata = %{
+      query: query,
+      source: export_params["repo"],
+      format: :csv,
+      context: context,
+      client: Telemetry.client(conn)
+    }
 
     :telemetry.span([:lotus_web, :export], metadata, fn ->
       {conn, bytes, status} = stream_chunks(conn, query, export_params, actor)

@@ -3,7 +3,7 @@ defmodule Lotus.Web.DashboardLive do
 
   alias Lotus.Web.{Actor, Assets, Authorization, Branding}
   alias Lotus.Web.{DashboardEditorPage, PublicDashboardPage, QueriesPage, QueryEditorPage}
-  alias Lotus.Web.SchedulesPage
+  alias Lotus.Web.{SchedulesPage, Telemetry}
 
   @impl Phoenix.LiveView
   def mount(params, session, socket) do
@@ -37,6 +37,7 @@ defmodule Lotus.Web.DashboardLive do
       |> assign(:context, context)
       |> assign(:scope, scope)
       |> assign(:actor, actor)
+      |> assign(:client, Telemetry.client(socket))
       |> assign(:features, features)
       |> assign(:card_concurrency, card_concurrency)
       |> assign(:theme, Map.get(session, "theme", :lotus))

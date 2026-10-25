@@ -13,6 +13,20 @@
 
 ### Added
 
+- **Telemetry an audit log can rest on.** Opening a saved query emits
+  `[:lotus_web, :query, :view]`, and a public link that opens nothing (no
+  dashboard has it, or Lotus Pro refused it) emits
+  `[:lotus_web, :public_link, :refused]`. Views, exports and AI actions carry
+  the `:client`: the visitor's address and browser, from the request or,
+  when the host's LiveView socket shares them, from its `connect_info`. See
+  `Lotus.Web.Telemetry`.
+
+- **Files from Lotus Pro.** `GET /pro/download?token=…` sends a file a
+  Lotus Pro page makes, such as the audit log's CSV: the page signs what to
+  make with `Lotus.Web.Pro.download_path/3`, and the route resolves the user
+  as the CSV export does and asks `Lotus.Web.Pro.download/3` as them. The
+  link is good for five minutes.
+
 - **A slot above the lists.** Lotus Pro fills `:list_header`, between a list's search row and its queries or dashboards (and above an empty list, which then reads "No queries here yet."), given the request and its `:tab`, as `:list_toolbar` is: Pro's collections draw their breadcrumb and folders there. The home page's lists ask `Lotus.Web.Pro.list_options/2` with `list: :home`, so Pro narrows them to the open collection while the palette and pickers list everything.
 
 - **Pro on public links.** A `:public_link` slot in the dashboard settings' public link box (given the dashboard and the request as `:info`), for Lotus Pro's link expiry; and `Lotus.Web.Pro.public_link_message/1`, Pro's words for a link to no dashboard (one its owner turned off) in place of "not found or no longer public". A public link that does not show its dashboard says why in the page, with a line on asking for a new link, rather than "This dashboard has no cards."
