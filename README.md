@@ -296,7 +296,23 @@ defp persist_user_locale(conn, _opts) do
 end
 ```
 
-To contribute translations, submit a PR with updates to `priv/gettext/<locale>/LC_MESSAGES/lotus.po`.
+Lotus Web ships English and French. Your app adds a language, or words
+Lotus's English its own way, in its own Gettext backend:
+
+```elixir
+# config/config.exs
+config :lotus_web, gettext: MyAppWeb.Gettext
+```
+
+```bash
+mix lotus_web.gettext                         # copies Lotus's strings: priv/gettext/lotus_web.pot
+mix gettext.merge priv/gettext --locale es    # makes es/LC_MESSAGES/lotus_web.po to translate
+```
+
+Run `mix lotus_web.gettext` again after upgrading Lotus to bring in new
+strings. Your app's translation is used wherever Lotus has none of its own;
+see `Lotus.Web.Translations`. To share a language with every app, send a PR
+with `priv/gettext/<locale>/LC_MESSAGES/default.po`.
 
 ## Security
 

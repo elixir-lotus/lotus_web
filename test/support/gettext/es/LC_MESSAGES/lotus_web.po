@@ -1,0 +1,15 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Queries"
+msgstr "Consultas"
+
+msgid "Dashboards"
+msgstr "Paneles"
+
+msgid "1 recipient"
+msgid_plural "%{count} recipients"
+msgstr[0] "1 destinatario"
+msgstr[1] "%{count} destinatarios"

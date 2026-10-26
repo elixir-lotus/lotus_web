@@ -1,0 +1,6 @@
+msgid ""
+msgstr ""
+"Language: fr\n"
+
+msgid "Queries"
+msgstr "Mes requêtes"

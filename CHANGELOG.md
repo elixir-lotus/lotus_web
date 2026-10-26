@@ -13,6 +13,16 @@
 
 ### Added
 
+- **Your app translates Lotus.** `config :lotus_web, gettext: MyAppWeb.Gettext`
+  points Lotus at your app's Gettext backend, whose `lotus_web` domain
+  (and `lotus_pro`, for Lotus Pro) adds a language Lotus does not ship, or
+  words Lotus's English your own way. `mix lotus_web.gettext` copies Lotus's
+  strings into `priv/gettext/lotus_web.pot` for `mix gettext.merge`, and
+  your app's `mix gettext.extract` leaves them alone. The locale Lotus
+  shows is set for the whole process, so Lotus Pro's strings follow it, and
+  a workspace may pick any language your app has. See
+  `Lotus.Web.Translations`.
+
 - **Share links Lotus Pro gates.** Pro's `authorize_public_dashboard/2`
   may now answer `{:ask, ask}`: the public page shows Pro's form (a
   password, an email address) instead of the dashboard, and sends the
