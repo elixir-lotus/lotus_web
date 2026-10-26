@@ -59,6 +59,12 @@ defmodule Lotus.Web.TokenizerConformanceTest do
     "SELECT '😀', `😀` -- 😀\n FROM t"
   ]
 
+  @update """
+  Write the fixture again, then make the editor's tokenizer agree (npm test):
+
+      UPDATE_TOKENIZER_FIXTURE=1 mix test test/lotus/web/tokenizer_conformance_test.exs
+  """
+
   @random_cases 400
   @alphabet [
     "'",
@@ -108,19 +114,32 @@ defmodule Lotus.Web.TokenizerConformanceTest do
   ]
 
   test "the fixture is what Lotus makes of the corpus" do
-    fixture = build() |> Jason.encode!(pretty: true)
+    # As JSON has it, so it compares with the committed file.
+    built = build() |> Jason.encode!() |> Jason.decode!()
 
     if System.get_env("UPDATE_TOKENIZER_FIXTURE") do
       File.mkdir_p!(Path.dirname(@fixture))
-      File.write!(@fixture, fixture <> "\n")
+      File.write!(@fixture, Jason.encode!(built, pretty: true) <> "\n")
     end
 
-    assert File.read!(@fixture) == fixture <> "\n", """
-    Lotus reads SQL differently from the editor's fixture. Write it again,
-    then make the editor's tokenizer agree (npm test):
+    committed = @fixture |> File.read!() |> Jason.decode!()
 
-        UPDATE_TOKENIZER_FIXTURE=1 mix test #{Path.relative_to_cwd(__ENV__.file)}
+    assert committed["profiles"] == built["profiles"], """
+    Lotus's lexical profiles changed. #{@update}
     """
+
+    for {was, now} <- Enum.zip(committed["cases"], built["cases"]) do
+      assert was == now, """
+      Lotus reads #{inspect(now["text"])} (#{now["dialect"]}) differently:
+
+          fixture: #{inspect(was["regions"])}
+          Lotus:   #{inspect(now["regions"])}
+
+      #{@update}
+      """
+    end
+
+    assert length(committed["cases"]) == length(built["cases"]), @update
   end
 
   defp build do
