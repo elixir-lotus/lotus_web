@@ -397,6 +397,13 @@
 
 ### Changed
 
+- **The results grid's filters are in the Results header row.** Add
+  filter, and the chips of the filters set, sit at the end of the row that
+  says "Results", the status and the row count, instead of on a line of
+  their own above the grid: the rows get that line (44px) back. Chips that
+  do not fit wrap under the row's text. The bar is Masu's own, moved there
+  in the browser, so its clicks, keys and menus are as before.
+
 - **The editor opens with a source's tables, and describes their columns
   as statements use them.** It no longer describes every table when it
   opens, so a database with hundreds of tables opens at once: the
