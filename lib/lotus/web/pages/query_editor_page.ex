@@ -20,6 +20,7 @@ defmodule Lotus.Web.QueryEditorPage do
   alias Lotus.Web.Queries.AiSteps
   alias Lotus.Web.Queries.DropdownOptionsModal
   alias Lotus.Web.Queries.MasuResults
+  alias Lotus.Web.Queries.References
   alias Lotus.Web.Queries.SchemaDiagramComponent
   alias Lotus.Web.Queries.SchemaExplorerComponent
   alias Lotus.Web.Queries.VariableSettingsComponent
@@ -174,6 +175,7 @@ defmodule Lotus.Web.QueryEditorPage do
                   is_saved_query={@page.mode == :edit}
                   results_run={Map.get(assigns, :results_run, 0)}
                   filter_operators={Map.get(assigns, :filter_operators, [])}
+                  references={@result_references}
                   visualization_config={@visualization_config}
                   visualization_view_mode={@visualization_view_mode}
                   visualization_visible={@left_drawer == :visualization}
@@ -374,15 +376,26 @@ defmodule Lotus.Web.QueryEditorPage do
         end
 
       %{mode: :new} ->
-        query = %Query{
-          name: "",
-          description: "",
-          statement: "",
-          data_source: socket.assigns.default_source,
-          variables: []
-        }
+        case follow_query(socket, params) do
+          {:ok, query, values} ->
+            {:noreply,
+             socket
+             |> assign(variable_values: values)
+             |> assign_query_changeset(query)
+             |> maybe_update_editor_schema(query.data_source)
+             |> maybe_auto_run_query()}
 
-        {:noreply, assign_query_changeset(socket, query)}
+          :error ->
+            query = %Query{
+              name: "",
+              description: "",
+              statement: "",
+              data_source: socket.assigns.default_source,
+              variables: []
+            }
+
+            {:noreply, assign_query_changeset(socket, query)}
+        end
     end
   end
 
@@ -1272,8 +1285,15 @@ defmodule Lotus.Web.QueryEditorPage do
     {:noreply, update(socket, :ai_conversation, &put_ai_message(&1, index, :preview, preview))}
   end
 
-  def handle_async(:query_execution, {:ok, {:ok, result}}, socket) do
-    {:noreply, assign(socket, result: result, error: nil, running: false)}
+  def handle_async(:query_execution, {:ok, {:ok, result, {key, references}}}, socket) do
+    {:noreply,
+     assign(socket,
+       result: result,
+       error: nil,
+       running: false,
+       result_references: references,
+       references_key: key
+     )}
   end
 
   def handle_async(:query_execution, {:ok, {:error, error_msg}}, socket) do
@@ -1370,6 +1390,11 @@ defmodule Lotus.Web.QueryEditorPage do
      |> execute_query(query_to_run(socket.assigns))}
   end
 
+  # A foreign key's cell in the results: its row opens in a new tab.
+  def update(%{action: :follow_reference, column: column, value: value}, socket) do
+    {:ok, follow_reference(socket, column, value)}
+  end
+
   def update(assigns, socket) do
     {:ok, assign(socket, assigns)}
   end
@@ -1439,6 +1464,10 @@ defmodule Lotus.Web.QueryEditorPage do
       # the part of the text the last run ran, when it was not all of it.
       run_scope: :all,
       ran_statement: nil,
+      # The foreign keys of the result's columns, and the run they are of
+      # ({source, statement, search path}).
+      result_references: %{},
+      references_key: nil,
       optional_variable_names: MapSet.new(),
       detected_variables: [],
       variable_form: to_form(%{}, as: "variables"),
@@ -1718,14 +1747,83 @@ defmodule Lotus.Web.QueryEditorPage do
     # The results grid keeps the rows it shows while the query runs.
     result = socket.assigns[:result]
 
+    # The foreign keys of the result's columns, found once for a statement.
+    key = {repo, query.statement, query.search_path}
+    known = if socket.assigns[:references_key] == key, do: socket.assigns.result_references
+
+    references_opts =
+      Keyword.take(opts, [:context, :scope, :search_path])
+
     socket
     |> assign(running: true, error: nil, result: result)
     # The filters the source runs, which the results grid offers.
     |> assign(filter_operators: Lotus.Source.supported_filter_operators(repo))
     |> start_async(:query_execution, fn ->
-      Lotus.run_query(query, opts)
+      with {:ok, result} <- Lotus.run_query(query, opts) do
+        references =
+          known ||
+            References.for_result(repo, query.statement, result.columns, references_opts)
+
+        {:ok, result, {key, references}}
+      end
     end)
   end
+
+  # The row a foreign key references opens in a new query, in a new tab, for a
+  # person who may query the source. The new query's page builds the
+  # statement again from what the source describes (`follow_query/2`).
+  defp follow_reference(socket, column, value) do
+    query = query_to_run(socket.assigns)
+    repo = source_or_default(query.data_source, socket.assigns)
+
+    with %{} = ref <- Map.get(socket.assigns.result_references, column),
+         text when is_binary(text) <- References.value_text(value),
+         :allow <- Authorization.authorize(socket.assigns, :query, repo) do
+      path =
+        lotus_path(["queries", "new"], %{
+          "follow_source" => repo,
+          "follow_schema" => ref.schema,
+          "follow_table" => ref.table,
+          "follow_column" => ref.column,
+          "follow_value" => text
+        })
+
+      push_event(socket, "open-blank", %{location: path})
+    else
+      {:deny, reason} -> deny(socket, reason)
+      _ -> socket
+    end
+  end
+
+  # A new query that opens a referenced row (`?follow_table=…`): for a source
+  # the person may browse and query, a table and column the source describes
+  # to them.
+  defp follow_query(
+         socket,
+         %{
+           "follow_source" => source,
+           "follow_table" => table,
+           "follow_column" => column,
+           "follow_value" => value
+         } = params
+       )
+       when is_binary(source) and is_binary(table) and is_binary(column) and is_binary(value) do
+    if source in socket.assigns.data_source_names and
+         Authorization.allowed?(socket.assigns, :query, source) do
+      References.lookup(
+        source,
+        params["follow_schema"],
+        table,
+        column,
+        value,
+        Actor.opts(socket.assigns)
+      )
+    else
+      :error
+    end
+  end
+
+  defp follow_query(_socket, _params), do: :error
 
   defp update_variable_state(socket, ordered_vars, names, extra_params) do
     params =

@@ -5536,3 +5536,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Format the query, in the editor"
 msgstr ""
+
+#: lib/lotus/web/queries/masu_results.ex
+#, elixir-autogen, elixir-format
+msgid "Open %{table} row"
+msgstr ""
+
+#: lib/lotus/web/queries/masu_results.ex
+#, elixir-autogen, elixir-format
+msgid "This cell is empty: it references no row"
+msgstr ""

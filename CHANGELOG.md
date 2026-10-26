@@ -13,6 +13,17 @@
 
 ### Added
 
+- **Follow a foreign key.** In the results of a plain select of one table
+  (`SELECT <columns> FROM <table>`, then a WHERE, ORDER BY, LIMIT or
+  OFFSET, each column a bare name or `*`), the menu of a foreign key's
+  cell (right click, or Shift+F10) has "Open <table> row": the referenced
+  row opens in a new tab, as a new query `SELECT * FROM <table> WHERE
+  <column> = {{column}}` with the cell's value in the variable, run. Lotus
+  builds that statement again from what the source describes to the
+  person, and only for a source they may query. Of a join, a union, a
+  grouping or aliased columns, no cell offers it: Lotus cannot tell which
+  table a column comes from there.
+
 - **Format SQL.** The editor's Format button (and ⌘⇧F / Ctrl+Shift+F, or
   Shift+Alt+F in the editor) now formats SQL too, with
   [sql-formatter](https://github.com/sql-formatter-org/sql-formatter) in

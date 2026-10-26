@@ -24,6 +24,8 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   attr(:results_run, :integer, default: 0)
   # The `Lotus.Query.Filter` operators the query's source runs.
   attr(:filter_operators, :list, default: [])
+  # The result's foreign key columns (`Lotus.Web.Queries.References`).
+  attr(:references, :map, default: %{})
 
   def render_result(assigns) do
     ~H"""
@@ -67,6 +69,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
                 target={@target}
                 operators={@filter_operators}
                 stats={Statistics.compute_all(@result)}
+                references={@references}
               />
             </div>
           </div>

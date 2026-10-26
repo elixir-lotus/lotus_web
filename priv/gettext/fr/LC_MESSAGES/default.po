@@ -5536,3 +5536,13 @@ msgstr "Mettre en forme la requête (sources SQL et JSON)"
 #, elixir-autogen, elixir-format
 msgid "Format the query, in the editor"
 msgstr "Mettre en forme la requête, dans l’éditeur"
+
+#: lib/lotus/web/queries/masu_results.ex
+#, elixir-autogen, elixir-format
+msgid "Open %{table} row"
+msgstr "Ouvrir la ligne de %{table}"
+
+#: lib/lotus/web/queries/masu_results.ex
+#, elixir-autogen, elixir-format
+msgid "This cell is empty: it references no row"
+msgstr "Cette cellule est vide : elle ne référence aucune ligne"
