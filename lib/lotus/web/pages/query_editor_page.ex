@@ -168,7 +168,22 @@ defmodule Lotus.Web.QueryEditorPage do
                 />
               </div>
 
-              <div class="flex-1">
+              <%!-- The divider: how much of the page the editor takes (EditorSplit). --%>
+              <div
+                :if={not @editor_minimized}
+                id="editor-results-split"
+                phx-hook="EditorSplit"
+                role="separator"
+                aria-orientation="horizontal"
+                aria-label={gettext("Resize the editor")}
+                title={gettext("Drag to resize the editor; double-click to reset")}
+                tabindex="0"
+                class="lotus-split group hidden sm:flex"
+              >
+                <span class="lotus-split-grip"></span>
+              </div>
+
+              <div class="flex-1 min-h-0">
                 <.render_result
                   query_id={Map.get(@page, :id, "new")}
                   result={@result}
