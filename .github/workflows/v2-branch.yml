@@ -41,7 +41,7 @@ jobs:
           cache: npm
           cache-dependency-path: assets/package-lock.json
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: |
             deps
