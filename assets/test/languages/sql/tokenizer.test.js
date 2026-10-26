@@ -100,9 +100,12 @@ describe("tokenize", () => {
     });
 
     it("takes Postgres's E'' strings with backslash escapes, only as a prefix", () => {
+      // The E stays a word before the string, as Lotus keeps it in the code.
       expect(toks("E'a\\'b' e'c\\'d'", PG)).toEqual([
-        ["string", "E'a\\'b'"],
-        ["string", "e'c\\'d'"],
+        ["word", "E"],
+        ["string", "'a\\'b'"],
+        ["word", "e"],
+        ["string", "'c\\'d'"],
       ]);
       // The E of a name is the name's.
       expect(toks("nameE'a\\' x", PG)).toEqual([
@@ -302,8 +305,13 @@ describe("tokenize", () => {
           .filter((t) => t === "block_open" || t === "block_close");
       expect(types("SELECT ARRAY[[1,2],[3,4]]")).toEqual([]);
       expect(types("SELECT arr[1][2]")).toEqual([]);
-      expect(types("SELECT f(x)[[1]]")).toEqual([]);
+      expect(types("SELECT ARRAY [[1]]")).toEqual([]);
+      expect(types("SELECT x[y[1]]")).toEqual([]);
       expect(types("SELECT 1 [[AND x]]")).toEqual(["block_open", "block_close"]);
+      // After a ) Postgres has no array syntax with [[: a block, as Lotus reads it.
+      expect(types("SELECT (a)[[AND x]]")).toEqual(["block_open", "block_close"]);
+      // A block left open is code.
+      expect(types("SELECT 1 [[AND x")).toEqual([]);
     });
 
     it("opens [[ in SQLite too", () => {
