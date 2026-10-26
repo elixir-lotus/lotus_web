@@ -63,7 +63,11 @@ if Code.ensure_loaded?(Sake.Server) do
     # What runs, its title, and the saved query's own chart (or nil).
     defp source(%{query_id: id} = args, ctx) when is_integer(id) do
       with {:ok, query} <- Support.fetch_query(id, ctx) do
-        run = fn opts -> Lotus.run_query(query, [vars: Support.vars(args[:vars])] ++ opts) end
+        # A chart only reads, as every MCP tool does.
+        run = fn opts ->
+          Lotus.run_query(query, [vars: Support.vars(args[:vars]), read_only: true] ++ opts)
+        end
+
         {:ok, query.name, run, saved_chart(query)}
       end
     end

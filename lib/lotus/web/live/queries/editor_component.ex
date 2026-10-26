@@ -11,6 +11,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
 
   attr(:minimized, :boolean, default: false)
   attr(:running, :boolean, default: false)
+  attr(:can_stop, :boolean, default: false)
   attr(:statement_empty, :boolean, default: false)
   attr(:right_drawer, :atom, default: nil, values: @right_drawer_values)
   attr(:left_drawer, :atom, default: nil, values: @left_drawer_values)
@@ -74,6 +75,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
           target={@target}
           minimized={@minimized}
           running={@running}
+          can_stop={@can_stop}
           statement_empty={@statement_empty}
           variables={@variables}
           variable_values={@variable_values}
@@ -113,6 +115,19 @@ defmodule Lotus.Web.Queries.EditorComponent do
           <% end %>
 
           <button
+            :if={@can_stop}
+            id="stop-query-btn"
+            type="button"
+            phx-click="cancel_query"
+            phx-target={@target}
+            title={gettext("Stop query")}
+            aria-label={gettext("Stop query")}
+            class="absolute bottom-4 right-4 w-12 h-12 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center bg-gray-800 hover:bg-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500"
+          >
+            <span class="block h-3.5 w-3.5 rounded-sm bg-white"></span>
+          </button>
+          <button
+            :if={not @can_stop}
             id="run-query-btn"
             type="submit"
             disabled={@running or @statement_empty or not @can_query}
@@ -151,6 +166,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:target, Phoenix.LiveComponent.CID, required: true)
   attr(:minimized, :boolean, default: false)
   attr(:running, :boolean, default: false)
+  attr(:can_stop, :boolean, default: false)
   attr(:statement_empty, :boolean, default: false)
   attr(:variables, :list, default: [])
   attr(:variable_values, :map, default: %{})
@@ -206,6 +222,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
             left_drawer={@left_drawer}
             minimized={@minimized}
             running={@running}
+            can_stop={@can_stop}
             statement_empty={@statement_empty}
             supports_formatting={@supports_formatting}
             can_query={@can_query}
@@ -260,6 +277,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:left_drawer, :atom, default: nil, values: @left_drawer_values)
   attr(:minimized, :boolean, default: false)
   attr(:running, :boolean, default: false)
+  attr(:can_stop, :boolean, default: false)
   attr(:statement_empty, :boolean, default: false)
   attr(:supports_formatting, :boolean, default: false)
   attr(:can_query, :boolean, default: true)
@@ -270,6 +288,24 @@ defmodule Lotus.Web.Queries.EditorComponent do
     ~H"""
     <div class="flex items-center space-x-1">
       <span
+        :if={@can_stop}
+        id="toolbar-stop-query-tippy"
+        data-title={gettext("Stop query")}
+        phx-hook="Tippy"
+      >
+        <button
+          id="toolbar-stop-query-btn"
+          type="button"
+          phx-click="cancel_query"
+          phx-target={@target}
+          aria-label={gettext("Stop query")}
+          class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+        >
+          <span class="m-0.5 block h-4 w-4 rounded-sm border-2 border-current"></span>
+        </button>
+      </span>
+      <span
+        :if={not @can_stop}
         id="toolbar-run-query-tippy"
         data-title={
           cond do

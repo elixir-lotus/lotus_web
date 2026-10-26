@@ -1335,7 +1335,13 @@ defmodule Lotus.Web.DashboardEditorPage do
     case Authorization.authorize(socket.assigns, :query, source) do
       :allow ->
         query = card.query
-        opts = Actor.merge([vars: build_card_variables(socket, card)], socket.assigns)
+        # A dashboard only reads, whatever its source allows.
+        opts =
+          Actor.merge(
+            [vars: build_card_variables(socket, card), read_only: true],
+            socket.assigns
+          )
+
         {:run, fn -> Lotus.run_query(query, opts) end}
 
       {:deny, reason} ->

@@ -458,7 +458,8 @@ defmodule Lotus.Web.PublicDashboardPage do
       vars = build_card_variables(socket, card)
       query = card.query
       opts = run_opts(socket)
-      {:run, fn -> Lotus.run_query(query, [vars: vars] ++ opts) end}
+      # A dashboard only reads, whatever its source allows.
+      {:run, fn -> Lotus.run_query(query, [vars: vars, read_only: true] ++ opts) end}
     else
       {:skip, socket}
     end

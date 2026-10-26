@@ -29,6 +29,7 @@ defmodule Lotus.Web.QueryEditorPage do
   alias Lotus.Web.SchemaBuilder
   alias Lotus.Web.SourcesMap
   alias Lotus.Web.Telemetry
+  alias Phoenix.LiveView.JS
 
   import Lotus.Web.Queries.EditorComponent
   import Lotus.Web.Queries.ResultsComponent
@@ -142,6 +143,7 @@ defmodule Lotus.Web.QueryEditorPage do
                   schemas={@editor_schemas}
                   source={@query.data_source}
                   running={@running}
+                  can_stop={not is_nil(@cancel_token)}
                   statement_empty={@statement_empty}
                   right_drawer={@right_drawer}
                   left_drawer={@left_drawer}
@@ -181,7 +183,8 @@ defmodule Lotus.Web.QueryEditorPage do
                   visualization_config={@visualization_config}
                   visualization_view_mode={@visualization_view_mode}
                   visualization_visible={@left_drawer == :visualization}
-                  can_export={@can_export}
+                  can_export={@can_export and not @ran_write}
+                  changed={@ran_write}
                 />
               </div>
 
@@ -192,6 +195,7 @@ defmodule Lotus.Web.QueryEditorPage do
 
       <.save_modal :if={@can_save} query_form={@query_form} target={@myself} />
       <.delete_modal :if={@page.mode == :edit and @can_delete} target={@myself} />
+      <.write_modal :if={@pending_write} source={@pending_write.source} target={@myself} />
 
       <%!-- On the body, over everything of the page and its layout. --%>
       <.portal :if={@schema_diagram} id="schema-diagram-portal" target="body">
@@ -316,6 +320,38 @@ defmodule Lotus.Web.QueryEditorPage do
           </.button>
         </div>
       </.form>
+    </.modal>
+    """
+  end
+
+  # Asks before a statement that changes data runs.
+  defp write_modal(assigns) do
+    ~H"""
+    <.modal id="write-query-modal" show on_cancel={JS.push("cancel_write", target: @target)}>
+      <div class="flex items-start gap-3">
+        <Icons.exclamation_triangle class="mt-0.5 h-6 w-6 shrink-0 text-amber-500" />
+        <div>
+          <h3 id="write-query-modal-title" class="text-lg font-semibold mb-2">
+            <%= gettext("Change data in %{source}?", source: @source) %>
+          </h3>
+          <p id="write-query-modal-description" class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <%= gettext("This statement changes data, and running it again changes it again. Run it?") %>
+          </p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3">
+        <.button type="button" variant="light" phx-click="cancel_write" phx-target={@target}>
+          <%= gettext("Cancel") %>
+        </.button>
+        <.button
+          id="write-query-confirm"
+          type="button"
+          phx-click="confirm_write"
+          phx-target={@target}
+        >
+          <%= gettext("Run it") %>
+        </.button>
+      </div>
     </.modal>
     """
   end
@@ -974,6 +1010,43 @@ defmodule Lotus.Web.QueryEditorPage do
     end
   end
 
+  # Stops the running statement. The database is asked from another
+  # process: it may take a moment to answer.
+  @impl Phoenix.LiveComponent
+  def handle_event("cancel_query", _params, socket) do
+    case socket.assigns do
+      %{running: true, cancel_token: token} when not is_nil(token) ->
+        {:noreply,
+         socket
+         |> assign(cancel_token: nil)
+         |> start_async(:cancel_query, fn -> Lotus.cancel(token) end)}
+
+      _not_running ->
+        {:noreply, socket}
+    end
+  end
+
+  # The person said to run the statement that changes data.
+  @impl Phoenix.LiveComponent
+  def handle_event("confirm_write", _params, socket) do
+    case socket.assigns.pending_write do
+      %{query: query, source: repo} ->
+        socket = assign(socket, pending_write: nil)
+
+        case Authorization.authorize(socket.assigns, :query, repo) do
+          :allow -> {:noreply, start_query(socket, query, repo, :write)}
+          {:deny, reason} -> {:noreply, assign(socket, error: reason, result: nil)}
+        end
+
+      nil ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl Phoenix.LiveComponent
+  def handle_event("cancel_write", _params, socket),
+    do: {:noreply, assign(socket, pending_write: nil)}
+
   @impl Phoenix.LiveComponent
   def handle_event("next_page", _params, socket) do
     case socket.assigns[:result] do
@@ -1308,6 +1381,7 @@ defmodule Lotus.Web.QueryEditorPage do
        result: result,
        error: nil,
        running: false,
+       cancel_token: nil,
        result_references: references,
        references_key: key
      )}
@@ -1318,7 +1392,7 @@ defmodule Lotus.Web.QueryEditorPage do
 
     {:noreply,
      socket
-     |> assign(error: to_string(error_msg), result: nil, running: false)
+     |> assign(error: to_string(error_msg), result: nil, running: false, cancel_token: nil)
      |> assign(ai_conversation: conversation)}
   end
 
@@ -1327,9 +1401,27 @@ defmodule Lotus.Web.QueryEditorPage do
 
     {:noreply,
      socket
-     |> assign(error: gettext("Query execution failed"), result: nil, running: false)
+     |> assign(
+       error: gettext("Query execution failed"),
+       result: nil,
+       running: false,
+       cancel_token: nil
+     )
      |> assign(ai_conversation: conversation)}
   end
+
+  # Asked the database to stop the statement: the run itself ends with the
+  # cancelled error. A statement that ended first has nothing to stop.
+  def handle_async(:cancel_query, {:ok, :ok}, socket), do: {:noreply, socket}
+
+  def handle_async(:cancel_query, {:ok, {:error, _reason}}, socket) do
+    if socket.assigns.running,
+      do:
+        {:noreply, assign(socket, cancel_token: nil, error: gettext("Could not stop the query."))},
+      else: {:noreply, socket}
+  end
+
+  def handle_async(:cancel_query, {:exit, _reason}, socket), do: {:noreply, socket}
 
   @impl Phoenix.LiveComponent
   def update(%{action: :ai_tool_call, event: event}, socket) do
@@ -1405,6 +1497,14 @@ defmodule Lotus.Web.QueryEditorPage do
      socket
      |> assign(filters: filters, sorts: sorts, page_index: 0)
      |> execute_query(query_to_run(socket.assigns))}
+  end
+
+  # The token that stops the running statement, for the Stop button; a
+  # token of an earlier run is spent.
+  def update(%{action: :cancel_token, run: run, token: token}, socket) do
+    if socket.assigns.running and socket.assigns[:run] == run,
+      do: {:ok, assign(socket, cancel_token: token)},
+      else: {:ok, socket}
   end
 
   # A foreign key's cell in the results: its row opens in a new tab.
@@ -1485,6 +1585,12 @@ defmodule Lotus.Web.QueryEditorPage do
       # the part of the text the last run ran, when it was not all of it.
       run_scope: :all,
       ran_statement: nil,
+      # The running statement's run, the token that stops it once the source
+      # gives one, and a statement that changes data waiting for the person.
+      run: nil,
+      cancel_token: nil,
+      pending_write: nil,
+      ran_write: false,
       # The foreign keys of the result's columns, and the run they are of
       # ({source, statement, search path}).
       result_references: %{},
@@ -1681,6 +1787,12 @@ defmodule Lotus.Web.QueryEditorPage do
     end
   end
 
+  defp cancellable?(repo) do
+    Lotus.cancellable?(repo)
+  rescue
+    _error -> false
+  end
+
   # The lexical rules Lotus tokenizes the source's statements with
   # (`Lotus.Query.Tokenizer.Profile`), for the editor's tokenizer to read the
   # text as the server does.
@@ -1779,49 +1891,40 @@ defmodule Lotus.Web.QueryEditorPage do
 
   # Every run goes through here: the run button, pagination, filters, sorts and
   # the auto-run of a saved query. Ask once, in this one place.
+  # Every run of the editor: a statement that changes data waits for the
+  # person to say so (`confirm_write`), as running it again would change it
+  # again.
   defp execute_query(socket, query) do
     repo = source_or_default(query.data_source, socket.assigns)
 
     case Authorization.authorize(socket.assigns, :query, repo) do
-      :allow -> start_query(socket, query, repo)
-      {:deny, reason} -> assign(socket, running: false, result: nil, error: reason)
+      :allow ->
+        if writes?(query, repo),
+          do: assign(socket, pending_write: %{query: query, source: repo}, running: false),
+          else: start_query(socket, query, repo)
+
+      {:deny, reason} ->
+        assign(socket, running: false, result: nil, error: reason)
     end
   end
 
-  defp start_query(socket, query, repo) do
-    vars = Map.get(socket.assigns, :variable_values, %{})
-    page_size = socket.assigns.page_size || @default_page_size
-    page_index = socket.assigns.page_index || 0
-    query_timeout = socket.assigns[:query_timeout]
+  # Whether a statement would change data on a source that takes writes.
+  defp writes?(query, repo) do
+    not Lotus.read_only?(repo) and Lotus.writes?(query.statement, repo: repo)
+  rescue
+    _error -> false
+  end
 
-    filters = Map.get(socket.assigns, :filters, [])
-    sorts = Map.get(socket.assigns, :sorts, [])
-
-    opts = [
-      repo: repo,
-      vars: vars,
-      filters: filters,
-      sorts: sorts,
-      window: [limit: page_size, offset: page_index * page_size, count: :exact]
-    ]
+  defp start_query(socket, query, repo, kind \\ :read) do
+    # A source that can stop a running statement gives a token to stop it
+    # with, as it starts: the Stop button's (`cancel_query`).
+    run = make_ref()
 
     opts =
-      if query.search_path && String.trim(query.search_path) != "" do
-        Keyword.put(opts, :search_path, query.search_path)
-      else
-        opts
-      end
-
-    opts =
-      if is_integer(query_timeout) and query_timeout > 0 do
-        opts
-        |> Keyword.put(:timeout, query_timeout)
-        |> Keyword.put(:statement_timeout_ms, query_timeout)
-      else
-        opts
-      end
-
-    opts = Actor.merge(opts, socket.assigns)
+      socket
+      |> run_opts(query, repo, kind)
+      |> Actor.merge(socket.assigns)
+      |> put_cancel_token(socket, repo, run)
 
     # The results grid keeps the rows it shows while the query runs.
     result = socket.assigns[:result]
@@ -1834,7 +1937,8 @@ defmodule Lotus.Web.QueryEditorPage do
       Keyword.take(opts, [:context, :scope, :search_path])
 
     socket
-    |> assign(running: true, error: nil, result: result)
+    |> assign(running: true, error: nil, result: result, run: run, cancel_token: nil)
+    |> assign(ran_write: kind == :write)
     # The filters the source runs, which the results grid offers.
     |> assign(filter_operators: Lotus.Source.supported_filter_operators(repo))
     |> start_async(:query_execution, fn ->
@@ -1847,6 +1951,66 @@ defmodule Lotus.Web.QueryEditorPage do
       end
     end)
   end
+
+  # What a run runs with. A statement that changes data runs as it is
+  # written: pages, filters and sorts wrap a statement in a SELECT, which
+  # only reads.
+  defp run_opts(socket, query, repo, kind) do
+    vars = Map.get(socket.assigns, :variable_values, %{})
+    page_size = socket.assigns.page_size || @default_page_size
+    page_index = socket.assigns.page_index || 0
+
+    case kind do
+      :read ->
+        [
+          repo: repo,
+          vars: vars,
+          filters: Map.get(socket.assigns, :filters, []),
+          sorts: Map.get(socket.assigns, :sorts, []),
+          window: [limit: page_size, offset: page_index * page_size, count: :exact]
+        ]
+
+      :write ->
+        [repo: repo, vars: vars]
+    end
+    |> put_search_path(query.search_path)
+    |> put_timeout(socket.assigns[:query_timeout])
+  end
+
+  defp put_search_path(opts, search_path) do
+    if search_path && String.trim(search_path) != "",
+      do: Keyword.put(opts, :search_path, search_path),
+      else: opts
+  end
+
+  defp put_timeout(opts, timeout) when is_integer(timeout) and timeout > 0 do
+    opts
+    |> Keyword.put(:timeout, timeout)
+    |> Keyword.put(:statement_timeout_ms, timeout)
+  end
+
+  defp put_timeout(opts, _timeout), do: opts
+
+  # The token reaches the page as the statement starts; a page not mounted
+  # as a component has no Stop button to show.
+  defp put_cancel_token(
+         opts,
+         %{assigns: %{myself: %Phoenix.LiveComponent.CID{} = myself}},
+         repo,
+         run
+       ) do
+    if cancellable?(repo) do
+      view = self()
+
+      Keyword.put(opts, :on_cancel_token, fn token ->
+        send_update(view, myself, %{action: :cancel_token, run: run, token: token})
+      end)
+    else
+      opts
+    end
+  end
+
+  defp put_cancel_token(opts, _socket, _repo, _run), do: opts
 
   # The row a foreign key references opens in a new query, in a new tab, for a
   # person who may query the source. The new query's page builds the

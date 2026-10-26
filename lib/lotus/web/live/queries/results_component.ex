@@ -26,6 +26,8 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   attr(:filter_operators, :list, default: [])
   # The result's foreign key columns (`Lotus.Web.Queries.References`).
   attr(:references, :map, default: %{})
+  # The run changed data (an UPDATE, INSERT or DELETE the person confirmed).
+  attr(:changed, :boolean, default: false)
 
   def render_result(assigns) do
     ~H"""
@@ -34,6 +36,26 @@ defmodule Lotus.Web.Queries.ResultsComponent do
         <%!-- While a query runs, the grid keeps its rows and shows it loads --%>
         <% @running == true and @result == nil -> %>
           <.loading_spinner />
+
+        <% @result != nil and @changed and @result.columns in [nil, []] -> %>
+          <div class="pt-3 pb-2 px-0 flex items-center gap-3 flex-shrink-0">
+            <h2 class="text-base font-semibold text-text-light dark:text-text-dark"><%= gettext("Results") %></h2>
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 rounded">
+              <Icons.check class="w-3 h-3" />
+              <%= gettext("Success") %>
+            </span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">
+              <%= gettext("%{duration}ms", duration: @result.duration_ms) %>
+            </span>
+          </div>
+          <div id="results-changed" class="flex flex-1 flex-col items-center justify-center gap-1 pb-8 text-center">
+            <p class="text-lg font-semibold text-text-light dark:text-text-dark">
+              <%= ngettext("%{count} row changed", "%{count} rows changed", @result.num_rows || 0, count: @result.num_rows || 0) %>
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              <%= gettext("Running the statement again changes the data again.") %>
+            </p>
+          </div>
 
         <% @result != nil -> %>
           <%!-- Compact header row --%>
