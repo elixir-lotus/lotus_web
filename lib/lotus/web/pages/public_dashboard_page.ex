@@ -58,7 +58,10 @@ defmodule Lotus.Web.PublicDashboardPage do
 
           <%!-- Grid Content --%>
           <div class="flex-1 overflow-y-auto px-4 sm:px-6 pt-2 pb-6">
-            <%= if @dashboard.cards != [] do %>
+            <%= cond do %>
+              <% @ask -> %>
+                <.ask_form ask={@ask} target={@myself} />
+              <% @dashboard.cards != [] -> %>
               <.live_component
                 module={CardGridComponent}
                 id="card-grid"
@@ -73,8 +76,9 @@ defmodule Lotus.Web.PublicDashboardPage do
                 filters={@dashboard.filters}
                 pro_info={Lotus.Web.Pro.request_info(%{})}
                 parent={@myself}
+                downloads={@downloads}
               />
-            <% else %>
+              <% true -> %>
               <div
                 :if={@unavailable}
                 id="public-dashboard-unavailable"
@@ -111,6 +115,12 @@ defmodule Lotus.Web.PublicDashboardPage do
     |> assign(
       dashboard: nil,
       unavailable: nil,
+      ask: nil,
+      asked: nil,
+      link_params: %{},
+      run_context: nil,
+      kept_params: %{},
+      downloads: true,
       filter_values: %{},
       filter_options: %{},
       card_results: %{},
@@ -138,6 +148,25 @@ defmodule Lotus.Web.PublicDashboardPage do
 
       _ ->
         {:noreply, assign(socket, dashboard: empty_dashboard())}
+    end
+  end
+
+  # What the visitor filled in on Lotus Pro's form (`{:ask, ask}`).
+  @impl Phoenix.LiveComponent
+  def handle_event("answer_link", params, socket) do
+    %{ask: ask, asked: dashboard, link_params: link_params} = socket.assigns
+
+    if dashboard do
+      answers = answers(ask, Map.get(params, "answers"))
+
+      answer(
+        socket,
+        dashboard,
+        link_params,
+        Pro.answer_public_dashboard(dashboard, answers, link_params)
+      )
+    else
+      {:noreply, socket}
     end
   end
 
@@ -183,6 +212,68 @@ defmodule Lotus.Web.PublicDashboardPage do
 
   def handle_info(_msg, socket), do: {:noreply, socket}
 
+  # The asked fields' answers, as text; nothing else the browser sends.
+  defp answers(%{fields: fields}, %{} = given) do
+    for %{key: key} <- fields, is_binary(given[key]), into: %{}, do: {key, given[key]}
+  end
+
+  defp answers(_ask, _given), do: %{}
+
+  # Lotus Pro's form, shown instead of the dashboard until it allows the link.
+  attr(:ask, :map, required: true)
+  attr(:target, :any, required: true)
+
+  defp ask_form(assigns) do
+    ~H"""
+    <div id="public-dashboard-ask" class="flex h-full items-center justify-center px-6">
+      <form
+        id="public-dashboard-ask-form"
+        phx-submit="answer_link"
+        phx-target={@target}
+        class="w-full max-w-md space-y-4"
+      >
+        <div class="flex flex-col items-center gap-3 text-center">
+          <Icons.lock class="h-10 w-10 text-gray-300 dark:text-gray-600" />
+          <p :if={@ask.message} class="text-sm text-gray-600 dark:text-gray-300"><%= @ask.message %></p>
+        </div>
+        <p
+          :if={@ask.error}
+          id="public-dashboard-ask-error"
+          role="alert"
+          class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300"
+        >
+          <%= @ask.error %>
+        </p>
+        <div :for={{field, index} <- Enum.with_index(@ask.fields)} class="space-y-1">
+          <label for={"ask-#{field.key}"} class="block text-sm font-medium text-gray-700 dark:text-gray-200">
+            <%= field.label %>
+          </label>
+          <input
+            id={"ask-#{field.key}"}
+            name={"answers[#{field.key}]"}
+            type={Atom.to_string(field.type)}
+            required
+            autofocus={index == 0}
+            autocomplete={autocomplete(field.type)}
+            class="block w-full rounded-md border-0 px-3 py-2 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-pink-600 dark:bg-input-dark dark:text-white dark:ring-gray-600"
+          />
+        </div>
+        <button
+          :if={@ask.fields != []}
+          type="submit"
+          class="w-full rounded-md bg-pink-600 px-3 py-2 text-sm font-semibold text-white hover:bg-pink-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600"
+        >
+          <%= @ask.submit || gettext("Continue") %>
+        </button>
+      </form>
+    </div>
+    """
+  end
+
+  defp autocomplete(:password), do: "current-password"
+  defp autocomplete(:email), do: "email"
+  defp autocomplete(:text), do: "off"
+
   # A link to no dashboard: Lotus Pro's words when it knows the link
   # (`Lotus.Web.Pro.public_link_message/1`), else not found.
   defp missing(token) do
@@ -193,10 +284,28 @@ defmodule Lotus.Web.PublicDashboardPage do
   end
 
   # Lotus Pro may refuse the link (`Lotus.Web.Pro.authorize_public_dashboard/2`).
-  defp open(socket, dashboard, params) do
-    case Pro.authorize_public_dashboard(dashboard, params) do
+  defp open(socket, dashboard, params),
+    do: answer(socket, dashboard, params, Pro.authorize_public_dashboard(dashboard, params))
+
+  defp answer(socket, dashboard, params, answer) do
+    case answer do
       :allow ->
-        show(socket, dashboard, params)
+        show(socket, dashboard, params, %{context: nil, downloads: true, params: %{}})
+
+      {:allow, opts} ->
+        show(socket, dashboard, Map.merge(params, opts.params), opts)
+
+      {:ask, ask} ->
+        title = ask.title || gettext("This dashboard is protected")
+
+        {:noreply,
+         assign(socket,
+           dashboard: empty_dashboard(title),
+           unavailable: nil,
+           ask: ask,
+           asked: dashboard,
+           link_params: params
+         )}
 
       {:deny, message} ->
         report_refused(socket, dashboard.public_token, dashboard, message)
@@ -209,7 +318,7 @@ defmodule Lotus.Web.PublicDashboardPage do
     end
   end
 
-  defp show(socket, dashboard, params) do
+  defp show(socket, dashboard, params, opts) do
     cards = Lotus.list_dashboard_cards(dashboard.id, preload: [:query, :filter_mappings])
     filters = Lotus.list_dashboard_filters(dashboard.id)
     dashboard = %{dashboard | cards: cards, filters: filters}
@@ -219,7 +328,13 @@ defmodule Lotus.Web.PublicDashboardPage do
 
     {:noreply,
      socket
-     |> assign(unavailable: nil)
+     |> assign(
+       unavailable: nil,
+       ask: nil,
+       asked: nil,
+       downloads: opts.downloads,
+       run_context: opts.context
+     )
      |> Branding.assign_branding(%{
        user: nil,
        context: nil,
@@ -228,6 +343,7 @@ defmodule Lotus.Web.PublicDashboardPage do
        dashboard: dashboard
      })
      |> assign(dashboard: dashboard, filter_values: filter_values)
+     |> keep_params(opts.params)
      |> watch()
      |> assign_filter_options()
      |> run_all_cards()}
@@ -341,23 +457,48 @@ defmodule Lotus.Web.PublicDashboardPage do
     if card && card.card_type == :query && card.query do
       vars = build_card_variables(socket, card)
       query = card.query
-      {:run, fn -> Lotus.run_query(query, vars: vars) end}
+      opts = run_opts(socket)
+      {:run, fn -> Lotus.run_query(query, [vars: vars] ++ opts) end}
     else
       {:skip, socket}
     end
   end
 
-  # A public dashboard has no actor, so the source queries run like its cards:
-  # with no :context or :scope.
+  # A public dashboard has no viewer: its cards and the filters' source
+  # queries run as whoever Lotus Pro names for the link, or with no
+  # :context.
+  defp run_opts(socket) do
+    case socket.assigns.run_context do
+      nil -> []
+      context -> [context: context]
+    end
+  end
+
   defp assign_filter_options(socket) do
     {filter_options, filter_values} =
-      FilterOptions.resolve(socket.assigns.dashboard.filters, socket.assigns.filter_values)
+      FilterOptions.resolve(socket.assigns.dashboard.filters, socket.assigns.filter_values,
+        run_opts: run_opts(socket)
+      )
 
     assign(socket, filter_options: filter_options, filter_values: filter_values)
   end
 
   defp push_filter_params_to_url(socket, filter_values) do
-    push_event(socket, "update-query-params", %{params: FilterValues.to_params(filter_values)})
+    params = Map.merge(FilterValues.to_params(filter_values), socket.assigns.kept_params)
+    push_event(socket, "update-query-params", %{params: params})
+  end
+
+  # The params Lotus Pro keeps in the link's URL (a grant after a password,
+  # say), written now and kept when the filters change the URL.
+  defp keep_params(socket, kept) when kept == %{}, do: assign(socket, kept_params: kept)
+
+  defp keep_params(socket, kept) do
+    socket = assign(socket, kept_params: kept)
+    params = Map.merge(FilterValues.to_params(socket.assigns.filter_values), kept)
+
+    if connected?(socket),
+      do: push_event(socket, "update-query-params", %{params: params}),
+      else: socket
   end
 
   defp extract_filter_values(params, filters), do: FilterValues.from_params(params, filters)

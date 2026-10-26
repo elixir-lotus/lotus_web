@@ -5496,3 +5496,13 @@ msgstr "Le test s'est arrêté avant d'être envoyé."
 #, elixir-autogen, elixir-format
 msgid "The test was not sent: %{reason}"
 msgstr "Le test n'a pas été envoyé : %{reason}"
+
+#: lib/lotus/web/pages/public_dashboard_page.ex
+#, elixir-autogen, elixir-format
+msgid "This dashboard is protected"
+msgstr "Ce tableau de bord est protégé"
+
+#: lib/lotus/web/pages/public_dashboard_page.ex
+#, elixir-autogen, elixir-format
+msgid "Continue"
+msgstr "Continuer"

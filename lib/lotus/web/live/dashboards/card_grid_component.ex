@@ -42,6 +42,7 @@ defmodule Lotus.Web.Dashboards.CardGridComponent do
           tabs={Map.get(assigns, :tabs, [])}
           tab={Map.get(assigns, :tab)}
           pro_info={Map.get(assigns, :pro_info, %{})}
+          downloads={Map.get(assigns, :downloads, true)}
           parent={@parent}
         />
       <% end %>
