@@ -23,7 +23,8 @@
 //   backslashEscapes: as `Lotus.Query.Tokenizer.Profile`;
 //   escapeStrings: Postgres's E'…' strings take backslash escapes;
 //   dashCommentNeedsSpace: MySQL's `--` is a comment only before a space;
-//   executableComments: MySQL's /*! … *\/ is code.
+//   executableComments: MySQL's /*! … *\/ is code;
+//   lineCommentEndsAtCr: a lone \r ends a line comment (Postgres).
 const ANSI = {
   stringQuotes: ["'"],
   identifierQuotes: ['"'],
@@ -35,6 +36,7 @@ const ANSI = {
   escapeStrings: false,
   dashCommentNeedsSpace: false,
   executableComments: false,
+  lineCommentEndsAtCr: false,
 };
 
 const POSTGRES = {
@@ -42,6 +44,7 @@ const POSTGRES = {
   dollarQuotes: true,
   nestedBlockComments: true,
   escapeStrings: true,
+  lineCommentEndsAtCr: true,
 };
 
 const MYSQL = {
@@ -77,9 +80,10 @@ const SERVER_KEYS = {
   "nested_block_comments?": "nestedBlockComments",
   "dollar_quotes?": "dollarQuotes",
   "backslash_escapes?": "backslashEscapes",
-  "escape_strings?": "escapeStrings",
+  "escape_string_prefix?": "escapeStrings",
   "dash_comment_needs_space?": "dashCommentNeedsSpace",
   "executable_comments?": "executableComments",
+  "line_comment_ends_at_cr?": "lineCommentEndsAtCr",
 };
 
 /**
@@ -97,12 +101,15 @@ export function profileFor(dialectName, serverProfile = null) {
         profile[name] = serverProfile[key];
       }
     }
-    // The server's ANSI profile has no [bracketed] identifiers; a dialect
-    // that has them keeps them.
+    // The server says whether [bracketed] identifiers are on apart from its
+    // quotes; without a word from it, a dialect that has them keeps them.
     const base = PROFILES[dialectName] || ANSI;
-    if (base.identifierQuotes.includes("[") && !profile.identifierQuotes.includes("[")) {
-      profile.identifierQuotes = [...profile.identifierQuotes, "["];
-    }
+    const brackets =
+      typeof serverProfile["bracket_identifiers?"] === "boolean"
+        ? serverProfile["bracket_identifiers?"]
+        : base.identifierQuotes.includes("[");
+    const quotes = profile.identifierQuotes.filter((q) => q !== "[");
+    profile.identifierQuotes = brackets ? [...quotes, "["] : quotes;
   }
 
   return profile;
@@ -215,6 +222,15 @@ export const TYPES = [
  */
 export function scan(text, profile = ANSI) {
   const p = { ...ANSI, ...profile };
+  const first = scanOnce(text, p, null);
+  if (first.unclosed.length === 0) return first;
+
+  // A block left open at the end is plain code, as Lotus reads it: scan
+  // again with those [[ taken as code; the blocks inside them stay blocks.
+  return scanOnce(text, p, new Set(first.unclosed));
+}
+
+function scanOnce(text, p, disabled) {
   const len = text.length;
   const types = new Uint8Array(len);
   const starts = new Int32Array(len + 1);
@@ -227,8 +243,10 @@ export function scan(text, profile = ANSI) {
   const slashComments = p.lineComments.includes("//");
 
   let i = 0;
-  // Open [[ blocks, and whether a /*! … */ is open.
-  let blocks = 0;
+  // The open [[ blocks (where each opened), the single [ open at each block
+  // level (an array's subscript), and whether a /*! … */ is open.
+  const blocks = [];
+  const singles = [0];
   let executable = false;
 
   const push = (type, start) => {
@@ -252,7 +270,7 @@ export function scan(text, profile = ANSI) {
       (c === HASH && hashComments) ||
       (c === SLASH && next === SLASH && slashComments)
     ) {
-      const j = lineEnd(text, i);
+      const j = lineEnd(text, i, p.lineCommentEndsAtCr);
       push(T_COMMENT, i);
       i = j;
     } else if (c === SLASH && next === STAR && p.blockComments) {
@@ -286,13 +304,28 @@ export function scan(text, profile = ANSI) {
         push(T_OPERATOR, i);
         i += 1;
       }
-    } else if (c === LBRACKET && next === LBRACKET && blockMayOpen(prev)) {
-      push(T_BLOCK_OPEN, i);
-      blocks += 1;
+    } else if (c === LBRACKET && next === LBRACKET && disabled && disabled.has(i)) {
+      push(T_OPERATOR, i);
       i += 2;
-    } else if (c === RBRACKET && next === RBRACKET && blocks > 0) {
+    } else if (
+      c === LBRACKET &&
+      next === LBRACKET &&
+      singles[singles.length - 1] === 0 &&
+      !isIdentChar(prev) &&
+      !afterArray(text, i)
+    ) {
+      push(T_BLOCK_OPEN, i);
+      blocks.push(i);
+      singles.push(0);
+      i += 2;
+    } else if (c === RBRACKET && singles[singles.length - 1] > 0) {
+      singles[singles.length - 1] -= 1;
+      push(T_OPERATOR, i);
+      i += 1;
+    } else if (c === RBRACKET && next === RBRACKET && blocks.length > 0) {
       push(T_BLOCK_CLOSE, i);
-      blocks -= 1;
+      blocks.pop();
+      singles.pop();
       i += 2;
     } else if (c === LBRACKET && identQuote[LBRACKET] === 1) {
       // A [bracketed] identifier: to the next ], with no escapes.
@@ -301,6 +334,10 @@ export function scan(text, profile = ANSI) {
       j = j < len ? j + 1 : len;
       push(T_QUOTED, i);
       i = j;
+    } else if (c === LBRACKET) {
+      singles[singles.length - 1] += 1;
+      push(T_OPERATOR, i);
+      i += 1;
     } else if (c === DOLLAR && p.dollarQuotes && !isIdentChar(prev)) {
       const tagEnd = dollarTagEnd(text, i + 1);
       if (tagEnd > 0) {
@@ -320,10 +357,11 @@ export function scan(text, profile = ANSI) {
       p.escapeStrings &&
       !isIdentChar(prev)
     ) {
-      // Postgres's E'…': a string with backslash escapes.
-      const j = quotedEnd(text, i + 2, QUOTE, true);
-      push(T_STRING, i);
-      i = j;
+      // Postgres's E'…': a string with backslash escapes. The E stays a word
+      // of its own, as Lotus keeps it in the code before the string.
+      push(T_WORD, i);
+      push(T_STRING, i + 1);
+      i = quotedEnd(text, i + 2, QUOTE, true);
     } else if (isIdentStart(c) || c === DOLLAR) {
       const j = wordEnd(text, i + 1);
       push(T_WORD, i);
@@ -356,7 +394,7 @@ export function scan(text, profile = ANSI) {
   }
 
   starts[count] = len;
-  return { types, starts, count };
+  return { types, starts, count, unclosed: blocks };
 }
 
 /**
@@ -389,15 +427,25 @@ function dashComment(text, at, profile) {
   return c <= SPACE;
 }
 
-// Lotus's [[ opens a block where it cannot be an array's: not after an
-// identifier, a ] or a ) (`ARRAY[[1,2]]`, `arr[1][2]`).
-function blockMayOpen(prev) {
-  return prev === -1 || !(isIdentChar(prev) || prev === RBRACKET || prev === RPAREN);
+// Whether the [[ at `i` follows the keyword ARRAY, spaces allowed between
+// (`ARRAY [[1,2]]` is an array's).
+function afterArray(text, i) {
+  let j = i - 1;
+  while (j >= 0 && isSpace(text.charCodeAt(j))) j--;
+  if (j < 4) return false;
+  if (text.slice(j - 4, j + 1).toUpperCase() !== "ARRAY") return false;
+  return j - 5 < 0 || !isIdentChar(text.charCodeAt(j - 5));
 }
 
-function lineEnd(text, i) {
-  const nl = text.indexOf("\n", i);
-  return nl === -1 ? text.length : nl;
+// The end of a line comment: its newline, or a lone \r where the profile
+// ends comments there too.
+function lineEnd(text, i, atCr = false) {
+  const len = text.length;
+  for (let j = i; j < len; j++) {
+    const c = text.charCodeAt(j);
+    if (c === LF || (atCr && c === 13)) return j;
+  }
+  return len;
 }
 
 function blockCommentEnd(text, i, nested) {
