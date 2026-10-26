@@ -1,6 +1,10 @@
 import { createEditor } from "../lib/editor.js";
-import { getDialectConfig } from "../lib/dialect_config.js";
+import {
+  getCachedDialectConfig,
+  isJsonLanguage,
+} from "../lib/dialect_config.js";
 import { format as formatContent } from "../lib/formatter.js";
+import { runTarget, dialectOptions } from "../lib/sql_statements.js";
 import { tinykeys } from "tinykeys";
 
 export default {
@@ -36,6 +40,26 @@ export default {
       if (submit && !submit.disabled) submit.click();
     };
 
+    // What a run runs: the selection, the statement at the cursor when the
+    // editor has several, or the whole text. The server hears which, for the
+    // run buttons' labels.
+    let runScope = "all";
+    let scopeTimer = null;
+    const onSelectionChange = () => {
+      clearTimeout(scopeTimer);
+      scopeTimer = setTimeout(() => {
+        const scope = this.runTarget().scope;
+        if (scope === runScope) return;
+        runScope = scope;
+        this.pushEventTo(
+          this.el.closest("[data-phx-component]"),
+          "editor_run_scope",
+          { scope },
+        );
+      }, 150);
+    };
+    this.clearScopeTimer = () => clearTimeout(scopeTimer);
+
     const initialSchema = this.getSchemaFromDOM();
     const initialDialect = this.getDialectFromDOM();
 
@@ -46,10 +70,20 @@ export default {
       dialectName: initialDialect,
       onChange: onContentChange,
       onRun: onRunQuery,
+      onFormat: () => {
+        if (this.formattable()) this.formatEditor();
+      },
+      onSelectionChange,
       onVars: onVariableChange,
+      completionOptions: {
+        fetchColumns: (tables) => this.fetchColumns(tables),
+        source: () => this.getSourceFromDOM(),
+        schemas: () => this.getSchemasFromDOM(),
+      },
     });
 
     editorContainer.lotusEditor = this.editor;
+    onSelectionChange();
 
     this.fetchAndApplyDialect(initialDialect);
 
@@ -208,30 +242,20 @@ export default {
       },
     });
 
+    // The form sends the whole text as the query's statement, and the part
+    // to run, when it is not all of it, as `run_statement`. LiveView reads
+    // the form after this listener.
     this.el.form?.addEventListener("submit", () => {
       textarea.value = this.editor.getContent();
+
+      const input = this.el.form.querySelector('input[name="run_statement"]');
+      const target = this.runTarget();
+      if (input) input.value = target.scope === "all" ? "" : target.text;
+      if (target.scope !== "all") this.editor.flash(target.from, target.to);
     });
 
     this.handleEvent("format-editor-content", (payload) => {
-      const dialect =
-        (payload && payload.dialect) ||
-        this._lastDialect ||
-        this.getDialectFromDOM();
-      const result = formatContent(this.editor.getContent(), dialect);
-      if (result.ok) {
-        this.editor.setContent(result.content);
-        this.pushEventTo(
-          this.el.closest("[data-phx-component]"),
-          "format-editor-content-success",
-          {},
-        );
-      } else {
-        this.pushEventTo(
-          this.el.closest("[data-phx-component]"),
-          "format-editor-content-error",
-          { error: result.error },
-        );
-      }
+      this.formatEditor(payload && payload.dialect);
     });
 
     this.handleEvent("copy-editor-content", () => {
@@ -268,6 +292,77 @@ export default {
 
     if (this.editor && this.el.value !== this.editor.getContent()) {
       this.editor.setContent(this.el.value);
+    }
+  },
+
+  // The server offers formatting for SQL and JSON sources only.
+  formattable() {
+    const el = document.querySelector("[data-editor-formattable]");
+    return el?.dataset.editorFormattable === "true";
+  },
+
+  currentDialect() {
+    return this._lastDialect || this.getDialectFromDOM();
+  },
+
+  runTarget() {
+    const view = this.editor.view;
+    const text = view.state.doc.toString();
+    const dialect = this.currentDialect();
+    if (isJsonLanguage(dialect)) return { scope: "all", text };
+    const server = getCachedDialectConfig(dialect)?.tokenizer;
+    return runTarget(text, view.state.selection.main, dialectOptions(dialect, server));
+  },
+
+  // Formats the text in place, as one change that one undo takes back; a
+  // text the formatter cannot read stays as it is.
+  formatEditor(dialect) {
+    const content = this.editor.getContent();
+    const result = formatContent(content, dialect || this.currentDialect());
+
+    if (result.ok) {
+      if (result.content !== content) {
+        this.editor.replaceContent(result.content, "input.format");
+      }
+      this.pushEventTo(
+        this.el.closest("[data-phx-component]"),
+        "format-editor-content-success",
+        {},
+      );
+    } else {
+      this.pushEventTo(
+        this.el.closest("[data-phx-component]"),
+        "format-editor-content-error",
+        { error: result.error },
+      );
+    }
+  },
+
+  // The columns of the tables a statement uses, from the server (the editor
+  // has tables only, up front).
+  fetchColumns(tables) {
+    return new Promise((resolve) => {
+      this.pushEventTo(
+        this.el.closest("[data-phx-component]"),
+        "editor_columns",
+        { tables },
+        (reply) => resolve((reply && reply.columns) || {}),
+      );
+    });
+  },
+
+  getSourceFromDOM() {
+    const el = document.querySelector("[data-editor-source]");
+    return (el && el.dataset.editorSource) || "";
+  },
+
+  getSchemasFromDOM() {
+    const el = document.querySelector("[data-editor-schemas]");
+    if (!el) return [];
+    try {
+      return JSON.parse(el.dataset.editorSchemas);
+    } catch {
+      return [];
     }
   },
 
@@ -315,6 +410,7 @@ export default {
   },
 
   destroyed() {
+    this.clearScopeTimer?.();
     this.editor?.destroy();
     this.unbindKeys?.();
   },

@@ -43,12 +43,27 @@ defmodule Lotus.Web.Queries.MasuResults do
   attr(:operators, :list, default: [])
   attr(:stats, :map, default: %{})
 
+  # The result's foreign key columns and the tables they reference
+  # (`Lotus.Web.Queries.References`): their cells open the row.
+  attr(:references, :map, default: %{})
+
   def grid(assigns) do
     target = assigns.target
 
     assigns =
       assign(assigns,
-        rows: rows(assigns.result),
+        follows:
+          for {column, ref} <- Enum.sort(assigns.references) do
+            %{
+              column: column,
+              label: gettext("Open %{table} row", table: ref.table),
+              on_action: &follow(target, column, &1)
+            }
+          end,
+        rows: grid_rows(assigns.result, assigns.references),
+        # A cell's item reads its row by the row's id: a cell of a foreign
+        # key needs one (`with_row_ids/1`); the rest are by their place.
+        row_id: if(assigns.references == %{}, do: :position, else: &List.last/1),
         columns: columns(assigns.result, filters_for(assigns.operators)),
         on_query: &Phoenix.LiveView.send_update(target, %{action: :masu_query, report: &1}),
         messages: MasuMessages.messages(),
@@ -61,7 +76,7 @@ defmodule Lotus.Web.Queries.MasuResults do
         id={@id}
         rows={@rows}
         columns={@columns}
-        row_id={:position}
+        row_id={@row_id}
         on_query={@on_query}
         loading={@running}
         multi_sort={false}
@@ -73,6 +88,12 @@ defmodule Lotus.Web.Queries.MasuResults do
         class="lotus-results"
         height="100%"
       >
+        <:cell_action
+          :for={follow <- @follows}
+          label={follow.label}
+          columns={[follow.column]}
+          on_action={follow.on_action}
+        />
         <:header_action :let={action} label={gettext("Column stats")}>
           <div
             id={"#{@id}-stats-#{action.column}"}
@@ -159,6 +180,24 @@ defmodule Lotus.Web.Queries.MasuResults do
     />
     """
   end
+
+  # A foreign key's cell opens the row it references, in the query editor
+  # (`:follow_reference`); an empty cell references none.
+  defp follow(_target, _column, %{value: nil}),
+    do: {:error, gettext("This cell is empty: it references no row")}
+
+  defp follow(target, column, %{value: value}) do
+    Phoenix.LiveView.send_update(target, %{
+      action: :follow_reference,
+      column: column,
+      value: value
+    })
+
+    :ok
+  end
+
+  defp grid_rows(result, references) when references == %{}, do: rows(result)
+  defp grid_rows(result, _references), do: result |> rows() |> with_row_ids()
 
   # Row actions need a row's id to stay the same from one run to the next: a
   # hash of its values and of how many rows with the same values came

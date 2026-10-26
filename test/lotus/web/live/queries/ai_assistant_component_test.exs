@@ -39,6 +39,16 @@ defmodule Lotus.Web.Queries.AiAssistantComponentTest do
              ]
     end
 
+    test "take a table whose columns are not described yet for one without" do
+      schema = %{"orders" => ~w(id status inserted_at), "users" => nil}
+
+      assert Assistant.suggested_prompts(schema) == [
+               "How many orders are there by status?",
+               "The 10 most recent orders",
+               "Which tables have the most rows?"
+             ]
+    end
+
     test "fall back to examples without a schema" do
       assert length(Assistant.suggested_prompts(nil)) == 3
       assert length(Assistant.suggested_prompts(%{})) == 3

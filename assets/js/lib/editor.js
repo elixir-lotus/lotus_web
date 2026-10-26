@@ -1,6 +1,12 @@
 import { EditorView, basicSetup } from "codemirror";
-import { placeholder, keymap } from "@codemirror/view";
-import { EditorState, Compartment, Prec } from "@codemirror/state";
+import { placeholder, keymap, Decoration } from "@codemirror/view";
+import {
+  EditorState,
+  Compartment,
+  Prec,
+  StateEffect,
+  StateField,
+} from "@codemirror/state";
 import { sql } from "@codemirror/lang-sql";
 import { json } from "@codemirror/lang-json";
 import { editorStyles, getCompletionStyles, themeHighlight } from "./styles";
@@ -10,12 +16,39 @@ import {
   getCachedDialectConfig,
   buildSqlExtension,
   isJsonLanguage,
+  tablesSchema,
 } from "./dialect_config";
 import { SqlCompletion } from "./languages/sql/completion";
 import { JsonDslCompletion } from "./languages/json_dsl/completion";
 import { load } from "./settings";
 
 const editorTheme = EditorView.theme(editorStyles);
+
+// The part of the text a run ran, marked for a moment.
+const flashRange = StateEffect.define();
+const ranMark = Decoration.mark({ class: "cm-lotus-ran" });
+
+const ranField = StateField.define({
+  create: () => Decoration.none,
+  update(marks, tr) {
+    marks = marks.map(tr.changes);
+    for (const effect of tr.effects) {
+      if (!effect.is(flashRange)) continue;
+      const { from, to } = effect.value;
+      marks = from < to ? Decoration.set([ranMark.range(from, to)]) : Decoration.none;
+    }
+    return marks;
+  },
+  provide: (field) => EditorView.decorations.from(field),
+});
+
+const ranTheme = EditorView.baseTheme({
+  ".cm-lotus-ran": {
+    backgroundColor: "rgba(219, 39, 119, 0.18)",
+    transition: "background-color 0.3s",
+  },
+});
+
 const languageCompartment = new Compartment();
 const completionThemeCompartment = new Compartment();
 
@@ -34,7 +67,7 @@ function isDarkMode() {
 
 function initialSqlExt(schema) {
   const cfg = { upperCaseKeywords: true };
-  if (schema) cfg.schema = schema;
+  if (schema) cfg.schema = tablesSchema(schema);
   return sql(cfg);
 }
 
@@ -45,7 +78,10 @@ export function createEditor({
   dialectName = "postgres",
   onChange,
   onRun,
+  onFormat,
+  onSelectionChange,
   onVars,
+  completionOptions = {},
 }) {
   let currentSchema = schema;
   let currentDialect = dialectName;
@@ -66,7 +102,33 @@ export function createEditor({
     themeHighlight,
     EditorView.lineWrapping,
     placeholder("SELECT * FROM table_name"),
+    ranField,
+    ranTheme,
   ];
+
+  if (onFormat) {
+    extensions.push(
+      Prec.highest(
+        keymap.of([
+          {
+            key: "Shift-Alt-f",
+            run: () => {
+              onFormat();
+              return true;
+            },
+          },
+        ]),
+      ),
+    );
+  }
+
+  if (onSelectionChange) {
+    extensions.push(
+      EditorView.updateListener.of((update) => {
+        if (update.selectionSet || update.docChanged) onSelectionChange();
+      }),
+    );
+  }
 
   if (onRun) {
     extensions.push(
@@ -105,6 +167,7 @@ export function createEditor({
   });
 
   let themeObserver = null;
+  let flashTimer = null;
 
   const updateCompletionTheme = () => {
     view.dispatch({
@@ -157,7 +220,10 @@ export function createEditor({
         ]),
       });
     } else {
-      contextCompletion = new SqlCompletion(currentSchema, currentConfig);
+      contextCompletion = new SqlCompletion(currentSchema, currentConfig, {
+        ...completionOptions,
+        dialect: currentDialect,
+      });
 
       view.dispatch({
         effects: languageCompartment.reconfigure(
@@ -185,6 +251,20 @@ export function createEditor({
           insert: content ?? "",
         },
       });
+    },
+    // The whole text in one change, which one undo takes back.
+    replaceContent(content, userEvent = "input") {
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: content ?? "" },
+        userEvent,
+      });
+    },
+    flash(from, to, ms = 1200) {
+      view.dispatch({ effects: flashRange.of({ from, to }) });
+      clearTimeout(flashTimer);
+      flashTimer = setTimeout(() => {
+        view.dispatch({ effects: flashRange.of({ from: 0, to: 0 }) });
+      }, ms);
     },
     updateSchema(newSchema) {
       currentSchema = newSchema;
@@ -216,6 +296,7 @@ export function createEditor({
       updateCompletionTheme();
     },
     destroy() {
+      clearTimeout(flashTimer);
       if (themeObserver) {
         themeObserver.disconnect();
       }

@@ -13,6 +13,48 @@
 
 ### Added
 
+- **SQL autocomplete reads the statement as the server does.** The editor
+  tokenizes SQL with the source's lexical rules, which the server sends
+  (`Lotus.Query.Tokenizer.Profile`): quotes, comments, dollar quotes,
+  escapes, `{{variables}}` and `[[ ]]` blocks. Autocomplete reads the whole
+  statement around the cursor: an alias defined after the cursor
+  (`select c.| from customers c`), comma joins, `WITH` queries (with their
+  columns when their select list names them plainly), subqueries in FROM,
+  quoted and schema-qualified names, and a schema's tables after its name
+  (`reporting.|`). A `;` in a string or a comment no longer ends the
+  statement, and `select | from customers` no longer cuts the table's name.
+
+- **Follow a foreign key.** In the results of a plain select of one table
+  (`SELECT <columns> FROM <table>`, then a WHERE, ORDER BY, LIMIT or
+  OFFSET, each column a bare name or `*`), the menu of a foreign key's
+  cell (right click, or Shift+F10) has "Open <table> row": the referenced
+  row opens in a new tab, as a new query `SELECT * FROM <table> WHERE
+  <column> = {{column}}` with the cell's value in the variable, run. Lotus
+  builds that statement again from what the source describes to the
+  person, and only for a source they may query. Of a join, a union, a
+  grouping or aliased columns, no cell offers it: Lotus cannot tell which
+  table a column comes from there.
+
+- **Format SQL.** The editor's Format button (and ⌘⇧F / Ctrl+Shift+F, or
+  Shift+Alt+F in the editor) now formats SQL too, with
+  [sql-formatter](https://github.com/sql-formatter-org/sql-formatter) in
+  the dialect of the source (PostgreSQL, MySQL, SQLite, ClickHouse, …;
+  plain SQL otherwise). Keywords keep their case, and `{{variables}}` and
+  `[[optional clauses]]` stay exactly as written. It is one change, which
+  one undo takes back; SQL the formatter cannot read stays as it is, with
+  a short message why. JSON sources (Elasticsearch) are pretty-printed as
+  before.
+
+- **Run the selection, or the statement at the cursor.** With text
+  selected, ⌘↵ / Ctrl↵ and the run buttons run only the selection. With
+  several statements in the editor, separated by `;`, they run the
+  statement the cursor is on, so a scratch file of statements works: a `;`
+  in a string (quoted, dollar-quoted) or a comment does not count. Otherwise
+  they run the whole query, as before. The part that ran is highlighted for
+  a moment, and the run buttons say what they run ("Run selection", "Run
+  statement at cursor"). The query keeps its whole text; its pages, the
+  grid's sort and filters, and the CSV export run the part that ran.
+
 - **Your app translates Lotus.** `config :lotus_web, gettext: MyAppWeb.Gettext`
   points Lotus at your app's Gettext backend, whose `lotus_web` domain
   (and `lotus_pro`, for Lotus Pro) adds a language Lotus does not ship, or
@@ -347,6 +389,14 @@
   close button or a click outside it; on a public dashboard too.
 
 ### Changed
+
+- **The editor opens with a source's tables, and describes their columns
+  as statements use them.** It no longer describes every table when it
+  opens, so a database with hundreds of tables opens at once: the
+  autocomplete asks for the columns of the tables a statement uses (a few
+  at a time), and the browser and the server keep them per source and
+  table. The AI assistant's suggestions describe a few tables when its
+  panel opens.
 
 - **Single values fill and center their card.** KPI, trend, gauge and
   progress cards draw large and centered, from Fude 0.2.

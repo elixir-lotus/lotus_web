@@ -895,7 +895,11 @@ defmodule Lotus.Web.Queries.AiAssistantComponent do
   # where a table has a date and an amount, a count by status, the latest rows.
   @spec suggested_prompts(map() | nil) :: [String.t()]
   def suggested_prompts(schema) when is_map(schema) and map_size(schema) > 0 do
-    tables = Enum.sort_by(schema, fn {table, columns} -> {-length(columns), table} end)
+    # A table whose columns the editor has not described yet has none here.
+    tables =
+      schema
+      |> Enum.map(fn {table, columns} -> {table, columns || []} end)
+      |> Enum.sort_by(fn {table, columns} -> {-length(columns), table} end)
 
     by_month =
       Enum.find_value(tables, fn {table, columns} ->

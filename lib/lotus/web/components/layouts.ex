@@ -161,7 +161,7 @@ defmodule Lotus.Web.Layouts do
             <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wider"><%= gettext("Query Editor") %></h4>
             <div class="space-y-2">
               <.shortcut_item
-                description={gettext("Run query")}
+                description={gettext("Run the selection, or the statement at the cursor")}
                 keys={["⌘", "Enter"]}
                 alt_keys={["Ctrl", "Enter"]}
               />
@@ -171,9 +171,13 @@ defmodule Lotus.Web.Layouts do
                 alt_keys={["Ctrl", "Shift", "C"]}
               />
               <.shortcut_item
-                description={gettext("Pretty-print the query (JSON sources)")}
+                description={gettext("Format the query (SQL and JSON sources)")}
                 keys={["⌘", "Shift", "F"]}
                 alt_keys={["Ctrl", "Shift", "F"]}
+              />
+              <.shortcut_item
+                description={gettext("Format the query, in the editor")}
+                keys={["Shift", "Alt", "F"]}
               />
               <.shortcut_item
                 description={gettext("Toggle Schema Explorer")}

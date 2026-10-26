@@ -20,6 +20,7 @@ defmodule Lotus.Web.QueryEditorPage do
   alias Lotus.Web.Queries.AiSteps
   alias Lotus.Web.Queries.DropdownOptionsModal
   alias Lotus.Web.Queries.MasuResults
+  alias Lotus.Web.Queries.References
   alias Lotus.Web.Queries.SchemaDiagramComponent
   alias Lotus.Web.Queries.SchemaExplorerComponent
   alias Lotus.Web.Queries.VariableSettingsComponent
@@ -137,6 +138,9 @@ defmodule Lotus.Web.QueryEditorPage do
                   data_source_names={@data_source_names}
                   schema={@editor_schema}
                   dialect={@editor_dialect}
+                  language={@editor_language}
+                  schemas={@editor_schemas}
+                  source={@query.data_source}
                   running={@running}
                   statement_empty={@statement_empty}
                   right_drawer={@right_drawer}
@@ -151,6 +155,7 @@ defmodule Lotus.Web.QueryEditorPage do
                   data_source={@default_source}
                   can_query={@can_query}
                   can_ai={@can_ai}
+                  run_scope={@run_scope}
                 />
 
                 <.results_pill
@@ -172,6 +177,7 @@ defmodule Lotus.Web.QueryEditorPage do
                   is_saved_query={@page.mode == :edit}
                   results_run={Map.get(assigns, :results_run, 0)}
                   filter_operators={Map.get(assigns, :filter_operators, [])}
+                  references={@result_references}
                   visualization_config={@visualization_config}
                   visualization_view_mode={@visualization_view_mode}
                   visualization_visible={@left_drawer == :visualization}
@@ -372,15 +378,26 @@ defmodule Lotus.Web.QueryEditorPage do
         end
 
       %{mode: :new} ->
-        query = %Query{
-          name: "",
-          description: "",
-          statement: "",
-          data_source: socket.assigns.default_source,
-          variables: []
-        }
+        case follow_query(socket, params) do
+          {:ok, query, values} ->
+            {:noreply,
+             socket
+             |> assign(variable_values: values)
+             |> assign_query_changeset(query)
+             |> maybe_update_editor_schema(query.data_source)
+             |> maybe_auto_run_query()}
 
-        {:noreply, assign_query_changeset(socket, query)}
+          :error ->
+            query = %Query{
+              name: "",
+              description: "",
+              statement: "",
+              data_source: socket.assigns.default_source,
+              variables: []
+            }
+
+            {:noreply, assign_query_changeset(socket, query)}
+        end
     end
   end
 
@@ -674,7 +691,8 @@ defmodule Lotus.Web.QueryEditorPage do
           visualization_view_mode: :chart,
           page_index: 0,
           filters: [],
-          sorts: []
+          sorts: [],
+          ran_statement: nil
         )
         |> assign(results_run: Map.get(socket.assigns, :results_run, 0) + 1)
 
@@ -818,12 +836,27 @@ defmodule Lotus.Web.QueryEditorPage do
     {:noreply, socket}
   end
 
+  # The columns of the tables a statement uses, which the editor's
+  # autocomplete asks for as the person writes (SchemaBuilder.columns/5).
+  @impl Phoenix.LiveComponent
+  def handle_event("editor_columns", %{"tables" => tables}, socket) when is_list(tables) do
+    {columns, socket} = describe_columns(socket, tables)
+    {:reply, %{columns: columns}, socket}
+  end
+
+  def handle_event("editor_columns", _params, socket), do: {:reply, %{columns: %{}}, socket}
+
   @impl Phoenix.LiveComponent
   def handle_event("fetch_dialect_config", %{"dialect" => dialect_name}, socket) do
     config =
       case find_source_for_dialect(dialect_name, socket.assigns) do
-        nil -> %{language: "sql", keywords: [], types: [], functions: [], context_boundaries: []}
-        source_name -> Lotus.Source.editor_config(source_name)
+        nil ->
+          %{language: "sql", keywords: [], types: [], functions: [], context_boundaries: []}
+
+        source_name ->
+          source_name
+          |> Lotus.Source.editor_config()
+          |> Map.put(:tokenizer, tokenizer_profile(source_name))
       end
 
     {:reply, %{config: config}, socket}
@@ -900,8 +933,25 @@ defmodule Lotus.Web.QueryEditorPage do
     end
   end
 
+  # What the run buttons run, as the editor reports it: the selection, the
+  # statement at the cursor, or the whole query.
   @impl Phoenix.LiveComponent
-  def handle_event("run_query", %{"query" => query_params}, socket) do
+  def handle_event("editor_run_scope", %{"scope" => scope}, socket) do
+    scope =
+      case scope do
+        "selection" -> :selection
+        "statement" -> :statement
+        _all -> :all
+      end
+
+    {:noreply, assign(socket, run_scope: scope)}
+  end
+
+  # The editor sends its whole text as the query's statement, and the part to
+  # run (the selection, or the statement at the cursor) as `run_statement`.
+  # The query keeps its text; the run, its pages and its export run the part.
+  @impl Phoenix.LiveComponent
+  def handle_event("run_query", %{"query" => query_params} = params, socket) do
     changeset = build_query_changeset(socket.assigns.query, query_params)
     form = build_query_form(changeset)
 
@@ -913,15 +963,14 @@ defmodule Lotus.Web.QueryEditorPage do
          running: false
        )}
     else
-      query = Ecto.Changeset.apply_changes(changeset)
-
       socket =
         socket
         |> update_query_state(changeset, [])
+        |> assign(ran_statement: run_statement(params))
         |> assign(page_index: 0, filters: [], sorts: [])
         |> assign(results_run: Map.get(socket.assigns, :results_run, 0) + 1)
 
-      {:noreply, execute_query(socket, query)}
+      {:noreply, execute_query(socket, query_to_run(socket.assigns))}
     end
   end
 
@@ -945,7 +994,7 @@ defmodule Lotus.Web.QueryEditorPage do
           {:noreply,
            socket
            |> assign(page_index: page_index + 1)
-           |> execute_query(socket.assigns.query)}
+           |> execute_query(query_to_run(socket.assigns))}
         else
           {:noreply, socket}
         end
@@ -964,7 +1013,7 @@ defmodule Lotus.Web.QueryEditorPage do
       {:noreply,
        socket
        |> assign(page_index: new_index)
-       |> execute_query(socket.assigns.query)}
+       |> execute_query(query_to_run(socket.assigns))}
     else
       {:noreply, socket}
     end
@@ -974,7 +1023,7 @@ defmodule Lotus.Web.QueryEditorPage do
   def handle_event("goto_page", %{"index" => idx}, socket) do
     case Integer.parse(to_string(idx)) do
       {n, ""} when n >= 0 ->
-        {:noreply, socket |> assign(page_index: n) |> execute_query(socket.assigns.query)}
+        {:noreply, socket |> assign(page_index: n) |> execute_query(query_to_run(socket.assigns))}
 
       _ ->
         {:noreply, socket}
@@ -1253,8 +1302,15 @@ defmodule Lotus.Web.QueryEditorPage do
     {:noreply, update(socket, :ai_conversation, &put_ai_message(&1, index, :preview, preview))}
   end
 
-  def handle_async(:query_execution, {:ok, {:ok, result}}, socket) do
-    {:noreply, assign(socket, result: result, error: nil, running: false)}
+  def handle_async(:query_execution, {:ok, {:ok, result, {key, references}}}, socket) do
+    {:noreply,
+     assign(socket,
+       result: result,
+       error: nil,
+       running: false,
+       result_references: references,
+       references_key: key
+     )}
   end
 
   def handle_async(:query_execution, {:ok, {:error, error_msg}}, socket) do
@@ -1348,7 +1404,12 @@ defmodule Lotus.Web.QueryEditorPage do
     {:ok,
      socket
      |> assign(filters: filters, sorts: sorts, page_index: 0)
-     |> execute_query(socket.assigns.query)}
+     |> execute_query(query_to_run(socket.assigns))}
+  end
+
+  # A foreign key's cell in the results: its row opens in a new tab.
+  def update(%{action: :follow_reference, column: column, value: value}, socket) do
+    {:ok, follow_reference(socket, column, value)}
   end
 
   def update(assigns, socket) do
@@ -1414,7 +1475,20 @@ defmodule Lotus.Web.QueryEditorPage do
       dropdown_options_variable_name: nil,
       editor_schema: nil,
       editor_dialect: nil,
+      editor_language: nil,
+      # The schemas of the editor's tables, and the columns described so far,
+      # by {source, search path} (`editor_columns`).
+      editor_schemas: [],
+      column_cache: %{},
       dynamic_options: false,
+      # What the run buttons run (`:all`, `:statement`, `:selection`), and
+      # the part of the text the last run ran, when it was not all of it.
+      run_scope: :all,
+      ran_statement: nil,
+      # The foreign keys of the result's columns, and the run they are of
+      # ({source, statement, search path}).
+      result_references: %{},
+      references_key: nil,
       optional_variable_names: MapSet.new(),
       detected_variables: [],
       variable_form: to_form(%{}, as: "variables"),
@@ -1513,6 +1587,7 @@ defmodule Lotus.Web.QueryEditorPage do
     if data_source && data_source != "" &&
          Authorization.discoverable?(socket.assigns, data_source) do
       dialect = dialect_for_repo(data_source)
+      language = Lotus.Source.query_language(data_source)
       source_type = Lotus.Source.source_type(data_source)
       search_path = socket.assigns.query && socket.assigns.query.search_path
 
@@ -1525,9 +1600,15 @@ defmodule Lotus.Web.QueryEditorPage do
              Actor.opts(socket.assigns)
            ) do
         {:ok, schema} ->
+          # The columns already described for the source, kept from before.
+          known = Map.get(socket.assigns[:column_cache] || %{}, {data_source, search_path}, %{})
+
           assign(socket,
-            editor_schema: schema,
+            editor_schema: Map.merge(schema, Map.take(known, Map.keys(schema))),
+            editor_schemas:
+              SchemaBuilder.schemas(socket.assigns.sources_map, data_source, search_path),
             editor_dialect: dialect,
+            editor_language: language,
             source_type: source_type,
             dynamic_options: dynamic_options
           )
@@ -1536,13 +1617,60 @@ defmodule Lotus.Web.QueryEditorPage do
           assign(socket,
             editor_schema: nil,
             editor_dialect: dialect,
+            editor_language: language,
             source_type: source_type,
             dynamic_options: dynamic_options
           )
       end
     else
-      assign(socket, editor_schema: nil, editor_dialect: nil, dynamic_options: false)
+      assign(socket,
+        editor_schema: nil,
+        editor_dialect: nil,
+        editor_language: nil,
+        dynamic_options: false
+      )
     end
+  end
+
+  # Describes the editor's tables `keys` not described yet, for a source the
+  # person may browse, and keeps their columns in the editor's schema. Gives
+  # the columns of `keys` it knows.
+  defp describe_columns(socket, keys) do
+    data_source = socket.assigns.query.data_source
+    search_path = socket.assigns.query.search_path
+    schema = socket.assigns.editor_schema || %{}
+
+    wanted =
+      Enum.filter(keys, &(is_binary(&1) and Map.has_key?(schema, &1) and is_nil(schema[&1])))
+
+    with [_ | _] <- wanted,
+         true <- is_binary(data_source),
+         true <- Authorization.discoverable?(socket.assigns, data_source),
+         {:ok, columns} <-
+           SchemaBuilder.columns(
+             socket.assigns.sources_map,
+             data_source,
+             search_path,
+             wanted,
+             Actor.opts(socket.assigns)
+           ) do
+      schema = Map.merge(schema, columns)
+
+      socket =
+        socket
+        |> assign(editor_schema: schema)
+        |> update(:column_cache, fn cache ->
+          Map.update(cache || %{}, {data_source, search_path}, columns, &Map.merge(&1, columns))
+        end)
+
+      {described(schema, keys), socket}
+    else
+      _ -> {described(schema, keys), socket}
+    end
+  end
+
+  defp described(schema, keys) do
+    schema |> Map.take(keys) |> Map.reject(fn {_key, columns} -> is_nil(columns) end)
   end
 
   defp dialect_for_repo(repo_name) do
@@ -1551,6 +1679,18 @@ defmodule Lotus.Web.QueryEditorPage do
       "json:" <> _ = full -> full
       _ -> "sql"
     end
+  end
+
+  # The lexical rules Lotus tokenizes the source's statements with
+  # (`Lotus.Query.Tokenizer.Profile`), for the editor's tokenizer to read the
+  # text as the server does.
+  defp tokenizer_profile(source_name) do
+    source_name
+    |> Lotus.Source.resolve!(nil)
+    |> Lotus.Source.Adapter.lexical_profile()
+    |> Map.from_struct()
+  rescue
+    _error -> nil
   end
 
   defp find_source_for_dialect(dialect_name, assigns) do
@@ -1612,6 +1752,21 @@ defmodule Lotus.Web.QueryEditorPage do
 
   defp check_statement_empty(nil), do: true
 
+  defp run_statement(%{"run_statement" => statement}) when is_binary(statement) do
+    if check_statement_empty(statement), do: nil, else: statement
+  end
+
+  defp run_statement(_params), do: nil
+
+  # The query as the last run ran it: its own statement, or the part of it
+  # the person ran.
+  defp query_to_run(%{query: query} = assigns) do
+    case assigns[:ran_statement] do
+      nil -> query
+      statement -> %{query | statement: statement}
+    end
+  end
+
   defp maybe_update_timeout(socket, %{"query_timeout" => timeout_str})
        when is_binary(timeout_str) do
     case Integer.parse(timeout_str) do
@@ -1671,14 +1826,83 @@ defmodule Lotus.Web.QueryEditorPage do
     # The results grid keeps the rows it shows while the query runs.
     result = socket.assigns[:result]
 
+    # The foreign keys of the result's columns, found once for a statement.
+    key = {repo, query.statement, query.search_path}
+    known = if socket.assigns[:references_key] == key, do: socket.assigns.result_references
+
+    references_opts =
+      Keyword.take(opts, [:context, :scope, :search_path])
+
     socket
     |> assign(running: true, error: nil, result: result)
     # The filters the source runs, which the results grid offers.
     |> assign(filter_operators: Lotus.Source.supported_filter_operators(repo))
     |> start_async(:query_execution, fn ->
-      Lotus.run_query(query, opts)
+      with {:ok, result} <- Lotus.run_query(query, opts) do
+        references =
+          known ||
+            References.for_result(repo, query.statement, result.columns, references_opts)
+
+        {:ok, result, {key, references}}
+      end
     end)
   end
+
+  # The row a foreign key references opens in a new query, in a new tab, for a
+  # person who may query the source. The new query's page builds the
+  # statement again from what the source describes (`follow_query/2`).
+  defp follow_reference(socket, column, value) do
+    query = query_to_run(socket.assigns)
+    repo = source_or_default(query.data_source, socket.assigns)
+
+    with %{} = ref <- Map.get(socket.assigns.result_references, column),
+         text when is_binary(text) <- References.value_text(value),
+         :allow <- Authorization.authorize(socket.assigns, :query, repo) do
+      path =
+        lotus_path(["queries", "new"], %{
+          "follow_source" => repo,
+          "follow_schema" => ref.schema,
+          "follow_table" => ref.table,
+          "follow_column" => ref.column,
+          "follow_value" => text
+        })
+
+      push_event(socket, "open-blank", %{location: path})
+    else
+      {:deny, reason} -> deny(socket, reason)
+      _ -> socket
+    end
+  end
+
+  # A new query that opens a referenced row (`?follow_table=…`): for a source
+  # the person may browse and query, a table and column the source describes
+  # to them.
+  defp follow_query(
+         socket,
+         %{
+           "follow_source" => source,
+           "follow_table" => table,
+           "follow_column" => column,
+           "follow_value" => value
+         } = params
+       )
+       when is_binary(source) and is_binary(table) and is_binary(column) and is_binary(value) do
+    if source in socket.assigns.data_source_names and
+         Authorization.allowed?(socket.assigns, :query, source) do
+      References.lookup(
+        source,
+        params["follow_schema"],
+        table,
+        column,
+        value,
+        Actor.opts(socket.assigns)
+      )
+    else
+      :error
+    end
+  end
+
+  defp follow_query(_socket, _params), do: :error
 
   defp update_variable_state(socket, ordered_vars, names, extra_params) do
     params =
@@ -1841,6 +2065,14 @@ defmodule Lotus.Web.QueryEditorPage do
         end
 
       new_drawer = if socket.assigns.left_drawer == :ai_assistant, do: nil, else: :ai_assistant
+
+      # The assistant's suggestions are made of tables' columns: describe a
+      # few, as the editor describes those its statements use.
+      socket =
+        if new_drawer == :ai_assistant,
+          do:
+            socket |> describe_columns(Map.keys(socket.assigns.editor_schema || %{})) |> elem(1),
+          else: socket
 
       {:noreply, assign(socket, left_drawer: new_drawer, ai_conversation: conversation)}
     else
@@ -2162,7 +2394,7 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   defp generate_export_url(socket) do
-    query = socket.assigns.query
+    query = query_to_run(socket.assigns)
     vars = Map.get(socket.assigns, :variable_values, %{})
     repo = source_or_default(query.data_source, socket.assigns)
 
@@ -2198,9 +2430,10 @@ defmodule Lotus.Web.QueryEditorPage do
       "sorts" => Map.get(socket.assigns, :sorts, [])
     }
 
+    # A saved query exports as saved, unless the person ran a part of it.
     export_params =
       case socket.assigns.page do
-        %{mode: :edit, id: id} ->
+        %{mode: :edit, id: id} when is_nil(socket.assigns.ran_statement) ->
           %{
             "query_id" => id,
             "repo" => repo,
@@ -2209,7 +2442,7 @@ defmodule Lotus.Web.QueryEditorPage do
             "filename" => filename
           }
 
-        %{mode: :new} ->
+        _new_or_part ->
           %{
             "query_attrs" => %{
               "statement" => query.statement,

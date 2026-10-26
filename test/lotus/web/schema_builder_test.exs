@@ -17,6 +17,8 @@ defmodule Lotus.Web.SchemaBuilderTest do
       assert Map.has_key?(schema, "test_users")
       assert Map.has_key?(schema, "test_posts")
 
+      {:ok, schema} = SchemaBuilder.columns(sources_map, "public", nil, Map.keys(schema))
+
       assert "name" in schema["test_users"]
       assert "email" in schema["test_users"]
       assert "age" in schema["test_users"]
@@ -40,6 +42,9 @@ defmodule Lotus.Web.SchemaBuilderTest do
       assert Map.has_key?(schema, "customers")
       assert Map.has_key?(schema, "orders")
 
+      {:ok, schema} =
+        SchemaBuilder.columns(sources_map, "reporting", "reporting", Map.keys(schema))
+
       assert "name" in schema["customers"]
       assert "email" in schema["customers"]
       assert "active" in schema["customers"]
@@ -54,6 +59,7 @@ defmodule Lotus.Web.SchemaBuilderTest do
       result = SchemaBuilder.build(sources_map, "public")
 
       assert {:ok, schema} = result
+      {:ok, schema} = SchemaBuilder.columns(sources_map, "public", nil, Map.keys(schema))
 
       assert "id" in schema["test_users"]
       assert "id" in schema["test_posts"]
@@ -162,26 +168,14 @@ defmodule Lotus.Web.SchemaBuilderTest do
       refute Map.has_key?(schema, "public.test_posts")
     end
 
-    test "includes columns for all tables", %{sources_map: sources_map} do
+    test "gives the tables without their columns", %{sources_map: sources_map} do
       result = SchemaBuilder.build(sources_map, "public")
 
       assert {:ok, schema} = result
+      assert map_size(schema) > 0
 
       Enum.each(schema, fn {_table_name, columns} ->
-        assert [_ | _] = columns
-      end)
-    end
-
-    test "handles tables without accessible columns gracefully", %{sources_map: sources_map} do
-      # This tests the error handling in fetch_table_columns
-      result = SchemaBuilder.build(sources_map, "public")
-
-      assert {:ok, schema} = result
-
-      # Even if some columns can't be fetched, the table should still appear with empty list
-      Enum.each(schema, fn {_table_name, columns} ->
-        assert is_list(columns)
-        # columns might be empty list if fetch fails, but should still be a list
+        assert columns == nil
       end)
     end
   end
@@ -231,6 +225,51 @@ defmodule Lotus.Web.SchemaBuilderTest do
 
       assert {:ok, schema} = result
       assert schema == %{}
+    end
+  end
+
+  describe "columns/5" do
+    test "describes the tables asked for", %{sources_map: sources_map} do
+      assert {:ok, columns} = SchemaBuilder.columns(sources_map, "public", nil, ["test_posts"])
+      assert Map.keys(columns) == ["test_posts"]
+      assert "user_id" in columns["test_posts"]
+    end
+
+    test "names a table as build/4 does, qualified for several schemas", %{
+      sources_map: sources_map
+    } do
+      assert {:ok, %{"public.test_users" => columns}} =
+               SchemaBuilder.columns(sources_map, "public", "public,information_schema", [
+                 "public.test_users"
+               ])
+
+      assert "email" in columns
+    end
+
+    test "leaves out a table the editor does not have", %{sources_map: sources_map} do
+      assert {:ok, %{}} =
+               SchemaBuilder.columns(sources_map, "public", nil, ["nowhere", "public.test_users"])
+    end
+
+    test "describes a few tables at a time" do
+      keys = for i <- 1..20, do: "t#{i}"
+
+      database = %SourcesMap.Database{
+        name: "public",
+        source_type: :postgres,
+        supports_schemas: true,
+        schemas: [%SourcesMap.Schema{name: "public", tables: keys, is_default: true}]
+      }
+
+      sources_map = %SourcesMap{databases: [database]}
+
+      assert {:ok, columns} = SchemaBuilder.columns(sources_map, "public", "public", keys)
+      assert map_size(columns) == SchemaBuilder.max_tables()
+    end
+
+    test "errs for a source it does not know", %{sources_map: sources_map} do
+      assert {:error, :database_not_found} =
+               SchemaBuilder.columns(sources_map, "nope", nil, ["a"])
     end
   end
 end

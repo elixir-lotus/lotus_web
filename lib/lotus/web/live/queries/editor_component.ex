@@ -19,6 +19,11 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:data_source_names, :list, default: [])
   attr(:schema, :map, default: %{})
   attr(:dialect, :string, default: "postgres")
+  attr(:language, :string, default: nil)
+  # The schemas of the schema's tables, and the source, for the editor's
+  # autocomplete to qualify tables and ask for their columns.
+  attr(:schemas, :list, default: [])
+  attr(:source, :string, default: nil)
   attr(:variables, :list, default: [])
   attr(:variable_values, :map, default: %{})
   attr(:resolved_variable_options, :map, default: %{})
@@ -30,6 +35,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:actor, :any, required: true)
   attr(:can_query, :boolean, default: true)
   attr(:can_ai, :boolean, default: true)
+  attr(:run_scope, :atom, default: :all, values: [:all, :statement, :selection])
 
   def editor(assigns) do
     search_path_field = assigns.form[:search_path]
@@ -47,7 +53,8 @@ defmodule Lotus.Web.Queries.EditorComponent do
          assigns.data_source != nil) and
         Lotus.Source.supports_feature?(assigns.data_source, :search_path)
 
-    supports_formatting = String.starts_with?(assigns.dialect || "", "json:")
+    # SQL is formatted in its dialect, JSON pretty-printed (formatter.js).
+    supports_formatting = formattable?(assigns.language)
 
     assigns =
       assigns
@@ -77,7 +84,11 @@ defmodule Lotus.Web.Queries.EditorComponent do
           supports_formatting={@supports_formatting}
           can_query={@can_query}
           can_ai={@can_ai}
+          run_scope={@run_scope}
         />
+
+        <%!-- The part of the text to run, when it is not all of it (EditorForm). --%>
+        <input type="hidden" name="run_statement" id="run-statement" value="" />
 
         <div id="editor-context-menu-wrapper" phx-hook="EditorContextMenu" data-ai-enabled={to_string(@can_ai and Lotus.Web.AI.enabled?())} class={["relative pb-8", if(@minimized, do: "hidden", else: "")]}>
 
@@ -86,6 +97,9 @@ defmodule Lotus.Web.Queries.EditorComponent do
           <div
             data-editor-schema={Lotus.JSON.encode!(@schema || %{})}
             data-editor-dialect={@dialect || "postgres"}
+            data-editor-formattable={to_string(@supports_formatting)}
+            data-editor-schemas={Lotus.JSON.encode!(@schemas || [])}
+            data-editor-source={@source}
             style="display: none;">
           </div>
 
@@ -112,7 +126,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
            title={
              if @statement_empty,
                do: gettext("Enter a query to run"),
-               else: gettext("Run Query")
+               else: run_label(@run_scope)
            }
           >
             <%= if @running do %>
@@ -148,6 +162,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:actor, :any, required: true)
   attr(:can_query, :boolean, default: true)
   attr(:can_ai, :boolean, default: true)
+  attr(:run_scope, :atom, default: :all)
 
   def render_toolbar(assigns) do
     ~H"""
@@ -195,6 +210,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
             supports_formatting={@supports_formatting}
             can_query={@can_query}
             can_ai={@can_ai}
+            run_scope={@run_scope}
           />
         </div>
       </div>
@@ -248,6 +264,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:supports_formatting, :boolean, default: false)
   attr(:can_query, :boolean, default: true)
   attr(:can_ai, :boolean, default: true)
+  attr(:run_scope, :atom, default: :all)
 
   def render_actions(assigns) do
     ~H"""
@@ -258,7 +275,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
           cond do
             @statement_empty -> gettext("Enter a query to run")
             @running -> gettext("Query running...")
-            true -> gettext("Run query")
+            true -> run_label(@run_scope)
           end
         }
         phx-hook="Tippy"
@@ -298,7 +315,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
           phx-click="format_query"
           phx-target={@target}
           class="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
-          data-title={gettext("Pretty-print query")}
+          data-title={gettext("Format query")}
           phx-hook="Tippy"
         >
           <Icons.code_braces class="h-5 w-5" />
@@ -401,6 +418,16 @@ defmodule Lotus.Web.Queries.EditorComponent do
     </div>
     """
   end
+
+  defp formattable?("sql:" <> _dialect), do: true
+  defp formattable?("json:" <> _dsl), do: true
+  defp formattable?(_language), do: false
+
+  # What the run buttons and ⌘↵ run: the text selected, the statement at the
+  # cursor when the editor has several, or the whole query.
+  defp run_label(:selection), do: gettext("Run selection")
+  defp run_label(:statement), do: gettext("Run statement at cursor")
+  defp run_label(_all), do: gettext("Run query")
 
   defp get_variable_options(options, variable_name) do
     Map.get(options, variable_name)
