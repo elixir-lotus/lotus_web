@@ -1,5 +1,8 @@
 import { createEditor } from "../lib/editor.js";
-import { getDialectConfig, isJsonLanguage } from "../lib/dialect_config.js";
+import {
+  getCachedDialectConfig,
+  isJsonLanguage,
+} from "../lib/dialect_config.js";
 import { format as formatContent } from "../lib/formatter.js";
 import { runTarget, dialectOptions } from "../lib/sql_statements.js";
 import { tinykeys } from "tinykeys";
@@ -302,7 +305,8 @@ export default {
     const text = view.state.doc.toString();
     const dialect = this.currentDialect();
     if (isJsonLanguage(dialect)) return { scope: "all", text };
-    return runTarget(text, view.state.selection.main, dialectOptions(dialect));
+    const server = getCachedDialectConfig(dialect)?.tokenizer;
+    return runTarget(text, view.state.selection.main, dialectOptions(dialect, server));
   },
 
   // Formats the text in place, as one change that one undo takes back; a

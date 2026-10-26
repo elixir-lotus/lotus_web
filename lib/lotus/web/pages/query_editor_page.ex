@@ -838,8 +838,13 @@ defmodule Lotus.Web.QueryEditorPage do
   def handle_event("fetch_dialect_config", %{"dialect" => dialect_name}, socket) do
     config =
       case find_source_for_dialect(dialect_name, socket.assigns) do
-        nil -> %{language: "sql", keywords: [], types: [], functions: [], context_boundaries: []}
-        source_name -> Lotus.Source.editor_config(source_name)
+        nil ->
+          %{language: "sql", keywords: [], types: [], functions: [], context_boundaries: []}
+
+        source_name ->
+          source_name
+          |> Lotus.Source.editor_config()
+          |> Map.put(:tokenizer, tokenizer_profile(source_name))
       end
 
     {:reply, %{config: config}, socket}
@@ -1612,6 +1617,18 @@ defmodule Lotus.Web.QueryEditorPage do
       "json:" <> _ = full -> full
       _ -> "sql"
     end
+  end
+
+  # The lexical rules Lotus tokenizes the source's statements with
+  # (`Lotus.Query.Tokenizer.Profile`), for the editor's tokenizer to read the
+  # text as the server does.
+  defp tokenizer_profile(source_name) do
+    source_name
+    |> Lotus.Source.resolve!(nil)
+    |> Lotus.Source.Adapter.lexical_profile()
+    |> Map.from_struct()
+  rescue
+    _error -> nil
   end
 
   defp find_source_for_dialect(dialect_name, assigns) do

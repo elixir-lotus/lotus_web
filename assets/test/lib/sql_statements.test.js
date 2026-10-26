@@ -40,16 +40,16 @@ describe("splitStatements", () => {
     ]);
   });
 
-  it("ignores ; in backquoted identifiers", () => {
-    expect(texts("SELECT `a;b` FROM t; SELECT 2")).toEqual([
+  it("ignores ; in backquoted identifiers (MySQL)", () => {
+    expect(texts("SELECT `a;b` FROM t; SELECT 2", dialectOptions("mysql"))).toEqual([
       "SELECT `a;b` FROM t",
       "SELECT 2",
     ]);
   });
 
-  it("ignores ; in dollar-quoted strings", () => {
+  it("ignores ; in dollar-quoted strings (Postgres)", () => {
     const text = "SELECT $$a;b$$; SELECT $fn$ x; $$ y; $fn$; SELECT 3";
-    expect(texts(text)).toEqual([
+    expect(texts(text, dialectOptions("postgres"))).toEqual([
       "SELECT $$a;b$$",
       "SELECT $fn$ x; $$ y; $fn$",
       "SELECT 3",
@@ -57,7 +57,7 @@ describe("splitStatements", () => {
   });
 
   it("does not take a positional parameter or an identifier's $ for a dollar quote", () => {
-    expect(texts("SELECT $1; SELECT a$b$c; SELECT 3")).toEqual([
+    expect(texts("SELECT $1; SELECT a$b$c; SELECT 3", dialectOptions("postgres"))).toEqual([
       "SELECT $1",
       "SELECT a$b$c",
       "SELECT 3",
@@ -104,6 +104,20 @@ describe("splitStatements", () => {
   it("takes # for a comment in MySQL only", () => {
     expect(texts("SELECT 1 # x; y\n; SELECT 2", dialectOptions("mysql"))).toEqual([
       "SELECT 1",
+      "SELECT 2",
+    ]);
+  });
+
+  it("reads MySQL's 5--1 as arithmetic, and its # as a comment", () => {
+    expect(texts("SELECT 5--1; SELECT 2 # x; y\n", dialectOptions("mysql"))).toEqual([
+      "SELECT 5--1",
+      "SELECT 2",
+    ]);
+  });
+
+  it("ignores ; in SQLite's [bracketed] identifiers", () => {
+    expect(texts("SELECT [a;b] FROM t; SELECT 2", dialectOptions("sqlite"))).toEqual([
+      "SELECT [a;b] FROM t",
       "SELECT 2",
     ]);
   });

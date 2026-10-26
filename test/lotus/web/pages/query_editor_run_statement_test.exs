@@ -112,4 +112,15 @@ defmodule Lotus.Web.Pages.QueryEditorRunStatementTest do
 
     assert has_element?(live, ~s(#toolbar-run-query-tippy[data-title="Run query"]))
   end
+
+  test "the editor gets the lexical rules the server tokenizes the source with", %{live: live} do
+    live
+    |> with_target("#query-editor-page")
+    |> render_hook("fetch_dialect_config", %{"dialect" => "postgres"})
+
+    assert_reply(live, %{config: %{tokenizer: tokenizer}})
+    assert tokenizer[:dollar_quotes?] == true
+    assert tokenizer[:nested_block_comments?] == true
+    assert tokenizer.string_quotes == ["'"]
+  end
 end

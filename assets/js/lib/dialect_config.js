@@ -121,6 +121,8 @@ function mergeWithDefaults(config) {
 
   if (config.dialect_spec) merged.dialect_spec = config.dialect_spec;
   if (config.context_schema) merged.context_schema = config.context_schema;
+  // The server's lexical profile, for the tokenizer (languages/sql/tokenizer.js).
+  if (config.tokenizer) merged.tokenizer = config.tokenizer;
 
   return merged;
 }
