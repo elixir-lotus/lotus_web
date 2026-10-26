@@ -5546,3 +5546,40 @@ msgstr "Ouvrir la ligne de %{table}"
 #, elixir-autogen, elixir-format
 msgid "This cell is empty: it references no row"
 msgstr "Cette cellule est vide : elle ne référence aucune ligne"
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "Change data in %{source}?"
+msgstr "Modifier les données de %{source} ?"
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "This statement changes data, and running it again changes it again. Run it?"
+msgstr "Cette requête modifie les données, et l’exécuter à nouveau les modifie à nouveau. L’exécuter ?"
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "Run it"
+msgstr "L’exécuter"
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "Could not stop the query."
+msgstr "Impossible d’arrêter la requête."
+
+#: lib/lotus/web/live/queries/editor_component.ex
+#, elixir-autogen, elixir-format
+msgid "Stop query"
+msgstr "Arrêter la requête"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} row changed"
+msgid_plural "%{count} rows changed"
+msgstr[0] "%{count} ligne modifiée"
+msgstr[1] "%{count} lignes modifiées"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Running the statement again changes the data again."
+msgstr "Exécuter à nouveau la requête modifie à nouveau les données."

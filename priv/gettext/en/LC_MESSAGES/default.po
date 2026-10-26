@@ -5546,3 +5546,40 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "This cell is empty: it references no row"
 msgstr ""
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "Change data in %{source}?"
+msgstr ""
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "This statement changes data, and running it again changes it again. Run it?"
+msgstr ""
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "Run it"
+msgstr ""
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "Could not stop the query."
+msgstr ""
+
+#: lib/lotus/web/live/queries/editor_component.ex
+#, elixir-autogen, elixir-format
+msgid "Stop query"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} row changed"
+msgid_plural "%{count} rows changed"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Running the statement again changes the data again."
+msgstr ""

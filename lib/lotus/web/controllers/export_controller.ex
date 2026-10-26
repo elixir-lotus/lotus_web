@@ -157,7 +157,9 @@ defmodule Lotus.Web.ExportController do
     vars = export_params["vars"] || %{}
     search_path = export_params["search_path"]
 
-    opts = [repo: repo, vars: vars]
+    # An export reads: a statement that changes data is refused, not run
+    # again for its rows.
+    opts = [repo: repo, vars: vars, read_only: true]
 
     opts =
       if search_path && String.trim(search_path) != "" do
