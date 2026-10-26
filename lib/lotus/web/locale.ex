@@ -21,7 +21,7 @@ defmodule Lotus.Web.Locale do
         {:cont, socket}
 
       locale ->
-        Gettext.put_locale(Lotus.Web.Gettext, locale)
+        Lotus.Web.Translations.put_locale(locale)
         {:cont, assign(socket, :lotus_locale, locale)}
     end
   end

@@ -64,11 +64,12 @@ defmodule Lotus.Web.Branding do
   end
 
   # The workspace's language, unless the host chose one for the person
-  # (`Lotus.Web.Locale`). Only a language Lotus speaks.
+  # (`Lotus.Web.Locale`). Only a language Lotus or the app speaks
+  # (`Lotus.Web.Translations`).
   defp assign_locale(socket, locale) when is_binary(locale) do
     if is_nil(socket.assigns[:lotus_locale]) and
-         locale in Gettext.known_locales(Lotus.Web.Gettext) do
-      Gettext.put_locale(Lotus.Web.Gettext, locale)
+         locale in Lotus.Web.Translations.known_locales() do
+      Lotus.Web.Translations.put_locale(locale)
       assign(socket, :lotus_locale, locale)
     else
       socket
