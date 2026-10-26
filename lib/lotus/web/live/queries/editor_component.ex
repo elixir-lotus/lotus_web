@@ -19,6 +19,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:data_source_names, :list, default: [])
   attr(:schema, :map, default: %{})
   attr(:dialect, :string, default: "postgres")
+  attr(:language, :string, default: nil)
   attr(:variables, :list, default: [])
   attr(:variable_values, :map, default: %{})
   attr(:resolved_variable_options, :map, default: %{})
@@ -48,7 +49,8 @@ defmodule Lotus.Web.Queries.EditorComponent do
          assigns.data_source != nil) and
         Lotus.Source.supports_feature?(assigns.data_source, :search_path)
 
-    supports_formatting = String.starts_with?(assigns.dialect || "", "json:")
+    # SQL is formatted in its dialect, JSON pretty-printed (formatter.js).
+    supports_formatting = formattable?(assigns.language)
 
     assigns =
       assigns
@@ -91,6 +93,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
           <div
             data-editor-schema={Lotus.JSON.encode!(@schema || %{})}
             data-editor-dialect={@dialect || "postgres"}
+            data-editor-formattable={to_string(@supports_formatting)}
             style="display: none;">
           </div>
 
@@ -306,7 +309,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
           phx-click="format_query"
           phx-target={@target}
           class="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
-          data-title={gettext("Pretty-print query")}
+          data-title={gettext("Format query")}
           phx-hook="Tippy"
         >
           <Icons.code_braces class="h-5 w-5" />
@@ -409,6 +412,10 @@ defmodule Lotus.Web.Queries.EditorComponent do
     </div>
     """
   end
+
+  defp formattable?("sql:" <> _dialect), do: true
+  defp formattable?("json:" <> _dsl), do: true
+  defp formattable?(_language), do: false
 
   # What the run buttons and ⌘↵ run: the text selected, the statement at the
   # cursor when the editor has several, or the whole query.

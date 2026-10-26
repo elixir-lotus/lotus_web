@@ -171,9 +171,13 @@ defmodule Lotus.Web.Layouts do
                 alt_keys={["Ctrl", "Shift", "C"]}
               />
               <.shortcut_item
-                description={gettext("Pretty-print the query (JSON sources)")}
+                description={gettext("Format the query (SQL and JSON sources)")}
                 keys={["⌘", "Shift", "F"]}
                 alt_keys={["Ctrl", "Shift", "F"]}
+              />
+              <.shortcut_item
+                description={gettext("Format the query, in the editor")}
+                keys={["Shift", "Alt", "F"]}
               />
               <.shortcut_item
                 description={gettext("Toggle Schema Explorer")}

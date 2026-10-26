@@ -77,6 +77,7 @@ export function createEditor({
   dialectName = "postgres",
   onChange,
   onRun,
+  onFormat,
   onSelectionChange,
   onVars,
 }) {
@@ -102,6 +103,22 @@ export function createEditor({
     ranField,
     ranTheme,
   ];
+
+  if (onFormat) {
+    extensions.push(
+      Prec.highest(
+        keymap.of([
+          {
+            key: "Shift-Alt-f",
+            run: () => {
+              onFormat();
+              return true;
+            },
+          },
+        ]),
+      ),
+    );
+  }
 
   if (onSelectionChange) {
     extensions.push(
@@ -228,6 +245,13 @@ export function createEditor({
           to: view.state.doc.length,
           insert: content ?? "",
         },
+      });
+    },
+    // The whole text in one change, which one undo takes back.
+    replaceContent(content, userEvent = "input") {
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: content ?? "" },
+        userEvent,
       });
     },
     flash(from, to, ms = 1200) {

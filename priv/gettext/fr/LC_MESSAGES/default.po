@@ -5521,3 +5521,18 @@ msgstr "Exécuter l’instruction au curseur"
 #, elixir-autogen, elixir-format
 msgid "Run the selection, or the statement at the cursor"
 msgstr "Exécuter la sélection, ou l’instruction au curseur"
+
+#: lib/lotus/web/live/queries/editor_component.ex
+#, elixir-autogen, elixir-format
+msgid "Format query"
+msgstr "Mettre en forme la requête"
+
+#: lib/lotus/web/components/layouts.ex
+#, elixir-autogen, elixir-format
+msgid "Format the query (SQL and JSON sources)"
+msgstr "Mettre en forme la requête (sources SQL et JSON)"
+
+#: lib/lotus/web/components/layouts.ex
+#, elixir-autogen, elixir-format
+msgid "Format the query, in the editor"
+msgstr "Mettre en forme la requête, dans l’éditeur"

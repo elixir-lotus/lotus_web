@@ -67,6 +67,9 @@ export default {
       dialectName: initialDialect,
       onChange: onContentChange,
       onRun: onRunQuery,
+      onFormat: () => {
+        if (this.formattable()) this.formatEditor();
+      },
       onSelectionChange,
       onVars: onVariableChange,
     });
@@ -244,25 +247,7 @@ export default {
     });
 
     this.handleEvent("format-editor-content", (payload) => {
-      const dialect =
-        (payload && payload.dialect) ||
-        this._lastDialect ||
-        this.getDialectFromDOM();
-      const result = formatContent(this.editor.getContent(), dialect);
-      if (result.ok) {
-        this.editor.setContent(result.content);
-        this.pushEventTo(
-          this.el.closest("[data-phx-component]"),
-          "format-editor-content-success",
-          {},
-        );
-      } else {
-        this.pushEventTo(
-          this.el.closest("[data-phx-component]"),
-          "format-editor-content-error",
-          { error: result.error },
-        );
-      }
+      this.formatEditor(payload && payload.dialect);
     });
 
     this.handleEvent("copy-editor-content", () => {
@@ -302,6 +287,12 @@ export default {
     }
   },
 
+  // The server offers formatting for SQL and JSON sources only.
+  formattable() {
+    const el = document.querySelector("[data-editor-formattable]");
+    return el?.dataset.editorFormattable === "true";
+  },
+
   currentDialect() {
     return this._lastDialect || this.getDialectFromDOM();
   },
@@ -312,6 +303,30 @@ export default {
     const dialect = this.currentDialect();
     if (isJsonLanguage(dialect)) return { scope: "all", text };
     return runTarget(text, view.state.selection.main, dialectOptions(dialect));
+  },
+
+  // Formats the text in place, as one change that one undo takes back; a
+  // text the formatter cannot read stays as it is.
+  formatEditor(dialect) {
+    const content = this.editor.getContent();
+    const result = formatContent(content, dialect || this.currentDialect());
+
+    if (result.ok) {
+      if (result.content !== content) {
+        this.editor.replaceContent(result.content, "input.format");
+      }
+      this.pushEventTo(
+        this.el.closest("[data-phx-component]"),
+        "format-editor-content-success",
+        {},
+      );
+    } else {
+      this.pushEventTo(
+        this.el.closest("[data-phx-component]"),
+        "format-editor-content-error",
+        { error: result.error },
+      );
+    }
   },
 
   getSchemaFromDOM() {

@@ -5521,3 +5521,18 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Run the selection, or the statement at the cursor"
 msgstr ""
+
+#: lib/lotus/web/live/queries/editor_component.ex
+#, elixir-autogen, elixir-format
+msgid "Format query"
+msgstr ""
+
+#: lib/lotus/web/components/layouts.ex
+#, elixir-autogen, elixir-format
+msgid "Format the query (SQL and JSON sources)"
+msgstr ""
+
+#: lib/lotus/web/components/layouts.ex
+#, elixir-autogen, elixir-format
+msgid "Format the query, in the editor"
+msgstr ""

@@ -13,6 +13,16 @@
 
 ### Added
 
+- **Format SQL.** The editor's Format button (and ⌘⇧F / Ctrl+Shift+F, or
+  Shift+Alt+F in the editor) now formats SQL too, with
+  [sql-formatter](https://github.com/sql-formatter-org/sql-formatter) in
+  the dialect of the source (PostgreSQL, MySQL, SQLite, ClickHouse, …;
+  plain SQL otherwise). Keywords keep their case, and `{{variables}}` and
+  `[[optional clauses]]` stay exactly as written. It is one change, which
+  one undo takes back; SQL the formatter cannot read stays as it is, with
+  a short message why. JSON sources (Elasticsearch) are pretty-printed as
+  before.
+
 - **Run the selection, or the statement at the cursor.** With text
   selected, ⌘↵ / Ctrl↵ and the run buttons run only the selection. With
   several statements in the editor, separated by `;`, they run the

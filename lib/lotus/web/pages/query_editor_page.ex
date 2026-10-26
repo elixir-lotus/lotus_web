@@ -137,6 +137,7 @@ defmodule Lotus.Web.QueryEditorPage do
                   data_source_names={@data_source_names}
                   schema={@editor_schema}
                   dialect={@editor_dialect}
+                  language={@editor_language}
                   running={@running}
                   statement_empty={@statement_empty}
                   right_drawer={@right_drawer}
@@ -1432,6 +1433,7 @@ defmodule Lotus.Web.QueryEditorPage do
       dropdown_options_variable_name: nil,
       editor_schema: nil,
       editor_dialect: nil,
+      editor_language: nil,
       dynamic_options: false,
       # What the run buttons run (`:all`, `:statement`, `:selection`), and
       # the part of the text the last run ran, when it was not all of it.
@@ -1535,6 +1537,7 @@ defmodule Lotus.Web.QueryEditorPage do
     if data_source && data_source != "" &&
          Authorization.discoverable?(socket.assigns, data_source) do
       dialect = dialect_for_repo(data_source)
+      language = Lotus.Source.query_language(data_source)
       source_type = Lotus.Source.source_type(data_source)
       search_path = socket.assigns.query && socket.assigns.query.search_path
 
@@ -1550,6 +1553,7 @@ defmodule Lotus.Web.QueryEditorPage do
           assign(socket,
             editor_schema: schema,
             editor_dialect: dialect,
+            editor_language: language,
             source_type: source_type,
             dynamic_options: dynamic_options
           )
@@ -1558,12 +1562,18 @@ defmodule Lotus.Web.QueryEditorPage do
           assign(socket,
             editor_schema: nil,
             editor_dialect: dialect,
+            editor_language: language,
             source_type: source_type,
             dynamic_options: dynamic_options
           )
       end
     else
-      assign(socket, editor_schema: nil, editor_dialect: nil, dynamic_options: false)
+      assign(socket,
+        editor_schema: nil,
+        editor_dialect: nil,
+        editor_language: nil,
+        dynamic_options: false
+      )
     end
   end
 
