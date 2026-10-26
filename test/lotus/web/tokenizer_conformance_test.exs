@@ -11,6 +11,8 @@ defmodule Lotus.Web.TokenizerConformanceTest do
   #     UPDATE_TOKENIZER_FIXTURE=1 mix test test/lotus/web/tokenizer_conformance_test.exs
   use ExUnit.Case, async: true
 
+  import Bitwise
+
   alias Lotus.Query.Tokenizer
   alias Lotus.Query.Tokenizer.Profile
 
@@ -159,13 +161,33 @@ defmodule Lotus.Web.TokenizerConformanceTest do
   defp merge_code([region | rest]), do: [region | merge_code(rest)]
   defp merge_code([]), do: []
 
-  # Seeded, so the fixture only changes when Lotus does.
+  # A fixed sequence, the same on every Elixir and OTP release (`:rand`
+  # and `Enum.random/1` promise no such thing), so the fixture only
+  # changes when Lotus does.
   defp random_texts do
-    :rand.seed(:exsss, {7, 11, 13})
+    alphabet = List.to_tuple(@alphabet)
 
-    for _ <- 1..@random_cases do
-      length = :rand.uniform(24)
-      Enum.map_join(1..length, fn _ -> Enum.random(@alphabet) end)
-    end
+    {texts, _state} =
+      Enum.map_reduce(1..@random_cases, 0x2545F491, fn _case, state ->
+        {length, state} = next(state, 24)
+
+        {pieces, state} =
+          Enum.map_reduce(0..length, state, fn _piece, state ->
+            {index, state} = next(state, tuple_size(alphabet))
+            {elem(alphabet, index), state}
+          end)
+
+        {Enum.join(pieces), state}
+      end)
+
+    texts
+  end
+
+  # xorshift32: the next state, and a number below `bound` from it.
+  defp next(state, bound) do
+    state = bxor(state, state <<< 13 &&& 0xFFFFFFFF)
+    state = bxor(state, state >>> 17)
+    state = bxor(state, state <<< 5 &&& 0xFFFFFFFF)
+    {rem(state, bound), state}
   end
 end
