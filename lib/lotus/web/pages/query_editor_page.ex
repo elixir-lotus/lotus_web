@@ -151,6 +151,7 @@ defmodule Lotus.Web.QueryEditorPage do
                   data_source={@default_source}
                   can_query={@can_query}
                   can_ai={@can_ai}
+                  run_scope={@run_scope}
                 />
 
                 <.results_pill
@@ -674,7 +675,8 @@ defmodule Lotus.Web.QueryEditorPage do
           visualization_view_mode: :chart,
           page_index: 0,
           filters: [],
-          sorts: []
+          sorts: [],
+          ran_statement: nil
         )
         |> assign(results_run: Map.get(socket.assigns, :results_run, 0) + 1)
 
@@ -900,8 +902,25 @@ defmodule Lotus.Web.QueryEditorPage do
     end
   end
 
+  # What the run buttons run, as the editor reports it: the selection, the
+  # statement at the cursor, or the whole query.
   @impl Phoenix.LiveComponent
-  def handle_event("run_query", %{"query" => query_params}, socket) do
+  def handle_event("editor_run_scope", %{"scope" => scope}, socket) do
+    scope =
+      case scope do
+        "selection" -> :selection
+        "statement" -> :statement
+        _all -> :all
+      end
+
+    {:noreply, assign(socket, run_scope: scope)}
+  end
+
+  # The editor sends its whole text as the query's statement, and the part to
+  # run (the selection, or the statement at the cursor) as `run_statement`.
+  # The query keeps its text; the run, its pages and its export run the part.
+  @impl Phoenix.LiveComponent
+  def handle_event("run_query", %{"query" => query_params} = params, socket) do
     changeset = build_query_changeset(socket.assigns.query, query_params)
     form = build_query_form(changeset)
 
@@ -913,15 +932,14 @@ defmodule Lotus.Web.QueryEditorPage do
          running: false
        )}
     else
-      query = Ecto.Changeset.apply_changes(changeset)
-
       socket =
         socket
         |> update_query_state(changeset, [])
+        |> assign(ran_statement: run_statement(params))
         |> assign(page_index: 0, filters: [], sorts: [])
         |> assign(results_run: Map.get(socket.assigns, :results_run, 0) + 1)
 
-      {:noreply, execute_query(socket, query)}
+      {:noreply, execute_query(socket, query_to_run(socket.assigns))}
     end
   end
 
@@ -945,7 +963,7 @@ defmodule Lotus.Web.QueryEditorPage do
           {:noreply,
            socket
            |> assign(page_index: page_index + 1)
-           |> execute_query(socket.assigns.query)}
+           |> execute_query(query_to_run(socket.assigns))}
         else
           {:noreply, socket}
         end
@@ -964,7 +982,7 @@ defmodule Lotus.Web.QueryEditorPage do
       {:noreply,
        socket
        |> assign(page_index: new_index)
-       |> execute_query(socket.assigns.query)}
+       |> execute_query(query_to_run(socket.assigns))}
     else
       {:noreply, socket}
     end
@@ -974,7 +992,7 @@ defmodule Lotus.Web.QueryEditorPage do
   def handle_event("goto_page", %{"index" => idx}, socket) do
     case Integer.parse(to_string(idx)) do
       {n, ""} when n >= 0 ->
-        {:noreply, socket |> assign(page_index: n) |> execute_query(socket.assigns.query)}
+        {:noreply, socket |> assign(page_index: n) |> execute_query(query_to_run(socket.assigns))}
 
       _ ->
         {:noreply, socket}
@@ -1348,7 +1366,7 @@ defmodule Lotus.Web.QueryEditorPage do
     {:ok,
      socket
      |> assign(filters: filters, sorts: sorts, page_index: 0)
-     |> execute_query(socket.assigns.query)}
+     |> execute_query(query_to_run(socket.assigns))}
   end
 
   def update(assigns, socket) do
@@ -1415,6 +1433,10 @@ defmodule Lotus.Web.QueryEditorPage do
       editor_schema: nil,
       editor_dialect: nil,
       dynamic_options: false,
+      # What the run buttons run (`:all`, `:statement`, `:selection`), and
+      # the part of the text the last run ran, when it was not all of it.
+      run_scope: :all,
+      ran_statement: nil,
       optional_variable_names: MapSet.new(),
       detected_variables: [],
       variable_form: to_form(%{}, as: "variables"),
@@ -1611,6 +1633,21 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   defp check_statement_empty(nil), do: true
+
+  defp run_statement(%{"run_statement" => statement}) when is_binary(statement) do
+    if check_statement_empty(statement), do: nil, else: statement
+  end
+
+  defp run_statement(_params), do: nil
+
+  # The query as the last run ran it: its own statement, or the part of it
+  # the person ran.
+  defp query_to_run(%{query: query} = assigns) do
+    case assigns[:ran_statement] do
+      nil -> query
+      statement -> %{query | statement: statement}
+    end
+  end
 
   defp maybe_update_timeout(socket, %{"query_timeout" => timeout_str})
        when is_binary(timeout_str) do
@@ -2162,7 +2199,7 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   defp generate_export_url(socket) do
-    query = socket.assigns.query
+    query = query_to_run(socket.assigns)
     vars = Map.get(socket.assigns, :variable_values, %{})
     repo = source_or_default(query.data_source, socket.assigns)
 
@@ -2198,9 +2235,10 @@ defmodule Lotus.Web.QueryEditorPage do
       "sorts" => Map.get(socket.assigns, :sorts, [])
     }
 
+    # A saved query exports as saved, unless the person ran a part of it.
     export_params =
       case socket.assigns.page do
-        %{mode: :edit, id: id} ->
+        %{mode: :edit, id: id} when is_nil(socket.assigns.ran_statement) ->
           %{
             "query_id" => id,
             "repo" => repo,
@@ -2209,7 +2247,7 @@ defmodule Lotus.Web.QueryEditorPage do
             "filename" => filename
           }
 
-        %{mode: :new} ->
+        _new_or_part ->
           %{
             "query_attrs" => %{
               "statement" => query.statement,

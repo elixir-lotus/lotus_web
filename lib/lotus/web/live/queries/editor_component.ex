@@ -30,6 +30,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:actor, :any, required: true)
   attr(:can_query, :boolean, default: true)
   attr(:can_ai, :boolean, default: true)
+  attr(:run_scope, :atom, default: :all, values: [:all, :statement, :selection])
 
   def editor(assigns) do
     search_path_field = assigns.form[:search_path]
@@ -77,7 +78,11 @@ defmodule Lotus.Web.Queries.EditorComponent do
           supports_formatting={@supports_formatting}
           can_query={@can_query}
           can_ai={@can_ai}
+          run_scope={@run_scope}
         />
+
+        <%!-- The part of the text to run, when it is not all of it (EditorForm). --%>
+        <input type="hidden" name="run_statement" id="run-statement" value="" />
 
         <div id="editor-context-menu-wrapper" phx-hook="EditorContextMenu" data-ai-enabled={to_string(@can_ai and Lotus.Web.AI.enabled?())} class={["relative pb-8", if(@minimized, do: "hidden", else: "")]}>
 
@@ -112,7 +117,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
            title={
              if @statement_empty,
                do: gettext("Enter a query to run"),
-               else: gettext("Run Query")
+               else: run_label(@run_scope)
            }
           >
             <%= if @running do %>
@@ -148,6 +153,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:actor, :any, required: true)
   attr(:can_query, :boolean, default: true)
   attr(:can_ai, :boolean, default: true)
+  attr(:run_scope, :atom, default: :all)
 
   def render_toolbar(assigns) do
     ~H"""
@@ -195,6 +201,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
             supports_formatting={@supports_formatting}
             can_query={@can_query}
             can_ai={@can_ai}
+            run_scope={@run_scope}
           />
         </div>
       </div>
@@ -248,6 +255,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:supports_formatting, :boolean, default: false)
   attr(:can_query, :boolean, default: true)
   attr(:can_ai, :boolean, default: true)
+  attr(:run_scope, :atom, default: :all)
 
   def render_actions(assigns) do
     ~H"""
@@ -258,7 +266,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
           cond do
             @statement_empty -> gettext("Enter a query to run")
             @running -> gettext("Query running...")
-            true -> gettext("Run query")
+            true -> run_label(@run_scope)
           end
         }
         phx-hook="Tippy"
@@ -401,6 +409,12 @@ defmodule Lotus.Web.Queries.EditorComponent do
     </div>
     """
   end
+
+  # What the run buttons and ⌘↵ run: the text selected, the statement at the
+  # cursor when the editor has several, or the whole query.
+  defp run_label(:selection), do: gettext("Run selection")
+  defp run_label(:statement), do: gettext("Run statement at cursor")
+  defp run_label(_all), do: gettext("Run query")
 
   defp get_variable_options(options, variable_name) do
     Map.get(options, variable_name)

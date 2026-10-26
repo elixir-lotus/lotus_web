@@ -1,6 +1,7 @@
 import { createEditor } from "../lib/editor.js";
-import { getDialectConfig } from "../lib/dialect_config.js";
+import { getDialectConfig, isJsonLanguage } from "../lib/dialect_config.js";
 import { format as formatContent } from "../lib/formatter.js";
+import { runTarget, dialectOptions } from "../lib/sql_statements.js";
 import { tinykeys } from "tinykeys";
 
 export default {
@@ -36,6 +37,26 @@ export default {
       if (submit && !submit.disabled) submit.click();
     };
 
+    // What a run runs: the selection, the statement at the cursor when the
+    // editor has several, or the whole text. The server hears which, for the
+    // run buttons' labels.
+    let runScope = "all";
+    let scopeTimer = null;
+    const onSelectionChange = () => {
+      clearTimeout(scopeTimer);
+      scopeTimer = setTimeout(() => {
+        const scope = this.runTarget().scope;
+        if (scope === runScope) return;
+        runScope = scope;
+        this.pushEventTo(
+          this.el.closest("[data-phx-component]"),
+          "editor_run_scope",
+          { scope },
+        );
+      }, 150);
+    };
+    this.clearScopeTimer = () => clearTimeout(scopeTimer);
+
     const initialSchema = this.getSchemaFromDOM();
     const initialDialect = this.getDialectFromDOM();
 
@@ -46,10 +67,12 @@ export default {
       dialectName: initialDialect,
       onChange: onContentChange,
       onRun: onRunQuery,
+      onSelectionChange,
       onVars: onVariableChange,
     });
 
     editorContainer.lotusEditor = this.editor;
+    onSelectionChange();
 
     this.fetchAndApplyDialect(initialDialect);
 
@@ -208,8 +231,16 @@ export default {
       },
     });
 
+    // The form sends the whole text as the query's statement, and the part
+    // to run, when it is not all of it, as `run_statement`. LiveView reads
+    // the form after this listener.
     this.el.form?.addEventListener("submit", () => {
       textarea.value = this.editor.getContent();
+
+      const input = this.el.form.querySelector('input[name="run_statement"]');
+      const target = this.runTarget();
+      if (input) input.value = target.scope === "all" ? "" : target.text;
+      if (target.scope !== "all") this.editor.flash(target.from, target.to);
     });
 
     this.handleEvent("format-editor-content", (payload) => {
@@ -271,6 +302,18 @@ export default {
     }
   },
 
+  currentDialect() {
+    return this._lastDialect || this.getDialectFromDOM();
+  },
+
+  runTarget() {
+    const view = this.editor.view;
+    const text = view.state.doc.toString();
+    const dialect = this.currentDialect();
+    if (isJsonLanguage(dialect)) return { scope: "all", text };
+    return runTarget(text, view.state.selection.main, dialectOptions(dialect));
+  },
+
   getSchemaFromDOM() {
     const el = document.querySelector("[data-editor-schema]");
     if (!el) return null;
@@ -315,6 +358,7 @@ export default {
   },
 
   destroyed() {
+    this.clearScopeTimer?.();
     this.editor?.destroy();
     this.unbindKeys?.();
   },

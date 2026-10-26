@@ -1,6 +1,12 @@
 import { EditorView, basicSetup } from "codemirror";
-import { placeholder, keymap } from "@codemirror/view";
-import { EditorState, Compartment, Prec } from "@codemirror/state";
+import { placeholder, keymap, Decoration } from "@codemirror/view";
+import {
+  EditorState,
+  Compartment,
+  Prec,
+  StateEffect,
+  StateField,
+} from "@codemirror/state";
 import { sql } from "@codemirror/lang-sql";
 import { json } from "@codemirror/lang-json";
 import { editorStyles, getCompletionStyles, themeHighlight } from "./styles";
@@ -16,6 +22,32 @@ import { JsonDslCompletion } from "./languages/json_dsl/completion";
 import { load } from "./settings";
 
 const editorTheme = EditorView.theme(editorStyles);
+
+// The part of the text a run ran, marked for a moment.
+const flashRange = StateEffect.define();
+const ranMark = Decoration.mark({ class: "cm-lotus-ran" });
+
+const ranField = StateField.define({
+  create: () => Decoration.none,
+  update(marks, tr) {
+    marks = marks.map(tr.changes);
+    for (const effect of tr.effects) {
+      if (!effect.is(flashRange)) continue;
+      const { from, to } = effect.value;
+      marks = from < to ? Decoration.set([ranMark.range(from, to)]) : Decoration.none;
+    }
+    return marks;
+  },
+  provide: (field) => EditorView.decorations.from(field),
+});
+
+const ranTheme = EditorView.baseTheme({
+  ".cm-lotus-ran": {
+    backgroundColor: "rgba(219, 39, 119, 0.18)",
+    transition: "background-color 0.3s",
+  },
+});
+
 const languageCompartment = new Compartment();
 const completionThemeCompartment = new Compartment();
 
@@ -45,6 +77,7 @@ export function createEditor({
   dialectName = "postgres",
   onChange,
   onRun,
+  onSelectionChange,
   onVars,
 }) {
   let currentSchema = schema;
@@ -66,7 +99,17 @@ export function createEditor({
     themeHighlight,
     EditorView.lineWrapping,
     placeholder("SELECT * FROM table_name"),
+    ranField,
+    ranTheme,
   ];
+
+  if (onSelectionChange) {
+    extensions.push(
+      EditorView.updateListener.of((update) => {
+        if (update.selectionSet || update.docChanged) onSelectionChange();
+      }),
+    );
+  }
 
   if (onRun) {
     extensions.push(
@@ -105,6 +148,7 @@ export function createEditor({
   });
 
   let themeObserver = null;
+  let flashTimer = null;
 
   const updateCompletionTheme = () => {
     view.dispatch({
@@ -186,6 +230,13 @@ export function createEditor({
         },
       });
     },
+    flash(from, to, ms = 1200) {
+      view.dispatch({ effects: flashRange.of({ from, to }) });
+      clearTimeout(flashTimer);
+      flashTimer = setTimeout(() => {
+        view.dispatch({ effects: flashRange.of({ from: 0, to: 0 }) });
+      }, ms);
+    },
     updateSchema(newSchema) {
       currentSchema = newSchema;
       if (contextCompletion) {
@@ -216,6 +267,7 @@ export function createEditor({
       updateCompletionTheme();
     },
     destroy() {
+      clearTimeout(flashTimer);
       if (themeObserver) {
         themeObserver.disconnect();
       }

@@ -13,6 +13,16 @@
 
 ### Added
 
+- **Run the selection, or the statement at the cursor.** With text
+  selected, ⌘↵ / Ctrl↵ and the run buttons run only the selection. With
+  several statements in the editor, separated by `;`, they run the
+  statement the cursor is on, so a scratch file of statements works: a `;`
+  in a string (quoted, dollar-quoted) or a comment does not count. Otherwise
+  they run the whole query, as before. The part that ran is highlighted for
+  a moment, and the run buttons say what they run ("Run selection", "Run
+  statement at cursor"). The query keeps its whole text; its pages, the
+  grid's sort and filters, and the CSV export run the part that ran.
+
 - **Your app translates Lotus.** `config :lotus_web, gettext: MyAppWeb.Gettext`
   points Lotus at your app's Gettext backend, whose `lotus_web` domain
   (and `lotus_pro`, for Lotus Pro) adds a language Lotus does not ship, or

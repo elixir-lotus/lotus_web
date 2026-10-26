@@ -5506,3 +5506,18 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Continue"
 msgstr ""
+
+#: lib/lotus/web/live/queries/editor_component.ex
+#, elixir-autogen, elixir-format
+msgid "Run selection"
+msgstr ""
+
+#: lib/lotus/web/live/queries/editor_component.ex
+#, elixir-autogen, elixir-format
+msgid "Run statement at cursor"
+msgstr ""
+
+#: lib/lotus/web/components/layouts.ex
+#, elixir-autogen, elixir-format
+msgid "Run the selection, or the statement at the cursor"
+msgstr ""

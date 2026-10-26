@@ -161,7 +161,7 @@ defmodule Lotus.Web.Layouts do
             <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wider"><%= gettext("Query Editor") %></h4>
             <div class="space-y-2">
               <.shortcut_item
-                description={gettext("Run query")}
+                description={gettext("Run the selection, or the statement at the cursor")}
                 keys={["⌘", "Enter"]}
                 alt_keys={["Ctrl", "Enter"]}
               />
