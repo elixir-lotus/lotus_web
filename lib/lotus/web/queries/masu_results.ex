@@ -80,7 +80,7 @@ defmodule Lotus.Web.Queries.MasuResults do
         on_query={@on_query}
         loading={@running}
         multi_sort={false}
-        row_height={52}
+        row_height={40}
         cell_menu
         messages={@messages}
         locale={@locale}

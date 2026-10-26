@@ -13,6 +13,13 @@
 
 ### Added
 
+- **A divider between the query editor and its results.** Drag it, or
+  focus it and use the arrow keys, Home and End, to give the editor more
+  or less of the page; double-click it to reset. The height is kept in
+  the browser. The editor no longer takes 300px before the results get
+  any, and the results grid's rows and header are 40px (were 52 and 48),
+  so a 900px screen shows several rows instead of one.
+
 - **SQL autocomplete reads the statement as the server does.** The editor
   tokenizes SQL with the source's lexical rules, which the server sends
   (`Lotus.Query.Tokenizer.Profile`): quotes, comments, dollar quotes,

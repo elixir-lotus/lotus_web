@@ -794,7 +794,7 @@
     --masu-border: rgb(var(--lotus-gray-200));
     --masu-header-background: rgb(var(--lotus-white));
     --masu-header-text: rgb(var(--lotus-text-light));
-    --masu-header-height: 48px;
+    --masu-header-height: 40px;
     --masu-header-border: none;
     --masu-header-shadow: 0 1px 0 0 rgb(var(--lotus-gray-300));
     --masu-header-hover: rgb(var(--lotus-gray-50));
@@ -1837,3 +1837,46 @@
 
     .lotus-ai-chart-line { stroke-dashoffset: 0; }
 }
+
+/* The divider between the query editor and its results (EditorSplit). */
+.lotus-split {
+    flex: none;
+    height: 0.625rem;
+    align-items: center;
+    justify-content: center;
+    cursor: row-resize;
+    touch-action: none;
+    border-top: 1px solid rgb(var(--lotus-gray-200));
+    background: rgb(var(--lotus-gray-50));
+    outline: none;
+}
+
+.lotus-split-grip {
+    width: 2.5rem;
+    height: 0.1875rem;
+    border-radius: 9999px;
+    background: rgb(var(--lotus-gray-300));
+    transition: background-color 0.15s, width 0.15s;
+}
+
+.lotus-split:hover .lotus-split-grip,
+.lotus-split:focus-visible .lotus-split-grip,
+.lotus-split[data-dragging] .lotus-split-grip {
+    width: 3.5rem;
+    background: rgb(var(--lotus-pink-500));
+}
+
+.dark .lotus-split {
+    border-top-color: rgb(var(--lotus-gray-700));
+    background: rgb(var(--lotus-gray-800));
+}
+
+.dark .lotus-split-grip {
+    background: rgb(var(--lotus-gray-600));
+}
+
+/* With a height from the divider, the editor scrolls within it. */
+#editor[data-split] .cm-editor {
+    height: 100%;
+}
+
