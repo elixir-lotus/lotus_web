@@ -387,6 +387,11 @@
 
 ### Fixed
 
+- **The schema browser's default schemas for a source a resolver adds at
+  runtime.** It looked the source up in `config :lotus, data_sources:` only,
+  and fell back to `public` for any other source. It now asks
+  `Lotus.list_data_source_names/0`, which lists the resolver's sources too.
+
 - **A list opens as the viewer left it, without a flash of the other
   view.** Queries, dashboards and reports opened as a gallery and switched
   to a table once the browser told the page which one the viewer had
