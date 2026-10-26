@@ -16,6 +16,7 @@ import {
   getCachedDialectConfig,
   buildSqlExtension,
   isJsonLanguage,
+  tablesSchema,
 } from "./dialect_config";
 import { SqlCompletion } from "./languages/sql/completion";
 import { JsonDslCompletion } from "./languages/json_dsl/completion";
@@ -66,7 +67,7 @@ function isDarkMode() {
 
 function initialSqlExt(schema) {
   const cfg = { upperCaseKeywords: true };
-  if (schema) cfg.schema = schema;
+  if (schema) cfg.schema = tablesSchema(schema);
   return sql(cfg);
 }
 
@@ -80,6 +81,7 @@ export function createEditor({
   onFormat,
   onSelectionChange,
   onVars,
+  completionOptions = {},
 }) {
   let currentSchema = schema;
   let currentDialect = dialectName;
@@ -218,7 +220,10 @@ export function createEditor({
         ]),
       });
     } else {
-      contextCompletion = new SqlCompletion(currentSchema, currentConfig);
+      contextCompletion = new SqlCompletion(currentSchema, currentConfig, {
+        ...completionOptions,
+        dialect: currentDialect,
+      });
 
       view.dispatch({
         effects: languageCompartment.reconfigure(

@@ -1,5 +1,6 @@
 import { SQL_DEFAULTS } from "./defaults.js";
 import { SqlContextAnalyzer } from "./context_analyzer.js";
+import { profileFor } from "./tokenizer.js";
 
 // Core SQL structural keywords where column/function suggestions mid-typing
 // would be unwanted noise. Kept intentionally small — adapter-specific keywords
@@ -14,8 +15,35 @@ const STRUCTURAL_KEYWORDS = [
   "table", "group", "order", "having", "limit", "offset",
 ];
 
+const COLUMN_CONTEXTS = new Set([
+  "select_columns",
+  "where_condition",
+  "after_on",
+  "after_group_by",
+  "after_order_by",
+  "after_having",
+]);
+
+// The most tables whose columns one completion asks the server for.
+export const MAX_TABLES = 8;
+
+// The columns the server described, by source and table, for every editor
+// on the page: a table is described once.
+const columnCache = new Map();
+
+export function clearColumnCache() {
+  columnCache.clear();
+}
+
+/**
+ * SQL autocomplete. `schema` maps each table ("orders", or "reporting.orders"
+ * when several schemas are selected) to its columns, or to null until they
+ * are described; `options.fetchColumns(keys)` asks the server for them (a
+ * promise of `{key: columns}`), `options.source()` names the source and
+ * `options.schemas()` the selected schemas.
+ */
 export class SqlCompletion {
-  constructor(schema, config = {}) {
+  constructor(schema, config = {}, options = {}) {
     this.schema = schema || {};
     this.config = {
       keywords: [...SQL_DEFAULTS.keywords, ...(config.keywords || [])],
@@ -25,141 +53,295 @@ export class SqlCompletion {
         ...(config.contextBoundaries || []),
       ],
     };
-    this.analyzer = new SqlContextAnalyzer(this.config);
+    this.options = options;
+    this.analyzer = new SqlContextAnalyzer(
+      this.config,
+      options.profile || profileFor(options.dialect || "sql", config.tokenizer),
+    );
+    this.pending = new Map();
   }
 
   updateSchema(newSchema) {
     this.schema = newSchema || {};
   }
 
+  source() {
+    const source = this.options.source;
+    return (typeof source === "function" ? source() : source) || "";
+  }
+
+  selectedSchemas() {
+    const schemas = this.options.schemas;
+    return (typeof schemas === "function" ? schemas() : schemas) || [];
+  }
+
   createCompletionSource() {
-    return (context) => {
-      const query = context.state.doc.toString();
-      const cursorPos = context.pos;
+    return (context) => this.complete(context.state.doc.toString(), context.pos);
+  }
 
-      if (this.isTypingKeyword(query, cursorPos)) {
-        return null;
-      }
+  /**
+   * The completions at `pos`: `{from, to, options}`, null, or a promise of
+   * one while the columns of the statement's tables load.
+   */
+  complete(text, pos) {
+    if (this.isTypingKeyword(text, pos)) return null;
 
-      const sqlContext = this.analyzer.analyzeContext(query, cursorPos);
+    const analysis = this.analyzer.analyzeContext(text, pos);
+    const missing = this.missingColumns(analysis);
 
-      const completions = this.getContextualCompletions(sqlContext);
+    if (missing.length && this.options.fetchColumns) {
+      return this.load(missing).then(() => this.result(analysis));
+    }
 
-      if (completions.length === 0) {
-        return null;
-      }
+    return this.result(analysis);
+  }
 
-      const wordBounds = this.getWordBounds(context);
+  result(analysis) {
+    const completions = this.getContextualCompletions(analysis).filter((c) => c.label);
+    if (completions.length === 0) return null;
 
-      return {
-        from: wordBounds.from,
-        to: wordBounds.to,
-        options: completions.map((completion) => {
-          const option = {
-            label: completion.label,
-            type: completion.type || "property",
-            detail: completion.detail,
-            boost: completion.boost || 0,
-          };
+    return {
+      from: analysis.word.from,
+      to: analysis.word.to,
+      options: completions.map((completion) => {
+        const option = {
+          label: completion.label,
+          type: completion.type || "property",
+          detail: completion.detail,
+          boost: completion.boost || 0,
+        };
 
-          if (completion.insertText) {
-            option.insertText = completion.insertText;
-          }
+        if (completion.insertText) {
+          option.insertText = completion.insertText;
+        }
 
-          return option;
-        }),
-      };
+        return option;
+      }),
     };
   }
 
-  getContextualCompletions(sqlContext) {
+  getContextualCompletions(analysis) {
+    if (analysis.qualifier) return this.qualifiedCompletions(analysis);
+
+    const type = analysis.contextType;
+    if (type === "after_from") {
+      return [...this.getTableCompletions(), ...this.cteCompletions(analysis)];
+    }
+    if (!COLUMN_CONTEXTS.has(type)) return [];
+
     const completions = [];
+    if (type === "select_columns") completions.push(this.getStarCompletion());
+    completions.push(...this.sourceColumnCompletions(analysis));
+    if (type !== "after_on") completions.push(...this.getFunctionCompletions());
+    return completions;
+  }
 
-    switch (sqlContext.contextType) {
-      case "after_from":
-        completions.push(...this.getTableCompletions());
-        break;
+  // After `x.`: the columns of the table or alias x, or the tables of the
+  // schema x; after `s.t.`, the columns of s.t.
+  qualifiedCompletions(analysis) {
+    const target = this.resolveQualifier(analysis.qualifier, analysis);
+    if (!target) return [];
 
-      case "after_select":
-      case "select_columns":
-        if (sqlContext.isAfterDot && sqlContext.currentTable) {
-          // User typed "table." - suggest columns for that specific table
-          completions.push(
-            ...this.getColumnCompletions(sqlContext.currentTable, true),
-          );
-        } else {
-          // Suggest columns from all referenced tables, plus * and functions
-          completions.push(this.getStarCompletion());
-          completions.push(...this.getRelevantColumnCompletions(sqlContext));
-          completions.push(...this.getFunctionCompletions());
-        }
-        break;
-
-      case "after_where":
-      case "where_condition":
-      case "after_having":
-      case "after_order_by":
-      case "after_group_by":
-        if (sqlContext.isAfterDot && sqlContext.currentTable) {
-          completions.push(
-            ...this.getColumnCompletions(sqlContext.currentTable, true),
-          );
-        } else {
-          completions.push(...this.getRelevantColumnCompletions(sqlContext));
-          completions.push(...this.getFunctionCompletions());
-        }
-        break;
-
-      case "after_on":
-        // JOIN ON condition - suggest columns from both tables
-        completions.push(...this.getRelevantColumnCompletions(sqlContext));
-        break;
+    if (target.tables) {
+      return target.tables.map((key) => ({
+        label: key.slice(key.indexOf(".") + 1),
+        type: "class",
+        detail: this.tableDetail(key),
+        boost: 10,
+      }));
     }
 
-    return completions.filter((c) => c.label); // Remove empty labels
+    const columns = target.key ? this.columnsOf(target.key) : target.columns;
+    return (columns || []).map((column) => ({
+      label: column,
+      type: "property",
+      detail: `Column from ${target.label}`,
+      boost: 15,
+    }));
+  }
+
+  // What a qualifier names, in this order: a source of the statement by its
+  // alias or name, a WITH query, a table, a schema.
+  resolveQualifier(names, analysis) {
+    if (names.length >= 2) {
+      const key = this.tableKey(names.slice(-2));
+      return key ? { key, label: key } : null;
+    }
+
+    const name = names[0];
+    const source = findByName(analysis.sources, name);
+    const target = source && this.sourceTarget(source, analysis);
+    if (target) return target;
+
+    if (name in analysis.ctes) {
+      return { columns: analysis.ctes[name] || [], label: name };
+    }
+
+    const key = this.tableKey([name]);
+    if (key) return { key, label: key };
+
+    const tables = this.schemaTables(name);
+    return tables ? { tables } : null;
+  }
+
+  sourceTarget(source, analysis) {
+    if (source.kind === "cte") {
+      return { columns: analysis.ctes[source.parts[0]] || [], label: source.parts[0] };
+    }
+    if (source.kind === "subquery") return { columns: [], label: source.name };
+
+    const key = this.tableKey(source.parts);
+    return key ? { key, label: key } : null;
+  }
+
+  // The schema's key for a table's name parts (["orders"], ["reporting",
+  // "orders"]): exact, then without regard to case (an unquoted name).
+  tableKey(parts) {
+    const keys = Object.keys(this.schema);
+    const table = parts[parts.length - 1];
+
+    if (parts.length >= 2) {
+      const schemaName = parts[parts.length - 2];
+      const qualified = findKey(keys, `${schemaName}.${table}`);
+      if (qualified) return qualified;
+      const selected = this.selectedSchemas().some(
+        (s) => s.toLowerCase() === schemaName.toLowerCase(),
+      );
+      return selected ? findKey(keys, table) : null;
+    }
+
+    return (
+      findKey(keys, table) ||
+      keys.find((k) => k.endsWith(`.${table}`)) ||
+      keys.find((k) => k.toLowerCase().endsWith(`.${table.toLowerCase()}`)) ||
+      null
+    );
+  }
+
+  // The tables of a schema, or null when no schema has that name.
+  schemaTables(name) {
+    const lower = name.toLowerCase();
+    const keys = Object.keys(this.schema);
+    const qualified = keys.filter((k) => k.toLowerCase().startsWith(`${lower}.`));
+    if (qualified.length) return qualified;
+
+    const selected = this.selectedSchemas();
+    if (selected.length === 1 && selected[0].toLowerCase() === lower) return keys;
+    return null;
+  }
+
+  columnsOf(key) {
+    const known = this.schema[key];
+    if (Array.isArray(known)) return known;
+    return columnCache.get(this.cacheKey(key)) || null;
+  }
+
+  cacheKey(key) {
+    return `${this.source()}\u0000${key}`;
+  }
+
+  // The tables of the statement (or of the qualifier) whose columns are not
+  // known yet.
+  missingColumns(analysis) {
+    const keys = new Set();
+
+    if (analysis.qualifier) {
+      const target = this.resolveQualifier(analysis.qualifier, analysis);
+      if (target && target.key) keys.add(target.key);
+    } else if (COLUMN_CONTEXTS.has(analysis.contextType)) {
+      for (const source of analysis.sources) {
+        if (source.kind !== "table") continue;
+        const key = this.tableKey(source.parts);
+        if (key) keys.add(key);
+      }
+    }
+
+    return [...keys]
+      .filter((key) => this.columnsOf(key) === null && !this.pending.has(key))
+      .slice(0, MAX_TABLES);
+  }
+
+  // Asks the server for the columns of `keys`, once a table; a table it
+  // does not describe has none.
+  load(keys) {
+    const request = Promise.resolve(this.options.fetchColumns(keys))
+      .then((columns) => {
+        for (const key of keys) {
+          const list = columns && Array.isArray(columns[key]) ? columns[key] : [];
+          columnCache.set(this.cacheKey(key), list);
+        }
+      })
+      .catch(() => {})
+      .finally(() => keys.forEach((key) => this.pending.delete(key)));
+
+    keys.forEach((key) => this.pending.set(key, request));
+    return request;
   }
 
   getTableCompletions() {
     return Object.keys(this.schema).map((tableName) => ({
       label: tableName,
       type: "class",
-      detail: `Table (${this.getColumnCount(tableName)} columns)`,
+      detail: this.tableDetail(tableName),
       boost: 10,
     }));
   }
 
-  getColumnCompletions(tableName, isQualified = false) {
-    const columns = this.schema[tableName] || [];
-    const prefix = isQualified ? `${tableName}.` : "";
+  tableDetail(key) {
+    const columns = this.columnsOf(key);
+    return columns ? `Table (${columns.length} columns)` : "Table";
+  }
 
-    return columns.map((columnName) => ({
-      label: `${prefix}${columnName}`,
-      type: "property",
-      detail: `Column from ${tableName}`,
-      boost: isQualified ? 15 : 5,
+  cteCompletions(analysis) {
+    return Object.keys(analysis.ctes).map((name) => ({
+      label: name,
+      type: "class",
+      detail: "WITH query",
+      boost: 12,
     }));
   }
 
-  getRelevantColumnCompletions(sqlContext) {
-    const completions = [];
-    const relevantTables = this.analyzer.getTablesForContext(sqlContext);
+  // The columns of the statement's sources; qualified by each source's name
+  // too when it reads several. With no source, every known column.
+  sourceColumnCompletions(analysis) {
+    const sources = analysis.sources
+      .map((source) => ({ source, target: this.sourceTarget(source, analysis) }))
+      .filter(({ target }) => target);
 
-    for (const tableName of relevantTables) {
-      if (this.schema[tableName]) {
-        const tableColumns = this.getColumnCompletions(tableName);
-        completions.push(...tableColumns);
-
-        if (relevantTables.length > 1) {
-          const qualifiedColumns = this.getColumnCompletions(tableName, true);
-          completions.push(...qualifiedColumns);
-        }
-      }
+    if (sources.length === 0) {
+      return Object.keys(this.schema).flatMap((key) =>
+        (this.columnsOf(key) || []).map((column) => ({
+          label: column,
+          type: "property",
+          detail: `Column from ${key}`,
+          boost: 5,
+        })),
+      );
     }
 
-    // If no specific tables found, suggest from all available tables
-    if (completions.length === 0) {
-      for (const tableName of Object.keys(this.schema)) {
-        completions.push(...this.getColumnCompletions(tableName));
+    const completions = [];
+    const seen = new Set();
+
+    for (const { source, target } of sources) {
+      const columns = target.key ? this.columnsOf(target.key) || [] : target.columns;
+      for (const column of columns) {
+        if (!seen.has(column)) {
+          seen.add(column);
+          completions.push({
+            label: column,
+            type: "property",
+            detail: `Column from ${target.label}`,
+            boost: 5,
+          });
+        }
+        if (sources.length > 1 && source.name) {
+          completions.push({
+            label: `${source.name}.${column}`,
+            type: "property",
+            detail: `Column from ${target.label}`,
+            boost: 4,
+          });
+        }
       }
     }
 
@@ -190,50 +372,6 @@ export class SqlCompletion {
     }));
   }
 
-  getWordBounds(context) {
-    const doc = context.state.doc;
-    const pos = context.pos;
-
-    let from = pos;
-    let to = pos;
-
-    // Find start of current word
-    while (from > 0) {
-      const char = doc.sliceString(from - 1, from);
-      if (/[a-zA-Z0-9_.]/.test(char)) {
-        from--;
-      } else {
-        break;
-      }
-    }
-
-    // Find end of current word
-    while (to < doc.length) {
-      const char = doc.sliceString(to, to + 1);
-      if (/[a-zA-Z0-9_]/.test(char)) {
-        to++;
-      } else {
-        break;
-      }
-    }
-
-    return { from, to };
-  }
-
-  getColumnCount(tableName) {
-    return (this.schema[tableName] || []).length;
-  }
-
-  getTableInfo(tableName) {
-    const columns = this.schema[tableName] || [];
-    if (columns.length === 0) return "Empty table";
-
-    const preview = columns.slice(0, 5).join(", ");
-    const suffix =
-      columns.length > 5 ? `, ... (${columns.length - 5} more)` : "";
-    return `Columns: ${preview}${suffix}`;
-  }
-
   isTypingKeyword(query, cursorPos) {
     const wordBounds = this.getWordBoundsFromString(query, cursorPos);
     const currentWord = query
@@ -261,26 +399,23 @@ export class SqlCompletion {
     let from = pos;
     let to = pos;
 
-    // Find start of current word
-    while (from > 0) {
-      const char = text.charAt(from - 1);
-      if (/[a-zA-Z0-9_.]/.test(char)) {
-        from--;
-      } else {
-        break;
-      }
-    }
-
-    // Find end of current word
-    while (to < text.length) {
-      const char = text.charAt(to);
-      if (/[a-zA-Z0-9_]/.test(char)) {
-        to++;
-      } else {
-        break;
-      }
-    }
+    while (from > 0 && /[a-zA-Z0-9_.]/.test(text.charAt(from - 1))) from--;
+    while (to < text.length && /[a-zA-Z0-9_]/.test(text.charAt(to))) to++;
 
     return { from, to };
   }
+}
+
+function findKey(keys, name) {
+  if (keys.includes(name)) return name;
+  const lower = name.toLowerCase();
+  return keys.find((k) => k.toLowerCase() === lower) || null;
+}
+
+function findByName(sources, name) {
+  return (
+    sources.find((s) => s.name === name) ||
+    sources.find((s) => s.name && s.name.toLowerCase() === name.toLowerCase()) ||
+    null
+  );
 }

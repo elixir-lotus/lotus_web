@@ -20,6 +20,10 @@ defmodule Lotus.Web.Queries.EditorComponent do
   attr(:schema, :map, default: %{})
   attr(:dialect, :string, default: "postgres")
   attr(:language, :string, default: nil)
+  # The schemas of the schema's tables, and the source, for the editor's
+  # autocomplete to qualify tables and ask for their columns.
+  attr(:schemas, :list, default: [])
+  attr(:source, :string, default: nil)
   attr(:variables, :list, default: [])
   attr(:variable_values, :map, default: %{})
   attr(:resolved_variable_options, :map, default: %{})
@@ -94,6 +98,8 @@ defmodule Lotus.Web.Queries.EditorComponent do
             data-editor-schema={Lotus.JSON.encode!(@schema || %{})}
             data-editor-dialect={@dialect || "postgres"}
             data-editor-formattable={to_string(@supports_formatting)}
+            data-editor-schemas={Lotus.JSON.encode!(@schemas || [])}
+            data-editor-source={@source}
             style="display: none;">
           </div>
 

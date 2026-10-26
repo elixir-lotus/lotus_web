@@ -162,6 +162,17 @@ export function resolveCodeMirrorDialect(dialectName, config) {
   });
 }
 
+/**
+ * The schema as CodeMirror's SQL language takes it: its tables, without
+ * their columns, which SqlCompletion offers (loading them as statements use
+ * them); with them, both would offer each column.
+ */
+export function tablesSchema(schema) {
+  const tables = {};
+  for (const key in schema) tables[key] = [];
+  return tables;
+}
+
 export function buildSqlExtension(
   config,
   schema,
@@ -174,7 +185,7 @@ export function buildSqlExtension(
     upperCaseKeywords: true,
     dialect,
   };
-  if (schema) cfg.schema = schema;
+  if (schema) cfg.schema = tablesSchema(schema);
 
   const sqlLang = sql(cfg);
 

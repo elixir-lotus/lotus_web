@@ -139,6 +139,8 @@ defmodule Lotus.Web.QueryEditorPage do
                   schema={@editor_schema}
                   dialect={@editor_dialect}
                   language={@editor_language}
+                  schemas={@editor_schemas}
+                  source={@query.data_source}
                   running={@running}
                   statement_empty={@statement_empty}
                   right_drawer={@right_drawer}
@@ -834,6 +836,16 @@ defmodule Lotus.Web.QueryEditorPage do
     {:noreply, socket}
   end
 
+  # The columns of the tables a statement uses, which the editor's
+  # autocomplete asks for as the person writes (SchemaBuilder.columns/5).
+  @impl Phoenix.LiveComponent
+  def handle_event("editor_columns", %{"tables" => tables}, socket) when is_list(tables) do
+    {columns, socket} = describe_columns(socket, tables)
+    {:reply, %{columns: columns}, socket}
+  end
+
+  def handle_event("editor_columns", _params, socket), do: {:reply, %{columns: %{}}, socket}
+
   @impl Phoenix.LiveComponent
   def handle_event("fetch_dialect_config", %{"dialect" => dialect_name}, socket) do
     config =
@@ -1464,6 +1476,10 @@ defmodule Lotus.Web.QueryEditorPage do
       editor_schema: nil,
       editor_dialect: nil,
       editor_language: nil,
+      # The schemas of the editor's tables, and the columns described so far,
+      # by {source, search path} (`editor_columns`).
+      editor_schemas: [],
+      column_cache: %{},
       dynamic_options: false,
       # What the run buttons run (`:all`, `:statement`, `:selection`), and
       # the part of the text the last run ran, when it was not all of it.
@@ -1584,8 +1600,13 @@ defmodule Lotus.Web.QueryEditorPage do
              Actor.opts(socket.assigns)
            ) do
         {:ok, schema} ->
+          # The columns already described for the source, kept from before.
+          known = Map.get(socket.assigns[:column_cache] || %{}, {data_source, search_path}, %{})
+
           assign(socket,
-            editor_schema: schema,
+            editor_schema: Map.merge(schema, Map.take(known, Map.keys(schema))),
+            editor_schemas:
+              SchemaBuilder.schemas(socket.assigns.sources_map, data_source, search_path),
             editor_dialect: dialect,
             editor_language: language,
             source_type: source_type,
@@ -1609,6 +1630,47 @@ defmodule Lotus.Web.QueryEditorPage do
         dynamic_options: false
       )
     end
+  end
+
+  # Describes the editor's tables `keys` not described yet, for a source the
+  # person may browse, and keeps their columns in the editor's schema. Gives
+  # the columns of `keys` it knows.
+  defp describe_columns(socket, keys) do
+    data_source = socket.assigns.query.data_source
+    search_path = socket.assigns.query.search_path
+    schema = socket.assigns.editor_schema || %{}
+
+    wanted =
+      Enum.filter(keys, &(is_binary(&1) and Map.has_key?(schema, &1) and is_nil(schema[&1])))
+
+    with [_ | _] <- wanted,
+         true <- is_binary(data_source),
+         true <- Authorization.discoverable?(socket.assigns, data_source),
+         {:ok, columns} <-
+           SchemaBuilder.columns(
+             socket.assigns.sources_map,
+             data_source,
+             search_path,
+             wanted,
+             Actor.opts(socket.assigns)
+           ) do
+      schema = Map.merge(schema, columns)
+
+      socket =
+        socket
+        |> assign(editor_schema: schema)
+        |> update(:column_cache, fn cache ->
+          Map.update(cache || %{}, {data_source, search_path}, columns, &Map.merge(&1, columns))
+        end)
+
+      {described(schema, keys), socket}
+    else
+      _ -> {described(schema, keys), socket}
+    end
+  end
+
+  defp described(schema, keys) do
+    schema |> Map.take(keys) |> Map.reject(fn {_key, columns} -> is_nil(columns) end)
   end
 
   defp dialect_for_repo(repo_name) do
@@ -2003,6 +2065,14 @@ defmodule Lotus.Web.QueryEditorPage do
         end
 
       new_drawer = if socket.assigns.left_drawer == :ai_assistant, do: nil, else: :ai_assistant
+
+      # The assistant's suggestions are made of tables' columns: describe a
+      # few, as the editor describes those its statements use.
+      socket =
+        if new_drawer == :ai_assistant,
+          do:
+            socket |> describe_columns(Map.keys(socket.assigns.editor_schema || %{})) |> elem(1),
+          else: socket
 
       {:noreply, assign(socket, left_drawer: new_drawer, ai_conversation: conversation)}
     else

@@ -13,6 +13,17 @@
 
 ### Added
 
+- **SQL autocomplete reads the statement as the server does.** The editor
+  tokenizes SQL with the source's lexical rules, which the server sends
+  (`Lotus.Query.Tokenizer.Profile`): quotes, comments, dollar quotes,
+  escapes, `{{variables}}` and `[[ ]]` blocks. Autocomplete reads the whole
+  statement around the cursor: an alias defined after the cursor
+  (`select c.| from customers c`), comma joins, `WITH` queries (with their
+  columns when their select list names them plainly), subqueries in FROM,
+  quoted and schema-qualified names, and a schema's tables after its name
+  (`reporting.|`). A `;` in a string or a comment no longer ends the
+  statement, and `select | from customers` no longer cuts the table's name.
+
 - **Follow a foreign key.** In the results of a plain select of one table
   (`SELECT <columns> FROM <table>`, then a WHERE, ORDER BY, LIMIT or
   OFFSET, each column a bare name or `*`), the menu of a foreign key's
@@ -378,6 +389,14 @@
   close button or a click outside it; on a public dashboard too.
 
 ### Changed
+
+- **The editor opens with a source's tables, and describes their columns
+  as statements use them.** It no longer describes every table when it
+  opens, so a database with hundreds of tables opens at once: the
+  autocomplete asks for the columns of the tables a statement uses (a few
+  at a time), and the browser and the server keep them per source and
+  table. The AI assistant's suggestions describe a few tables when its
+  panel opens.
 
 - **Single values fill and center their card.** KPI, trend, gauge and
   progress cards draw large and centered, from Fude 0.2.

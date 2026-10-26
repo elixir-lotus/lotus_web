@@ -75,6 +75,11 @@ export default {
       },
       onSelectionChange,
       onVars: onVariableChange,
+      completionOptions: {
+        fetchColumns: (tables) => this.fetchColumns(tables),
+        source: () => this.getSourceFromDOM(),
+        schemas: () => this.getSchemasFromDOM(),
+      },
     });
 
     editorContainer.lotusEditor = this.editor;
@@ -330,6 +335,34 @@ export default {
         "format-editor-content-error",
         { error: result.error },
       );
+    }
+  },
+
+  // The columns of the tables a statement uses, from the server (the editor
+  // has tables only, up front).
+  fetchColumns(tables) {
+    return new Promise((resolve) => {
+      this.pushEventTo(
+        this.el.closest("[data-phx-component]"),
+        "editor_columns",
+        { tables },
+        (reply) => resolve((reply && reply.columns) || {}),
+      );
+    });
+  },
+
+  getSourceFromDOM() {
+    const el = document.querySelector("[data-editor-source]");
+    return (el && el.dataset.editorSource) || "";
+  },
+
+  getSchemasFromDOM() {
+    const el = document.querySelector("[data-editor-schemas]");
+    if (!el) return [];
+    try {
+      return JSON.parse(el.dataset.editorSchemas);
+    } catch {
+      return [];
     }
   },
 
