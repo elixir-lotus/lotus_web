@@ -121,6 +121,31 @@ defmodule Lotus.Web.Pages.QueryEditorWritesTest do
     assert age("Alice") == 30
   end
 
+  describe "a dashboard" do
+    setup do
+      query = query_fixture(%{statement: @update, data_source: "public"})
+      dashboard = public_dashboard_fixture(%{name: "Changes"})
+
+      dashboard_card_fixture(dashboard, %{card_type: :query, query_id: query.id, content: %{}})
+
+      %{dashboard: dashboard}
+    end
+
+    test "opened in the app, runs its cards read-only", %{dashboard: dashboard} do
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/#{dashboard.id}")
+      render_async(live)
+
+      assert age("Alice") == 30
+    end
+
+    test "opened from its public link, runs its cards read-only", %{dashboard: dashboard} do
+      {:ok, live, _html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
+      render_async(live)
+
+      assert age("Alice") == 30
+    end
+  end
+
   describe "the Stop button" do
     test "shows once the source gives the running statement's token", %{live: live} do
       refute has_element?(live, "#stop-query-btn")
