@@ -25,6 +25,8 @@ defmodule Lotus.Web.Dashboards.CardComponent do
       assign(assigns,
         is_public: is_public,
         can_manage: can_manage,
+        # Lotus Pro may turn a share link's downloads off.
+        downloads: Map.get(assigns, :downloads, true),
         heading: heading,
         values: Map.get(assigns, :values, %{}),
         # A heading is its text, with no frame; a text or a link has a
@@ -111,10 +113,10 @@ defmodule Lotus.Web.Dashboards.CardComponent do
             <Icons.cog_6_tooth class="h-4 w-4" />
           </.card_button>
           <.card_menu
-            :if={@chart? or (@card.card_type == :query and not @is_public) or @can_manage}
+            :if={(@chart? and @downloads) or (@card.card_type == :query and not @is_public) or @can_manage}
             id={"#{@id}-menu"}
             card={@card}
-            chart?={@chart?}
+            chart?={@chart? and @downloads}
             public={@is_public}
             can_manage={@can_manage}
             running={@running}
@@ -133,6 +135,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
           <% :query -> %>
             <.query_content
               card={@card}
+              downloads={@downloads}
               result={@result}
               error={@error}
               running={@running}
@@ -166,7 +169,14 @@ defmodule Lotus.Web.Dashboards.CardComponent do
       >
       </span>
 
-      <.maximized :if={@maximized and @chart?} id={@id} card={@card} result={@result} target={@myself} />
+      <.maximized
+        :if={@maximized and @chart?}
+        id={@id}
+        card={@card}
+        result={@result}
+        downloads={@downloads}
+        target={@myself}
+      />
     </div>
     """
   end
@@ -406,6 +416,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   attr(:id, :string, required: true)
   attr(:card, :map, required: true)
   attr(:result, :map, required: true)
+  attr(:downloads, :boolean, default: true)
   attr(:target, :any, required: true)
 
   defp maximized(assigns) do
@@ -451,7 +462,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
             id={"chart-max-#{@card.id}"}
             result={@result}
             config={@card.visualization_config}
-            export
+            export={@downloads}
             class="lotus-chart-max"
           />
         </div>
@@ -567,7 +578,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
             result={@result}
             config={@card.visualization_config}
             height={:fill}
-            export
+            export={@downloads}
             select={@click_filters != %{} && "chart_select"}
             selected={ChartFilters.selected(@click_filters, @values)}
             phx-target={@parent}

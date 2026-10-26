@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html
-  lang="en"
+  lang={assigns[:lotus_locale] || "en"}
   data-lotus-theme={assigns[:theme] || :lotus}
   data-lotus-themes={Enum.join(assigns[:themes] || Lotus.Web.Theme.names(), " ")}
 >
@@ -13,13 +13,26 @@
     <meta name="lotus-map-us-states" content={asset_path(:us_states)} />
 
     <title>{assigns[:page_title] || product_name(assigns)}</title>
-    <link rel="icon" href={asset_path(:svg)} type="image/svg+xml" />
-    <link rel="icon" href={asset_path(:ico)} sizes="any" />
+    <%= if favicon = assigns[:branding] && @branding.favicon do %>
+      <link rel="icon" href={favicon} />
+    <% else %>
+      <link rel="icon" href={asset_path(:svg)} type="image/svg+xml" />
+      <link rel="icon" href={asset_path(:ico)} sizes="any" />
+    <% end %>
+    <link
+      :if={assigns[:branding] && @branding.font_url}
+      rel="stylesheet"
+      nonce={@csp_nonces[:style]}
+      href={@branding.font_url}
+    />
 
     <style :if={Lotus.Web.Theme.css(assigns[:theme_colors])} nonce={@csp_nonces[:style]}>
       <%= Lotus.Web.Theme.css(assigns[:theme_colors]) %>
     </style>
     <link phx-track-static rel="stylesheet" nonce={@csp_nonces[:style]} href={asset_path(:css)} />
+    <style :if={Lotus.Web.Branding.css(assigns[:branding])} nonce={@csp_nonces[:style]}>
+      <%= Lotus.Web.Branding.css(assigns[:branding]) %>
+    </style>
     <script phx-track-static nonce={@csp_nonces[:script]} src={asset_path(:js)} defer>
     </script>
     <script

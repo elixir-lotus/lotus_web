@@ -5496,3 +5496,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "The test was not sent: %{reason}"
 msgstr ""
+
+#: lib/lotus/web/pages/public_dashboard_page.ex
+#, elixir-autogen, elixir-format
+msgid "This dashboard is protected"
+msgstr ""
+
+#: lib/lotus/web/pages/public_dashboard_page.ex
+#, elixir-autogen, elixir-format
+msgid "Continue"
+msgstr ""

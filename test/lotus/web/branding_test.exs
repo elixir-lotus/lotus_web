@@ -143,5 +143,60 @@ defmodule Lotus.Web.BrandingTest do
 
       assert render(live) =~ "Acme Copilot"
     end
+
+    test "Pro sets the favicon, the font and its stylesheet, and the corners" do
+      with_pro(%{
+        favicon: "https://cdn.acme.test/favicon.png",
+        font: ~s("Acme Sans", system-ui, sans-serif),
+        font_url: "https://fonts.acme.test/css?family=Acme+Sans",
+        radius: :large
+      })
+
+      {:ok, _live, html} = live(build_conn(), "/lotus")
+
+      assert html =~ ~s(<link rel="icon" href="https://cdn.acme.test/favicon.png"/>)
+      refute html =~ ~s(sizes="any")
+      assert html =~ ~s(href="https://fonts.acme.test/css?family=Acme+Sans")
+      assert html =~ "--lotus-font-sans: Acme Sans, system-ui, sans-serif;"
+
+      assert html =~ "--lotus-radius-xl: 1rem;"
+    end
+
+    test "a font, stylesheet, favicon or radius that is not valid is ignored" do
+      with_pro(%{
+        favicon: "javascript:alert(1)",
+        font: "x; } body { visibility: hidden",
+        font_url: "http://fonts.acme.test/css",
+        radius: :huge
+      })
+
+      {:ok, _live, html} = live(build_conn(), "/lotus")
+
+      refute html =~ "javascript:"
+      refute html =~ "visibility: hidden"
+      refute html =~ "fonts.acme.test"
+      refute html =~ "--lotus-radius"
+      assert html =~ ~s(sizes="any")
+    end
+
+    test "Pro sets the language, unless the host chose one for the person" do
+      with_pro(%{locale: "fr"})
+
+      {:ok, _live, html} = live(build_conn(), "/lotus")
+      assert html =~ ~s(lang="fr")
+      assert html =~ "Requêtes"
+
+      conn = build_conn() |> Plug.Test.init_test_session(%{"lotus_locale" => "en"})
+      {:ok, _live, html} = live(conn, "/lotus")
+      assert html =~ ~s(lang="en")
+      refute html =~ "Requêtes"
+    end
+
+    test "a language Lotus does not speak is ignored" do
+      with_pro(%{locale: "xx"})
+
+      {:ok, _live, html} = live(build_conn(), "/lotus")
+      assert html =~ ~s(lang="en")
+    end
   end
 end

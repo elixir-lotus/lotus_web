@@ -51,25 +51,125 @@ defmodule Lotus.Web.Pro do
     :ok
   end
 
+  @typedoc """
+  What Lotus Pro answers about a share link:
+
+    * `:allow`, or `{:allow, opts}`: `context` is who the dashboard's
+      cards and filter options run as (the link's owner, say; with none
+      they run with no `:context`), `downloads: false` hides the download
+      controls (a chart's "Save as PNG") on the public page, and `params`
+      are kept in the link's URL when the filters change it (a grant that
+      lets a reload in);
+    * `{:deny, message}` to show the message instead of the dashboard;
+    * `{:ask, ask}` to ask the visitor something first, such as a password
+      or an email address, before the dashboard shows (`t:ask/0`).
+  """
+  @type public_answer ::
+          :allow
+          | {:allow,
+             %{context: term(), downloads: boolean(), params: %{String.t() => String.t()}}}
+          | {:deny, String.t() | nil}
+          | {:ask, ask()}
+
+  @typedoc """
+  A form shown instead of the dashboard: an optional `:title`, `:message`,
+  `:error` (the last answer was wrong) and `:submit` label, and the
+  `:fields` to fill, each a `:key`, a `:label` and a `:type` (`:password`,
+  `:email` or `:text`). No fields shows the message only, such as "We sent
+  you a link".
+  """
+  @type ask :: %{
+          title: String.t() | nil,
+          message: String.t() | nil,
+          error: String.t() | nil,
+          submit: String.t() | nil,
+          fields: [%{key: String.t(), label: String.t(), type: :password | :email | :text}]
+        }
+
   @doc """
   Whether a public dashboard may be shown through its share link, asked on
-  every load of the link with the URL's params: `:allow`, or
-  `{:deny, message}` to show the message instead of the dashboard. Without
-  Pro, or when Pro does not decide, every link is allowed, as before. An
-  answer it does not understand denies.
+  every load of the link with the URL's params (`t:public_answer/0`).
+  Without Pro, or when Pro does not decide, every link is allowed, as
+  before. An answer it does not understand denies.
   """
-  @spec authorize_public_dashboard(map(), map()) :: :allow | {:deny, String.t() | nil}
+  @spec authorize_public_dashboard(map(), map()) :: public_answer()
   def authorize_public_dashboard(dashboard, params) do
     if available?() and function_exported?(pro_web(), :authorize_public_dashboard, 2) do
-      case apply(pro_web(), :authorize_public_dashboard, [dashboard, params]) do
-        :allow -> :allow
-        {:deny, message} when is_binary(message) -> {:deny, message}
-        _other -> {:deny, nil}
-      end
+      public_answer(apply(pro_web(), :authorize_public_dashboard, [dashboard, params]))
     else
       :allow
     end
   end
+
+  @doc """
+  Lotus Pro's answer to what the visitor filled in on a share link's form
+  (`{:ask, ask}`): `answers` by field key, with the URL's `params`. Pro
+  answers as `authorize_public_dashboard/2` does, and `{:allow, opts}` may
+  also give `params` to add to the link's URL, so that a reload keeps the
+  access (a signed grant, say). Without Pro's callback, denies.
+  """
+  @spec answer_public_dashboard(map(), %{String.t() => String.t()}, map()) :: public_answer()
+  def answer_public_dashboard(dashboard, answers, params) do
+    if available?() and function_exported?(pro_web(), :answer_public_dashboard, 3) do
+      public_answer(apply(pro_web(), :answer_public_dashboard, [dashboard, answers, params]))
+    else
+      {:deny, nil}
+    end
+  end
+
+  defp public_answer(:allow), do: :allow
+
+  defp public_answer({:allow, opts}) when is_list(opts),
+    do: public_answer({:allow, Map.new(opts)})
+
+  defp public_answer({:allow, %{} = opts}) do
+    {:allow,
+     %{
+       context: Map.get(opts, :context),
+       downloads: Map.get(opts, :downloads, true) != false,
+       params: grant_params(Map.get(opts, :params))
+     }}
+  end
+
+  defp public_answer({:deny, message}) when is_binary(message), do: {:deny, message}
+
+  defp public_answer({:ask, %{} = ask}) do
+    given = List.wrap(Map.get(ask, :fields))
+
+    case Enum.flat_map(given, &ask_field/1) do
+      fields when length(fields) == length(given) ->
+        {:ask,
+         %{
+           title: ask_text(ask[:title]),
+           message: ask_text(ask[:message]),
+           error: ask_text(ask[:error]),
+           submit: ask_text(ask[:submit]),
+           fields: fields
+         }}
+
+      _invalid ->
+        {:deny, nil}
+    end
+  end
+
+  defp public_answer(_other), do: {:deny, nil}
+
+  defp ask_field(%{key: key, label: label} = field)
+       when is_binary(key) and key != "" and is_binary(label) do
+    type = Map.get(field, :type, :text)
+    if type in [:password, :email, :text], do: [%{key: key, label: label, type: type}], else: []
+  end
+
+  defp ask_field(_field), do: []
+
+  defp ask_text(text) when is_binary(text) and text != "", do: text
+  defp ask_text(_text), do: nil
+
+  defp grant_params(%{} = params) do
+    for {key, value} <- params, is_binary(key) and is_binary(value), into: %{}, do: {key, value}
+  end
+
+  defp grant_params(_params), do: %{}
 
   @doc """
   What to tell whoever opens a public link to no dashboard, given its
@@ -91,7 +191,11 @@ defmodule Lotus.Web.Pro do
   public dashboard is loaded. `info` has the `:user`, `:context` and
   `:scope` of the request, `:public` and, on a public dashboard, the
   `:dashboard`. Pro answers a map with any of `:product_name`, `:logo` (an
-  image URL), `:assistant_name`, `:theme` and `:theme_colors`. The
+  image URL), `:assistant_name`, `:theme`, `:theme_colors`, `:favicon` (an
+  image URL), `:font` (a CSS font family list, such as
+  `"Acme Sans", sans-serif`), `:font_url` (an `https` stylesheet that loads
+  it), `:radius` (`:none`, `:small`, `:medium` or `:large`) and `:locale` (a
+  language Lotus speaks, used when the host chose none for the person). The
   "Powered by Lotus" footer is not part of it: it always shows. `%{}` without Pro: the dashboard
   is Lotus.
   """

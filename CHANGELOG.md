@@ -13,6 +13,22 @@
 
 ### Added
 
+- **Share links Lotus Pro gates.** Pro's `authorize_public_dashboard/2`
+  may now answer `{:ask, ask}`: the public page shows Pro's form (a
+  password, an email address) instead of the dashboard, and sends the
+  answers to Pro's `answer_public_dashboard/3`. `{:allow, opts}` names who
+  the cards and filter options run as (`context:`), so a public dashboard
+  works under Pro's access control; can hide the download controls
+  (`downloads: false`); and keeps `params` in the link's URL, so a reload
+  keeps the access. See `Lotus.Web.Pro.authorize_public_dashboard/2`.
+
+- **More branding from Lotus Pro.** Pro's `branding/1` may also give a
+  `:favicon`, a `:font` (a CSS font family list) with the `https`
+  stylesheet that loads it (`:font_url`), how round the corners are
+  (`:radius`: `:none`, `:small`, `:medium` or `:large`), and the
+  workspace's `:locale`, used when the host chose none for the person.
+  The page's `lang` follows the locale.
+
 - **Telemetry an audit log can rest on.** Opening a saved query emits
   `[:lotus_web, :query, :view]`, and a public link that opens nothing (no
   dashboard has it, or Lotus Pro refused it) emits
