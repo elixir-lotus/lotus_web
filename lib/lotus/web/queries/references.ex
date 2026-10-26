@@ -156,7 +156,7 @@ defmodule Lotus.Web.Queries.References do
   `opts` are the actor's (`:context`, `:scope`).
   """
   @spec lookup(String.t(), String.t() | nil, String.t(), String.t(), String.t(), keyword()) ::
-          {:ok, %Query{}, %{String.t() => String.t()}} | :error
+          {:ok, struct(), %{String.t() => String.t()}} | :error
   def lookup(source, schema, table, column, value, opts \\ []) do
     describe_opts = if schema in [nil, ""], do: opts, else: Keyword.put(opts, :schema, schema)
 

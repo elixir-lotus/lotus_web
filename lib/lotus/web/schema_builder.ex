@@ -37,7 +37,7 @@ defmodule Lotus.Web.SchemaBuilder do
   The schemas the editor's tables are of: the search_path's, or the source's
   default ones.
   """
-  @spec schemas(%SourcesMap{}, String.t() | nil, String.t() | nil) :: [String.t()]
+  @spec schemas(SourcesMap.t(), String.t() | nil, String.t() | nil) :: [String.t()]
   def schemas(%SourcesMap{} = sources_map, data_repo, search_path) do
     case SourcesMap.get_database(sources_map, data_repo) do
       nil -> []
@@ -52,7 +52,7 @@ defmodule Lotus.Web.SchemaBuilder do
   `opts` are the actor options (`:context`, `:scope`) forwarded to the core
   calls that describe each table.
   """
-  @spec columns(%SourcesMap{}, String.t() | nil, String.t() | nil, [String.t()], keyword()) ::
+  @spec columns(SourcesMap.t(), String.t() | nil, String.t() | nil, [String.t()], keyword()) ::
           {:ok, %{String.t() => [String.t()]}} | {:error, :database_not_found}
   def columns(%SourcesMap{} = sources_map, data_repo, search_path, keys, opts \\ []) do
     with {:ok, tables} <- tables(sources_map, data_repo, search_path) do

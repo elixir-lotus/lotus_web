@@ -7,6 +7,8 @@ defmodule Lotus.Web.SourcesMap do
 
   defstruct databases: []
 
+  @type t :: %__MODULE__{databases: [__MODULE__.Database.t()]}
+
   defmodule Database do
     @moduledoc false
 
