@@ -31,11 +31,6 @@ defmodule Lotus.Web.Queries.PinTest do
     assert Pin.key_columns(pin, result(~w(email id region), 1)) == ["id", "email"]
   end
 
-  test "a pin keeps its rows as text, as Lotus keeps them" do
-    pin = Pin.new(%{columns: ["d"], rows: [[~D[2026-01-04]], [nil]], num_rows: 2}, %{})
-    assert pin.result.rows == [["2026-01-04"], [nil]]
-  end
-
   test "no percent from nothing" do
     pin = Pin.new(result(["a"], 0), %{})
     assert %{delta: 4, percent: nil} = Pin.compare(pin, result(["a"], 4))

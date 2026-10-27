@@ -192,16 +192,6 @@ defmodule Lotus.Web.Queries.ResultsComponent do
             class="mb-4 max-h-[60%]"
           />
 
-        <% @pinned != nil -> %>
-          <%!-- The pin kept from an earlier visit: the next run compares with it --%>
-          <div class="pt-3 pb-2 flex items-center gap-3 flex-shrink-0">
-            <h2 class="text-base font-semibold text-text-light dark:text-text-dark"><%= gettext("Results") %></h2>
-            <span class="text-xs text-gray-500 dark:text-gray-400">
-              <%= gettext("Run the query to compare it with the pinned result.") %>
-            </span>
-          </div>
-          <.pinned_panel pinned={@pinned} comparison={%{removed: []}} target={@target} class="mb-4 min-h-0" />
-
         <% true -> %>
           <.empty_state os={@os} />
       <% end %>
@@ -660,7 +650,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
     do: Enum.find_index(pinned.result.columns || [], &(&1 == key))
 
   defp gone?(_row, nil, _removed), do: false
-  defp gone?(row, index, {_key, values}), do: MapSet.member?(values, Enum.at(row, index) || "")
+  defp gone?(row, index, {_key, values}), do: MapSet.member?(values, cell(Enum.at(row, index)))
 
   defp delta_class(delta) when delta < 0, do: "text-orange-800 dark:text-orange-300"
   defp delta_class(_delta), do: "text-blue-800 dark:text-blue-300"

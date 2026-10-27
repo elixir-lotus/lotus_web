@@ -67,25 +67,19 @@ defmodule Lotus.Web.Pages.QueryEditorPinTest do
   end
 end
 
-defmodule Lotus.Web.Pages.QueryEditorPinKeptTest do
-  # With a browser id (or a user), Lotus keeps the pin across visits, and
-  # every row of the pinned query and the last run compare on a key.
+defmodule Lotus.Web.Pages.QueryEditorPinDiffTest do
+  # Every row of the pinned query and the last run, compared on a key.
   use Lotus.Web.Case
 
   import Phoenix.LiveViewTest
-
-  @browser "0f8b7a2e-3c4d-4e5f-8a9b-0c1d2e3f4a5b"
 
   setup do
     create_test_users()
     :ok
   end
 
-  defp open(path \\ "/lotus/queries/new", browser \\ @browser) do
-    {:ok, live, _html} =
-      build_conn()
-      |> put_connect_params(%{"browser_id" => browser})
-      |> live(path)
+  defp open do
+    {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
 
     render_async(live)
     live
@@ -97,31 +91,6 @@ defmodule Lotus.Web.Pages.QueryEditorPinKeptTest do
     |> render_submit(%{"query" => %{"statement" => statement}})
 
     render_async(live)
-  end
-
-  test "the pin is there again after a reload, for this browser only" do
-    live = open()
-    run(live, "SELECT name FROM test_users ORDER BY name")
-    live |> element("#pin-result-btn") |> render_click()
-
-    live = open()
-    assert has_element?(live, "#pinned-result", "Alice")
-    assert has_element?(live, "#pinned-result code", "SELECT name FROM test_users ORDER BY name")
-
-    other = open("/lotus/queries/new", "11111111-2222-3333-4444-555555555555")
-    refute has_element?(other, "#pinned-result")
-
-    live |> element("#unpin-result-btn") |> render_click()
-    refute has_element?(open(), "#pinned-result")
-  end
-
-  test "a saved query's pin is its own" do
-    query = query_fixture(%{name: "Users", statement: "SELECT name FROM test_users"})
-    live = open("/lotus/queries/#{query.id}")
-    live |> element("#pin-result-btn") |> render_click()
-
-    assert has_element?(open("/lotus/queries/#{query.id}"), "#pinned-result")
-    refute has_element?(open(), "#pinned-result")
   end
 
   test "compare every row on a key: gone, new and changed", %{} do

@@ -5800,10 +5800,6 @@ msgstr "Lignes disparues"
 msgid "Changed rows"
 msgstr "Lignes modifiées"
 
-#: lib/lotus/web/live/queries/results_component.ex
-#, elixir-autogen, elixir-format
-msgid "Run the query to compare it with the pinned result."
-msgstr "Exécutez la requête pour la comparer au résultat épinglé."
 
 #: lib/lotus/web/live/queries/results_component.ex
 #, elixir-autogen, elixir-format

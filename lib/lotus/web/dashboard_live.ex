@@ -38,7 +38,6 @@ defmodule Lotus.Web.DashboardLive do
       |> assign(:scope, scope)
       |> assign(:actor, actor)
       |> assign(:client, Telemetry.client(socket))
-      |> assign(:browser_id, browser_id(socket))
       |> assign(:features, features)
       |> assign(:card_concurrency, card_concurrency)
       |> assign(:theme, Map.get(session, "theme", :lotus))
@@ -128,18 +127,6 @@ defmodule Lotus.Web.DashboardLive do
     ~H"""
     <.live_component id="page" module={@page.comp} {assigns} />
     """
-  end
-
-  # The random id the browser keeps for itself (`assets/js/app.js`), sent
-  # as it connects: whose pins they are when there is no user to tell.
-  defp browser_id(socket) do
-    with true <- connected?(socket),
-         id when is_binary(id) <- get_connect_params(socket)["browser_id"],
-         true <- id =~ ~r/\A[A-Za-z0-9-]{16,64}\z/ do
-      "browser:" <> id
-    else
-      _ -> nil
-    end
   end
 
   @impl Phoenix.LiveView

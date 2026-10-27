@@ -5800,10 +5800,6 @@ msgstr ""
 msgid "Changed rows"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex
-#, elixir-autogen, elixir-format
-msgid "Run the query to compare it with the pinned result."
-msgstr ""
 
 #: lib/lotus/web/live/queries/results_component.ex
 #, elixir-autogen, elixir-format

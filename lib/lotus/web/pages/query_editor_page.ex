@@ -1077,10 +1077,9 @@ defmodule Lotus.Web.QueryEditorPage do
   def handle_event("cancel_write", _params, socket),
     do: {:noreply, assign(socket, pending_write: nil)}
 
-  # The pin: a result kept beside the next runs, one per person and query
-  # (a new one takes its place), which Lotus keeps when it knows the person
-  # (`pin_owner/1`). Its state lives in this component only (the LiveView
-  # never holds it, so its renders do not reset it): `pinned`, `pin_layout`
+  # The pin: a result kept beside the next runs, as long as the page (a new
+  # one takes its place). Its state lives in this component only (the
+  # LiveView never holds it, so its renders do not reset it): `pinned`, `pin_layout`
   # (`:split` beside the result, `:stacked` above it), `pin_open` (stacked,
   # its rows shown), `pin_sync` (side by side, both tables scroll together),
   # and `pin_diff`, the rows of both queries compared (`Lotus.diff/3`).
@@ -1099,7 +1098,7 @@ defmodule Lotus.Web.QueryEditorPage do
             vars: Map.get(socket.assigns, :variable_values, %{})
           })
 
-        {:noreply, socket |> assign(pinned: store_pin(socket, pin), pin_diff: nil)}
+        {:noreply, assign(socket, pinned: pin, pin_diff: nil)}
 
       _ ->
         {:noreply, socket}
@@ -1107,12 +1106,8 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   @impl Phoenix.LiveComponent
-  def handle_event("unpin_result", _params, socket) do
-    with [_ | _] = opts <- pin_owner(socket.assigns),
-         do: Lotus.unpin(pin_query_id(socket.assigns), opts)
-
-    {:noreply, assign(socket, pinned: nil, pin_open: false, pin_diff: nil)}
-  end
+  def handle_event("unpin_result", _params, socket),
+    do: {:noreply, assign(socket, pinned: nil, pin_open: false, pin_diff: nil)}
 
   # The pinned result's text back in the editor.
   @impl Phoenix.LiveComponent
@@ -1645,7 +1640,7 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   def update(assigns, socket) do
-    {:ok, socket |> assign(assigns) |> load_pin()}
+    {:ok, assign(socket, assigns)}
   end
 
   # The editor offers, browses and autocompletes only the sources the user may
@@ -2031,58 +2026,6 @@ defmodule Lotus.Web.QueryEditorPage do
       statement -> %{query | statement: statement}
     end
   end
-
-  # The person's pin of the query, from Lotus, once the page is connected
-  # (the browser's id comes with the connection) and once per query.
-  defp load_pin(socket) do
-    key = {:pin, pin_query_id(socket.assigns)}
-
-    cond do
-      not connected?(socket) or socket.assigns[:pin_loaded] == key ->
-        socket
-
-      opts = pin_owner(socket.assigns) ->
-        pin =
-          case Lotus.get_pin(pin_query_id(socket.assigns), opts) do
-            nil -> nil
-            stored -> Pin.from_stored(stored)
-          end
-
-        assign(socket, pinned: pin, pin_loaded: key, pin_diff: nil)
-
-      true ->
-        assign(socket, pin_loaded: key)
-    end
-  end
-
-  # Lotus keeps the pin when it knows whose it is; else it lasts the page.
-  defp store_pin(socket, pin) do
-    with [_ | _] = opts <- pin_owner(socket.assigns),
-         {:ok, stored} <-
-           Lotus.pin_result(pin.result, Pin.attrs(pin, pin_query_id(socket.assigns)), opts) do
-      Pin.from_stored(stored)
-    else
-      _ -> pin
-    end
-  end
-
-  defp pin_query_id(%{page: %{mode: :edit, id: id}}), do: id
-  defp pin_query_id(_assigns), do: nil
-
-  # Whose pin: the user's id when the resolver gives one, else the
-  # browser's (a random id it keeps, sent as it connects). `nil`: no one
-  # to keep it for.
-  defp pin_owner(assigns) do
-    case pin_user_id(assigns[:user]) || assigns[:browser_id] do
-      id when is_binary(id) and id != "" -> [owner_id: id]
-      id when is_integer(id) -> [owner_id: Integer.to_string(id)]
-      _ -> nil
-    end
-  end
-
-  defp pin_user_id(%{id: id}) when not is_nil(id), do: "user:#{id}"
-  defp pin_user_id(%{"id" => id}) when not is_nil(id), do: "user:#{id}"
-  defp pin_user_id(_user), do: nil
 
   # The pinned query as it ran, and the last run's, for `Lotus.diff/3`.
   defp diff_sides(assigns, %Pin{} = pin) do

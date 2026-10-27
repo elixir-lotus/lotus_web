@@ -172,26 +172,6 @@ const livePath = document
   .querySelector("meta[name='live-path']")
   .getAttribute("content");
 
-// A random id this browser keeps, whose pinned results are its own when
-// the dashboard has no user to tell them by.
-function browserId() {
-  try {
-    let id = localStorage.getItem("lotus:browser-id");
-    if (!id) {
-      // randomUUID needs https (or localhost); getRandomValues does not.
-      id = crypto.randomUUID
-        ? crypto.randomUUID()
-        : Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) =>
-            b.toString(16).padStart(2, "0"),
-          ).join("");
-      localStorage.setItem("lotus:browser-id", id);
-    }
-    return id;
-  } catch (_error) {
-    return null;
-  }
-}
-
 const liveSocket = new LiveView.LiveSocket(livePath, Phoenix.Socket, {
   transport: liveTran === "longpoll" ? Phoenix.LongPoll : WebSocket,
   // The viewer's time zone (a new schedule runs in it) and the lists' views
@@ -200,7 +180,6 @@ const liveSocket = new LiveView.LiveSocket(livePath, Phoenix.Socket, {
     _csrf_token: csrfToken,
     time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     views: listViews(),
-    browser_id: browserId(),
   }),
   hooks: hooks,
 });

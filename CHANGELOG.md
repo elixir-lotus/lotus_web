@@ -13,20 +13,14 @@
 
 ### Added
 
-- **Pinned results: every row compared, kept across visits, scrolled
-  together** (elixir-lotus/lotus#117). Three follow-ups to pinning:
+- **Pinned results: every row compared, scrolled together**
+  (elixir-lotus/lotus#117). Two follow-ups to pinning:
   - **Compare rows** in the comparison bar runs the pinned query and the
     last run again, read only, and matches their rows on a column ("Match
     rows on", `id` first): the rows gone, new and changed (each changed
     cell before → after), in tabs, and the pinned rows the last run no
     longer has turn orange (`Lotus.diff/3`; each query may return up to
     10,000 rows).
-  - **The pin stays.** Lotus keeps it (`Lotus.pin_result/3`), one per
-    person and query: a reload, or coming back to the query later, shows it
-    again, until it is unpinned. The person is the user's `:id` when the
-    resolver's user has one, else the browser (a random id it keeps in
-    `localStorage` and sends as it connects). Needs the `lotus_pins` table
-    of Lotus's v7 migration.
   - **Scroll together**: side by side, the pinned table and the results
     grid scroll as one, down and across (a toggle in the comparison bar).
 

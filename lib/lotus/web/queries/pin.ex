@@ -1,12 +1,11 @@
 defmodule Lotus.Web.Queries.Pin do
   @moduledoc false
 
-  # A result the editor keeps beside the next ones, to compare them: the
-  # rows it showed when it was pinned (its page, as text, not the query run
-  # again), the statement that ran with its source, search path and
-  # variables (to compare all its rows with the next run's, `Lotus.diff/3`),
-  # and the editor's text then, to restore it. One per person and query,
-  # kept by Lotus (`Lotus.Pins`) when the person is known.
+  # A result the editor keeps beside the next ones, to compare them, as long
+  # as the page: the rows it showed when it was pinned (its page, not the
+  # query run again), the statement that ran with its source, search path
+  # and variables (to compare every row of it with the next run's,
+  # `Lotus.diff/3`), and the editor's text then, to restore it.
 
   defstruct [:result, :statement, :text, :pinned_at, :data_source, :search_path, vars: %{}]
 
@@ -22,43 +21,13 @@ defmodule Lotus.Web.Queries.Pin do
 
   @doc """
   Pins a result, with `attrs` (`:statement`, `:text`, `:data_source`,
-  `:search_path`, `:vars`). Its rows are kept as Lotus keeps them.
+  `:search_path`, `:vars`).
   """
   def new(result, attrs, now \\ DateTime.utc_now()) do
     struct(
-      %__MODULE__{result: from_snapshot(Lotus.Pins.snapshot(result))},
+      %__MODULE__{result: result},
       Map.put(attrs, :pinned_at, DateTime.truncate(now, :second))
     )
-  end
-
-  @doc "The pin Lotus kept (`Lotus.Storage.Pin`)."
-  def from_stored(%Lotus.Storage.Pin{} = pin) do
-    %__MODULE__{
-      result: from_snapshot(pin.result),
-      statement: pin.statement,
-      text: pin.text,
-      data_source: pin.data_source,
-      search_path: pin.search_path,
-      vars: pin.vars || %{},
-      pinned_at: DateTime.truncate(pin.pinned_at, :second)
-    }
-  end
-
-  @doc "What Lotus keeps of a pin: its attributes, for `Lotus.pin_result/3`."
-  def attrs(%__MODULE__{} = pin, query_id) do
-    pin
-    |> Map.take([:statement, :text, :data_source, :search_path, :vars, :pinned_at])
-    |> Map.put(:query_id, query_id)
-  end
-
-  defp from_snapshot(snapshot) do
-    %{
-      columns: snapshot["columns"] || [],
-      rows: snapshot["rows"] || [],
-      num_rows: snapshot["num_rows"],
-      duration_ms: snapshot["duration_ms"],
-      meta: %{total_count: snapshot["total_count"]}
-    }
   end
 
   @doc """
