@@ -48,6 +48,17 @@ defmodule Lotus.Web.Pages.QueryEditorMasuTest do
     assert names(live, grid) == ["Alice", "Bob", "Charlie"]
   end
 
+  test "the grid's filter bar has its place in the Results header row", %{live: live, grid: grid} do
+    # Masu draws the bar in the browser; its hook moves it to this element,
+    # at the end of the header row, so the rows have the line it took.
+    assert has_element?(
+             live,
+             ~s([id^="query-results-header-"] .lotus-results-filters [phx-hook="ResultsFilters"][data-grid="#{grid}"][phx-update="ignore"])
+           )
+
+    refute has_element?(live, "##{grid} .masu-chips")
+  end
+
   test "the grid offers the filters of the query's source", %{live: live} do
     [config] =
       live

@@ -823,6 +823,24 @@
     --masu-cell-padding: 0 0.5rem;
 }
 
+/* The results grid's filter bar, in the Results header row (its hook,
+   results_filters.js): the chips and Add filter at the end of the row, as
+   tall as its words, onto a line of their own when they do not fit. */
+.lotus-results-filters {
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+.lotus-results-filters > .masu {
+    display: block;
+}
+
+.lotus-results-filters .masu-chips {
+    --masu-chip-height: 1.5rem;
+    justify-content: flex-end;
+    margin-bottom: 0;
+}
+
 /* The active cell shows where the focus is; no ring around the whole
    grid as well. */
 .lotus-results > .masu-grid:focus-visible {

@@ -71,7 +71,7 @@ defmodule Lotus.Web.Queries.MasuResults do
       )
 
     ~H"""
-    <div class="h-full py-2">
+    <div class="h-full pb-2">
       <.data_grid
         id={@id}
         rows={@rows}
