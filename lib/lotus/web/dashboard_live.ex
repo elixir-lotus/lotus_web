@@ -3,7 +3,7 @@ defmodule Lotus.Web.DashboardLive do
 
   alias Lotus.Web.{Actor, Assets, Authorization, Branding}
   alias Lotus.Web.{DashboardEditorPage, PublicDashboardPage, QueriesPage, QueryEditorPage}
-  alias Lotus.Web.{SchedulesPage, Telemetry}
+  alias Lotus.Web.{Pro, SchedulesPage, Telemetry}
 
   @impl Phoenix.LiveView
   def mount(params, session, socket) do
@@ -54,6 +54,7 @@ defmodule Lotus.Web.DashboardLive do
       |> title_with_product()
       |> assign_permissions()
       |> mount_palette()
+      |> assign_pro_creates()
       |> page.comp.handle_mount()
 
     {:ok, socket}
@@ -88,6 +89,14 @@ defmodule Lotus.Web.DashboardLive do
   # dashboard has no actions to offer.
   defp mount_palette(%{assigns: %{public_view: true}} = socket), do: socket
   defp mount_palette(socket), do: Jumon.Live.mount(socket, Lotus.Web.Commands)
+
+  # What Lotus Pro lets the user create, for the header's New menu, as the
+  # command palette offers it (`Lotus.Web.Pro.palette/1`).
+  defp assign_pro_creates(%{assigns: %{public_view: true}} = socket),
+    do: assign(socket, :pro_creates, [])
+
+  defp assign_pro_creates(socket),
+    do: assign(socket, :pro_creates, Pro.palette(socket.assigns)[:create] || [])
 
   # The actions of the page in view leave with it.
   defp put_page_actions(%{assigns: %{jumon: _}} = socket) do

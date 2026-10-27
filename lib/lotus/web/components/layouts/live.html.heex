@@ -31,7 +31,8 @@
             <div
               :if={
                 Lotus.Web.Authorization.allowed?(assigns, :create_query) or
-                  Lotus.Web.Authorization.allowed?(assigns, :manage_dashboard)
+                  Lotus.Web.Authorization.allowed?(assigns, :manage_dashboard) or
+                  (assigns[:pro_creates] || []) != []
               }
               class="relative"
               id="new-item-dropdown"
@@ -65,6 +66,15 @@
                 >
                   <Icons.blocks class="h-5 w-5 text-gray-400" />
                   <%= gettext("Dashboard") %>
+                </.link>
+                <.link
+                  :for={item <- assigns[:pro_creates] || []}
+                  id={"new-#{item.id}"}
+                  navigate={lotus_path(item.path, item[:params] || %{})}
+                  class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <.palette_icon name={to_string(item[:icon] || "plus")} class="h-5 w-5 text-gray-400" />
+                  <%= item[:menu_label] || item.label %>
                 </.link>
               </div>
             </div>

@@ -31,7 +31,16 @@ defmodule Lotus.Web.CommandsTest do
 
       def palette(_assigns) do
         %{
-          create: [%{id: "workflow", label: "New workflow", path: "workflows", params: %{new: 1}}],
+          create: [
+            %{
+              id: "workflow",
+              label: "New workflow",
+              menu_label: "Workflow",
+              icon: :layers,
+              path: "workflows",
+              params: %{new: 1}
+            }
+          ],
           sources: [
             %{
               id: :workflows,
@@ -63,6 +72,11 @@ defmodule Lotus.Web.CommandsTest do
       [result] = Enum.filter(search(view, "churn"), &(&1["source"] == "workflows"))
       assert result["name"] == "Monthly churn"
       assert result["perform"]["to"] =~ "/lotus/workflows?id=7"
+    end
+
+    test "what it creates is in the header's New menu too" do
+      {:ok, view, _html} = live(build_conn(), "/lotus")
+      assert has_element?(view, ~s(#new-workflow[href="/lotus/workflows?new=1"]), "Workflow")
     end
   end
 
