@@ -3,12 +3,12 @@ msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/lotus/web/live/queries/results_component.ex:329
+#: lib/lotus/web/live/queries/results_component.ex:351
 #, elixir-autogen, elixir-format
 msgid " rows"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex:307
+#: lib/lotus/web/live/queries/results_component.ex:329
 #, elixir-autogen, elixir-format
 msgid "%{stats} • %{duration}ms"
 msgstr ""
@@ -153,7 +153,7 @@ msgstr ""
 msgid "Enter value"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex:115
+#: lib/lotus/web/live/queries/results_component.ex:135
 #: lib/lotus/web/live/queries/results_pill_component.ex:25
 #, elixir-autogen, elixir-format
 msgid "Error"
@@ -165,12 +165,12 @@ msgstr ""
 msgid "Expand editor"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex:175
+#: lib/lotus/web/live/queries/results_component.ex:197
 #, elixir-autogen, elixir-format
 msgid "Export (.csv)"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex:171
+#: lib/lotus/web/live/queries/results_component.ex:193
 #, elixir-autogen, elixir-format
 msgid "Export query results to CSV"
 msgstr ""
@@ -196,7 +196,7 @@ msgstr ""
 msgid "Help"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex:399
+#: lib/lotus/web/live/queries/results_component.ex:421
 #, elixir-autogen, elixir-format
 msgid "Here's where your results will appear"
 msgstr ""
@@ -258,7 +258,7 @@ msgstr ""
 msgid "New Query"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex:163
+#: lib/lotus/web/live/queries/results_component.ex:185
 #: lib/lotus/web/queries/masu_messages.ex:108
 #: lib/lotus/web/schedules/components.ex:411
 #, elixir-autogen, elixir-format
@@ -293,7 +293,7 @@ msgstr ""
 msgid "Please enter at least one option"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex:155
+#: lib/lotus/web/live/queries/results_component.ex:177
 #, elixir-autogen, elixir-format
 msgid "Prev"
 msgstr ""
@@ -352,9 +352,9 @@ msgid "Query saved successfully!"
 msgstr ""
 
 #: lib/lotus/web/live/queries/results_component.ex:42
-#: lib/lotus/web/live/queries/results_component.ex:63
-#: lib/lotus/web/live/queries/results_component.ex:112
-#: lib/lotus/web/live/queries/results_component.ex:408
+#: lib/lotus/web/live/queries/results_component.ex:66
+#: lib/lotus/web/live/queries/results_component.ex:132
+#: lib/lotus/web/live/queries/results_component.ex:430
 #: lib/lotus/web/queries/masu_results.ex:87
 #, elixir-autogen, elixir-format
 msgid "Results"
@@ -428,12 +428,12 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex:320
+#: lib/lotus/web/live/queries/results_component.ex:342
 #, elixir-autogen, elixir-format
 msgid "Showing %{from}–%{to}"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex:322
+#: lib/lotus/web/live/queries/results_component.ex:344
 #, elixir-autogen, elixir-format
 msgid "Showing 0"
 msgstr ""
@@ -451,7 +451,7 @@ msgid "Static options"
 msgstr ""
 
 #: lib/lotus/web/live/queries/results_component.ex:45
-#: lib/lotus/web/live/queries/results_component.ex:66
+#: lib/lotus/web/live/queries/results_component.ex:69
 #: lib/lotus/web/live/queries/results_pill_component.ex:31
 #, elixir-autogen, elixir-format
 msgid "Success"
@@ -483,7 +483,7 @@ msgstr ""
 msgid "Text"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex:385
+#: lib/lotus/web/live/queries/results_component.ex:407
 #, elixir-autogen, elixir-format
 msgid "To run your query, click on the Run button or press"
 msgstr ""
@@ -604,7 +604,7 @@ msgstr ""
 msgid "search_path:"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex:327
+#: lib/lotus/web/live/queries/results_component.ex:349
 #, elixir-autogen, elixir-format
 msgid " of %{count} row"
 msgid_plural " of %{count} rows"
@@ -620,7 +620,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: lib/lotus/web/live/queries/ai_assistant_component.ex:595
-#: lib/lotus/web/live/queries/results_component.ex:336
+#: lib/lotus/web/live/queries/results_component.ex:358
 #: lib/lotus/web/live/queries/results_pill_component.ex:45
 #, elixir-autogen, elixir-format
 msgid "%{count} row"
@@ -733,8 +733,8 @@ msgstr ""
 msgid "Chart Type"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex:206
-#: lib/lotus/web/live/queries/results_component.ex:267
+#: lib/lotus/web/live/queries/results_component.ex:228
+#: lib/lotus/web/live/queries/results_component.ex:289
 #, elixir-autogen, elixir-format
 msgid "Chart view"
 msgstr ""
@@ -814,7 +814,7 @@ msgstr "None"
 msgid "Query Results"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex:411
+#: lib/lotus/web/live/queries/results_component.ex:433
 #, elixir-autogen, elixir-format
 msgid "Running..."
 msgstr "Running..."
@@ -860,8 +860,8 @@ msgstr ""
 msgid "Switch to table view"
 msgstr ""
 
-#: lib/lotus/web/live/queries/results_component.ex:189
-#: lib/lotus/web/live/queries/results_component.ex:250
+#: lib/lotus/web/live/queries/results_component.ex:211
+#: lib/lotus/web/live/queries/results_component.ex:272
 #, elixir-autogen, elixir-format
 msgid "Table view"
 msgstr ""
@@ -882,7 +882,7 @@ msgid "Use the chart icon in the bottom bar to view."
 msgstr ""
 
 #: lib/lotus/web/live/dashboards/card_settings_drawer.ex:157
-#: lib/lotus/web/live/queries/results_component.ex:238
+#: lib/lotus/web/live/queries/results_component.ex:260
 #: lib/lotus/web/live/queries/visualization_settings_component.ex:46
 #, elixir-autogen, elixir-format
 msgid "Visualization"

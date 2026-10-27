@@ -5,11 +5,22 @@ import {
   MatchDecorator,
 } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
-import { tokenize, JSON_PROFILE } from "../languages/sql/tokenizer.js";
-import { templateVariables, stringPlaceholders } from "../languages/json_dsl/parser.js";
+import { scan, tokenize, profileFor, TYPES } from "../languages/sql/tokenizer.js";
+import { jsonProfile } from "../languages/json_dsl/parser.js";
 
-function isJson(dialect) {
-  return typeof dialect === "string" && dialect.startsWith("json:");
+const VARIABLE = TYPES.indexOf("variable");
+const STRING = TYPES.indexOf("string");
+
+/**
+ * The lexical rules to find variables with, for an editor dialect name and
+ * the server's profile of the source (`tokenizer` in its editor config),
+ * when it sent one.
+ */
+export function variableProfile(dialectName, serverProfile = null) {
+  if (dialectName && dialectName.startsWith("json:")) {
+    return jsonProfile(serverProfile);
+  }
+  return profileFor(dialectName, serverProfile);
 }
 
 const variableContainerDecoration = Decoration.mark({
@@ -34,56 +45,84 @@ const optionalBracketDecoration = Decoration.mark({
 });
 
 /**
- * The statement's variables, in order, once each. A JSON source's are found
- * as Lotus finds them (`{{name}}` in code and in strings, through blocks);
- * a SQL source's by their `{{ name }}` shape.
+ * The `{{name}}` placeholders Lotus binds, as `{from, to, name}`, in order:
+ * those in code and in string literals (the dialect rewrites `'%{{q}}%'`),
+ * not those in a comment or a quoted identifier. The grammar is the
+ * server's (`Lotus.Query.Tokenizer`): a name is a letter or `_`, then
+ * letters, digits or `_`, with no spaces.
  */
-export function extractVariables(content, dialect = null) {
-  if (isJson(dialect)) return [...new Set(templateVariables(content))];
+export function variableRanges(content, profile = undefined) {
+  const ranges = [];
+  const { types, starts, count } = scan(content, profile);
 
-  const variables = [];
-  const seen = new Set();
-  const regex = /\{\{\s*(\w+)\s*\}\}/g;
-  let match;
+  for (let k = 0; k < count; k++) {
+    const from = starts[k];
+    const to = starts[k + 1];
 
-  while ((match = regex.exec(content)) !== null) {
-    const varName = match[1];
-    if (!seen.has(varName)) {
-      seen.add(varName);
-      variables.push(varName);
+    if (types[k] === VARIABLE) {
+      ranges.push({ from, to, name: content.slice(from + 2, to - 2) });
+    } else if (types[k] === STRING) {
+      stringPlaceholders(content, from, to, ranges);
     }
   }
 
-  return variables;
+  return ranges;
 }
 
-// A JSON source's variables and blocks, where Lotus reads them: `[[1, 2]]`
-// in an array is an array.
-function jsonDecorations(text) {
+// The placeholders inside a string literal: the leftmost `{{name}}` wins,
+// and after a `{{` that does not start one the search goes on from the next
+// character, as on the server (`{{{a}}}` holds `{{a}}`).
+function stringPlaceholders(text, from, to, ranges) {
+  let i = text.indexOf("{{", from);
+  while (i !== -1 && i + 4 <= to) {
+    const end = placeholderEnd(text, i + 2, to);
+    if (end) {
+      ranges.push({ from: i, to: end, name: text.slice(i + 2, end - 2) });
+      i = text.indexOf("{{", end);
+    } else {
+      i = text.indexOf("{{", i + 1);
+    }
+  }
+}
+
+function placeholderEnd(text, i, limit) {
+  if (!/[A-Za-z_]/.test(text[i] || "")) return 0;
+  let j = i + 1;
+  while (j < limit && /[A-Za-z0-9_]/.test(text[j])) j += 1;
+  return j + 2 <= limit && text[j] === "}" && text[j + 1] === "}" ? j + 2 : 0;
+}
+
+/** The names of the variables in `content`, in order, once each. */
+export function extractVariables(content, profile = undefined) {
+  const seen = new Set();
+  for (const { name } of variableRanges(content, profile)) seen.add(name);
+  return [...seen];
+}
+
+function createVariableDecorations(view, profile) {
   const decorations = [];
+  const text = view.state.doc.toString();
+
+  // Optional blocks, where Lotus reads them: not inside a string or a
+  // comment, and in a JSON array `[[1, 2]]` is an array.
   const open = [];
-  for (const t of tokenize(text, JSON_PROFILE)) {
-    if (t.type === "variable") {
-      decorations.push(variableContainerDecoration.range(t.start, t.end));
-    } else if (t.type === "string") {
-      for (const p of stringPlaceholders(text.slice(t.start, t.end))) {
-        decorations.push(variableContainerDecoration.range(t.start + p.start, t.start + p.end));
-      }
-    } else if (t.type === "block_open") {
+  for (const t of tokenize(text, profile)) {
+    if (t.type === "block_open") {
       open.push(t.start);
     } else if (t.type === "block_close" && open.length) {
       const start = open.pop();
       decorations.push(optionalBracketDecoration.range(start, start + 2));
       decorations.push(optionalBracketDecoration.range(t.start, t.end));
-      if (start + 2 < t.start) decorations.push(optionalClauseDecoration.range(start + 2, t.start));
+      if (start + 2 < t.start) {
+        decorations.push(optionalClauseDecoration.range(start + 2, t.start));
+      }
     }
   }
-  return decorations;
-}
 
-function createVariableDecorations(view, dialect = null) {
-  const text = view.state.doc.toString();
-  const decorations = isJson(dialect) ? jsonDecorations(text) : sqlDecorations(text);
+  // Add variable decorations: the placeholders Lotus binds
+  for (const { from, to } of variableRanges(text, profile)) {
+    decorations.push(variableContainerDecoration.range(from, to));
+  }
 
   // Sort by start position (required by RangeSetBuilder)
   decorations.sort((a, b) => a.from - b.from || a.to - b.to);
@@ -96,64 +135,38 @@ function createVariableDecorations(view, dialect = null) {
   return builder.finish();
 }
 
-function sqlDecorations(text) {
-  const decorations = [];
-
-  // Add optional clause decorations
-  const optionalRegex = /\[\[(.*?)\]\]/gs;
-  let optMatch;
-
-  while ((optMatch = optionalRegex.exec(text)) !== null) {
-    const start = optMatch.index;
-    const end = start + optMatch[0].length;
-
-    // Bracket decorations for [[ and ]]
-    decorations.push(optionalBracketDecoration.range(start, start + 2));
-    decorations.push(optionalBracketDecoration.range(end - 2, end));
-
-    // Content decoration (between brackets)
-    if (start + 2 < end - 2) {
-      decorations.push(optionalClauseDecoration.range(start + 2, end - 2));
-    }
-  }
-
-  // Add variable decorations
-  const regex = /\{\{\s*(\w+)\s*\}\}/g;
-  let match;
-
-  while ((match = regex.exec(text)) !== null) {
-    const start = match.index;
-    const end = match.index + match[0].length;
-
-    decorations.push(variableContainerDecoration.range(start, end));
-  }
-
-  return decorations;
-}
-
 /**
- * Marks the statement's variables and optional blocks, and calls
- * `onVariableChange` with its variables when they change. `getDialect`
- * names the source's language, which says how to find them.
+ * Marks the variables and optional clauses, and calls `onVariableChange`
+ * with the variables' names when they change. `getProfile()` gives the
+ * lexical rules of the current source (see `variableProfile/2`); they are
+ * read again on every update, so a change of source re-reads the text.
  */
-export function lotusVariablesPlugin(onVariableChange, getDialect = () => null) {
+export function lotusVariablesPlugin(onVariableChange, getProfile = () => undefined) {
   return ViewPlugin.define(
     (view) => {
-      let lastVariables = extractVariables(view.state.doc.toString(), getDialect());
-      let lastDialect = getDialect();
+      let profile = getProfile();
+      let profileKey = JSON.stringify(profile);
+      let lastVariables = extractVariables(view.state.doc.toString(), profile);
 
       return {
-        decorations: createVariableDecorations(view, lastDialect),
+        decorations: createVariableDecorations(view, profile),
 
         update(update) {
-          const dialect = getDialect();
-          if (update.docChanged || update.viewportChanged || dialect !== lastDialect) {
-            this.decorations = createVariableDecorations(update.view, dialect);
+          const nextProfile = getProfile();
+          const nextKey = JSON.stringify(nextProfile);
+          const profileChanged = nextKey !== profileKey;
+          profile = nextProfile;
+          profileKey = nextKey;
+
+          if (update.docChanged || update.viewportChanged || profileChanged) {
+            this.decorations = createVariableDecorations(update.view, profile);
           }
 
-          if ((update.docChanged || dialect !== lastDialect) && onVariableChange) {
-            lastDialect = dialect;
-            const currentVariables = extractVariables(update.state.doc.toString(), dialect);
+          if ((update.docChanged || profileChanged) && onVariableChange) {
+            const currentVariables = extractVariables(
+              update.state.doc.toString(),
+              profile,
+            );
 
             if (
               JSON.stringify(currentVariables) !== JSON.stringify(lastVariables)

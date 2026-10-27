@@ -33,6 +33,7 @@ import RelativeTime from "./hooks/relative_time";
 import MultiSelectSearch from "./hooks/multi_select_search";
 import PlatformScout from "./hooks/platform_scout";
 import ResultsVisibility from "./hooks/results_visibility";
+import ResultsFilters from "./hooks/results_filters";
 import EditorSplit from "./hooks/editor_split";
 import TagInput from "./hooks/tag_input";
 import TagRemove from "./hooks/tag_remove";
@@ -142,6 +143,7 @@ const hooks = {
   PlatformScout,
   RelativeTime,
   ResultsVisibility,
+  ResultsFilters,
   EditorSplit,
   TagInput,
   TagRemove,

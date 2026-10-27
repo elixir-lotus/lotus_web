@@ -58,8 +58,11 @@ defmodule Lotus.Web.Queries.ResultsComponent do
           </div>
 
         <% @result != nil -> %>
-          <%!-- Compact header row --%>
-          <div class="pt-3 pb-2 px-0 flex items-center gap-3 flex-shrink-0">
+          <%!-- Compact header row, with the grid's filters at its end --%>
+          <div
+            id={"query-results-header-#{@query_id}"}
+            class="pt-3 pb-2 px-0 flex flex-wrap items-center gap-x-3 gap-y-2 flex-shrink-0"
+          >
             <h2 class="text-base font-semibold text-text-light dark:text-text-dark"><%= gettext("Results") %></h2>
             <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 rounded">
               <Icons.check class="w-3 h-3" />
@@ -68,6 +71,23 @@ defmodule Lotus.Web.Queries.ResultsComponent do
             <span class="text-xs text-gray-500 dark:text-gray-400">
               <%= info_text(@result) %>
             </span>
+            <%!-- The grid's filter bar (its chips and Add filter), which
+            Masu draws in the grid and the hook moves here. A new element
+            for each grid; hidden with the grid under a chart --%>
+            <div class={[
+              "lotus-results-filters",
+              @visualization_view_mode == :chart && has_valid_config?(@visualization_config) &&
+                "hidden"
+            ]}>
+              <div
+                id={"results-filters-#{@query_id}-#{@results_run}"}
+                class="masu lotus-results"
+                phx-hook="ResultsFilters"
+                phx-update="ignore"
+                data-grid={grid_id(@query_id, @results_run)}
+              >
+              </div>
+            </div>
           </div>
 
           <%!-- Content area: Table or Chart --%>
@@ -85,7 +105,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
                 "hidden"
             ]}>
               <MasuResults.grid
-                id={"results-grid-#{@query_id}-#{@results_run}"}
+                id={grid_id(@query_id, @results_run)}
                 result={@result}
                 running={@running}
                 target={@target}
@@ -123,6 +143,8 @@ defmodule Lotus.Web.Queries.ResultsComponent do
     </div>
     """
   end
+
+  defp grid_id(query_id, results_run), do: "results-grid-#{query_id}-#{results_run}"
 
   defp render_chart(assigns) do
     ~H"""
