@@ -18,7 +18,6 @@ const WIDE = "(min-width: 640px)";
 const EditorSplit = {
   mounted() {
     this.editor = document.getElementById("editor");
-    this.area = this.el.parentElement;
     this.wide = window.matchMedia(WIDE);
 
     this.onPointerDown = (e) => this.startDrag(e);
@@ -60,11 +59,17 @@ const EditorSplit = {
   // toolbar and the divider.
   space() {
     const chrome = this.editorBox().offsetHeight - this.editor.offsetHeight;
-    return this.area.clientHeight - chrome - this.el.offsetHeight;
+    return this.area().clientHeight - chrome - this.el.offsetHeight;
+  },
+
+  // The divider's parent, looked up each time: a LiveView patch can put the
+  // divider in a new one, and the one it had at mount is then empty.
+  area() {
+    return this.el.parentElement;
   },
 
   editorBox() {
-    return this.area.firstElementChild;
+    return this.area()?.firstElementChild;
   },
 
   clamp(height) {
@@ -74,7 +79,7 @@ const EditorSplit = {
 
   // `height` null is the default share.
   apply(height) {
-    if (!this.editor) return;
+    if (!this.editor || !this.editorBox()) return;
 
     if (!this.wide.matches) {
       this.editor.style.height = "";
