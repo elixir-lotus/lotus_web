@@ -30,6 +30,10 @@ defmodule Lotus.Web.ProSlotsTest do
       Phoenix.HTML.raw(~s(<span data-pro-slot="#{label}"></span>))
     end
 
+    # Who made it, when Pro knows.
+    def byline(%{owner_id: "u1"}), do: "Created by Ana"
+    def byline(_record), do: nil
+
     # The tenant of the request, or "mine" when the URL asks for it.
     def list_options(_kind, %{params: %{"owner" => "me"}}), do: [owner_id: "u1"]
     def list_options(_kind, %{params: %{"owner" => "shared"}}), do: [filter: :shared, page: 2]
@@ -71,6 +75,7 @@ defmodule Lotus.Web.ProSlotsTest do
       assert html =~ "Acme revenue"
       assert html =~ "Globex revenue"
       refute html =~ "data-pro-slot"
+      refute html =~ "data-byline"
 
       html = live |> element("button", "Dashboards") |> render_click()
       assert html =~ "Acme board"
@@ -95,6 +100,26 @@ defmodule Lotus.Web.ProSlotsTest do
       assert html =~ "Acme board"
       refute html =~ "Globex board"
       assert html =~ ~s(data-pro-slot="dashboard_badges:#{board.id}")
+    end
+
+    test "Pro's byline describes a query or dashboard in each view of the lists", %{
+      acme: acme,
+      board: board
+    } do
+      set_fields(Dashboard, board, owner_id: "u1")
+      {:ok, live, html} = live(build_conn(), "/lotus")
+
+      assert html =~ "Created by Ana"
+      assert html |> :binary.matches("data-byline") |> length() == 1
+
+      html = live |> element("#queries-view-list") |> render_click()
+      assert html =~ ~r/id="query-row-#{acme.id}".*Created by Ana/s
+
+      html = live |> element("button", "Dashboards") |> render_click()
+      assert html =~ ~r/id="dashboard-tile-#{board.id}".*· Created by Ana/s
+
+      html = live |> element("#dashboards-view-list") |> render_click()
+      assert html =~ "Created by Ana"
     end
 
     test "Pro reads the URL, so its toolbar can filter by patching it" do

@@ -287,7 +287,7 @@ defmodule Lotus.Web.QueriesPage do
                 <span class="truncate font-medium text-indigo-600 dark:text-indigo-400"><%= entry.query.name %></span>
                 <.pro_slot name={:query_badges} slot_assigns={%{query: entry.query}} />
               </span>
-              <span class="block truncate text-xs text-gray-500 dark:text-gray-400"><%= entry.query.description %></span>
+              <span class="block truncate text-xs text-gray-500 dark:text-gray-400"><%= entry.query.description %><.byline record={entry.query} prefix={if entry.query.description not in [nil, ""], do: " · "} /></span>
             </span>
             <code class="truncate rounded-md border border-gray-100 bg-gray-50 px-2 py-1 font-mono text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
               <.sql tokens={QueryList.tokens(entry.query.statement, :one_line)} />
@@ -336,6 +336,7 @@ defmodule Lotus.Web.QueriesPage do
             <%= ngettext("In 1 dashboard", "In %{count} dashboards", @entry.dashboards) %>
           </span>
           <span><%= gettext("Updated") %> <.updated id={"query-#{@entry.query.id}-updated"} at={to_datetime(@entry.query.updated_at)} /></span>
+          <.byline record={@entry.query} />
           <.pro_slot name={:query_badges} slot_assigns={%{query: @entry.query}} />
         </p>
       </div>
@@ -567,8 +568,11 @@ defmodule Lotus.Web.QueriesPage do
               <span class="h-14 w-[5.5rem] shrink-0 rounded-md border border-gray-200 bg-gray-50 p-1 dark:border-gray-600 dark:bg-gray-900">
                 <Sketch.sketch dashboard={dashboard} size={:mini} />
               </span>
-              <span class="font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
-                <%= dashboard.name %>
+              <span>
+                <span class="block font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                  <%= dashboard.name %>
+                </span>
+                <.byline record={dashboard} class="block text-xs text-gray-500 dark:text-gray-400" />
               </span>
               <.pro_slot name={:dashboard_badges} slot_assigns={%{dashboard: dashboard}} />
             </.link>
@@ -585,6 +589,20 @@ defmodule Lotus.Web.QueriesPage do
         </.table>
       </div>
     <% end %>
+    """
+  end
+
+  # What Lotus Pro says of a saved query or dashboard where it is listed
+  # ("Created by Ana"), after `prefix`; nothing without it.
+  attr(:record, :map, required: true)
+  attr(:prefix, :string, default: nil)
+  attr(:class, :string, default: nil)
+
+  defp byline(assigns) do
+    assigns = assign(assigns, :text, Pro.byline(assigns.record))
+
+    ~H"""
+    <span :if={@text} data-byline class={@class}><%= @prefix %><%= @text %></span>
     """
   end
 
@@ -623,6 +641,7 @@ defmodule Lotus.Web.QueriesPage do
             <span><%= ngettext("1 card", "%{count} cards", @cards) %></span>
             <span :if={@tabs > 1}>· <%= ngettext("1 tab", "%{count} tabs", @tabs) %></span>
             <span>· <%= gettext("Updated") %> <.updated id={"dashboard-#{@dashboard.id}-updated"} at={last_updated(@dashboard)} /></span>
+            <.byline record={@dashboard} prefix="· " />
           </p>
         </div>
       </.link>

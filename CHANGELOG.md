@@ -13,6 +13,7 @@
 
 ### Added
 
+- **A byline from Lotus Pro in the lists** — each query and dashboard in the home page's lists (tiles and rows) shows the short line Lotus Pro gives about it, such as who made it (`Lotus.Web.Pro.byline/1`). Without Pro, nothing changes
 - **Lotus Pro's New menu items** — the header's New menu lists, after Query and Dashboard, what Lotus Pro lets the user create (its palette's `:create` items, with `:menu_label` and `:icon`): a workflow, an investigation
 - **Schedules of what an extension registers** — the schedule editor offers, beside queries and dashboards, the targets an extension registers (`Lotus.Schedules.Target`, such as Lotus Pro's workflows): a group of them in the picker, with what the viewer may schedule; `?target=<type>:<id>` opens a new schedule on one; a target may be an alert, as a query may. The Reports & alerts list names them, and step 1 of the editor says what they send ("or a workflow's output").
 
