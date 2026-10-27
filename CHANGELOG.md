@@ -478,6 +478,15 @@
 
 ### Fixed
 
+- **A `{{variable}}` in a comment or a quoted identifier is not a
+  variable.** The editor found variables with a regular expression, so
+  `-- {{note}}`, `"{{col}}"` or, on ClickHouse and MySQL, `# {{note}}`
+  added a variable input that Lotus never binds. It now reads the text
+  with the editor's tokenizer under the source's lexical rules, the same
+  ones the server uses. Variables in code and in string literals
+  (`'%{{q}}%'`) count, as on the server, and so does its name grammar:
+  `{{ q }}` and `{{1q}}` are not variables. The highlighting follows.
+
 - **The SQL editor for an external SQL adapter such as ClickHouse.** A
   source whose editor config names its language `"sql:<dialect>"` (as
   `lotus_clickhouse` does) skipped the merge with the SQL defaults, so
