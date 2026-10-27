@@ -10,7 +10,7 @@ import {
 import { sql } from "@codemirror/lang-sql";
 import { json } from "@codemirror/lang-json";
 import { editorStyles, getCompletionStyles, themeHighlight } from "./styles";
-import { lotusVariablesPlugin } from "./plugins/lotus_variables";
+import { lotusVariablesPlugin, variableProfile } from "./plugins/lotus_variables";
 import {
   getDialectConfig,
   getCachedDialectConfig,
@@ -154,7 +154,11 @@ export function createEditor({
   }
 
   if (onVars) {
-    extensions.push(lotusVariablesPlugin(onVars));
+    extensions.push(
+      lotusVariablesPlugin(onVars, () =>
+        variableProfile(currentDialect, currentConfig && currentConfig.tokenizer),
+      ),
+    );
   }
 
   const view = new EditorView({
