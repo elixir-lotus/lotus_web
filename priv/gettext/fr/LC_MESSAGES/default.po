@@ -5907,7 +5907,6 @@ msgstr "Le SQL exécuté"
 msgid "The first column is the value the query receives, the second (optional) is the label people see. Any other column is left out."
 msgstr "La première colonne est la valeur que reçoit la requête, la deuxième (facultative) le libellé affiché. Les autres colonnes sont ignorées."
 
-#: lib/lotus/web/live/queries/widget_component.ex:116
 #: lib/lotus/web/live/queries/widget_component.ex:117
 #, elixir-autogen, elixir-format
 msgid "The options could not load: %{reason}"
