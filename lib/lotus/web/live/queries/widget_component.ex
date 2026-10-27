@@ -16,12 +16,14 @@ defmodule Lotus.Web.Queries.WidgetComponent do
     * class             - extra classes for outer wrapper
     * resolved_options  - pre-resolved Phoenix select options [{label, value}] for SQL-based dropdowns;
                           takes precedence over static_options when provided
+    * options_error     - why the options of a dropdown from a query could not load
   """
 
   attr(:var, :map, required: true)
   attr(:value, :any, default: nil)
   attr(:class, :string, default: nil)
   attr(:resolved_options, :list, default: nil)
+  attr(:options_error, :string, default: nil)
   attr(:optional, :boolean, default: false)
 
   def widget(assigns) do
@@ -68,6 +70,7 @@ defmodule Lotus.Web.Queries.WidgetComponent do
             options={@options}
             prompt={gettext("Select values")}
             disabled={@options == []}
+            errors={if @options_error, do: [gettext("Options failed")], else: []}
             class="min-w-40 w-40"
           />
 
@@ -91,6 +94,7 @@ defmodule Lotus.Web.Queries.WidgetComponent do
             options={@options}
             prompt={gettext("Select value")}
             disabled={@options == []}
+            errors={if @options_error, do: [gettext("Options failed")], else: []}
             class="min-w-40 w-40"
           />
 
@@ -105,6 +109,17 @@ defmodule Lotus.Web.Queries.WidgetComponent do
             class="min-w-40 w-40"
           />
       <% end %>
+      <span
+        :if={@options_error}
+        id={@id <> "-options-error"}
+        phx-hook="Tippy"
+        data-title={@options_error}
+        aria-label={gettext("The options could not load: %{reason}", reason: @options_error)}
+        role="img"
+        class="text-rose-500 dark:text-rose-400"
+      >
+        <Icons.exclamation_triangle class="h-4 w-4" />
+      </span>
     </div>
     """
   end

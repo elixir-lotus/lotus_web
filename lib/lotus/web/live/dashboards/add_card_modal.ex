@@ -7,6 +7,8 @@ defmodule Lotus.Web.Dashboards.AddCardModal do
 
   use Lotus.Web, :live_component
 
+  import Lotus.Web.Components.QueryPicker
+
   @impl Phoenix.LiveComponent
   def mount(socket) do
     {:ok, assign(socket, selected_type: :query, selected_query_id: nil)}
@@ -78,21 +80,17 @@ defmodule Lotus.Web.Dashboards.AddCardModal do
       <%!-- Query Selector (only for query type) --%>
       <%= if @selected_type == :query do %>
         <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <div id="add-card-query-label" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             <%= gettext("Select Query") %>
-          </label>
+          </div>
           <form id="add-card-query-form" phx-change="select_query" phx-target={@myself}>
-            <select
+            <.query_picker
+              id="add-card-query"
               name="query_id"
-              class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
-            >
-              <option value=""><%= gettext("Choose a query...") %></option>
-              <%= for query <- @queries do %>
-                <option value={query.id} selected={@selected_query_id == query.id}>
-                  <%= query.name %>
-                </option>
-              <% end %>
-            </select>
+              value={@selected_query_id}
+              queries={@queries}
+              label_id="add-card-query-label"
+            />
           </form>
         </div>
       <% end %>

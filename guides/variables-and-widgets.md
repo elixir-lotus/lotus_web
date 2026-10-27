@@ -66,9 +66,13 @@ A variable stores one of two widgets, `input` or `select`. The toolbar renders f
 ### Dropdown Widgets
 - **Best for**: Predefined lists of options
 - **Available for**: Text and Number variables
-- **Configuration**: Custom list, or a query, in the "Dropdown values" modal
+- **Configuration**: The "Dropdown values" modal, with four sources:
+  - **Custom list**: values typed by hand
+  - **Pick a column**: a table and its value and label columns; Lotus writes the SQL
+  - **Write SQL**: SQL in the editor the query has, with its highlighting and completion
+  - **Saved query**: a saved query whose rows are the options
 
-A select widget must define either static options or an options query — the changeset rejects one with neither.
+A select widget must define static options, an options query or a saved query (`options_query_id`) — the changeset rejects one with none.
 
 #### Static Options Format
 
@@ -90,11 +94,15 @@ cancelled | Cancelled
 
 #### Options from a Query
 
-**Dynamic dropdown options** populated from the data source:
+Pick a column, Write SQL and Saved query all read the options from rows, by position:
+
+- The **first column** is the value the query receives
+- The **second column**, optional, is the label people see; without it the value is the label
+- Any **other column** is left out
 
 **Single column query** (value = label):
 ```sql
-SELECT status FROM orders GROUP BY status ORDER BY status
+SELECT DISTINCT status FROM orders ORDER BY status
 ```
 
 **Two column query** (first = value, second = label):
@@ -102,14 +110,26 @@ SELECT status FROM orders GROUP BY status ORDER BY status
 SELECT user_id, email FROM users WHERE active = true ORDER BY email
 ```
 
-**Query requirements**:
-- Must return 1 or 2 columns
-- If 2 or more columns, the first is used as value, the second as label
-- Results are cached under Lotus's `:options` cache profile
-- Runs against the query's own data source and search path, with the dashboard's resolved actor
-- Built-in "Test Query" button validates and previews before saving
+**Pick a column** writes such a query from a table, a value column and an optional label column, and shows it:
 
-> **Not every source offers this.** The "From query" mode is shown only when the selected data source declares the `:dynamic_options` feature — that is, a query against it can return a flat list of values. Document-shaped sources such as Elasticsearch declare `false`, and the modal offers manual entry only. A variable that carries an options query from an earlier source opens on manual entry rather than a mode it cannot use.
+```sql
+SELECT DISTINCT "status" AS value FROM "orders" WHERE "status" IS NOT NULL ORDER BY value
+```
+
+It is saved as SQL, so the dropdown opens on **Write SQL** next time, to edit it.
+
+**Test Query** previews the options before saving: how many there are (up to 100 shown), which column is the value and which the label, and warnings for what makes a poor dropdown — options with no value (NULL or empty), values that come more than once, and columns left out. The modal says which source and search path the SQL runs on.
+
+**Query requirements**:
+- Results are cached under Lotus's `:options` cache profile
+- SQL runs against the query's own data source and search path, with the dashboard's resolved actor
+- A saved query runs on its own data source, read only, with its own variables' defaults. The variable keeps the saved query's id, so an edit to that query changes the options
+
+#### When Options Fail to Load
+
+When the options query fails, the saved query is gone, or the person may not run it, the dropdown is marked **Options failed** and a warning icon next to it gives the reason, rather than showing an empty list.
+
+> **Not every source offers SQL.** Pick a column and Write SQL are shown only when the selected data source declares the `:dynamic_options` feature — that is, a query against it can return a flat list of values. Document-shaped sources such as Elasticsearch declare `false`, and the modal offers the custom list and saved queries. A variable that carries an options query from an earlier source opens on the custom list rather than a mode it cannot use.
 
 ### Date Picker Widgets
 - **Automatic**: All date variables use the date picker
@@ -131,7 +151,7 @@ Variables can be configured to accept multiple values, which is useful for `IN` 
 The control depends on whether the variable has dropdown options configured:
 
 - **Tag Input** (widget `input`) — A chip-style control where users type values and press Enter to add them. Each value appears as a tag with an X button to remove it. The inner field is typed `number` for number variables.
-- **Multiselect** (widget `select`) — A multi-select dropdown that lets users pick several values from the configured static or query-backed options.
+- **Multiselect** (widget `select`) — A multi-select dropdown that lets users pick several values from the configured static, query-backed or saved-query options.
 
 ### How Values Are Stored
 
