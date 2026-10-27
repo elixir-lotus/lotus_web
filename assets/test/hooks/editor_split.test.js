@@ -100,3 +100,42 @@ describe("EditorSplit", () => {
     expect(editor.hasAttribute("data-split")).toBe(false);
   });
 });
+
+describe("EditorSplit on another page", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    window.matchMedia = () => ({ matches: true, addEventListener() {}, removeEventListener() {} });
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("sizes the pane it names, with its own share and its own key", () => {
+    document.body.innerHTML = `
+      <div id="area">
+        <div id="canvas"></div>
+        <div id="split" data-target="canvas" data-key="canvas_height" data-share="0.5"></div>
+        <div id="results"></div>
+      </div>`;
+
+    const area = document.getElementById("area");
+    const canvas = document.getElementById("canvas");
+    const split = document.getElementById("split");
+    const height = () => parseInt(canvas.style.height, 10) || 300;
+    Object.defineProperty(area, "clientHeight", { get: () => 810 });
+    Object.defineProperty(canvas, "offsetHeight", { get: height });
+    Object.defineProperty(split, "offsetHeight", { get: () => 10 });
+
+    const hook = Object.create(EditorSplit);
+    hook.el = split;
+    hook.mounted();
+
+    expect(canvas.style.height).toBe("400px");
+
+    split.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    expect(canvas.style.height).toBe("424px");
+    expect(localStorage.getItem("lotus:canvas_height")).toBe("424");
+    expect(localStorage.getItem("lotus:editor_height")).toBe(null);
+  });
+});
