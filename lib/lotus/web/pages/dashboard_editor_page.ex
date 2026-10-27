@@ -32,6 +32,8 @@ defmodule Lotus.Web.DashboardEditorPage do
   alias Lotus.Web.RichText
   alias Lotus.Web.Telemetry
 
+  import Lotus.Web.Components.QueryPicker
+
   @impl Phoenix.LiveComponent
   def render(assigns) do
     resource = dashboard_resource(assigns.page, assigns.dashboard)
@@ -508,20 +510,17 @@ defmodule Lotus.Web.DashboardEditorPage do
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <div id="filter-source-query-label" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 <%= gettext("Source Query") %>
-              </label>
-              <select
+              </div>
+              <.query_picker
+                id="filter-source-query"
                 name="filter[source_query_id]"
-                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
-              >
-                <option value=""><%= gettext("None (use the options above)") %></option>
-                <%= for query <- @queries do %>
-                  <option value={query.id} selected={query.id == @source_query_id}>
-                    <%= query.name %>
-                  </option>
-                <% end %>
-              </select>
+                value={@source_query_id}
+                queries={@queries}
+                label_id="filter-source-query-label"
+                placeholder={gettext("None (use the options above)")}
+              />
               <.filter_field_error errors={@errors} field={:source_query_id} />
             </div>
             <div>

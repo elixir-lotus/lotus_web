@@ -167,6 +167,20 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
       # After selecting text type, the Text button should be highlighted
       assert html =~ "border-pink-500"
     end
+
+    test "picks the query of a card with the searchable query picker" do
+      query = query_fixture(%{name: "Revenue by month", description: "Monthly totals"})
+      {:ok, live, _html} = live(build_conn(), "/lotus/dashboards/new")
+
+      live |> element("button", "Add Card") |> render_click()
+
+      assert "Revenue by month" in Erabi.Test.choices(live, "add-card-query")
+
+      Erabi.Test.choose(live, "add-card-query", query.id)
+
+      assert Erabi.Test.chosen(live, "add-card-query") == ["Revenue by month"]
+      refute has_element?(live, "#add-card-modal button[phx-click='confirm_add_card'][disabled]")
+    end
   end
 
   describe "with query cards" do
@@ -433,6 +447,8 @@ defmodule Lotus.Web.Pages.DashboardEditorPageTest do
                live,
                "select[name='filter[source_query_id]'] option[value='#{titles.id}'][selected]"
              )
+
+      assert Erabi.Test.chosen(live, "filter-source-query") == [titles.name]
 
       assert has_element?(
                live,
