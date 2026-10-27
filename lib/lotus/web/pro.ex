@@ -49,7 +49,8 @@ defmodule Lotus.Web.Pro do
   `%{}` without it:
 
     * `:create`: what the user may create, each `%{id:, label:, path:}`
-      (and `:params`), under "Create";
+      (and `:params`), under "Create", and in the header's New menu, as
+      `:menu_label` (else `:label`) with `:icon` (a palette icon's name);
     * `:sources`: what the palette searches, each `%{id:, label:, icon:,
       search:}` (`id` an atom of its own, not `:queries` or `:dashboards`),
       `search` a function of the typed text returning results,

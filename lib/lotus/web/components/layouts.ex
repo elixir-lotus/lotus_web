@@ -76,27 +76,28 @@ defmodule Lotus.Web.Layouts do
   end
 
   attr(:name, :string, required: true)
+  attr(:class, :string, default: "h-4 w-4")
 
   # The icons of the command palette's actions, by the names that
   # Lotus.Web.Commands gives them.
   defp palette_icon(assigns) do
     ~H"""
-    <Icons.terminal :if={@name == "terminal"} class="h-4 w-4" />
-    <Icons.blocks :if={@name == "blocks"} class="h-4 w-4" />
-    <Icons.plus :if={@name == "plus"} class="h-4 w-4" />
-    <Icons.play :if={@name == "play"} class="h-4 w-4" />
-    <Icons.database :if={@name == "database"} class="h-4 w-4" />
-    <Icons.variable :if={@name == "variable"} class="h-4 w-4" />
-    <Icons.chart_bar :if={@name == "chart_bar"} class="h-4 w-4" />
-    <Icons.clipboard_copy :if={@name == "clipboard_copy"} class="h-4 w-4" />
-    <Icons.sparkles :if={@name == "sparkles"} class="h-4 w-4" />
-    <Icons.sun :if={@name == "sun"} class="h-4 w-4" />
-    <Icons.moon :if={@name == "moon"} class="h-4 w-4" />
-    <Icons.monitor :if={@name == "monitor"} class="h-4 w-4" />
-    <Icons.layers :if={@name == "layers"} class="h-4 w-4" />
-    <Icons.key :if={@name == "key"} class="h-4 w-4" />
-    <Icons.wrench :if={@name == "wrench"} class="h-4 w-4" />
-    <Icons.clock :if={@name == "clock"} class="h-4 w-4" />
+    <Icons.terminal :if={@name == "terminal"} class={@class} />
+    <Icons.blocks :if={@name == "blocks"} class={@class} />
+    <Icons.plus :if={@name == "plus"} class={@class} />
+    <Icons.play :if={@name == "play"} class={@class} />
+    <Icons.database :if={@name == "database"} class={@class} />
+    <Icons.variable :if={@name == "variable"} class={@class} />
+    <Icons.chart_bar :if={@name == "chart_bar"} class={@class} />
+    <Icons.clipboard_copy :if={@name == "clipboard_copy"} class={@class} />
+    <Icons.sparkles :if={@name == "sparkles"} class={@class} />
+    <Icons.sun :if={@name == "sun"} class={@class} />
+    <Icons.moon :if={@name == "moon"} class={@class} />
+    <Icons.monitor :if={@name == "monitor"} class={@class} />
+    <Icons.layers :if={@name == "layers"} class={@class} />
+    <Icons.key :if={@name == "key"} class={@class} />
+    <Icons.wrench :if={@name == "wrench"} class={@class} />
+    <Icons.clock :if={@name == "clock"} class={@class} />
     """
   end
 
