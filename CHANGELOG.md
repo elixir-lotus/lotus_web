@@ -578,6 +578,10 @@
 
 ### Fixed
 
+- **Long tooltips ran out of their box.** A tooltip's text never wrapped,
+  so one longer than the box spilled past it. A tooltip now takes the width
+  of its text and wraps at its maximum width.
+
 - **The divider between the editor and its results threw on updates.**
   It measured the parent it had when it mounted, which a LiveView patch can
   replace, so every update after a variable appeared threw in the browser.

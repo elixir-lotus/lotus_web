@@ -594,8 +594,9 @@
     @apply dark:bg-zinc-800 dark:text-zinc-200 dark:ring-white/10 dark:ring-inset;
 }
 
+/* A tooltip takes the width of its text, up to max-w-xs, and wraps a longer one. */
 .tippy-box[data-theme~="lotus"] .tippy-content {
-    @apply px-2.5 py-1.5 max-w-xs min-w-max break-words whitespace-nowrap;
+    @apply px-2.5 py-1.5 w-max max-w-xs break-words whitespace-normal;
 }
 
 .tippy-box[data-theme~="lotus"] {

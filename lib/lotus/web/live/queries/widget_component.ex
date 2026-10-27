@@ -113,7 +113,7 @@ defmodule Lotus.Web.Queries.WidgetComponent do
         :if={@options_error}
         id={@id <> "-options-error"}
         phx-hook="Tippy"
-        data-title={gettext("The options could not load: %{reason}", reason: @options_error)}
+        data-title={@options_error}
         aria-label={gettext("The options could not load: %{reason}", reason: @options_error)}
         role="img"
         class="text-rose-500 dark:text-rose-400"
