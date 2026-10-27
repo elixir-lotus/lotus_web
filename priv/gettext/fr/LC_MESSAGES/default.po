@@ -5829,3 +5829,173 @@ msgstr "Rechercher ce que vous pouvez planifier"
 #, elixir-autogen, elixir-format
 msgid "Search what you can schedule…"
 msgstr "Rechercher ce que vous pouvez planifier…"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:481
+#, elixir-autogen, elixir-format
+msgid "1 option"
+msgid_plural "%{count} options"
+msgstr[0] "1 option"
+msgstr[1] "%{count} options"
+
+#: lib/lotus/web/query_editor/dropdown_options.ex:79
+#, elixir-autogen, elixir-format
+msgid "1 option has no value (NULL or empty). Filter it out with WHERE … IS NOT NULL."
+msgid_plural "%{count} options have no value (NULL or empty). Filter them out with WHERE … IS NOT NULL."
+msgstr[0] "1 option n’a pas de valeur (NULL ou vide). Écartez-la avec WHERE … IS NOT NULL."
+msgstr[1] "%{count} options n’ont pas de valeur (NULL ou vide). Écartez-les avec WHERE … IS NOT NULL."
+
+#: lib/lotus/web/query_editor/dropdown_options.ex:85
+#, elixir-autogen, elixir-format
+msgid "1 value comes more than once. Add DISTINCT to list each value once."
+msgid_plural "%{count} values come more than once. Add DISTINCT to list each value once."
+msgstr[0] "1 valeur revient plusieurs fois. Ajoutez DISTINCT pour lister chaque valeur une seule fois."
+msgstr[1] "%{count} valeurs reviennent plusieurs fois. Ajoutez DISTINCT pour lister chaque valeur une seule fois."
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:445
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:579
+#, elixir-autogen, elixir-format
+msgid "Choose a saved query"
+msgstr "Choisir une requête enregistrée"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:384
+#, elixir-autogen, elixir-format
+msgid "Choose a table"
+msgstr "Choisir une table"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:567
+#, elixir-autogen, elixir-format
+msgid "Choose a table and a value column"
+msgstr "Choisissez une table et une colonne des valeurs"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:405
+#, elixir-autogen, elixir-format
+msgid "Label column"
+msgstr "Colonne des libellés"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:399
+#, elixir-autogen, elixir-format
+msgid "Loading columns..."
+msgstr "Chargement des colonnes..."
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:479
+#, elixir-autogen, elixir-format
+msgid "More than %{count} options, the first %{count} shown"
+msgstr "Plus de %{count} options, les %{count} premières affichées"
+
+#: lib/lotus/web/query_editor/dropdown_options.ex:91
+#, elixir-autogen, elixir-format
+msgid "Only the first two columns are used; %{columns} are left out."
+msgstr "Seules les deux premières colonnes servent ; %{columns} sont ignorées."
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:463
+#, elixir-autogen, elixir-format
+msgid "Open this query"
+msgstr "Ouvrir cette requête"
+
+#: lib/lotus/web/live/queries/widget_component.ex:73
+#: lib/lotus/web/live/queries/widget_component.ex:97
+#, elixir-autogen, elixir-format
+msgid "Options failed"
+msgstr "Options indisponibles"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:526
+#, elixir-autogen, elixir-format
+msgid "Pick a column"
+msgstr "Choisir une colonne"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:451
+#, elixir-autogen, elixir-format
+msgid "Query #%{id} (not found)"
+msgstr "Requête n°%{id} (introuvable)"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:357
+#, elixir-autogen, elixir-format
+msgid "Runs on"
+msgstr "S’exécute sur"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:414
+#, elixir-autogen, elixir-format
+msgid "Same as the value"
+msgstr "Identique à la valeur"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:426
+#, elixir-autogen, elixir-format
+msgid "Saved as SQL: open these options again to edit it under Write SQL."
+msgstr "Enregistré en SQL : rouvrez ces options pour le modifier sous Écrire du SQL."
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:437
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:528
+#, elixir-autogen, elixir-format
+msgid "Saved query"
+msgstr "Requête enregistrée"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:420
+#, elixir-autogen, elixir-format
+msgid "The SQL it runs"
+msgstr "Le SQL exécuté"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:371
+#, elixir-autogen, elixir-format
+msgid "The first column is the value the query receives, the second (optional) is the label people see. Any other column is left out."
+msgstr "La première colonne est la valeur que reçoit la requête, la deuxième (facultative) le libellé affiché. Les autres colonnes sont ignorées."
+
+#: lib/lotus/web/live/queries/widget_component.ex:116
+#: lib/lotus/web/live/queries/widget_component.ex:117
+#, elixir-autogen, elixir-format
+msgid "The options could not load: %{reason}"
+msgstr "Les options n’ont pas pu se charger : %{reason}"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:466
+#, elixir-autogen, elixir-format
+msgid "The options follow the query: an edit to it changes them. It runs read only, with its own variables' defaults."
+msgstr "Les options suivent la requête : la modifier les change. Elle s’exécute en lecture seule, avec les valeurs par défaut de ses variables."
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:517
+#, elixir-autogen, elixir-format
+msgid "The query returned no rows, so the dropdown would be empty."
+msgstr "La requête n’a renvoyé aucune ligne : la liste déroulante serait vide."
+
+#: lib/lotus/web/pages/query_editor_page.ex:2697
+#, elixir-autogen, elixir-format
+msgid "The saved query of these options no longer exists"
+msgstr "La requête enregistrée de ces options n’existe plus"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:441
+#, elixir-autogen, elixir-format
+msgid "There are no saved queries yet. Save a query that lists the options, then pick it here."
+msgstr "Il n’y a pas encore de requête enregistrée. Enregistrez une requête qui liste les options, puis choisissez-la ici."
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:391
+#, elixir-autogen, elixir-format
+msgid "Value column"
+msgstr "Colonne des valeurs"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:527
+#, elixir-autogen, elixir-format
+msgid "Write SQL"
+msgstr "Écrire du SQL"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:487
+#, elixir-autogen, elixir-format
+msgid "label"
+msgstr "libellé"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:288
+#, elixir-autogen, elixir-format
+msgid "or press Ctrl + Enter in the editor"
+msgstr "ou appuyez sur Ctrl + Entrée dans l’éditeur"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:360
+#, elixir-autogen, elixir-format
+msgid "search path"
+msgstr "search_path"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:363
+#, elixir-autogen, elixir-format
+msgid "the query's own source"
+msgstr "la source de la requête"
+
+#: lib/lotus/web/live/queries/dropdown_options_modal.ex:485
+#, elixir-autogen, elixir-format
+msgid "value"
+msgstr "valeur"

@@ -31,6 +31,7 @@ import Flash from "./hooks/flash";
 import ListView from "./hooks/list_view";
 import RelativeTime from "./hooks/relative_time";
 import MultiSelectSearch from "./hooks/multi_select_search";
+import OptionsSqlEditor from "./hooks/options_sql_editor";
 import PlatformScout from "./hooks/platform_scout";
 import ResultsVisibility from "./hooks/results_visibility";
 import ResultsFilters from "./hooks/results_filters";
@@ -141,6 +142,7 @@ const hooks = {
   EditorForm,
   Flash,
   MultiSelectSearch,
+  OptionsSqlEditor,
   PlatformScout,
   RelativeTime,
   ResultsVisibility,

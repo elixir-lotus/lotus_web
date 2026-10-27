@@ -99,7 +99,8 @@ defmodule Lotus.Web.QueryEditor.Variables do
       label: format_label(name),
       default: nil,
       static_options: [],
-      options_query: nil
+      options_query: nil,
+      options_query_id: nil
     }
   end
 
@@ -141,7 +142,8 @@ defmodule Lotus.Web.QueryEditor.Variables do
       "default" => v.default,
       "list" => v.list,
       "static_options" => static_options_to_params(v.static_options),
-      "options_query" => v.options_query
+      "options_query" => v.options_query,
+      "options_query_id" => v.options_query_id
     }
   end
 
