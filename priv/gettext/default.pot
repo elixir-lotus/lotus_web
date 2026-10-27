@@ -5859,11 +5859,6 @@ msgstr ""
 msgid "More than %{count} options, the first %{count} shown"
 msgstr ""
 
-#: lib/lotus/web/query_editor/dropdown_options.ex:91
-#, elixir-autogen, elixir-format
-msgid "Only the first two columns are used; %{columns} are left out."
-msgstr ""
-
 #: lib/lotus/web/live/queries/dropdown_options_modal.ex:463
 #, elixir-autogen, elixir-format
 msgid "Open this query"
@@ -5976,3 +5971,10 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "value"
 msgstr ""
+
+#: lib/lotus/web/query_editor/dropdown_options.ex:91
+#, elixir-autogen, elixir-format
+msgid "Only the first two columns are used; %{columns} is left out."
+msgid_plural "Only the first two columns are used; %{columns} are left out."
+msgstr[0] ""
+msgstr[1] ""

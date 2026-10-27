@@ -215,8 +215,8 @@ defmodule Lotus.Web.Queries.DropdownOptionsModal do
           <%= @title_before %><span class="text-pink-600 dark:text-pink-400 font-mono"><%= @variable_name %></span><%= @title_after %>
         </h3>
 
-        <div class="grid grid-cols-5 gap-6">
-          <div :if={length(@sources) > 1} class="col-span-1 space-y-3" role="radiogroup">
+        <div class="flex gap-6">
+          <div :if={length(@sources) > 1} class="w-36 shrink-0 space-y-3" role="radiogroup">
             <div
               :for={{source, label} <- @sources}
               phx-click="change_option_source"
@@ -233,7 +233,7 @@ defmodule Lotus.Web.Queries.DropdownOptionsModal do
             </div>
           </div>
 
-          <div class={if length(@sources) > 1, do: "col-span-4 space-y-3 min-w-0", else: "col-span-5 space-y-3 min-w-0"}>
+          <div class="flex-1 space-y-3 min-w-0">
             <%= case @option_source do %>
               <% :static -> %>
                 <.static_options custom_options={@custom_options} myself={@myself} />
