@@ -86,8 +86,14 @@ export function isJsonLanguage(dialectName) {
   return dialectName && dialectName.startsWith("json:");
 }
 
+// "sql", or "sql:<dialect>" as an external adapter's query_language/0 names
+// it (lotus_clickhouse sends "sql:clickhouse").
+function isSqlLanguage(language) {
+  return language === "sql" || (typeof language === "string" && language.startsWith("sql:"));
+}
+
 function mergeWithDefaults(config) {
-  if (!config || (config.language !== "sql" && !config.language?.startsWith("json:"))) {
+  if (!config || (!isSqlLanguage(config.language) && !config.language?.startsWith("json:"))) {
     return config || emptyConfig();
   }
 
@@ -155,9 +161,10 @@ export function resolveCodeMirrorDialect(dialectName, config) {
   // external SQL adapters reach tokenization parity with the built-in
   // Lezer grammars: identifier quoting, comment styles, dollar-quoted
   // strings, PL/SQL quoting, etc.
+  // CodeMirror looks a word up lowercased, so the lists must be lowercase.
   return SQLDialect.define({
-    keywords: config.keywords.join(" "),
-    types: config.types.join(" "),
+    keywords: config.keywords.map((k) => k.toLowerCase()).join(" "),
+    types: config.types.map((t) => t.toLowerCase()).join(" "),
     ...toDialectSpec(config.dialect_spec),
   });
 }

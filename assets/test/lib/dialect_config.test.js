@@ -11,6 +11,7 @@ import {
 import {
   toDialectSpec,
   resolveCodeMirrorDialect,
+  getDialectConfig,
 } from "../../js/lib/dialect_config.js";
 
 describe("toDialectSpec", () => {
@@ -112,8 +113,9 @@ describe("resolveCodeMirrorDialect", () => {
     expect(dialect.spec.hashComments).toBe(true);
     expect(dialect.spec.doubleQuotedStrings).toBe(false);
     expect(dialect.spec.caseInsensitiveIdentifiers).toBe(true);
-    expect(dialect.spec.keywords).toBe("SELECT FROM");
-    expect(dialect.spec.types).toBe("INTEGER");
+    // CodeMirror looks words up lowercased, so the lists are lowercased.
+    expect(dialect.spec.keywords).toBe("select from");
+    expect(dialect.spec.types).toBe("integer");
   });
 
   it("synthesized dialect works without any dialect_spec", () => {
@@ -122,5 +124,51 @@ describe("resolveCodeMirrorDialect", () => {
     expect(dialect.spec.keywords).toBe("a");
     expect(dialect.spec.types).toBe("b");
     expect(dialect.spec.hashComments).toBeUndefined();
+  });
+});
+
+describe("getDialectConfig", () => {
+  // What an external adapter such as lotus_clickhouse sends: its
+  // `query_language/0` as the language, uppercase keywords, snake_case keys.
+  const clickhouse = {
+    language: "sql:clickhouse",
+    keywords: ["PREWHERE", "FINAL", "SETTINGS"],
+    types: ["UInt64", "LowCardinality"],
+    functions: [{ name: "toDate", detail: "Convert to Date", args: "(expr)" }],
+    context_boundaries: ["PREWHERE", "SETTINGS"],
+    dialect_spec: { identifier_quotes: '"`', hash_comments: true },
+    tokenizer: { "backslash_escapes?": true },
+  };
+
+  it("merges a sql:<dialect> config with the SQL defaults, as for plain sql", async () => {
+    const config = await getDialectConfig("clickhouse-merge", () =>
+      Promise.resolve(clickhouse),
+    );
+
+    expect(config.language).toBe("sql");
+    expect(config.keywords).toContain("select");
+    expect(config.keywords).toContain("prewhere");
+    expect(config.types).toContain("uint64");
+    expect(config.functions.map((f) => f.name)).toContain("COUNT");
+    expect(config.functions.map((f) => f.name)).toContain("toDate");
+    expect(config.contextBoundaries).toEqual(["PREWHERE", "SETTINGS"]);
+    expect(config.dialect_spec).toEqual(clickhouse.dialect_spec);
+    expect(config.tokenizer).toEqual(clickhouse.tokenizer);
+  });
+
+  it("highlights the SQL defaults and the adapter's keywords in a synthesized dialect", async () => {
+    const config = await getDialectConfig("clickhouse-highlight", () =>
+      Promise.resolve(clickhouse),
+    );
+    const words = resolveCodeMirrorDialect("clickhouse", config).spec.keywords.split(" ");
+
+    expect(words).toContain("select");
+    expect(words).toContain("prewhere");
+  });
+
+  it("passes a json:<dsl> config through unchanged", async () => {
+    const json = { language: "json:elasticsearch", keywords: ["query"] };
+    const config = await getDialectConfig("json:merge-test", () => Promise.resolve(json));
+    expect(config).toBe(json);
   });
 });
