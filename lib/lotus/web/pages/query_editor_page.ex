@@ -551,7 +551,9 @@ defmodule Lotus.Web.QueryEditorPage do
         statement_empty: statement_empty,
         variable_values: normalized_vars
       )
-      |> maybe_update_editor_schema(query_params["data_source"])
+      # The variable settings form has no source field, so its changes
+      # keep the source of the query.
+      |> maybe_update_editor_schema(query.data_source)
 
     {:noreply, socket}
   end

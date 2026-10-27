@@ -694,6 +694,34 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
     end
   end
 
+  describe "dropdown options" do
+    test "a change in the variable settings keeps the options from a query" do
+      {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
+
+      live
+      |> with_target("#query-editor-page")
+      |> render_hook("editor_content_changed", %{"statement" => "SELECT {{status}} AS status"})
+
+      live
+      |> with_target("#query-editor-page")
+      |> render_hook("variables_detected", %{"variables" => ["status"]})
+
+      live |> element("#variable-settings-btn") |> render_click()
+
+      # The variable settings form sends no data source
+      live
+      |> element("#variable-settings-form")
+      |> render_change(%{"query" => %{"variables" => %{"0" => %{"widget" => "select"}}}})
+
+      html =
+        live
+        |> element(~s([phx-click="open_dropdown_options_modal"]))
+        |> render_click()
+
+      assert html =~ "From query"
+    end
+  end
+
   describe "saving a query" do
     test "records the query language of the selected data source" do
       {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
