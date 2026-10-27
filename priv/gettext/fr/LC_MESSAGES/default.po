@@ -5882,11 +5882,6 @@ msgstr "Chargement des colonnes..."
 msgid "More than %{count} options, the first %{count} shown"
 msgstr "Plus de %{count} options, les %{count} premières affichées"
 
-#: lib/lotus/web/query_editor/dropdown_options.ex:91
-#, elixir-autogen, elixir-format
-msgid "Only the first two columns are used; %{columns} are left out."
-msgstr "Seules les deux premières colonnes servent ; %{columns} sont ignorées."
-
 #: lib/lotus/web/live/queries/dropdown_options_modal.ex:463
 #, elixir-autogen, elixir-format
 msgid "Open this query"
@@ -5999,3 +5994,10 @@ msgstr "la source de la requête"
 #, elixir-autogen, elixir-format
 msgid "value"
 msgstr "valeur"
+
+#: lib/lotus/web/query_editor/dropdown_options.ex:91
+#, elixir-autogen, elixir-format
+msgid "Only the first two columns are used; %{columns} is left out."
+msgid_plural "Only the first two columns are used; %{columns} are left out."
+msgstr[0] "Seules les deux premières colonnes servent ; %{columns} est ignorée."
+msgstr[1] "Seules les deux premières colonnes servent ; %{columns} sont ignorées."

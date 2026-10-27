@@ -88,7 +88,10 @@ defmodule Lotus.Web.QueryEditor.DropdownOptions do
           repeated
         ),
       ignored != [] &&
-        gettext("Only the first two columns are used; %{columns} are left out.",
+        ngettext(
+          "Only the first two columns are used; %{columns} is left out.",
+          "Only the first two columns are used; %{columns} are left out.",
+          length(ignored),
           columns: Enum.join(ignored, ", ")
         )
     ]

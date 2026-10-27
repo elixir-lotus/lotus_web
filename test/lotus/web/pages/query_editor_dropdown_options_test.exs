@@ -72,7 +72,7 @@ defmodule Lotus.Web.Pages.QueryEditorDropdownOptionsTest do
       assert html =~ ~r/value ←\s*<code[^>]*>name<\/code>/
       assert html =~ ~r/label ←\s*<code[^>]*>email<\/code>/
       assert html =~ "1 value comes more than once"
-      assert html =~ "age are left out"
+      assert html =~ "age is left out"
       assert html =~ "charlie@test.com"
     end
 

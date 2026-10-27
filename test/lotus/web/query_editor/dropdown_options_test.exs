@@ -46,7 +46,7 @@ defmodule Lotus.Web.QueryEditor.DropdownOptionsTest do
       assert [blank, repeated, ignored] = preview.warnings
       assert blank =~ "2 options have no value"
       assert repeated =~ "1 value comes more than once"
-      assert ignored =~ "extra are left out"
+      assert ignored =~ "extra is left out"
     end
 
     test "no columns, no options" do
