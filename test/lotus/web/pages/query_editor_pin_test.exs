@@ -66,3 +66,101 @@ defmodule Lotus.Web.Pages.QueryEditorPinTest do
     refute has_element?(live, "#pin-compare-bar")
   end
 end
+
+defmodule Lotus.Web.Pages.QueryEditorPinKeptTest do
+  # With a browser id (or a user), Lotus keeps the pin across visits, and
+  # every row of the pinned query and the last run compare on a key.
+  use Lotus.Web.Case
+
+  import Phoenix.LiveViewTest
+
+  @browser "0f8b7a2e-3c4d-4e5f-8a9b-0c1d2e3f4a5b"
+
+  setup do
+    create_test_users()
+    :ok
+  end
+
+  defp open(path \\ "/lotus/queries/new", browser \\ @browser) do
+    {:ok, live, _html} =
+      build_conn()
+      |> put_connect_params(%{"browser_id" => browser})
+      |> live(path)
+
+    render_async(live)
+    live
+  end
+
+  defp run(live, statement) do
+    live
+    |> element(~s(form[phx-submit="run_query"]))
+    |> render_submit(%{"query" => %{"statement" => statement}})
+
+    render_async(live)
+  end
+
+  test "the pin is there again after a reload, for this browser only" do
+    live = open()
+    run(live, "SELECT name FROM test_users ORDER BY name")
+    live |> element("#pin-result-btn") |> render_click()
+
+    live = open()
+    assert has_element?(live, "#pinned-result", "Alice")
+    assert has_element?(live, "#pinned-result code", "SELECT name FROM test_users ORDER BY name")
+
+    other = open("/lotus/queries/new", "11111111-2222-3333-4444-555555555555")
+    refute has_element?(other, "#pinned-result")
+
+    live |> element("#unpin-result-btn") |> render_click()
+    refute has_element?(open(), "#pinned-result")
+  end
+
+  test "a saved query's pin is its own" do
+    query = query_fixture(%{name: "Users", statement: "SELECT name FROM test_users"})
+    live = open("/lotus/queries/#{query.id}")
+    live |> element("#pin-result-btn") |> render_click()
+
+    assert has_element?(open("/lotus/queries/#{query.id}"), "#pinned-result")
+    refute has_element?(open(), "#pinned-result")
+  end
+
+  test "compare every row on a key: gone, new and changed", %{} do
+    live = open()
+    run(live, "SELECT name, email FROM test_users ORDER BY name")
+    live |> element("#pin-result-btn") |> render_click()
+
+    run(
+      live,
+      "SELECT name, upper(email) AS email FROM test_users WHERE name <> 'Alice' " <>
+        "UNION ALL SELECT 'Dora', 'dora@test.com' ORDER BY name"
+    )
+
+    assert has_element?(live, "#pin-diff-key option[value=name]")
+    live |> form("#pin-diff-form", %{"key" => "name"}) |> render_submit()
+    render_async(live)
+
+    assert has_element?(live, "#pin-diff-tab-removed", "1")
+    assert has_element?(live, "#pin-diff-tab-added", "1")
+    assert has_element?(live, "#pin-diff-tab-changed", "2")
+    assert has_element?(live, "#pin-diff-rows", "Alice")
+    # The pinned row the last run does not have.
+    assert has_element?(live, "#pinned-result tr.lotus-pin-gone", "Alice")
+
+    live |> element("#pin-diff-tab-added") |> render_click()
+    assert has_element?(live, "#pin-diff-rows", "Dora")
+
+    live |> element("#pin-diff-tab-changed") |> render_click()
+    assert has_element?(live, "#pin-diff-rows", "BOB@TEST.COM")
+  end
+
+  test "a key that is not unique says so", %{} do
+    live = open()
+    run(live, "SELECT 1 AS one, name FROM test_users")
+    live |> element("#pin-result-btn") |> render_click()
+    run(live, "SELECT 1 AS one, name FROM test_users")
+
+    live |> form("#pin-diff-form", %{"key" => "one"}) |> render_submit()
+    render_async(live)
+    assert has_element?(live, "#pin-diff-error", "pick a column whose values are unique")
+  end
+end

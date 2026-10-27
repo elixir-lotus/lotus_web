@@ -5724,3 +5724,102 @@ msgid "Pinned · %{count} row · %{time}"
 msgid_plural "Pinned · %{count} rows · %{time}"
 msgstr[0] "Épinglé · %{count} ligne · %{time}"
 msgstr[1] "Épinglé · %{count} lignes · %{time}"
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "Each query may return up to %{limit} rows to compare: narrow them down."
+msgstr "Chaque requête peut renvoyer jusqu’à %{limit} lignes pour être comparée : réduisez-les."
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "Some rows share a value of that column: pick a column whose values are unique."
+msgstr "Des lignes partagent une valeur de cette colonne : choisissez une colonne aux valeurs uniques."
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "%{columns} is not a column of both results."
+msgstr "%{columns} n’est pas une colonne des deux résultats."
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "The comparison stopped"
+msgstr "La comparaison s’est arrêtée"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Match rows on"
+msgstr "Associer les lignes sur"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Run both queries and compare every row, matched on this column"
+msgstr "Exécuter les deux requêtes et comparer chaque ligne, associée sur cette colonne"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Compare rows"
+msgstr "Comparer les lignes"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Scroll together"
+msgstr "Défiler ensemble"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Rows compared"
+msgstr "Lignes comparées"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Comparing every row on %{key}…"
+msgstr "Comparaison de chaque ligne sur %{key}…"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Every row, on %{key}"
+msgstr "Toutes les lignes, sur %{key}"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Close the comparison"
+msgstr "Fermer la comparaison"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "None."
+msgstr "Aucune."
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Rows gone"
+msgstr "Lignes disparues"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Changed rows"
+msgstr "Lignes modifiées"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Run the query to compare it with the pinned result."
+msgstr "Exécutez la requête pour la comparer au résultat épinglé."
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} row the same"
+msgid_plural "%{count} rows the same"
+msgstr[0] "%{count} ligne identique"
+msgstr[1] "%{count} lignes identiques"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "And %{count} more row."
+msgid_plural "And %{count} more rows."
+msgstr[0] "Et %{count} ligne de plus."
+msgstr[1] "Et %{count} lignes de plus."
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "New rows"
+msgstr "Nouvelles lignes"

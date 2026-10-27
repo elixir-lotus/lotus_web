@@ -7,7 +7,7 @@ defmodule Lotus.Web.Queries.PinTest do
     do: Map.merge(%{columns: columns, rows: [], num_rows: n, duration_ms: 5, meta: %{}}, extra)
 
   test "compare/2: rows, their change, and the columns added and removed" do
-    pin = Pin.new(result(~w(id total), 847, %{duration_ms: 14}), "SELECT 1", "SELECT 1")
+    pin = Pin.new(result(~w(id total), 847, %{duration_ms: 14}), %{statement: "SELECT 1"})
 
     assert %{
              rows: 847,
@@ -26,8 +26,18 @@ defmodule Lotus.Web.Queries.PinTest do
     assert Pin.row_count(result(["a"], 50)) == 50
   end
 
+  test "key_columns/2: the columns both have, id first" do
+    pin = Pin.new(result(~w(name id email), 1), %{})
+    assert Pin.key_columns(pin, result(~w(email id region), 1)) == ["id", "email"]
+  end
+
+  test "a pin keeps its rows as text, as Lotus keeps them" do
+    pin = Pin.new(%{columns: ["d"], rows: [[~D[2026-01-04]], [nil]], num_rows: 2}, %{})
+    assert pin.result.rows == [["2026-01-04"], [nil]]
+  end
+
   test "no percent from nothing" do
-    pin = Pin.new(result(["a"], 0), nil, nil)
+    pin = Pin.new(result(["a"], 0), %{})
     assert %{delta: 4, percent: nil} = Pin.compare(pin, result(["a"], 4))
   end
 end

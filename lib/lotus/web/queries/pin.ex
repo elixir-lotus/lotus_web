@@ -2,26 +2,62 @@ defmodule Lotus.Web.Queries.Pin do
   @moduledoc false
 
   # A result the editor keeps beside the next ones, to compare them: the
-  # rows it showed when it was pinned (its page, not the query run again),
-  # the statement that ran, and the editor's text then, to restore it.
-  # One at a time; it lives as long as the page.
+  # rows it showed when it was pinned (its page, as text, not the query run
+  # again), the statement that ran with its source, search path and
+  # variables (to compare all its rows with the next run's, `Lotus.diff/3`),
+  # and the editor's text then, to restore it. One per person and query,
+  # kept by Lotus (`Lotus.Pins`) when the person is known.
 
-  defstruct [:result, :statement, :text, :pinned_at]
+  defstruct [:result, :statement, :text, :pinned_at, :data_source, :search_path, vars: %{}]
 
   @type t :: %__MODULE__{
-          result: Lotus.Result.t() | map(),
+          result: map(),
           statement: String.t() | nil,
           text: String.t() | nil,
-          pinned_at: DateTime.t()
+          pinned_at: DateTime.t(),
+          data_source: String.t() | nil,
+          search_path: String.t() | nil,
+          vars: map()
         }
 
-  @doc "Pins a result, the statement it ran and the editor's text."
-  def new(result, statement, text, now \\ DateTime.utc_now()) do
+  @doc """
+  Pins a result, with `attrs` (`:statement`, `:text`, `:data_source`,
+  `:search_path`, `:vars`). Its rows are kept as Lotus keeps them.
+  """
+  def new(result, attrs, now \\ DateTime.utc_now()) do
+    struct(
+      %__MODULE__{result: from_snapshot(Lotus.Pins.snapshot(result))},
+      Map.put(attrs, :pinned_at, DateTime.truncate(now, :second))
+    )
+  end
+
+  @doc "The pin Lotus kept (`Lotus.Storage.Pin`)."
+  def from_stored(%Lotus.Storage.Pin{} = pin) do
     %__MODULE__{
-      result: result,
-      statement: statement,
-      text: text,
-      pinned_at: DateTime.truncate(now, :second)
+      result: from_snapshot(pin.result),
+      statement: pin.statement,
+      text: pin.text,
+      data_source: pin.data_source,
+      search_path: pin.search_path,
+      vars: pin.vars || %{},
+      pinned_at: DateTime.truncate(pin.pinned_at, :second)
+    }
+  end
+
+  @doc "What Lotus keeps of a pin: its attributes, for `Lotus.pin_result/3`."
+  def attrs(%__MODULE__{} = pin, query_id) do
+    pin
+    |> Map.take([:statement, :text, :data_source, :search_path, :vars, :pinned_at])
+    |> Map.put(:query_id, query_id)
+  end
+
+  defp from_snapshot(snapshot) do
+    %{
+      columns: snapshot["columns"] || [],
+      rows: snapshot["rows"] || [],
+      num_rows: snapshot["num_rows"],
+      duration_ms: snapshot["duration_ms"],
+      meta: %{total_count: snapshot["total_count"]}
     }
   end
 
@@ -55,6 +91,16 @@ defmodule Lotus.Web.Queries.Pin do
       duration: Map.get(pinned, :duration_ms),
       now_duration: Map.get(result, :duration_ms)
     }
+  end
+
+  @doc """
+  The columns both results have that can match their rows: `id` first when
+  both have it.
+  """
+  def key_columns(%__MODULE__{result: pinned}, result) do
+    shared = Enum.filter(result.columns || [], &(&1 in (pinned.columns || [])))
+    {ids, rest} = Enum.split_with(shared, &(&1 == "id"))
+    ids ++ rest
   end
 
   defp percent(_delta, 0), do: nil

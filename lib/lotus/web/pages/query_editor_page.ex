@@ -201,9 +201,12 @@ defmodule Lotus.Web.QueryEditorPage do
                   visualization_visible={@left_drawer == :visualization}
                   can_export={@can_export and not @ran_write}
                   changed={@ran_write}
-                  pinned={@pinned}
-                  pin_layout={@pin_layout}
-                  pin_open={@pin_open}
+                  pinned={assigns[:pinned]}
+                  pin_layout={assigns[:pin_layout] || :split}
+                  pin_open={assigns[:pin_open] || false}
+                  pin_sync={Map.get(assigns, :pin_sync, true)}
+                  pin_diff={assigns[:pin_diff]}
+                  pin_diff_tab={assigns[:pin_diff_tab] || :removed}
                 />
               </div>
 
@@ -1030,7 +1033,7 @@ defmodule Lotus.Web.QueryEditorPage do
         socket
         |> update_query_state(changeset, [])
         |> assign(ran_statement: run_statement(params))
-        |> assign(page_index: 0, filters: [], sorts: [])
+        |> assign(page_index: 0, filters: [], sorts: [], pin_diff: nil)
         |> assign(results_run: Map.get(socket.assigns, :results_run, 0) + 1)
 
       {:noreply, execute_query(socket, query_to_run(socket.assigns))}
@@ -1074,15 +1077,29 @@ defmodule Lotus.Web.QueryEditorPage do
   def handle_event("cancel_write", _params, socket),
     do: {:noreply, assign(socket, pending_write: nil)}
 
-  # Keeps the result on screen beside the next runs (one pin: a new one
-  # takes its place).
+  # The pin: a result kept beside the next runs, one per person and query
+  # (a new one takes its place), which Lotus keeps when it knows the person
+  # (`pin_owner/1`). Its state lives in this component only (the LiveView
+  # never holds it, so its renders do not reset it): `pinned`, `pin_layout`
+  # (`:split` beside the result, `:stacked` above it), `pin_open` (stacked,
+  # its rows shown), `pin_sync` (side by side, both tables scroll together),
+  # and `pin_diff`, the rows of both queries compared (`Lotus.diff/3`).
   @impl Phoenix.LiveComponent
   def handle_event("pin_result", _params, socket) do
     case socket.assigns do
       %{result: %{} = result, ran_write: false} ->
-        statement = query_to_run(socket.assigns).statement
-        text = socket.assigns.query_form[:statement].value
-        {:noreply, assign(socket, pinned: Pin.new(result, statement, text))}
+        query = query_to_run(socket.assigns)
+
+        pin =
+          Pin.new(result, %{
+            statement: query.statement,
+            text: socket.assigns.query_form[:statement].value,
+            data_source: source_or_default(query.data_source, socket.assigns),
+            search_path: query.search_path,
+            vars: Map.get(socket.assigns, :variable_values, %{})
+          })
+
+        {:noreply, socket |> assign(pinned: store_pin(socket, pin), pin_diff: nil)}
 
       _ ->
         {:noreply, socket}
@@ -1090,13 +1107,17 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   @impl Phoenix.LiveComponent
-  def handle_event("unpin_result", _params, socket),
-    do: {:noreply, assign(socket, pinned: nil, pin_open: false)}
+  def handle_event("unpin_result", _params, socket) do
+    with [_ | _] = opts <- pin_owner(socket.assigns),
+         do: Lotus.unpin(pin_query_id(socket.assigns), opts)
+
+    {:noreply, assign(socket, pinned: nil, pin_open: false, pin_diff: nil)}
+  end
 
   # The pinned result's text back in the editor.
   @impl Phoenix.LiveComponent
   def handle_event("restore_pinned_sql", _params, socket) do
-    case socket.assigns.pinned do
+    case socket.assigns[:pinned] do
       %Pin{text: text} when is_binary(text) -> {:noreply, apply_ai_query(socket, text, nil)}
       _ -> {:noreply, socket}
     end
@@ -1110,7 +1131,41 @@ defmodule Lotus.Web.QueryEditorPage do
 
   @impl Phoenix.LiveComponent
   def handle_event("toggle_pin_open", _params, socket),
-    do: {:noreply, assign(socket, pin_open: not socket.assigns.pin_open)}
+    do: {:noreply, assign(socket, pin_open: not (socket.assigns[:pin_open] || false))}
+
+  @impl Phoenix.LiveComponent
+  def handle_event("toggle_pin_sync", _params, socket),
+    do: {:noreply, assign(socket, pin_sync: not Map.get(socket.assigns, :pin_sync, true))}
+
+  # Every row of the pinned query and of the last run, matched on `key`.
+  @impl Phoenix.LiveComponent
+  def handle_event("diff_rows", %{"key" => key}, socket) when is_binary(key) and key != "" do
+    with %Pin{} = pin <- socket.assigns[:pinned],
+         %{} <- socket.assigns[:result],
+         {:ok, before, after_} <- diff_sides(socket.assigns, pin) do
+      opts = Actor.opts(socket.assigns) ++ [key: key]
+
+      {:noreply,
+       socket
+       |> assign(pin_diff: %{status: :running, key: key})
+       |> start_async(:pin_diff, fn -> Lotus.diff(before, after_, opts) end)}
+    else
+      {:deny, reason} -> {:noreply, assign(socket, pin_diff: %{status: :error, message: reason})}
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("diff_rows", _params, socket), do: {:noreply, socket}
+
+  @impl Phoenix.LiveComponent
+  def handle_event("set_pin_diff_tab", %{"tab" => tab}, socket) do
+    tab = Enum.find([:removed, :added, :changed], :removed, &(Atom.to_string(&1) == tab))
+    {:noreply, assign(socket, pin_diff_tab: tab)}
+  end
+
+  @impl Phoenix.LiveComponent
+  def handle_event("clear_pin_diff", _params, socket),
+    do: {:noreply, assign(socket, pin_diff: nil)}
 
   @impl Phoenix.LiveComponent
   def handle_event("next_page", _params, socket) do
@@ -1440,6 +1495,18 @@ defmodule Lotus.Web.QueryEditorPage do
     {:noreply, update(socket, :ai_conversation, &put_ai_message(&1, index, :preview, preview))}
   end
 
+  def handle_async(:pin_diff, {:ok, {:ok, %Lotus.Diff{} = diff}}, socket) do
+    {:noreply, assign(socket, pin_diff: %{status: :ok, key: hd(diff.key), diff: diff})}
+  end
+
+  def handle_async(:pin_diff, {:ok, {:error, reason}}, socket),
+    do: {:noreply, assign(socket, pin_diff: %{status: :error, message: diff_error(reason)})}
+
+  def handle_async(:pin_diff, {:exit, _reason}, socket) do
+    {:noreply,
+     assign(socket, pin_diff: %{status: :error, message: gettext("The comparison stopped")})}
+  end
+
   def handle_async(:query_execution, {:ok, {:ok, result, {key, references}}}, socket) do
     {:noreply,
      assign(socket,
@@ -1578,7 +1645,7 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   def update(assigns, socket) do
-    {:ok, assign(socket, assigns)}
+    {:ok, socket |> assign(assigns) |> load_pin()}
   end
 
   # The editor offers, browses and autocompletes only the sources the user may
@@ -1657,12 +1724,6 @@ defmodule Lotus.Web.QueryEditorPage do
       cancel_token: nil,
       pending_write: nil,
       ran_write: false,
-      # A result kept beside the next runs to compare them (`Pin`), and how
-      # it shows: beside the result (`:split`) or above it (`:stacked`), open
-      # or not.
-      pinned: nil,
-      pin_layout: :split,
-      pin_open: false,
       # The foreign keys of the result's columns, and the run they are of
       # ({source, statement, search path}).
       result_references: %{},
@@ -1970,6 +2031,96 @@ defmodule Lotus.Web.QueryEditorPage do
       statement -> %{query | statement: statement}
     end
   end
+
+  # The person's pin of the query, from Lotus, once the page is connected
+  # (the browser's id comes with the connection) and once per query.
+  defp load_pin(socket) do
+    key = {:pin, pin_query_id(socket.assigns)}
+
+    cond do
+      not connected?(socket) or socket.assigns[:pin_loaded] == key ->
+        socket
+
+      opts = pin_owner(socket.assigns) ->
+        pin =
+          case Lotus.get_pin(pin_query_id(socket.assigns), opts) do
+            nil -> nil
+            stored -> Pin.from_stored(stored)
+          end
+
+        assign(socket, pinned: pin, pin_loaded: key, pin_diff: nil)
+
+      true ->
+        assign(socket, pin_loaded: key)
+    end
+  end
+
+  # Lotus keeps the pin when it knows whose it is; else it lasts the page.
+  defp store_pin(socket, pin) do
+    with [_ | _] = opts <- pin_owner(socket.assigns),
+         {:ok, stored} <-
+           Lotus.pin_result(pin.result, Pin.attrs(pin, pin_query_id(socket.assigns)), opts) do
+      Pin.from_stored(stored)
+    else
+      _ -> pin
+    end
+  end
+
+  defp pin_query_id(%{page: %{mode: :edit, id: id}}), do: id
+  defp pin_query_id(_assigns), do: nil
+
+  # Whose pin: the user's id when the resolver gives one, else the
+  # browser's (a random id it keeps, sent as it connects). `nil`: no one
+  # to keep it for.
+  defp pin_owner(assigns) do
+    case pin_user_id(assigns[:user]) || assigns[:browser_id] do
+      id when is_binary(id) and id != "" -> [owner_id: id]
+      id when is_integer(id) -> [owner_id: Integer.to_string(id)]
+      _ -> nil
+    end
+  end
+
+  defp pin_user_id(%{id: id}) when not is_nil(id), do: "user:#{id}"
+  defp pin_user_id(%{"id" => id}) when not is_nil(id), do: "user:#{id}"
+  defp pin_user_id(_user), do: nil
+
+  # The pinned query as it ran, and the last run's, for `Lotus.diff/3`.
+  defp diff_sides(assigns, %Pin{} = pin) do
+    %Query{} = query = query_to_run(assigns)
+    repo = source_or_default(query.data_source, assigns)
+    pinned_repo = pin.data_source || repo
+
+    with :allow <- Authorization.authorize(assigns, :query, repo),
+         :allow <- Authorization.authorize(assigns, :query, pinned_repo) do
+      pinned_query = %Query{
+        query
+        | statement: pin.statement,
+          data_source: pinned_repo,
+          search_path: pin.search_path
+      }
+
+      {:ok, {pinned_query, diff_opts(pinned_repo, pin.vars, pin.search_path)},
+       {query, diff_opts(repo, Map.get(assigns, :variable_values, %{}), query.search_path)}}
+    end
+  end
+
+  defp diff_opts(repo, vars, search_path),
+    do: put_search_path([repo: repo, vars: vars || %{}], search_path)
+
+  defp diff_error({:too_many_rows, limit}),
+    do:
+      gettext("Each query may return up to %{limit} rows to compare: narrow them down.",
+        limit: limit
+      )
+
+  defp diff_error({:duplicate_key, _side, _key}),
+    do: gettext("Some rows share a value of that column: pick a column whose values are unique.")
+
+  defp diff_error({:missing_key, _side, columns}),
+    do: gettext("%{columns} is not a column of both results.", columns: Enum.join(columns, ", "))
+
+  defp diff_error(reason) when is_binary(reason), do: reason
+  defp diff_error(reason), do: inspect(reason)
 
   defp maybe_update_timeout(socket, %{"query_timeout" => timeout_str})
        when is_binary(timeout_str) do
