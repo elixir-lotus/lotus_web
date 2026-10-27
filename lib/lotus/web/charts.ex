@@ -158,7 +158,12 @@ defmodule Lotus.Web.Charts do
     end)
   end
 
-  defp config_fields(type), do: fields(type) ++ option_keys(type)
+  defp config_fields(type), do: fields(type) ++ option_keys(type) ++ live_keys(type)
+
+  # A dashboard card's live settings (`Lotus.Web.Dashboards.LiveCards`), on
+  # the charts whose marks are their rows.
+  defp live_keys(type) when type in ~w(line area scatter), do: ~w(live live_window)
+  defp live_keys(_type), do: []
 
   # A list of a form (the tooltip's fields) without the empty value that lets
   # it send none.

@@ -13,6 +13,15 @@
 
 ### Added
 
+- **Live dashboard cards** (#205). A line, area or scatter chart whose
+  query reads `{{since}}` can be switched live in its settings: every 10
+  seconds, Lotus runs the query with `since` set to the last x value the
+  chart has and sends only the new rows to it (`Fude.Live.append/5`),
+  keeping the last 30 to 300 points. The chart moves rather than drawing
+  again whole, which suits a dashboard on a wall screen. A live card has a
+  pulsing dot; ticks pause in a background tab; it works on public links
+  too. See the dashboards guide.
+
 - **An Elasticsearch editor on a par with the SQL one.** The editor reads
   a JSON source's request as Lotus does (`Lotus.Query.Tokenizer` with the
   JSON profile: `{{variables}}` bare or in strings, `[[ ]]` blocks where no
@@ -514,6 +523,12 @@
   failed on PostgreSQL.
 
 ### Fixed
+
+- **A dashboard's auto-refresh crashed the page.** Its timer sent its tick
+  to the page's LiveView, which had no handler for it, rather than to the
+  dashboard: the LiveView crashed and the page reconnected, which ran the
+  cards again only by starting over. The tick now goes to the dashboard,
+  which runs its cards again in place.
 
 - **Columns of a source without schemas.** Autocomplete asked such a source
   (Elasticsearch's indices) for its columns under the stand-in schema the
