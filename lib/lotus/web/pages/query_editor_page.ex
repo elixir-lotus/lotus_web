@@ -20,6 +20,7 @@ defmodule Lotus.Web.QueryEditorPage do
   alias Lotus.Web.Queries.AiSteps
   alias Lotus.Web.Queries.DropdownOptionsModal
   alias Lotus.Web.Queries.MasuResults
+  alias Lotus.Web.Queries.Pin
   alias Lotus.Web.Queries.References
   alias Lotus.Web.Queries.SchemaDiagramComponent
   alias Lotus.Web.Queries.SchemaExplorerComponent
@@ -200,6 +201,9 @@ defmodule Lotus.Web.QueryEditorPage do
                   visualization_visible={@left_drawer == :visualization}
                   can_export={@can_export and not @ran_write}
                   changed={@ran_write}
+                  pinned={@pinned}
+                  pin_layout={@pin_layout}
+                  pin_open={@pin_open}
                 />
               </div>
 
@@ -1070,6 +1074,44 @@ defmodule Lotus.Web.QueryEditorPage do
   def handle_event("cancel_write", _params, socket),
     do: {:noreply, assign(socket, pending_write: nil)}
 
+  # Keeps the result on screen beside the next runs (one pin: a new one
+  # takes its place).
+  @impl Phoenix.LiveComponent
+  def handle_event("pin_result", _params, socket) do
+    case socket.assigns do
+      %{result: %{} = result, ran_write: false} ->
+        statement = query_to_run(socket.assigns).statement
+        text = socket.assigns.query_form[:statement].value
+        {:noreply, assign(socket, pinned: Pin.new(result, statement, text))}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl Phoenix.LiveComponent
+  def handle_event("unpin_result", _params, socket),
+    do: {:noreply, assign(socket, pinned: nil, pin_open: false)}
+
+  # The pinned result's text back in the editor.
+  @impl Phoenix.LiveComponent
+  def handle_event("restore_pinned_sql", _params, socket) do
+    case socket.assigns.pinned do
+      %Pin{text: text} when is_binary(text) -> {:noreply, apply_ai_query(socket, text, nil)}
+      _ -> {:noreply, socket}
+    end
+  end
+
+  @impl Phoenix.LiveComponent
+  def handle_event("set_pin_layout", %{"layout" => layout}, socket) do
+    layout = if layout == "stacked", do: :stacked, else: :split
+    {:noreply, assign(socket, pin_layout: layout)}
+  end
+
+  @impl Phoenix.LiveComponent
+  def handle_event("toggle_pin_open", _params, socket),
+    do: {:noreply, assign(socket, pin_open: not socket.assigns.pin_open)}
+
   @impl Phoenix.LiveComponent
   def handle_event("next_page", _params, socket) do
     case socket.assigns[:result] do
@@ -1615,6 +1657,12 @@ defmodule Lotus.Web.QueryEditorPage do
       cancel_token: nil,
       pending_write: nil,
       ran_write: false,
+      # A result kept beside the next runs to compare them (`Pin`), and how
+      # it shows: beside the result (`:split`) or above it (`:stacked`), open
+      # or not.
+      pinned: nil,
+      pin_layout: :split,
+      pin_open: false,
       # The foreign keys of the result's columns, and the run they are of
       # ({source, statement, search path}).
       result_references: %{},

@@ -13,6 +13,16 @@
 
 ### Added
 
+- **Pin a result to compare** (elixir-lotus/lotus#117). "Pin to compare"
+  in the Results header keeps the result on screen; edit the query and run
+  it again, and the new result shows beside the pinned one (or under it,
+  as a strip that opens), with how they differ: the rows before and after
+  (and by how much), the columns added and removed (marked on the pinned
+  table), and both run times. "Restore SQL" puts the pinned query back in
+  the editor, "Pin this instead" swaps the pin, × unpins. The pin keeps the
+  rows it showed; it does not run its query again, and lasts as long as
+  the page.
+
 - **Live dashboard cards** (#205). A line, area or scatter chart whose
   query reads `{{since}}` can be switched live in its settings: every 10
   seconds, Lotus runs the query with `since` set to the last x value the
