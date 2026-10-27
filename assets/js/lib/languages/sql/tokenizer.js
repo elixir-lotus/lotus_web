@@ -59,6 +59,17 @@ const MYSQL = {
 
 const SQLITE = { ...ANSI, identifierQuotes: ['"', "`", "["] };
 
+// JSON (`json:elasticsearch` and other JSON query languages): double-quoted
+// strings with backslash escapes, and no comments or quoted identifiers.
+export const JSON_PROFILE = {
+  ...ANSI,
+  stringQuotes: ['"'],
+  identifierQuotes: [],
+  lineComments: [],
+  blockComments: false,
+  backslashEscapes: true,
+};
+
 const PROFILES = {
   postgres: POSTGRES,
   postgresql: POSTGRES,
@@ -92,7 +103,8 @@ const SERVER_KEYS = {
  * when it sent one.
  */
 export function profileFor(dialectName, serverProfile = null) {
-  const profile = { ...(PROFILES[dialectName] || ANSI) };
+  const base = baseProfile(dialectName);
+  const profile = { ...base };
 
   if (serverProfile && typeof serverProfile === "object") {
     for (const key in serverProfile) {
@@ -103,7 +115,6 @@ export function profileFor(dialectName, serverProfile = null) {
     }
     // The server says whether [bracketed] identifiers are on apart from its
     // quotes; without a word from it, a dialect that has them keeps them.
-    const base = PROFILES[dialectName] || ANSI;
     const brackets =
       typeof serverProfile["bracket_identifiers?"] === "boolean"
         ? serverProfile["bracket_identifiers?"]
@@ -113,6 +124,11 @@ export function profileFor(dialectName, serverProfile = null) {
   }
 
   return profile;
+}
+
+function baseProfile(dialectName) {
+  if (typeof dialectName === "string" && dialectName.startsWith("json")) return JSON_PROFILE;
+  return PROFILES[dialectName] || ANSI;
 }
 
 // Character codes.
@@ -301,8 +317,11 @@ function scanOnce(text, p, disabled) {
         push(T_VARIABLE, i);
         i = j;
       } else {
+        // As Lotus does, the scan goes on after both braces, so `{{{a}}`
+        // holds no variable.
         push(T_OPERATOR, i);
-        i += 1;
+        push(T_OPERATOR, i + 1);
+        i += 2;
       }
     } else if (c === LBRACKET && next === LBRACKET && disabled && disabled.has(i)) {
       push(T_OPERATOR, i);

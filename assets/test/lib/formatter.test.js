@@ -71,6 +71,56 @@ describe("format JSON", () => {
     });
   });
 
+  it("lays out a request as JSON.stringify does", () => {
+    const requests = [
+      { query: { bool: { filter: [{ term: { status: "paid" } }, { range: { total: { gte: 10 } } }] } } },
+      { size: 0, aggs: { by: { terms: { field: "status", size: 10 }, aggs: {} } }, sort: [] },
+      { a: [1, -2.5, true, null, "x \" y"], b: { "c.d": [[1, 2], [3, 4]] } },
+    ];
+    for (const request of requests) {
+      expect(format(JSON.stringify(request), "json:elasticsearch")).toEqual({
+        ok: true,
+        content: JSON.stringify(request, null, 2),
+      });
+    }
+  });
+
+  it("keeps variables, blocks, strings and numbers as written", () => {
+    const template =
+      '{"query":{"range":{"total":{"gte":{{min}}}}},"size":{{n}} [[,"from":{{offset}}]],' +
+      '"q":"*{{q}}* \\u00e9","x":1.50}';
+    expect(format(template, "json:elasticsearch")).toEqual({
+      ok: true,
+      content: [
+        "{",
+        '  "query": {',
+        '    "range": {',
+        '      "total": {',
+        '        "gte": {{min}}',
+        "      }",
+        "    }",
+        "  },",
+        '  "size": {{n}}',
+        '  [[, "from": {{offset}}]],',
+        '  "q": "*{{q}}* \\u00e9",',
+        '  "x": 1.50',
+        "}",
+      ].join("\n"),
+    });
+  });
+
+  it("formats its own output the same", () => {
+    const once = format('{"a":{{x}} [[,"b":[{"c":1}]]]}', "json:elasticsearch").content;
+    expect(format(once, "json:elasticsearch").content).toBe(once);
+  });
+
+  it("says why it cannot format a template Lotus would refuse", () => {
+    expect(format('{"a": 1,}', "json:elasticsearch")).toEqual({
+      ok: false,
+      error: "Trailing comma: JSON takes none after the last property",
+    });
+  });
+
   it("fails on JSON it cannot parse", () => {
     expect(format("{", "json:elasticsearch").ok).toBe(false);
   });

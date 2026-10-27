@@ -95,7 +95,17 @@ defmodule Lotus.Web.Queries.EditorComponent do
         <div id="editor-context-menu-wrapper" phx-hook="EditorContextMenu" data-ai-enabled={to_string(@can_ai and Lotus.Web.AI.enabled?())} class={["relative pb-8", if(@minimized, do: "hidden", else: "")]}>
 
           <div id="editor" phx-update="ignore" class="w-full bg-editor-light dark:bg-editor-dark" style="min-height: 300px;"></div>
-          <.input type="textarea" field={@form[:statement]} phx-hook="EditorForm" phx-target={@target} style="display: none;" />
+          <%!-- data-editor-state changes with the source, its language and its
+               schema, so the hook's updated/0 runs and reads them when the
+               statement itself does not change (a new query's source). --%>
+          <.input
+            type="textarea"
+            field={@form[:statement]}
+            phx-hook="EditorForm"
+            phx-target={@target}
+            data-editor-state={:erlang.phash2({@dialect, @source, @schema, @schemas})}
+            style="display: none;"
+          />
           <div
             data-editor-schema={Lotus.JSON.encode!(@schema || %{})}
             data-editor-dialect={@dialect || "postgres"}

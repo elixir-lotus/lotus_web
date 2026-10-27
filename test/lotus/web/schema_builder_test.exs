@@ -228,6 +228,16 @@ defmodule Lotus.Web.SchemaBuilderTest do
     end
   end
 
+  describe "describe/5" do
+    test "describes the tables asked for, each column with its type", %{sources_map: sources_map} do
+      assert {:ok, %{"test_posts" => columns}} =
+               SchemaBuilder.describe(sources_map, "public", nil, ["test_posts"])
+
+      assert %{name: "user_id", type: type} = Enum.find(columns, &(&1.name == "user_id"))
+      assert is_binary(type)
+    end
+  end
+
   describe "columns/5" do
     test "describes the tables asked for", %{sources_map: sources_map} do
       assert {:ok, columns} = SchemaBuilder.columns(sources_map, "public", nil, ["test_posts"])

@@ -1,0 +1,2885 @@
+{
+  "functions": [
+    {
+      "args": "{\"field\": \"value\"}",
+      "name": "match",
+      "detail": "Full-text search"
+    },
+    {
+      "args": "{\"field\": \"phrase\"}",
+      "name": "match_phrase",
+      "detail": "Exact phrase match"
+    },
+    {
+      "args": "{\"query\": \"text\", \"fields\": []}",
+      "name": "multi_match",
+      "detail": "Multi-field search"
+    },
+    {
+      "args": "{\"field\": \"value\"}",
+      "name": "term",
+      "detail": "Exact value match"
+    },
+    {
+      "args": "{\"field\": [\"v1\", \"v2\"]}",
+      "name": "terms",
+      "detail": "Match any of values"
+    },
+    {
+      "args": "{\"field\": {\"gte\": 0, \"lte\": 100}}",
+      "name": "range",
+      "detail": "Range query"
+    },
+    {
+      "args": "{\"field\": \"name\"}",
+      "name": "exists",
+      "detail": "Field exists"
+    },
+    {
+      "args": "{\"field\": \"prefix\"}",
+      "name": "prefix",
+      "detail": "Prefix match"
+    },
+    {
+      "args": "{\"field\": {\"value\": \"pattern*\"}}",
+      "name": "wildcard",
+      "detail": "Wildcard match"
+    },
+    {
+      "args": "{\"field\": \"pattern\"}",
+      "name": "regexp",
+      "detail": "Regex match"
+    },
+    {
+      "args": "{\"field\": {\"value\": \"text\"}}",
+      "name": "fuzzy",
+      "detail": "Fuzzy match"
+    },
+    {
+      "args": "{\"must\": [], \"should\": [], \"filter\": []}",
+      "name": "bool",
+      "detail": "Boolean combination"
+    },
+    {
+      "args": "{\"path\": \"obj\", \"query\": {}}",
+      "name": "nested",
+      "detail": "Query nested objects"
+    },
+    {
+      "args": "{\"query\": \"field:value\"}",
+      "name": "query_string",
+      "detail": "Lucene query syntax"
+    },
+    {
+      "args": "{\"query\": \"text\"}",
+      "name": "simple_query_string",
+      "detail": "Simple query syntax"
+    },
+    {
+      "args": "{\"field\": \"name\", \"size\": 10}",
+      "name": "terms",
+      "detail": "Bucket by field values"
+    },
+    {
+      "args": "{\"field\": \"date\", \"calendar_interval\": \"day\"}",
+      "name": "date_histogram",
+      "detail": "Bucket by date interval"
+    },
+    {
+      "args": "{\"field\": \"price\", \"interval\": 10}",
+      "name": "histogram",
+      "detail": "Bucket by numeric range"
+    },
+    {
+      "args": "{\"field\": \"price\"}",
+      "name": "avg",
+      "detail": "Average metric"
+    },
+    {
+      "args": "{\"field\": \"amount\"}",
+      "name": "sum",
+      "detail": "Sum metric"
+    },
+    {
+      "args": "{\"field\": \"price\"}",
+      "name": "min",
+      "detail": "Minimum metric"
+    },
+    {
+      "args": "{\"field\": \"price\"}",
+      "name": "max",
+      "detail": "Maximum metric"
+    },
+    {
+      "args": "{\"field\": \"user_id\"}",
+      "name": "cardinality",
+      "detail": "Approximate distinct count"
+    },
+    {
+      "args": "{\"field\": \"name\"}",
+      "name": "value_count",
+      "detail": "Count of values"
+    },
+    {
+      "args": "{\"field\": \"price\"}",
+      "name": "stats",
+      "detail": "Count, min, max, avg, sum"
+    },
+    {
+      "args": "{\"field\": \"price\"}",
+      "name": "extended_stats",
+      "detail": "Stats + variance, std dev"
+    },
+    {
+      "args": "{\"field\": \"latency\"}",
+      "name": "percentiles",
+      "detail": "Percentile values"
+    },
+    {
+      "args": "{\"size\": 3, \"sort\": []}",
+      "name": "top_hits",
+      "detail": "Top documents per bucket"
+    },
+    {
+      "args": "{\"sources\": []}",
+      "name": "composite",
+      "detail": "Paginated multi-bucket"
+    },
+    {
+      "args": "{\"field\": \"text\"}",
+      "name": "significant_terms",
+      "detail": "Statistically unusual terms"
+    },
+    {
+      "args": "{\"term\": {\"status\": \"active\"}}",
+      "name": "filter",
+      "detail": "Single filter bucket"
+    },
+    {
+      "args": "{\"filters\": {}}",
+      "name": "filters",
+      "detail": "Named filter buckets"
+    },
+    {
+      "args": "{\"field\": \"date\", \"buckets\": 10}",
+      "name": "auto_date_histogram",
+      "detail": "Auto-interval date buckets"
+    }
+  ],
+  "keywords": [
+    "query",
+    "bool",
+    "must",
+    "should",
+    "must_not",
+    "filter",
+    "match",
+    "match_phrase",
+    "match_all",
+    "term",
+    "terms",
+    "range",
+    "exists",
+    "prefix",
+    "wildcard",
+    "regexp",
+    "fuzzy",
+    "nested",
+    "has_child",
+    "has_parent",
+    "ids",
+    "multi_match",
+    "match_phrase_prefix",
+    "match_bool_prefix",
+    "simple_query_string",
+    "query_string",
+    "constant_score",
+    "dis_max",
+    "function_score",
+    "boosting",
+    "aggs",
+    "aggregations",
+    "terms",
+    "date_histogram",
+    "histogram",
+    "date_range",
+    "ip_range",
+    "avg",
+    "sum",
+    "min",
+    "max",
+    "cardinality",
+    "value_count",
+    "stats",
+    "extended_stats",
+    "percentiles",
+    "percentile_ranks",
+    "top_hits",
+    "significant_terms",
+    "rare_terms",
+    "composite",
+    "auto_date_histogram",
+    "filter",
+    "filters",
+    "adjacency_matrix",
+    "nested",
+    "reverse_nested",
+    "parent",
+    "sort",
+    "size",
+    "from",
+    "_source",
+    "highlight",
+    "track_total_hits",
+    "timeout",
+    "search_after",
+    "collapse",
+    "pit",
+    "scroll",
+    "slice",
+    "suggest",
+    "post_filter",
+    "rescore",
+    "script_fields",
+    "stored_fields",
+    "indices_boost",
+    "min_score",
+    "search_type",
+    "preference",
+    "routing"
+  ],
+  "types": [
+    "text",
+    "keyword",
+    "long",
+    "integer",
+    "short",
+    "byte",
+    "double",
+    "float",
+    "half_float",
+    "scaled_float",
+    "boolean",
+    "date",
+    "date_nanos",
+    "binary",
+    "ip",
+    "object",
+    "nested",
+    "flattened",
+    "geo_point",
+    "geo_shape",
+    "point",
+    "shape",
+    "completion",
+    "search_as_you_type",
+    "token_count",
+    "rank_feature",
+    "rank_features",
+    "dense_vector",
+    "sparse_vector",
+    "alias",
+    "join"
+  ],
+  "language": "json:elasticsearch",
+  "context_boundaries": [],
+  "context_schema": {
+    "root": [
+      "query",
+      "aggs",
+      "aggregations",
+      "sort",
+      "size",
+      "from",
+      "_source",
+      "highlight",
+      "track_total_hits",
+      "timeout",
+      "collapse",
+      "search_after",
+      "pit",
+      "scroll",
+      "slice",
+      "suggest",
+      "post_filter",
+      "rescore",
+      "script_fields",
+      "stored_fields",
+      "indices_boost",
+      "min_score",
+      "search_type",
+      "preference",
+      "routing",
+      "explain",
+      "version",
+      "seq_no_primary_term",
+      "profile"
+    ],
+    "children": {
+      "_source": [
+        "includes",
+        "excludes"
+      ],
+      "aggregations": "named_aggregation",
+      "aggs": "named_aggregation",
+      "bool": [
+        "must",
+        "should",
+        "must_not",
+        "filter",
+        "minimum_should_match",
+        "boost"
+      ],
+      "boosting": [
+        "positive",
+        "negative",
+        "negative_boost"
+      ],
+      "collapse": [
+        "field",
+        "inner_hits",
+        "max_concurrent_group_searches"
+      ],
+      "constant_score": [
+        "filter",
+        "boost"
+      ],
+      "date_histogram": [
+        "field",
+        "calendar_interval",
+        "fixed_interval",
+        "time_zone",
+        "format",
+        "offset",
+        "min_doc_count",
+        "extended_bounds",
+        "hard_bounds",
+        "missing",
+        "order"
+      ],
+      "date_range": [
+        "field",
+        "format",
+        "ranges",
+        "time_zone",
+        "keyed",
+        "missing"
+      ],
+      "dis_max": [
+        "queries",
+        "tie_breaker",
+        "boost"
+      ],
+      "exists": [
+        "field"
+      ],
+      "filter": "array_of_query",
+      "function_score": [
+        "query",
+        "functions",
+        "score_mode",
+        "boost_mode",
+        "min_score"
+      ],
+      "fuzzy": "fields",
+      "highlight": [
+        "fields",
+        "pre_tags",
+        "post_tags",
+        "type",
+        "fragment_size",
+        "number_of_fragments",
+        "order",
+        "boundary_scanner",
+        "boundary_chars",
+        "fragmenter",
+        "no_match_size"
+      ],
+      "histogram": [
+        "field",
+        "interval",
+        "min_doc_count",
+        "extended_bounds",
+        "order"
+      ],
+      "match": "fields",
+      "match_phrase": "fields",
+      "match_phrase_prefix": "fields",
+      "must": "array_of_query",
+      "must_not": "array_of_query",
+      "nested": [
+        "path",
+        "query",
+        "score_mode",
+        "ignore_unmapped",
+        "inner_hits"
+      ],
+      "prefix": "fields",
+      "query": [
+        "match",
+        "match_all",
+        "match_phrase",
+        "match_phrase_prefix",
+        "multi_match",
+        "term",
+        "terms",
+        "range",
+        "bool",
+        "exists",
+        "prefix",
+        "wildcard",
+        "regexp",
+        "fuzzy",
+        "nested",
+        "query_string",
+        "simple_query_string",
+        "ids",
+        "constant_score",
+        "dis_max",
+        "function_score",
+        "boosting",
+        "has_child",
+        "has_parent",
+        "match_bool_prefix"
+      ],
+      "range": "fields",
+      "regexp": "fields",
+      "should": "array_of_query",
+      "sort": "array_of_sort",
+      "term": "fields",
+      "terms": "fields",
+      "wildcard": "fields"
+    },
+    "grammar": {
+      "start": "search",
+      "types": {
+        "composite_source": {
+          "names": {
+            "object": {
+              "date_histogram": {
+                "object": {
+                  "calendar_interval": "calendar_interval",
+                  "field": {
+                    "field": [
+                      "date",
+                      "date_nanos"
+                    ]
+                  },
+                  "fixed_interval": "string",
+                  "format": "string",
+                  "time_zone": "time_zone"
+                }
+              },
+              "histogram": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long"
+                    ]
+                  },
+                  "interval": "number"
+                }
+              },
+              "terms": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "keyword",
+                      "constant_keyword",
+                      "wildcard",
+                      "ip",
+                      "boolean",
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long",
+                      "date",
+                      "date_nanos"
+                    ]
+                  },
+                  "missing_bucket": "boolean",
+                  "order": "sort_order"
+                }
+              }
+            },
+            "one_key": true
+          },
+          "object": {}
+        },
+        "query": {
+          "object": {
+            "dis_max": {
+              "type": {
+                "object": {
+                  "boost": "number",
+                  "queries": {
+                    "array": "query"
+                  },
+                  "tie_breaker": "number"
+                }
+              },
+              "doc": "The best of several clauses"
+            },
+            "terms_set": {
+              "type": {
+                "fields": "terms_set_value",
+                "object": {}
+              },
+              "doc": "A number of these values"
+            },
+            "match_phrase_prefix": {
+              "type": {
+                "fields": "match_phrase_value",
+                "object": {}
+              },
+              "doc": "A phrase, the last word as a prefix",
+              "snippet": "{ \"${field}\": \"${text}\" }"
+            },
+            "match_all": {
+              "type": {
+                "object": {
+                  "boost": "number"
+                }
+              },
+              "doc": "Every document",
+              "snippet": "{}"
+            },
+            "constant_score": {
+              "type": {
+                "object": {
+                  "boost": "number",
+                  "filter": "query"
+                }
+              },
+              "doc": "A filter, every hit scored alike"
+            },
+            "wildcard": {
+              "type": {
+                "fields": "wildcard_value",
+                "object": {}
+              },
+              "doc": "A pattern with * and ?",
+              "snippet": "{ \"${field}\": { \"value\": \"${*}\" } }"
+            },
+            "ids": {
+              "type": {
+                "object": {
+                  "values": {
+                    "array": "string"
+                  }
+                }
+              },
+              "doc": "Documents by id",
+              "snippet": "{ \"values\": [ \"${}\" ] }"
+            },
+            "match_none": {
+              "type": {
+                "object": {}
+              },
+              "doc": "No document",
+              "snippet": "{}"
+            },
+            "function_score": {
+              "type": "function_score",
+              "doc": "Change scores with functions"
+            },
+            "query_string": {
+              "type": "query_string",
+              "doc": "Lucene query syntax",
+              "snippet": "{ \"query\": \"${}\" }"
+            },
+            "terms": {
+              "type": {
+                "fields": {
+                  "array": "scalar"
+                },
+                "object": {
+                  "_name": "string",
+                  "boost": "number"
+                }
+              },
+              "doc": "Any of these exact values",
+              "snippet": "{ \"${field}\": [ ${} ] }"
+            },
+            "knn": {
+              "type": "knn",
+              "doc": "Nearest neighbours of a vector"
+            },
+            "bool": {
+              "type": "bool",
+              "doc": "Combine clauses with must, filter, should and must_not",
+              "snippet": "{ \"must\": [ ${} ] }"
+            },
+            "term": {
+              "type": {
+                "fields": "term_value",
+                "object": {}
+              },
+              "doc": "An exact value (keyword, number, date…)",
+              "snippet": "{ \"${field}\": \"${value}\" }"
+            },
+            "fuzzy": {
+              "type": {
+                "fields": "fuzzy_value",
+                "object": {}
+              },
+              "doc": "Values close to this one"
+            },
+            "multi_match": {
+              "type": "multi_match",
+              "doc": "Full-text search on several fields",
+              "snippet": "{ \"query\": \"${text}\", \"fields\": [ \"${}\" ] }"
+            },
+            "prefix": {
+              "type": {
+                "fields": "prefix_value",
+                "object": {}
+              },
+              "doc": "A value that starts with this",
+              "snippet": "{ \"${field}\": \"${prefix}\" }"
+            },
+            "match": {
+              "type": {
+                "fields": "match_value",
+                "object": {}
+              },
+              "doc": "Full-text search on a field",
+              "snippet": "{ \"${field}\": \"${text}\" }"
+            },
+            "nested": {
+              "type": {
+                "object": {
+                  "ignore_unmapped": "boolean",
+                  "inner_hits": "inner_hits",
+                  "path": {
+                    "field": [
+                      "nested"
+                    ]
+                  },
+                  "query": "query",
+                  "score_mode": {
+                    "enum": [
+                      "avg",
+                      "max",
+                      "min",
+                      "none",
+                      "sum"
+                    ]
+                  }
+                }
+              },
+              "doc": "Search nested objects",
+              "snippet": "{ \"path\": \"${}\", \"query\": { } }"
+            },
+            "script": {
+              "type": {
+                "object": {
+                  "boost": "number",
+                  "script": "script"
+                }
+              },
+              "doc": "Filter with a script"
+            },
+            "combined_fields": {
+              "type": "combined_fields",
+              "doc": "Full-text search across fields as one"
+            },
+            "simple_query_string": {
+              "type": "simple_query_string",
+              "doc": "Simple query syntax, never fails",
+              "snippet": "{ \"query\": \"${}\" }"
+            },
+            "has_child": {
+              "type": {
+                "object": {
+                  "ignore_unmapped": "boolean",
+                  "inner_hits": "inner_hits",
+                  "max_children": "integer",
+                  "min_children": "integer",
+                  "query": "query",
+                  "score_mode": {
+                    "enum": [
+                      "none",
+                      "avg",
+                      "sum",
+                      "max",
+                      "min"
+                    ]
+                  },
+                  "type": "string"
+                }
+              },
+              "doc": "Parents whose children match"
+            },
+            "match_bool_prefix": {
+              "type": {
+                "fields": "match_value",
+                "object": {}
+              },
+              "doc": "Words, the last as a prefix",
+              "snippet": "{ \"${field}\": \"${text}\" }"
+            },
+            "exists": {
+              "type": {
+                "object": {
+                  "boost": "number",
+                  "field": "field"
+                }
+              },
+              "doc": "The field has a value",
+              "snippet": "{ \"field\": \"${}\" }"
+            },
+            "script_score": {
+              "type": {
+                "object": {
+                  "min_score": "number",
+                  "query": "query",
+                  "script": "script"
+                }
+              },
+              "doc": "Score with a script"
+            },
+            "geo_bounding_box": {
+              "type": "geo_bounding_box",
+              "doc": "Points within a box"
+            },
+            "regexp": {
+              "type": {
+                "fields": "regexp_value",
+                "object": {}
+              },
+              "doc": "A regular expression",
+              "snippet": "{ \"${field}\": \"${}\" }"
+            },
+            "geo_distance": {
+              "type": "geo_distance",
+              "doc": "Points within a distance"
+            },
+            "more_like_this": {
+              "type": "more_like_this",
+              "doc": "Documents like these"
+            },
+            "has_parent": {
+              "type": {
+                "object": {
+                  "ignore_unmapped": "boolean",
+                  "inner_hits": "inner_hits",
+                  "parent_type": "string",
+                  "query": "query",
+                  "score": "boolean"
+                }
+              },
+              "doc": "Children whose parent matches"
+            },
+            "match_phrase": {
+              "type": {
+                "fields": "match_phrase_value",
+                "object": {}
+              },
+              "doc": "The words of a phrase, in order",
+              "snippet": "{ \"${field}\": \"${phrase}\" }"
+            },
+            "range": {
+              "type": {
+                "fields": "range_value",
+                "object": {}
+              },
+              "doc": "A range of numbers or dates",
+              "snippet": "{ \"${field}\": { \"gte\": ${} } }"
+            },
+            "boosting": {
+              "type": {
+                "object": {
+                  "negative": "query",
+                  "negative_boost": "number",
+                  "positive": "query"
+                }
+              },
+              "doc": "Lower the score of some matches"
+            }
+          },
+          "one_key": true
+        },
+        "scalar": {
+          "one_of": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "field_format": {
+          "one_of": [
+            {
+              "field": []
+            },
+            {
+              "object": {
+                "field": "field",
+                "format": "string",
+                "include_unmapped": "boolean"
+              }
+            }
+          ]
+        },
+        "sort_item": {
+          "one_of": [
+            {
+              "field": [
+                "keyword",
+                "constant_keyword",
+                "wildcard",
+                "ip",
+                "boolean",
+                "long",
+                "integer",
+                "short",
+                "byte",
+                "double",
+                "float",
+                "half_float",
+                "scaled_float",
+                "unsigned_long",
+                "date",
+                "date_nanos"
+              ]
+            },
+            {
+              "fields": {
+                "one_of": [
+                  "sort_order",
+                  "sort_options"
+                ]
+              },
+              "object": {
+                "_doc": {
+                  "type": {
+                    "one_of": [
+                      "sort_order",
+                      "sort_options"
+                    ]
+                  },
+                  "doc": "Sort by index order"
+                },
+                "_geo_distance": {
+                  "type": {
+                    "open": true,
+                    "object": {}
+                  },
+                  "doc": "Sort by distance"
+                },
+                "_score": {
+                  "type": {
+                    "one_of": [
+                      "sort_order",
+                      "sort_options"
+                    ]
+                  },
+                  "doc": "Sort by score"
+                },
+                "_script": {
+                  "type": "script_sort",
+                  "doc": "Sort by a script"
+                }
+              }
+            }
+          ]
+        },
+        "script_sort": {
+          "object": {
+            "order": "sort_order",
+            "script": "script",
+            "type": {
+              "enum": [
+                "number",
+                "string"
+              ]
+            }
+          }
+        },
+        "match_phrase_value": {
+          "one_of": [
+            "scalar",
+            {
+              "object": {
+                "_name": "string",
+                "analyzer": "string",
+                "boost": "number",
+                "max_expansions": "integer",
+                "query": "scalar",
+                "slop": "integer",
+                "zero_terms_query": {
+                  "enum": [
+                    "none",
+                    "all"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "collapse": {
+          "object": {
+            "field": {
+              "field": [
+                "keyword",
+                "constant_keyword",
+                "wildcard",
+                "ip",
+                "boolean",
+                "long",
+                "integer",
+                "short",
+                "byte",
+                "double",
+                "float",
+                "half_float",
+                "scaled_float",
+                "unsigned_long",
+                "date",
+                "date_nanos"
+              ]
+            },
+            "inner_hits": {
+              "one_of": [
+                "inner_hits",
+                {
+                  "array": "inner_hits"
+                }
+              ]
+            },
+            "max_concurrent_group_searches": "integer"
+          }
+        },
+        "script_field": {
+          "object": {
+            "ignore_failure": "boolean",
+            "script": "script"
+          }
+        },
+        "agg": {
+          "object": {
+            "filters": {
+              "type": {
+                "object": {
+                  "filters": {
+                    "one_of": [
+                      {
+                        "names": "query",
+                        "object": {}
+                      },
+                      {
+                        "array": "query"
+                      }
+                    ]
+                  },
+                  "other_bucket": "boolean",
+                  "other_bucket_key": "string"
+                }
+              },
+              "doc": "A bucket per filter"
+            },
+            "percentile_ranks": {
+              "type": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long"
+                    ]
+                  },
+                  "format": "string",
+                  "keyed": "boolean",
+                  "missing": "scalar",
+                  "script": "script",
+                  "values": {
+                    "array": "number"
+                  }
+                }
+              },
+              "doc": "The percentile of these values"
+            },
+            "sum": {
+              "type": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long"
+                    ]
+                  },
+                  "format": "string",
+                  "missing": "scalar",
+                  "script": "script"
+                }
+              },
+              "doc": "Sum",
+              "snippet": "{ \"field\": \"${}\" }"
+            },
+            "stats": {
+              "type": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long"
+                    ]
+                  },
+                  "format": "string",
+                  "missing": "scalar",
+                  "script": "script"
+                }
+              },
+              "doc": "Count, min, max, avg and sum",
+              "snippet": "{ \"field\": \"${}\" }"
+            },
+            "cumulative_sum": {
+              "type": {
+                "object": {
+                  "buckets_path": {
+                    "type": "string",
+                    "doc": "As \"by_month>sales\""
+                  },
+                  "format": "string",
+                  "gap_policy": {
+                    "enum": [
+                      "skip",
+                      "insert_zeros",
+                      "keep_values"
+                    ]
+                  }
+                }
+              },
+              "doc": "Running total across buckets"
+            },
+            "min_bucket": {
+              "type": {
+                "object": {
+                  "buckets_path": {
+                    "type": "string",
+                    "doc": "As \"by_month>sales\""
+                  },
+                  "format": "string",
+                  "gap_policy": {
+                    "enum": [
+                      "skip",
+                      "insert_zeros",
+                      "keep_values"
+                    ]
+                  }
+                }
+              },
+              "doc": "Bucket with the lowest metric"
+            },
+            "top_hits": {
+              "type": {
+                "object": {
+                  "_source": "source_filter",
+                  "from": "integer",
+                  "highlight": "highlight",
+                  "size": "integer",
+                  "sort": "sort"
+                }
+              },
+              "doc": "The top documents of each bucket",
+              "snippet": "{ \"size\": ${3} }"
+            },
+            "bucket_selector": {
+              "type": {
+                "object": {
+                  "buckets_path": {
+                    "names": "string",
+                    "object": {}
+                  },
+                  "script": "script"
+                }
+              },
+              "doc": "Keep the buckets a script selects"
+            },
+            "bucket_sort": {
+              "type": {
+                "object": {
+                  "from": "integer",
+                  "size": "integer",
+                  "sort": "sort"
+                }
+              },
+              "doc": "Sort and page buckets"
+            },
+            "max_bucket": {
+              "type": {
+                "object": {
+                  "buckets_path": {
+                    "type": "string",
+                    "doc": "As \"by_month>sales\""
+                  },
+                  "format": "string",
+                  "gap_policy": {
+                    "enum": [
+                      "skip",
+                      "insert_zeros",
+                      "keep_values"
+                    ]
+                  }
+                }
+              },
+              "doc": "Bucket with the highest metric"
+            },
+            "aggregations": {
+              "type": "aggs",
+              "doc": "Aggregations in each bucket",
+              "snippet": "{ ${} }"
+            },
+            "min": {
+              "type": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long",
+                      "date",
+                      "date_nanos"
+                    ]
+                  },
+                  "format": "string",
+                  "missing": "scalar",
+                  "script": "script"
+                }
+              },
+              "doc": "Minimum",
+              "snippet": "{ \"field\": \"${}\" }"
+            },
+            "terms": {
+              "type": {
+                "object": {
+                  "exclude": "any",
+                  "execution_hint": {
+                    "enum": [
+                      "map",
+                      "global_ordinals"
+                    ]
+                  },
+                  "field": {
+                    "field": [
+                      "keyword",
+                      "constant_keyword",
+                      "wildcard",
+                      "ip",
+                      "boolean",
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long",
+                      "date",
+                      "date_nanos"
+                    ]
+                  },
+                  "include": "any",
+                  "min_doc_count": "integer",
+                  "missing": "scalar",
+                  "order": "agg_order",
+                  "script": "script",
+                  "shard_size": "integer",
+                  "show_term_doc_count_error": "boolean",
+                  "size": "integer"
+                }
+              },
+              "doc": "A bucket per value of a field",
+              "snippet": "{ \"field\": \"${}\", \"size\": 10 }"
+            },
+            "aggs": {
+              "type": "aggs",
+              "doc": "Aggregations in each bucket",
+              "snippet": "{ ${} }"
+            },
+            "rare_terms": {
+              "type": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "keyword",
+                      "constant_keyword",
+                      "wildcard",
+                      "ip",
+                      "boolean",
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long",
+                      "date",
+                      "date_nanos"
+                    ]
+                  },
+                  "max_doc_count": "integer"
+                }
+              },
+              "doc": "Rare values"
+            },
+            "meta": {
+              "type": {
+                "open": true,
+                "object": {}
+              },
+              "doc": "Data returned with the result"
+            },
+            "percentiles": {
+              "type": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long"
+                    ]
+                  },
+                  "format": "string",
+                  "keyed": "boolean",
+                  "missing": "scalar",
+                  "percents": {
+                    "array": "number"
+                  },
+                  "script": "script"
+                }
+              },
+              "doc": "Percentiles",
+              "snippet": "{ \"field\": \"${}\", \"percents\": [ 50, 95, 99 ] }"
+            },
+            "sum_bucket": {
+              "type": {
+                "object": {
+                  "buckets_path": {
+                    "type": "string",
+                    "doc": "As \"by_month>sales\""
+                  },
+                  "format": "string",
+                  "gap_policy": {
+                    "enum": [
+                      "skip",
+                      "insert_zeros",
+                      "keep_values"
+                    ]
+                  }
+                }
+              },
+              "doc": "Sum of a metric across buckets"
+            },
+            "significant_terms": {
+              "type": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "keyword",
+                      "constant_keyword",
+                      "wildcard",
+                      "ip",
+                      "boolean",
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long",
+                      "date",
+                      "date_nanos"
+                    ]
+                  },
+                  "size": "integer"
+                }
+              },
+              "doc": "Unusually common values"
+            },
+            "nested": {
+              "type": {
+                "object": {
+                  "path": {
+                    "field": [
+                      "nested"
+                    ]
+                  }
+                }
+              },
+              "doc": "Aggregate nested objects"
+            },
+            "missing": {
+              "type": {
+                "object": {
+                  "field": "field"
+                }
+              },
+              "doc": "A bucket for documents without the field"
+            },
+            "date_range": {
+              "type": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "date",
+                      "date_nanos"
+                    ]
+                  },
+                  "format": "string",
+                  "keyed": "boolean",
+                  "missing": "string",
+                  "ranges": {
+                    "array": "agg_range"
+                  },
+                  "time_zone": "time_zone"
+                }
+              },
+              "doc": "A bucket per date range"
+            },
+            "sampler": {
+              "type": {
+                "object": {
+                  "shard_size": "integer"
+                }
+              },
+              "doc": "Aggregate a sample"
+            },
+            "composite": {
+              "type": {
+                "object": {
+                  "after": {
+                    "open": true,
+                    "object": {}
+                  },
+                  "size": "integer",
+                  "sources": {
+                    "array": "composite_source"
+                  }
+                }
+              },
+              "doc": "Pages of buckets over several fields"
+            },
+            "derivative": {
+              "type": {
+                "object": {
+                  "buckets_path": {
+                    "type": "string",
+                    "doc": "As \"by_month>sales\""
+                  },
+                  "format": "string",
+                  "gap_policy": {
+                    "enum": [
+                      "skip",
+                      "insert_zeros",
+                      "keep_values"
+                    ]
+                  }
+                }
+              },
+              "doc": "Change from the previous bucket"
+            },
+            "filter": {
+              "type": "query",
+              "doc": "One bucket: the documents that match",
+              "snippet": "{ ${} }"
+            },
+            "reverse_nested": {
+              "type": {
+                "object": {
+                  "path": {
+                    "field": [
+                      "nested"
+                    ]
+                  }
+                }
+              },
+              "doc": "Back to the parent documents"
+            },
+            "cardinality": {
+              "type": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "keyword",
+                      "constant_keyword",
+                      "wildcard",
+                      "ip",
+                      "boolean",
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long",
+                      "date",
+                      "date_nanos"
+                    ]
+                  },
+                  "format": "string",
+                  "missing": "scalar",
+                  "precision_threshold": "integer",
+                  "script": "script"
+                }
+              },
+              "doc": "How many distinct values, approximately",
+              "snippet": "{ \"field\": \"${}\" }"
+            },
+            "histogram": {
+              "type": {
+                "object": {
+                  "extended_bounds": "bounds",
+                  "field": {
+                    "field": [
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long"
+                    ]
+                  },
+                  "hard_bounds": "bounds",
+                  "interval": "number",
+                  "keyed": "boolean",
+                  "min_doc_count": "integer",
+                  "missing": "number",
+                  "offset": "number",
+                  "order": "agg_order"
+                }
+              },
+              "doc": "A bucket per interval of a number",
+              "snippet": "{ \"field\": \"${}\", \"interval\": ${10} }"
+            },
+            "auto_date_histogram": {
+              "type": {
+                "object": {
+                  "buckets": "integer",
+                  "field": {
+                    "field": [
+                      "date",
+                      "date_nanos"
+                    ]
+                  },
+                  "format": "string",
+                  "minimum_interval": {
+                    "enum": [
+                      "second",
+                      "minute",
+                      "hour",
+                      "day",
+                      "month",
+                      "year"
+                    ]
+                  },
+                  "time_zone": "time_zone"
+                }
+              },
+              "doc": "Date buckets, the interval chosen for you"
+            },
+            "avg_bucket": {
+              "type": {
+                "object": {
+                  "buckets_path": {
+                    "type": "string",
+                    "doc": "As \"by_month>sales\""
+                  },
+                  "format": "string",
+                  "gap_policy": {
+                    "enum": [
+                      "skip",
+                      "insert_zeros",
+                      "keep_values"
+                    ]
+                  }
+                }
+              },
+              "doc": "Average of a metric across buckets"
+            },
+            "date_histogram": {
+              "type": {
+                "object": {
+                  "calendar_interval": "calendar_interval",
+                  "extended_bounds": "bounds",
+                  "field": {
+                    "field": [
+                      "date",
+                      "date_nanos"
+                    ]
+                  },
+                  "fixed_interval": {
+                    "type": "string",
+                    "doc": "As \"30m\" or \"12h\""
+                  },
+                  "format": "string",
+                  "hard_bounds": "bounds",
+                  "keyed": "boolean",
+                  "min_doc_count": "integer",
+                  "missing": "scalar",
+                  "offset": "string",
+                  "order": "agg_order",
+                  "time_zone": "time_zone"
+                }
+              },
+              "doc": "A bucket per interval of a date field",
+              "snippet": "{ \"field\": \"${}\", \"calendar_interval\": \"${day}\" }"
+            },
+            "max": {
+              "type": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long",
+                      "date",
+                      "date_nanos"
+                    ]
+                  },
+                  "format": "string",
+                  "missing": "scalar",
+                  "script": "script"
+                }
+              },
+              "doc": "Maximum",
+              "snippet": "{ \"field\": \"${}\" }"
+            },
+            "range": {
+              "type": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long",
+                      "date",
+                      "date_nanos"
+                    ]
+                  },
+                  "keyed": "boolean",
+                  "ranges": {
+                    "array": "agg_range"
+                  },
+                  "script": "script"
+                }
+              },
+              "doc": "A bucket per range",
+              "snippet": "{ \"field\": \"${}\", \"ranges\": [ { \"to\": ${} } ] }"
+            },
+            "value_count": {
+              "type": {
+                "object": {
+                  "field": {
+                    "field": []
+                  },
+                  "format": "string",
+                  "missing": "scalar",
+                  "script": "script"
+                }
+              },
+              "doc": "How many values",
+              "snippet": "{ \"field\": \"${}\" }"
+            },
+            "avg": {
+              "type": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long"
+                    ]
+                  },
+                  "format": "string",
+                  "missing": "scalar",
+                  "script": "script"
+                }
+              },
+              "doc": "Average",
+              "snippet": "{ \"field\": \"${}\" }"
+            },
+            "extended_stats": {
+              "type": {
+                "object": {
+                  "field": {
+                    "field": [
+                      "long",
+                      "integer",
+                      "short",
+                      "byte",
+                      "double",
+                      "float",
+                      "half_float",
+                      "scaled_float",
+                      "unsigned_long"
+                    ]
+                  },
+                  "format": "string",
+                  "missing": "scalar",
+                  "script": "script",
+                  "sigma": "number"
+                }
+              },
+              "doc": "Stats, variance and deviation"
+            }
+          }
+        },
+        "pit": {
+          "object": {
+            "id": "string",
+            "keep_alive": "string"
+          }
+        },
+        "score_function": {
+          "object": {
+            "exp": "decay",
+            "field_value_factor": "field_value_factor",
+            "filter": "query",
+            "gauss": "decay",
+            "linear": "decay",
+            "random_score": "random_score",
+            "script_score": {
+              "object": {
+                "script": "script"
+              }
+            },
+            "weight": "number"
+          }
+        },
+        "function_score": {
+          "object": {
+            "boost": "number",
+            "boost_mode": {
+              "enum": [
+                "multiply",
+                "replace",
+                "sum",
+                "avg",
+                "max",
+                "min"
+              ]
+            },
+            "field_value_factor": "field_value_factor",
+            "functions": {
+              "array": "score_function"
+            },
+            "max_boost": "number",
+            "min_score": "number",
+            "query": "query",
+            "random_score": "random_score",
+            "score_mode": {
+              "enum": [
+                "multiply",
+                "sum",
+                "avg",
+                "first",
+                "max",
+                "min"
+              ]
+            },
+            "script_score": {
+              "object": {
+                "script": "script"
+              }
+            },
+            "weight": "number"
+          }
+        },
+        "query_string": {
+          "object": {
+            "_name": "string",
+            "allow_leading_wildcard": "boolean",
+            "analyze_wildcard": "boolean",
+            "analyzer": "string",
+            "boost": "number",
+            "default_field": "field",
+            "default_operator": {
+              "enum": [
+                "OR",
+                "AND"
+              ]
+            },
+            "fields": {
+              "array": "field"
+            },
+            "fuzziness": {
+              "one_of": [
+                {
+                  "enum": [
+                    "AUTO"
+                  ]
+                },
+                "integer"
+              ]
+            },
+            "lenient": "boolean",
+            "minimum_should_match": {
+              "one_of": [
+                "integer",
+                "string"
+              ]
+            },
+            "query": {
+              "type": "string",
+              "doc": "Lucene query syntax, as status:paid AND total:>10"
+            },
+            "time_zone": "time_zone"
+          }
+        },
+        "knn": {
+          "object": {
+            "boost": "number",
+            "field": {
+              "field": [
+                "dense_vector",
+                "knn_vector"
+              ]
+            },
+            "filter": {
+              "one_of": [
+                "query",
+                {
+                  "array": "query"
+                }
+              ]
+            },
+            "k": "integer",
+            "num_candidates": "integer",
+            "query_vector": {
+              "array": "number"
+            },
+            "similarity": "number"
+          }
+        },
+        "aggs": {
+          "names": "agg",
+          "object": {}
+        },
+        "bool": {
+          "object": {
+            "_name": "string",
+            "boost": "number",
+            "filter": {
+              "type": "queries",
+              "doc": "Clauses that must match, without scoring",
+              "snippet": "[ ${} ]"
+            },
+            "minimum_should_match": {
+              "type": {
+                "one_of": [
+                  "integer",
+                  "string"
+                ]
+              },
+              "doc": "How many should clauses must match"
+            },
+            "must": {
+              "type": "queries",
+              "doc": "Clauses that must match, and score",
+              "snippet": "[ ${} ]"
+            },
+            "must_not": {
+              "type": "queries",
+              "doc": "Clauses that must not match",
+              "snippet": "[ ${} ]"
+            },
+            "should": {
+              "type": "queries",
+              "doc": "Clauses that should match",
+              "snippet": "[ ${} ]"
+            }
+          }
+        },
+        "queries": {
+          "one_of": [
+            "query",
+            {
+              "array": "query"
+            }
+          ]
+        },
+        "agg_range": {
+          "object": {
+            "from": "scalar",
+            "key": "string",
+            "to": "scalar"
+          }
+        },
+        "multi_match": {
+          "object": {
+            "_name": "string",
+            "analyzer": "string",
+            "boost": "number",
+            "fields": {
+              "type": {
+                "array": {
+                  "field": [
+                    "text",
+                    "keyword"
+                  ]
+                }
+              },
+              "doc": "The fields to search",
+              "snippet": "[ \"${}\" ]"
+            },
+            "fuzziness": {
+              "one_of": [
+                {
+                  "enum": [
+                    "AUTO",
+                    "0",
+                    "1",
+                    "2"
+                  ]
+                },
+                "integer"
+              ]
+            },
+            "lenient": "boolean",
+            "minimum_should_match": {
+              "one_of": [
+                "integer",
+                "string"
+              ]
+            },
+            "operator": {
+              "enum": [
+                "or",
+                "and"
+              ]
+            },
+            "query": {
+              "type": "scalar",
+              "doc": "The text to search for"
+            },
+            "slop": "integer",
+            "tie_breaker": "number",
+            "type": {
+              "enum": [
+                "best_fields",
+                "most_fields",
+                "cross_fields",
+                "phrase",
+                "phrase_prefix",
+                "bool_prefix"
+              ]
+            },
+            "zero_terms_query": {
+              "enum": [
+                "none",
+                "all"
+              ]
+            }
+          }
+        },
+        "regexp_value": {
+          "one_of": [
+            "string",
+            {
+              "object": {
+                "boost": "number",
+                "case_insensitive": "boolean",
+                "flags": {
+                  "enum": [
+                    "ALL",
+                    "COMPLEMENT",
+                    "EMPTY",
+                    "INTERSECTION",
+                    "INTERVAL",
+                    "NONE"
+                  ]
+                },
+                "max_determinized_states": "integer",
+                "rewrite": "string",
+                "value": "string"
+              }
+            }
+          ]
+        },
+        "source_filter": {
+          "one_of": [
+            "boolean",
+            {
+              "field": []
+            },
+            {
+              "array": "field"
+            },
+            {
+              "object": {
+                "excludes": {
+                  "array": "field"
+                },
+                "includes": {
+                  "array": "field"
+                }
+              }
+            }
+          ]
+        },
+        "calendar_interval": {
+          "enum": [
+            "minute",
+            "hour",
+            "day",
+            "week",
+            "month",
+            "quarter",
+            "year",
+            "1m",
+            "1h",
+            "1d",
+            "1w",
+            "1M",
+            "1q",
+            "1y"
+          ]
+        },
+        "terms_set_value": {
+          "object": {
+            "boost": "number",
+            "minimum_should_match_field": {
+              "field": [
+                "long",
+                "integer",
+                "short",
+                "byte",
+                "double",
+                "float",
+                "half_float",
+                "scaled_float",
+                "unsigned_long"
+              ]
+            },
+            "minimum_should_match_script": "script",
+            "terms": {
+              "array": "scalar"
+            }
+          }
+        },
+        "highlight": {
+          "object": {
+            "boundary_scanner": {
+              "enum": [
+                "chars",
+                "sentence",
+                "word"
+              ]
+            },
+            "encoder": {
+              "enum": [
+                "default",
+                "html"
+              ]
+            },
+            "fields": {
+              "type": {
+                "one_of": [
+                  {
+                    "fields": "highlight_options",
+                    "object": {}
+                  },
+                  {
+                    "array": "any"
+                  }
+                ]
+              },
+              "doc": "Fields to highlight"
+            },
+            "fragment_size": "integer",
+            "highlight_query": "query",
+            "no_match_size": "integer",
+            "number_of_fragments": "integer",
+            "order": {
+              "enum": [
+                "score",
+                "none"
+              ]
+            },
+            "post_tags": {
+              "array": "string"
+            },
+            "pre_tags": {
+              "array": "string"
+            },
+            "require_field_match": "boolean",
+            "type": {
+              "enum": [
+                "unified",
+                "plain",
+                "fvh"
+              ]
+            }
+          }
+        },
+        "match_value": {
+          "one_of": [
+            "scalar",
+            {
+              "object": {
+                "_name": "string",
+                "analyzer": "string",
+                "auto_generate_synonyms_phrase_query": "boolean",
+                "boost": "number",
+                "fuzziness": {
+                  "one_of": [
+                    {
+                      "enum": [
+                        "AUTO",
+                        "0",
+                        "1",
+                        "2"
+                      ]
+                    },
+                    "integer"
+                  ]
+                },
+                "fuzzy_transpositions": "boolean",
+                "lenient": "boolean",
+                "max_expansions": "integer",
+                "minimum_should_match": {
+                  "one_of": [
+                    "integer",
+                    "string"
+                  ]
+                },
+                "operator": {
+                  "enum": [
+                    "or",
+                    "and"
+                  ]
+                },
+                "prefix_length": "integer",
+                "query": {
+                  "type": "scalar",
+                  "doc": "The text to search for"
+                },
+                "zero_terms_query": {
+                  "enum": [
+                    "none",
+                    "all"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "agg_order": {
+          "one_of": [
+            {
+              "names": "sort_order",
+              "object": {
+                "_count": "sort_order",
+                "_key": "sort_order"
+              }
+            },
+            {
+              "array": {
+                "names": "sort_order",
+                "object": {
+                  "_count": "sort_order",
+                  "_key": "sort_order"
+                }
+              }
+            }
+          ]
+        },
+        "fuzzy_value": {
+          "one_of": [
+            "scalar",
+            {
+              "object": {
+                "boost": "number",
+                "fuzziness": {
+                  "one_of": [
+                    {
+                      "enum": [
+                        "AUTO",
+                        "0",
+                        "1",
+                        "2"
+                      ]
+                    },
+                    "integer"
+                  ]
+                },
+                "max_expansions": "integer",
+                "prefix_length": "integer",
+                "rewrite": "string",
+                "transpositions": "boolean",
+                "value": "scalar"
+              }
+            }
+          ]
+        },
+        "inner_hits": {
+          "object": {
+            "_source": "source_filter",
+            "collapse": "collapse",
+            "from": "integer",
+            "highlight": "highlight",
+            "name": "string",
+            "size": "integer",
+            "sort": "sort"
+          }
+        },
+        "script": {
+          "one_of": [
+            "string",
+            {
+              "object": {
+                "id": "string",
+                "lang": {
+                  "enum": [
+                    "painless",
+                    "expression",
+                    "mustache"
+                  ]
+                },
+                "params": {
+                  "open": true,
+                  "object": {}
+                },
+                "source": {
+                  "type": "string",
+                  "doc": "The script, in Painless"
+                }
+              }
+            }
+          ]
+        },
+        "term_value": {
+          "one_of": [
+            "scalar",
+            {
+              "object": {
+                "_name": "string",
+                "boost": "number",
+                "case_insensitive": "boolean",
+                "value": "scalar"
+              }
+            }
+          ]
+        },
+        "highlight_options": {
+          "object": {
+            "fragment_size": "integer",
+            "matched_fields": {
+              "array": "field"
+            },
+            "no_match_size": "integer",
+            "number_of_fragments": "integer",
+            "post_tags": {
+              "array": "string"
+            },
+            "pre_tags": {
+              "array": "string"
+            },
+            "type": {
+              "enum": [
+                "unified",
+                "plain",
+                "fvh"
+              ]
+            }
+          }
+        },
+        "runtime_field": {
+          "object": {
+            "format": "string",
+            "script": "script",
+            "type": {
+              "enum": [
+                "keyword",
+                "long",
+                "double",
+                "date",
+                "boolean",
+                "ip",
+                "geo_point",
+                "composite",
+                "lookup"
+              ]
+            }
+          }
+        },
+        "combined_fields": {
+          "object": {
+            "boost": "number",
+            "fields": {
+              "array": {
+                "field": [
+                  "text"
+                ]
+              }
+            },
+            "minimum_should_match": {
+              "one_of": [
+                "integer",
+                "string"
+              ]
+            },
+            "operator": {
+              "enum": [
+                "or",
+                "and"
+              ]
+            },
+            "query": "string",
+            "zero_terms_query": {
+              "enum": [
+                "none",
+                "all"
+              ]
+            }
+          }
+        },
+        "sort_order": {
+          "enum": [
+            "asc",
+            "desc"
+          ]
+        },
+        "simple_query_string": {
+          "object": {
+            "_name": "string",
+            "analyzer": "string",
+            "boost": "number",
+            "default_operator": {
+              "enum": [
+                "OR",
+                "AND"
+              ]
+            },
+            "fields": {
+              "array": "field"
+            },
+            "flags": "string",
+            "lenient": "boolean",
+            "minimum_should_match": {
+              "one_of": [
+                "integer",
+                "string"
+              ]
+            },
+            "query": "string"
+          }
+        },
+        "bounds": {
+          "object": {
+            "max": "scalar",
+            "min": "scalar"
+          }
+        },
+        "wildcard_value": {
+          "one_of": [
+            "string",
+            {
+              "object": {
+                "boost": "number",
+                "case_insensitive": "boolean",
+                "rewrite": "string",
+                "value": {
+                  "type": "string",
+                  "doc": "A pattern: * any characters, ? one"
+                },
+                "wildcard": "string"
+              }
+            }
+          ]
+        },
+        "random_score": {
+          "object": {
+            "field": "field",
+            "seed": "integer"
+          }
+        },
+        "field_value_factor": {
+          "object": {
+            "factor": "number",
+            "field": {
+              "field": [
+                "long",
+                "integer",
+                "short",
+                "byte",
+                "double",
+                "float",
+                "half_float",
+                "scaled_float",
+                "unsigned_long"
+              ]
+            },
+            "missing": "number",
+            "modifier": {
+              "enum": [
+                "none",
+                "log",
+                "log1p",
+                "log2p",
+                "ln",
+                "ln1p",
+                "ln2p",
+                "square",
+                "sqrt",
+                "reciprocal"
+              ]
+            }
+          }
+        },
+        "time_zone": {
+          "enum": [
+            "UTC",
+            "+00:00",
+            "+01:00",
+            "+02:00",
+            "-05:00",
+            "-08:00",
+            "Europe/Lisbon",
+            "America/New_York"
+          ]
+        },
+        "sort": {
+          "one_of": [
+            "sort_item",
+            {
+              "array": "sort_item"
+            }
+          ]
+        },
+        "geo_bounding_box": {
+          "fields": {
+            "object": {
+              "bottom_left": "any",
+              "bottom_right": "any",
+              "top_left": "any",
+              "top_right": "any",
+              "wkt": "string"
+            }
+          },
+          "object": {
+            "validation_method": {
+              "enum": [
+                "STRICT",
+                "IGNORE_MALFORMED",
+                "COERCE"
+              ]
+            }
+          }
+        },
+        "search": {
+          "object": {
+            "_source": {
+              "type": "source_filter",
+              "doc": "Which fields of _source to return"
+            },
+            "aggregations": {
+              "type": "aggs",
+              "doc": "Aggregations over the matching documents",
+              "snippet": "{ ${} }"
+            },
+            "aggs": {
+              "type": "aggs",
+              "doc": "Aggregations over the matching documents",
+              "snippet": "{ ${} }"
+            },
+            "collapse": {
+              "type": "collapse",
+              "doc": "One hit per value of a field"
+            },
+            "docvalue_fields": {
+              "type": {
+                "array": "field_format"
+              },
+              "doc": "Fields to return from doc values"
+            },
+            "explain": {
+              "type": "boolean",
+              "doc": "Explain how each hit's score was computed"
+            },
+            "fields": {
+              "type": {
+                "array": "field_format"
+              },
+              "doc": "Fields to return, from the mapping"
+            },
+            "from": {
+              "type": "integer",
+              "doc": "How many hits to skip"
+            },
+            "highlight": {
+              "type": "highlight",
+              "doc": "Highlight matches in these fields"
+            },
+            "indices_boost": {
+              "type": {
+                "array": {
+                  "object": {},
+                  "indices": "number"
+                }
+              },
+              "doc": "Boost by index"
+            },
+            "knn": {
+              "type": {
+                "one_of": [
+                  "knn",
+                  {
+                    "array": "knn"
+                  }
+                ]
+              },
+              "doc": "Nearest neighbours of a vector"
+            },
+            "min_score": {
+              "type": "number",
+              "doc": "Leave out hits that score lower"
+            },
+            "pit": {
+              "type": "pit",
+              "doc": "Search a point in time"
+            },
+            "post_filter": {
+              "type": "query",
+              "doc": "A filter applied after aggregations",
+              "snippet": "{ ${} }"
+            },
+            "profile": {
+              "type": "boolean",
+              "doc": "Profile the search"
+            },
+            "query": {
+              "type": "query",
+              "doc": "The query that matches documents",
+              "snippet": "{ ${} }"
+            },
+            "rescore": {
+              "type": {
+                "one_of": [
+                  "rescore",
+                  {
+                    "array": "rescore"
+                  }
+                ]
+              },
+              "doc": "Rescore the top hits"
+            },
+            "runtime_mappings": {
+              "type": {
+                "names": "runtime_field",
+                "object": {}
+              },
+              "doc": "Fields computed at search time"
+            },
+            "script_fields": {
+              "type": {
+                "names": "script_field",
+                "object": {}
+              },
+              "doc": "Fields computed by a script"
+            },
+            "search_after": {
+              "type": {
+                "array": "any"
+              },
+              "doc": "Page after these sort values"
+            },
+            "seq_no_primary_term": {
+              "type": "boolean",
+              "doc": "Return each hit's sequence number"
+            },
+            "size": {
+              "type": "integer",
+              "doc": "How many hits to return (10 by default)"
+            },
+            "sort": {
+              "type": "sort",
+              "doc": "How to sort the hits",
+              "snippet": "[ ${} ]"
+            },
+            "stats": {
+              "type": {
+                "array": "string"
+              },
+              "doc": "Stats groups"
+            },
+            "stored_fields": {
+              "type": {
+                "one_of": [
+                  "field",
+                  {
+                    "array": "field"
+                  }
+                ]
+              },
+              "doc": "Stored fields to return"
+            },
+            "suggest": {
+              "type": {
+                "open": true,
+                "names": "any",
+                "object": {}
+              },
+              "doc": "Suggest similar terms"
+            },
+            "terminate_after": {
+              "type": "integer",
+              "doc": "The most documents to collect per shard"
+            },
+            "timeout": {
+              "type": "string",
+              "doc": "How long to search, as \"2s\""
+            },
+            "track_scores": {
+              "type": "boolean",
+              "doc": "Compute scores when sorting by a field"
+            },
+            "track_total_hits": {
+              "type": {
+                "one_of": [
+                  "boolean",
+                  "integer"
+                ]
+              },
+              "doc": "Count every hit (true) or up to a number"
+            },
+            "version": {
+              "type": "boolean",
+              "doc": "Return each hit's version"
+            }
+          }
+        },
+        "prefix_value": {
+          "one_of": [
+            "string",
+            {
+              "object": {
+                "boost": "number",
+                "case_insensitive": "boolean",
+                "rewrite": "string",
+                "value": "string"
+              }
+            }
+          ]
+        },
+        "range_value": {
+          "object": {
+            "_name": "string",
+            "boost": "number",
+            "format": {
+              "type": "string",
+              "doc": "The date format of the bounds, as \"yyyy-MM-dd\""
+            },
+            "gt": {
+              "type": "scalar",
+              "doc": "Greater than"
+            },
+            "gte": {
+              "type": "scalar",
+              "doc": "Greater than or equal to"
+            },
+            "lt": {
+              "type": "scalar",
+              "doc": "Less than"
+            },
+            "lte": {
+              "type": "scalar",
+              "doc": "Less than or equal to"
+            },
+            "relation": {
+              "enum": [
+                "INTERSECTS",
+                "CONTAINS",
+                "WITHIN"
+              ]
+            },
+            "time_zone": "time_zone"
+          }
+        },
+        "decay": {
+          "fields": {
+            "object": {
+              "decay": "number",
+              "offset": "scalar",
+              "origin": "scalar",
+              "scale": "scalar"
+            }
+          },
+          "object": {
+            "multi_value_mode": {
+              "enum": [
+                "min",
+                "max",
+                "avg",
+                "sum"
+              ]
+            }
+          }
+        },
+        "geo_distance": {
+          "fields": "any",
+          "object": {
+            "_name": "string",
+            "distance": {
+              "type": "string",
+              "doc": "As \"10km\""
+            },
+            "distance_type": {
+              "enum": [
+                "arc",
+                "plane"
+              ]
+            },
+            "validation_method": {
+              "enum": [
+                "STRICT",
+                "IGNORE_MALFORMED",
+                "COERCE"
+              ]
+            }
+          }
+        },
+        "more_like_this": {
+          "object": {
+            "boost": "number",
+            "fields": {
+              "array": "field"
+            },
+            "like": "any",
+            "max_query_terms": "integer",
+            "min_doc_freq": "integer",
+            "min_term_freq": "integer",
+            "minimum_should_match": {
+              "one_of": [
+                "integer",
+                "string"
+              ]
+            },
+            "unlike": "any"
+          }
+        },
+        "sort_options": {
+          "object": {
+            "format": "string",
+            "missing": {
+              "one_of": [
+                {
+                  "enum": [
+                    "_last",
+                    "_first"
+                  ]
+                },
+                "any"
+              ]
+            },
+            "mode": {
+              "enum": [
+                "min",
+                "max",
+                "sum",
+                "avg",
+                "median"
+              ]
+            },
+            "nested": {
+              "object": {
+                "filter": "query",
+                "path": {
+                  "field": [
+                    "nested"
+                  ]
+                }
+              }
+            },
+            "numeric_type": {
+              "enum": [
+                "double",
+                "long",
+                "date",
+                "date_nanos"
+              ]
+            },
+            "order": "sort_order",
+            "unmapped_type": {
+              "enum": [
+                "long",
+                "double",
+                "keyword",
+                "date",
+                "boolean"
+              ]
+            }
+          }
+        },
+        "rescore": {
+          "object": {
+            "query": {
+              "object": {
+                "query_weight": "number",
+                "rescore_query": "query",
+                "rescore_query_weight": "number",
+                "score_mode": {
+                  "enum": [
+                    "total",
+                    "multiply",
+                    "avg",
+                    "max",
+                    "min"
+                  ]
+                }
+              }
+            },
+            "window_size": "integer"
+          }
+        }
+      }
+    },
+    "value_literals": {
+      "boost_mode": [
+        "multiply",
+        "replace",
+        "sum",
+        "avg",
+        "max",
+        "min"
+      ],
+      "calendar_interval": [
+        "minute",
+        "hour",
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year",
+        "1m",
+        "1h",
+        "1d",
+        "1w",
+        "1M",
+        "1q",
+        "1y"
+      ],
+      "fixed_interval": [
+        "ms",
+        "s",
+        "m",
+        "h",
+        "d"
+      ],
+      "operator": [
+        "and",
+        "or"
+      ],
+      "order": [
+        "asc",
+        "desc"
+      ],
+      "score_mode": [
+        "avg",
+        "max",
+        "min",
+        "sum",
+        "multiply",
+        "first"
+      ],
+      "search_type": [
+        "query_then_fetch",
+        "dfs_query_then_fetch"
+      ],
+      "time_zone": [
+        "UTC",
+        "+00:00",
+        "+01:00",
+        "+02:00",
+        "-05:00",
+        "-08:00"
+      ],
+      "type": [
+        "best_fields",
+        "most_fields",
+        "cross_fields",
+        "phrase",
+        "phrase_prefix",
+        "bool_prefix"
+      ],
+      "zero_terms_query": [
+        "none",
+        "all"
+      ]
+    }
+  }
+}

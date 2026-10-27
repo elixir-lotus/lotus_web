@@ -5,20 +5,11 @@ import {
   MatchDecorator,
 } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
-import { scan, profileFor, TYPES } from "../languages/sql/tokenizer.js";
+import { scan, tokenize, profileFor, TYPES } from "../languages/sql/tokenizer.js";
+import { jsonProfile } from "../languages/json_dsl/parser.js";
 
 const VARIABLE = TYPES.indexOf("variable");
 const STRING = TYPES.indexOf("string");
-
-// A JSON DSL's lexical rules, as the server's JSON profile has them: strings
-// in double quotes with backslash escapes, no identifiers, no comments.
-const JSON_PROFILE = {
-  stringQuotes: ['"'],
-  identifierQuotes: [],
-  lineComments: [],
-  blockComments: false,
-  backslashEscapes: true,
-};
 
 /**
  * The lexical rules to find variables with, for an editor dialect name and
@@ -27,7 +18,7 @@ const JSON_PROFILE = {
  */
 export function variableProfile(dialectName, serverProfile = null) {
   if (dialectName && dialectName.startsWith("json:")) {
-    return serverProfile ? profileFor(null, serverProfile) : JSON_PROFILE;
+    return jsonProfile(serverProfile);
   }
   return profileFor(dialectName, serverProfile);
 }
@@ -112,21 +103,19 @@ function createVariableDecorations(view, profile) {
   const decorations = [];
   const text = view.state.doc.toString();
 
-  // Add optional clause decorations
-  const optionalRegex = /\[\[(.*?)\]\]/gs;
-  let optMatch;
-
-  while ((optMatch = optionalRegex.exec(text)) !== null) {
-    const start = optMatch.index;
-    const end = start + optMatch[0].length;
-
-    // Bracket decorations for [[ and ]]
-    decorations.push(optionalBracketDecoration.range(start, start + 2));
-    decorations.push(optionalBracketDecoration.range(end - 2, end));
-
-    // Content decoration (between brackets)
-    if (start + 2 < end - 2) {
-      decorations.push(optionalClauseDecoration.range(start + 2, end - 2));
+  // Optional blocks, where Lotus reads them: not inside a string or a
+  // comment, and in a JSON array `[[1, 2]]` is an array.
+  const open = [];
+  for (const t of tokenize(text, profile)) {
+    if (t.type === "block_open") {
+      open.push(t.start);
+    } else if (t.type === "block_close" && open.length) {
+      const start = open.pop();
+      decorations.push(optionalBracketDecoration.range(start, start + 2));
+      decorations.push(optionalBracketDecoration.range(t.start, t.end));
+      if (start + 2 < t.start) {
+        decorations.push(optionalClauseDecoration.range(start + 2, t.start));
+      }
     }
   }
 

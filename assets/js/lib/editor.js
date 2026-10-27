@@ -8,9 +8,8 @@ import {
   StateField,
 } from "@codemirror/state";
 import { sql } from "@codemirror/lang-sql";
-import { json } from "@codemirror/lang-json";
 import { editorStyles, getCompletionStyles, themeHighlight } from "./styles";
-import { lotusVariablesPlugin, variableProfile } from "./plugins/lotus_variables";
+import { lotusVariablesPlugin, lotusVariableStyles, variableProfile } from "./plugins/lotus_variables";
 import {
   getDialectConfig,
   getCachedDialectConfig,
@@ -20,6 +19,7 @@ import {
 } from "./dialect_config";
 import { SqlCompletion } from "./languages/sql/completion";
 import { JsonDslCompletion } from "./languages/json_dsl/completion";
+import { jsonTemplate } from "./languages/json_dsl/language";
 import { load } from "./settings";
 
 const editorTheme = EditorView.theme(editorStyles);
@@ -50,6 +50,13 @@ const ranTheme = EditorView.baseTheme({
 });
 
 const languageCompartment = new Compartment();
+const placeholderCompartment = new Compartment();
+
+function placeholderFor(dialectName) {
+  return isJsonLanguage(dialectName)
+    ? placeholder('{ "query": { "match_all": {} } }')
+    : placeholder("SELECT * FROM table_name");
+}
 const completionThemeCompartment = new Compartment();
 
 function isDarkMode() {
@@ -89,7 +96,7 @@ export function createEditor({
   let contextCompletion = null;
 
   const initialLang = isJsonLanguage(dialectName)
-    ? json()
+    ? jsonTemplate()
     : initialSqlExt(currentSchema);
 
   const extensions = [
@@ -101,7 +108,8 @@ export function createEditor({
     editorTheme,
     themeHighlight,
     EditorView.lineWrapping,
-    placeholder("SELECT * FROM table_name"),
+    placeholderCompartment.of(placeholderFor(dialectName)),
+    lotusVariableStyles,
     ranField,
     ranTheme,
   ];
@@ -212,16 +220,18 @@ export function createEditor({
     if (!currentConfig) return;
 
     if (isJsonLanguage(currentDialect)) {
-      contextCompletion = new JsonDslCompletion(currentSchema, currentConfig);
-      const jsonLang = json();
+      contextCompletion = new JsonDslCompletion(currentSchema, currentConfig, {
+        ...completionOptions,
+        dialect: currentDialect,
+      });
 
       view.dispatch({
-        effects: languageCompartment.reconfigure([
-          jsonLang,
-          jsonLang.language.data.of({
-            autocomplete: contextCompletion.createCompletionSource(),
-          }),
-        ]),
+        effects: [
+          languageCompartment.reconfigure(
+            jsonTemplate({ completion: contextCompletion, config: currentConfig }),
+          ),
+          placeholderCompartment.reconfigure(placeholderFor(currentDialect)),
+        ],
       });
     } else {
       contextCompletion = new SqlCompletion(currentSchema, currentConfig, {
@@ -230,14 +240,17 @@ export function createEditor({
       });
 
       view.dispatch({
-        effects: languageCompartment.reconfigure(
-          buildSqlExtension(
-            currentConfig,
-            currentSchema,
-            contextCompletion,
-            currentDialect,
+        effects: [
+          languageCompartment.reconfigure(
+            buildSqlExtension(
+              currentConfig,
+              currentSchema,
+              contextCompletion,
+              currentDialect,
+            ),
           ),
-        ),
+          placeholderCompartment.reconfigure(placeholderFor(currentDialect)),
+        ],
       });
     }
   }

@@ -1,282 +1,325 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { EditorView } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
-import { json } from "@codemirror/lang-json";
-import { JsonDslCompletion } from "../../../js/lib/languages/json_dsl/completion.js";
+import {
+  JsonDslCompletion,
+  clearFieldCache,
+} from "../../../js/lib/languages/json_dsl/completion.js";
+import esConfig from "../../fixtures/elasticsearch_editor_config.json";
 
-// Minimal fake completion context. We only care about state + pos — the
-// completion source never consults the `explicit` / `matchBefore` hooks
-// in our implementation.
-function makeContext(doc, pos) {
-  const state = EditorState.create({ doc, extensions: [json()] });
-  return { state, pos, explicit: true };
+// The text with the cursor where `|` is.
+const at = (marked) => [marked.replace("|", ""), marked.indexOf("|")];
+const labels = (result) => (result ? result.options.map((o) => o.label) : []);
+
+// The indices' fields, as the server describes them (`editor_columns`).
+const FIELDS = {
+  orders: {
+    customer: "text",
+    "customer.keyword": "keyword",
+    status: "keyword",
+    total: "double",
+    created_at: "date",
+    lines: "nested",
+    "lines.sku": "keyword",
+  },
+  "logs-2026.10": { level: "keyword", "@timestamp": "date", latency_ms: "long" },
+};
+
+function fetchFields(indices) {
+  const columns = {};
+  const types = {};
+  for (const index of indices) {
+    columns[index] = Object.keys(FIELDS[index] || {});
+    types[index] = FIELDS[index] || {};
+  }
+  return Promise.resolve({ columns, types });
 }
 
-function labels(result) {
-  if (!result) return [];
-  return result.options.map((o) => o.label);
+const SCHEMA = { orders: null, "logs-2026.10": null };
+
+function completer(config = esConfig, options = {}) {
+  return new JsonDslCompletion(SCHEMA, config, { source: "search", fetchFields, ...options });
 }
 
-describe("JsonDslCompletion with context_schema", () => {
-  const schema = {
-    users: ["name", "age", "created_at"],
-    orders: ["total", "status"],
-  };
+// The completions at `|`, the fields loaded.
+async function complete(marked, config = esConfig) {
+  return await completer(config).complete(...at(marked), true);
+}
 
-  const contextSchema = {
-    root: ["query", "aggs", "sort", "size"],
-    children: {
-      query: ["match", "match_all", "term", "terms", "bool", "range"],
-      bool: ["must", "should", "must_not", "filter", "minimum_should_match"],
-      must: "array_of_query",
-      should: "array_of_query",
-      must_not: "array_of_query",
-      filter: "array_of_query",
-      match: "fields",
-      term: "fields",
-      range: "fields",
-      aggs: "named_aggregation",
-    },
-    value_literals: {
-      order: ["asc", "desc"],
-      calendar_interval: ["minute", "hour", "day", "week", "month"],
-    },
-  };
+// The text after accepting `label` at `|`, the cursor at `|`.
+async function accept(marked, label, config = esConfig) {
+  const [text, pos] = at(marked);
+  const result = await completer(config).complete(text, pos, true);
+  const option = result && result.options.find((o) => o.label === label);
+  if (!option) throw new Error(`no ${label} in ${labels(result)}`);
 
-  let completion;
-  let source;
-
-  beforeEach(() => {
-    completion = new JsonDslCompletion(schema, {
-      keywords: ["query", "aggs", "sort", "bool"],
-      context_schema: contextSchema,
+  const view = new EditorView({
+    state: EditorState.create({ doc: text, selection: { anchor: pos } }),
+    parent: document.body,
+  });
+  if (typeof option.apply === "function") {
+    option.apply(view, option, result.from, result.to);
+  } else {
+    view.dispatch({
+      changes: { from: result.from, to: result.to, insert: option.apply ?? option.label },
+      selection: { anchor: result.from + (option.apply ?? option.label).length },
     });
-    source = completion.createCompletionSource();
+  }
+  const out = view.state.doc.toString();
+  const cursor = view.state.selection.main.head;
+  view.destroy();
+  return out.slice(0, cursor) + "|" + out.slice(cursor);
+}
+
+beforeEach(() => clearFieldCache());
+
+describe("keys, at every level of the request", () => {
+  it("offers the request's keys at the top, not URL parameters", async () => {
+    const ls = labels(await complete('{ "| }'));
+    expect(ls).toEqual(expect.arrayContaining(["query", "aggs", "size", "from", "sort", "_source"]));
+    expect(ls).not.toContain("routing");
+    expect(ls).not.toContain("match");
   });
 
-  describe("key position at root", () => {
-    it("suggests context_schema.root when the doc is empty", () => {
-      const doc = '{"}';
-      //           ^ cursor just inside the open brace / quote
-      const ctx = makeContext(doc, 2);
-      const result = source(ctx);
-      expect(labels(result).sort()).toEqual(
-        ["aggs", "query", "size", "sort"].sort(),
-      );
-    });
-
-    it("suggests root keys inside a non-empty but root-level object", () => {
-      const doc = '{"size": 10, ""}';
-      //                         ^ pos after opening quote of 2nd key
-      const ctx = makeContext(doc, 14);
-      const result = source(ctx);
-      expect(labels(result)).toContain("query");
-      expect(labels(result)).toContain("aggs");
-      expect(labels(result)).not.toContain("match");
-    });
+  it("leaves out the keys the object has", async () => {
+    const ls = labels(await complete('{ "size": 10, "query": {}, "| }'));
+    expect(ls).not.toContain("size");
+    expect(ls).not.toContain("query");
+    expect(ls).toContain("aggs");
   });
 
-  describe("nested key positions", () => {
-    it('suggests query-type keys inside {"query": {↓}}', () => {
-      const doc = '{"query": {""}}';
-      //                     ^ pos right after opening quote
-      const ctx = makeContext(doc, 12);
-      const result = source(ctx);
-      const ls = labels(result);
-      expect(ls).toContain("match");
-      expect(ls).toContain("bool");
-      expect(ls).toContain("range");
-      // NOT the root keys
-      expect(ls).not.toContain("query");
-      expect(ls).not.toContain("aggs");
-    });
-
-    it('suggests bool leaves inside {"query": {"bool": {↓}}}', () => {
-      const doc = '{"query": {"bool": {""}}}';
-      //                              ^ pos right after opening quote
-      const ctx = makeContext(doc, 21);
-      const result = source(ctx);
-      const ls = labels(result);
-      expect(ls).toContain("must");
-      expect(ls).toContain("should");
-      expect(ls).toContain("filter");
-      // not query keywords
-      expect(ls).not.toContain("match");
-      expect(ls).not.toContain("query");
-    });
-
-    it('suggests field names inside {"match": {↓}} (:fields marker)', () => {
-      const doc = '{"match": {""}}';
-      const ctx = makeContext(doc, 12);
-      const result = source(ctx);
-      const ls = labels(result);
-      expect(ls).toContain("name");
-      expect(ls).toContain("age");
-      expect(ls).toContain("total");
-      // not keywords
-      expect(ls).not.toContain("match");
-      expect(ls).not.toContain("bool");
-    });
-
-    it('suggests query-type keys inside must array element: {"must": [{↓}]}', () => {
-      const doc = '{"must": [{""}]}';
-      const ctx = makeContext(doc, 12);
-      const result = source(ctx);
-      const ls = labels(result);
-      expect(ls).toContain("match");
-      expect(ls).toContain("bool");
-      expect(ls).toContain("range");
-    });
-
-    it("returns no suggestions inside :named_aggregation (free-form bucket name)", () => {
-      const doc = '{"aggs": {""}}';
-      const ctx = makeContext(doc, 11);
-      const result = source(ctx);
-      expect(result).toBeNull();
-    });
+  it("offers query clauses in a query, and a bool's clauses in a bool", async () => {
+    expect(labels(await complete('{"query": {"|"}}'))).toEqual(
+      expect.arrayContaining(["bool", "term", "range", "match", "exists", "nested"]),
+    );
+    const bool = labels(await complete('{"query": {"bool": {"|"}}}'));
+    expect(bool).toEqual(expect.arrayContaining(["must", "filter", "should", "must_not"]));
+    expect(bool).not.toContain("term");
   });
 
-  describe("value position", () => {
-    it('suggests value_literals for {"order": "↓"}', () => {
-      const doc = '{"order": ""}';
-      //                      ^ inside the value string
-      const ctx = makeContext(doc, 11);
-      const result = source(ctx);
-      expect(labels(result).sort()).toEqual(["asc", "desc"]);
-    });
-
-    it("suggests value_literals for calendar_interval", () => {
-      const doc = '{"calendar_interval": ""}';
-      const ctx = makeContext(doc, 23);
-      const result = source(ctx);
-      const ls = labels(result);
-      expect(ls).toContain("day");
-      expect(ls).toContain("month");
-    });
-
-    it("returns null for keys without value_literals", () => {
-      const doc = '{"name": ""}';
-      const ctx = makeContext(doc, 10);
-      const result = source(ctx);
-      expect(result).toBeNull();
-    });
+  it("offers clauses in an item of a bool's list", async () => {
+    const ls = labels(await complete('{"query": {"bool": {"filter": [{"|"}]}}}'));
+    expect(ls).toEqual(expect.arrayContaining(["term", "range", "bool"]));
   });
 
-  describe("fallback when context_schema is absent", () => {
-    it("suggests flat keywords + fields at every key position", () => {
-      const flat = new JsonDslCompletion(schema, {
-        keywords: ["query", "aggs", "match"],
-        // no context_schema
-      });
-      const src = flat.createCompletionSource();
-      const doc = '{""}';
-      const ctx = makeContext(doc, 2);
-      const result = src(ctx);
-      const ls = labels(result);
-      expect(ls).toContain("query");
-      expect(ls).toContain("match");
-      expect(ls).toContain("name"); // field from schema
-    });
+  it("offers nothing more in a query clause that has its query", async () => {
+    expect(await complete('{"query": {"term": {"a": 1}, "|"}}')).toBeNull();
   });
 
-  describe("range operator grandparent lookup", () => {
-    it('suggests gte/lt/etc. inside {"range": {"created_at": {↓}}}', () => {
-      const doc = '{"range": {"created_at": {""}}}';
-      //           0         1         2         3
-      //           0123456789012345678901234567890
-      //                                     ^ pos 26 (inside last "")
-      const ctx = makeContext(doc, 26);
-      const result = source(ctx);
-      const ls = labels(result);
-      expect(ls).toContain("gte");
-      expect(ls).toContain("lte");
-      expect(ls).toContain("gt");
-      expect(ls).toContain("lt");
-      expect(ls).toContain("format");
-    });
+  it("offers fields, with their types, where a clause is keyed by field", async () => {
+    const result = await complete('{"query": {"term": {"|"}}}');
+    expect(labels(result)).toEqual(expect.arrayContaining(["status", "customer.keyword", "level"]));
+    const status = result.options.find((o) => o.label === "status");
+    expect(status.detail).toBe("keyword · orders");
   });
 
-  describe("partial string value bounds", () => {
-    it('replacement range for {"order": "ma↓"} drops the opening quote only', () => {
-      const doc = '{"order": "ma"}';
-      //           0         1
-      //           0123456789012345
-      //                       ^ pos 12 (cursor after "ma")
-      const ctx = makeContext(doc, 12);
-      const result = source(ctx);
-      expect(result).not.toBeNull();
-      // wordFrom must be _after_ the opening `"` (position 11), not on it
-      expect(result.from).toBe(11);
-      // wordTo must stop at the closing `"` (position 13)
-      expect(result.to).toBe(13);
-    });
+  it("offers a range's operators inside a field of a range", async () => {
+    const ls = labels(await complete('{"query": {"range": {"total": {"|"}}}}'));
+    expect(ls).toEqual(expect.arrayContaining(["gte", "gt", "lte", "lt", "format"]));
   });
 
-  describe("apply: auto-quoting on insertion", () => {
-    function applies(result) {
-      return result.options.map((o) => o.apply);
-    }
-
-    it('wraps key completions in "…": at bare-cursor positions', () => {
-      const doc = "{}";
-      const ctx = makeContext(doc, 1);
-      const result = source(ctx);
-      expect(result).not.toBeNull();
-      // All suggestions at root should be `"<name>": `
-      for (const apply of applies(result)) {
-        expect(apply).toMatch(/^".+":\s$/);
-      }
-    });
-
-    it('wraps value completions in "…"', () => {
-      const doc = '{"order": }';
-      //                   ^ pos 10 (between the space and `}`)
-      const ctx = makeContext(doc, 10);
-      const result = source(ctx);
-      expect(result).not.toBeNull();
-      for (const apply of applies(result)) {
-        expect(apply).toMatch(/^".+"$/);
-      }
-    });
-
-    it("inserts bare label when cursor is already inside a partial string", () => {
-      const doc = '{"qu"}';
-      //              ^ pos 4 (inside "qu")
-      const ctx = makeContext(doc, 4);
-      const result = source(ctx);
-      const queryOpt = result.options.find((o) => o.label === "query");
-      expect(queryOpt).toBeDefined();
-      expect(queryOpt.apply).toBe("query");
-    });
-
-    it("skips trailing `: ` when a colon already follows the cursor", () => {
-      const doc = '{: "x"}';
-      //           ^ pos 1
-      const ctx = makeContext(doc, 1);
-      const result = source(ctx);
-      expect(result).not.toBeNull();
-      for (const apply of applies(result)) {
-        // Should be `"name"` — no trailing `: ` because a `:` already follows.
-        expect(apply).toMatch(/^"[^"]+"$/);
-      }
-    });
+  it("tells an aggregation's name from its type, and nests aggregations", async () => {
+    expect(labels(await complete('{"aggs": {"by_status": {"|"}}}'))).toEqual(
+      expect.arrayContaining(["terms", "date_histogram", "avg", "aggs"]),
+    );
+    expect(
+      labels(await complete('{"aggs": {"a": {"terms": {"field": "status"}, "aggs": {"b": {"|"}}}}}')),
+    ).toContain("avg");
+    expect(labels(await complete('{"aggs": {"by_status": {"terms": {"|"}}}}'))).toEqual(
+      expect.arrayContaining(["field", "size", "order", "min_doc_count"]),
+    );
   });
 
-  describe("malformed / mid-typing JSON tolerance", () => {
-    it("still suggests root keys when the JSON is not yet closed", () => {
-      const doc = '{"';
-      const ctx = makeContext(doc, 2);
-      const result = source(ctx);
-      // Should not throw; should return something useful
-      expect(result).not.toBeNull();
-      expect(labels(result)).toContain("query");
-    });
+  it("reads `terms` in a query and in an aggregation apart", async () => {
+    // In a query, terms is keyed by field; in an aggregation it takes one.
+    expect(labels(await complete('{"query": {"terms": {"|"}}}'))).toContain("status");
+    expect(labels(await complete('{"aggs": {"x": {"terms": {"|"}}}}'))).toContain("field");
+  });
 
-    it("handles partial key prefix correctly", () => {
-      const doc = '{"que"}';
-      //              ^ cursor at position 5 — after "que
-      const ctx = makeContext(doc, 5);
-      const result = source(ctx);
-      expect(labels(result)).toContain("query");
+  it("offers sort fields and their options", async () => {
+    expect(labels(await complete('{"sort": [{"|"}]}'))).toEqual(
+      expect.arrayContaining(["created_at", "_score"]),
+    );
+    expect(labels(await complete('{"sort": [{"total": {"|"}}]}'))).toEqual(
+      expect.arrayContaining(["order", "mode", "missing"]),
+    );
+  });
+
+  it("offers index names where an object is keyed by index", async () => {
+    expect(labels(await complete('{"indices_boost": [{"|"}]}'))).toEqual(["orders", "logs-2026.10"]);
+  });
+});
+
+describe("values", () => {
+  it("offers a parameter's values", async () => {
+    expect(labels(await complete('{"sort": [{"total": {"order": "|"}}]}'))).toEqual(["asc", "desc"]);
+    expect(
+      labels(await complete('{"aggs": {"x": {"date_histogram": {"calendar_interval": "|"}}}}')),
+    ).toContain("month");
+    expect(labels(await complete('{"query": {"match": {"customer": {"operator": "|"}}}}'))).toEqual([
+      "or",
+      "and",
+    ]);
+  });
+
+  it("offers true and false for a boolean", async () => {
+    expect(labels(await complete('{"track_total_hits": |}'))).toEqual(
+      expect.arrayContaining(["true", "false"]),
+    );
+    expect(labels(await complete('{"explain": t|}'))).toContain("true");
+  });
+
+  it("offers the fields of the types a parameter takes", async () => {
+    const date = labels(await complete('{"aggs": {"x": {"date_histogram": {"field": "|"}}}}'));
+    expect(date.sort()).toEqual(["@timestamp", "created_at"]);
+    const avg = labels(await complete('{"aggs": {"x": {"avg": {"field": "|"}}}}'));
+    expect(avg.sort()).toEqual(["latency_ms", "total"]);
+    expect(labels(await complete('{"query": {"exists": {"field": "|"}}}'))).toContain("customer");
+    expect(labels(await complete('{"query": {"nested": {"path": "|"}}}'))).toEqual(["lines"]);
+  });
+
+  it("offers fields in _source and multi_match lists", async () => {
+    expect(labels(await complete('{"_source": ["|"]}'))).toContain("status");
+    expect(labels(await complete('{"query": {"multi_match": {"fields": ["|"]}}}'))).toContain("customer");
+  });
+
+  it("offers index names for _index", async () => {
+    expect(labels(await complete('{"query": {"term": {"_index": "|"}}}'))).toEqual([
+      "orders",
+      "logs-2026.10",
+    ]);
+  });
+
+  it("offers each clause, as an object, where a query goes", async () => {
+    const ls = labels(await complete('{"query": {"bool": {"must": |}}}'));
+    expect(ls).toEqual(expect.arrayContaining(["term", "range", "bool", "[ ]"]));
+    expect(labels(await complete('{"query": {"bool": {"filter": [|]}}}'))).toContain("term");
+  });
+
+  it("offers the template's variables as values", async () => {
+    expect(labels(await complete('{"size": {{limit}}, "from": |}'))).toContain("{{limit}}");
+  });
+});
+
+describe("a template that is not JSON yet", () => {
+  it("reads through a bare {{variable}} in value position", async () => {
+    expect(labels(await complete('{"size": {{n}}, "query": {"term": {"|"}}}'))).toContain("status");
+  });
+
+  it("reads through strings that hold braces and quotes", async () => {
+    const ls = labels(await complete('{"query": {"match": {"customer": "a{b\\"}"}}, "|}'));
+    expect(ls).toContain("aggs");
+    expect(ls).not.toContain("query");
+  });
+
+  it("reads through [[ ]] blocks", async () => {
+    expect(
+      labels(await complete('{"query": {"bool": {"filter": [] [[, "must": {"term": {"|"}}}]]}}}')),
+    ).toContain("status");
+  });
+
+  it("completes after a trailing comma, with nothing typed", async () => {
+    const ls = labels(await complete('{"query": {"match": {"customer": "a{b"}}, |}'));
+    expect(ls).toContain("aggs");
+    expect(ls).not.toContain("query");
+  });
+
+  it("completes a bare word being typed as a key", async () => {
+    expect(labels(await complete('{"query": {"bo|}}'))).toContain("bool");
+  });
+
+  it("completes in a request missing its closing braces", async () => {
+    expect(labels(await complete('{"query": {"bool": {"must": [{"|'))).toContain("term");
+  });
+
+  it("offers requests to start from in an empty editor", async () => {
+    expect(labels(await complete("|"))).toEqual(["match_all", "bool query", "terms aggregation"]);
+  });
+});
+
+describe("variables", () => {
+  it("offers the template's variables after {{, in code and in strings", async () => {
+    const result = await complete('{"size": {{limit}}, "query": {"term": {"status": "{{|"}}}');
+    expect(labels(result)).toEqual(["{{limit}}"]);
+  });
+
+  it("offers the name being typed as a new variable", async () => {
+    expect(labels(await complete('{"size": {{lim|}'))).toEqual(["{{lim}}"]);
+  });
+});
+
+describe("what accepting a completion inserts", () => {
+  it("a key with its value's opening, the cursor inside", async () => {
+    expect(await accept('{"query": {"bool": {"|"}}}', "must")).toBe(
+      '{"query": {"bool": {"must": [ | ]}}}',
+    );
+    expect(await accept('{"query": {|}}', "bool")).toBe('{"query": {"bool": { "must": [ | ] }}}');
+    expect(await accept('{"|"}', "size")).toBe('{"size": |}');
+    expect(await accept('{"aggs": {"x": {"terms": {"|"}}}}', "field")).toBe(
+      '{"aggs": {"x": {"terms": {"field": "|"}}}}',
+    );
+  });
+
+  it("a clause keyed by field, the field to type first", async () => {
+    expect(await accept('{"query": {"bo|}}', "bool")).toBe('{"query": {"bool": { "must": [ | ] }}}');
+    const term = await accept('{"query": {"|"}}', "term");
+    expect(term.replace("|", "")).toBe('{"query": {"term": { "field": "value" }}}');
+  });
+
+  it("a key typed further after the list opened, the typing replaced", async () => {
+    const [text, pos] = at('{"aggs": {"x": {"|"}}}');
+    const result = await completer().complete(text, pos, true);
+    const option = result.options.find((o) => o.label === "date_histogram");
+    // "date_h" typed since: CodeMirror hands the word as it is now.
+    const typed = text.slice(0, pos) + "date_h" + text.slice(pos);
+    const view = new EditorView({
+      state: EditorState.create({ doc: typed, selection: { anchor: pos + 6 } }),
+      parent: document.body,
     });
+    option.apply(view, option, result.from, pos + 6);
+    expect(view.state.doc.toString()).toBe(
+      '{"aggs": {"x": {"date_histogram": { "field": "", "calendar_interval": "day" }}}}',
+    );
+    view.destroy();
+  });
+
+  it("a key alone when its colon is there", async () => {
+    expect(await accept('{"qu|": {}}', "query")).toBe('{"query|": {}}');
+  });
+
+  it("a value in its quotes, or quoted", async () => {
+    expect(await accept('{"sort": [{"total": {"order": "d|"}}]}', "desc")).toBe(
+      '{"sort": [{"total": {"order": "desc|"}}]}',
+    );
+    expect(await accept('{"aggs": {"x": {"terms": {"field": |}}}}', "status")).toBe(
+      '{"aggs": {"x": {"terms": {"field": "status"|}}}}',
+    );
+  });
+
+  it("a clause as an object where a query goes", async () => {
+    expect(await accept('{"query": {"bool": {"filter": [|]}}}', "exists")).toBe(
+      '{"query": {"bool": {"filter": [{ "exists": { "field": "|" } }]}}}',
+    );
+  });
+});
+
+describe("the flat schema, for an adapter that sends no grammar", () => {
+  const { grammar: _grammar, ...flat } = esConfig.context_schema;
+  const legacy = { ...esConfig, context_schema: flat };
+
+  it("reads a key's children wherever the key is", async () => {
+    expect(labels(await complete('{"query": {"bool": {"|"}}}', legacy))).toContain("must");
+    expect(labels(await complete('{"query": {"bool": {"must": [{"|"}]}}}', legacy))).toContain("term");
+    expect(labels(await complete('{"query": {"match": {"|"}}}', legacy))).toContain("status");
+    expect(labels(await complete('{"sort": [{"x": {"order": "|"}}]}', legacy))).toEqual([
+      "asc",
+      "desc",
+    ]);
+  });
+
+  it("offers every keyword and field without a schema", async () => {
+    const { context_schema: _schema, ...none } = esConfig;
+    const ls = labels(await complete('{"|"}', none));
+    expect(ls).toEqual(expect.arrayContaining(["query", "bool", "status"]));
   });
 });
