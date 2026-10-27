@@ -531,6 +531,14 @@
   swap a few times, the cursor jumping to the start. The editor now drops
   its own texts coming back.
 
+- **An optional block inside a JSON array, as Lotus reads it.** With
+  elixir-lotus/lotus#393, Lotus reads `[[` right after an item of a JSON
+  array as a block (`[{…} [[, {…}]]]`); the editor does too, highlights it,
+  and checks the request with it kept and dropped. A block without
+  variables is always kept, as Lotus keeps it. At the start of an array's
+  items `[[` stays two brackets, and the editor says so when the request
+  does not parse.
+
 - **A cleared editor stays empty.** Clearing a saved query's editor put
   its saved statement back a moment later: an empty text read as no change,
   so the query kept the saved statement, and the next update of the page

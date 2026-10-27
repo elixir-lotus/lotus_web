@@ -37,6 +37,7 @@ const ANSI = {
   dashCommentNeedsSpace: false,
   executableComments: false,
   lineCommentEndsAtCr: false,
+  jsonBlocks: false,
 };
 
 const POSTGRES = {
@@ -68,6 +69,7 @@ export const JSON_PROFILE = {
   lineComments: [],
   blockComments: false,
   backslashEscapes: true,
+  jsonBlocks: true,
 };
 
 const PROFILES = {
@@ -95,6 +97,7 @@ const SERVER_KEYS = {
   "dash_comment_needs_space?": "dashCommentNeedsSpace",
   "executable_comments?": "executableComments",
   "line_comment_ends_at_cr?": "lineCommentEndsAtCr",
+  "json_blocks?": "jsonBlocks",
 };
 
 /**
@@ -329,9 +332,8 @@ function scanOnce(text, p, disabled) {
     } else if (
       c === LBRACKET &&
       next === LBRACKET &&
-      singles[singles.length - 1] === 0 &&
-      !isIdentChar(prev) &&
-      !afterArray(text, i)
+      ((singles[singles.length - 1] === 0 && !isIdentChar(prev) && !afterArray(text, i)) ||
+        (p.jsonBlocks && afterJsonValue(text, i)))
     ) {
       push(T_BLOCK_OPEN, i);
       blocks.push(i);
@@ -454,6 +456,18 @@ function afterArray(text, i) {
   if (j < 4) return false;
   if (text.slice(j - 4, j + 1).toUpperCase() !== "ARRAY") return false;
   return j - 5 < 0 || !isIdentChar(text.charCodeAt(j - 5));
+}
+
+// JSON: whether the code before the [[ at `i`, whitespace aside, ends a
+// value (}, ], ", a digit or a letter). No [ follows a value in JSON, so
+// that [[ opens a block even inside an array, as Lotus reads it.
+function afterJsonValue(text, i) {
+  let j = i - 1;
+  // ASCII whitespace only, as Lotus skips it.
+  while (j >= 0 && (text.charCodeAt(j) === SPACE || (text.charCodeAt(j) >= TAB && text.charCodeAt(j) <= 13))) j--;
+  if (j < 0) return false;
+  const c = text.charCodeAt(j);
+  return c === RBRACE || c === RBRACKET || c === DQUOTE || isDigit(c) || isLetter(c);
 }
 
 // The end of a line comment: its newline, or a lone \r where the profile

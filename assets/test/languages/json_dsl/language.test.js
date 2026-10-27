@@ -83,9 +83,15 @@ describe("error markers", () => {
     ]);
   });
 
-  it("explains a block inside an array", () => {
-    const m = messages('{"filter": [{"match_all": {}} [[, {"term": {"a": "{{a}}"}}]]]}');
-    expect(m[0]).toMatch(/optional block only outside an array/);
+  it("takes a block after an item of an array, as Lotus does", () => {
+    expect(messages('{"filter": [{"match_all": {}} [[, {"term": {"a": "{{a}}"}}]]]}')).toEqual([]);
+  });
+
+  it("explains a block at the start of an array's items, which Lotus reads as brackets", () => {
+    const m = messages('{"filter": [ [[ {"term": {"a": "{{a}}"}}, ]] {"match_all": {}}]}');
+    expect(m.some((x) => /warning: In an array, Lotus reads \[\[ as an optional block only after an item/.test(x))).toBe(true);
+    // A nested array that parses gets no such word.
+    expect(messages('{"c": [[1, 2], [3, 4]]}')).toEqual([]);
   });
 
   it("warns about a duplicate key, an unknown key and a second query clause", () => {

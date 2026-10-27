@@ -43,26 +43,67 @@ export function significantTokens(text, profile = JSON_PROFILE) {
 }
 
 /**
- * The tokens the request has when every block is kept (`mode: "kept"`) or
- * dropped (`mode: "dropped"`): the block markers go, and with "dropped",
- * what is between them.
+ * The tokens the request has when every variable is given (`mode:
+ * "kept"`: each block kept) or none is (`mode: "dropped"`): the block
+ * markers go, and with "dropped", each block with a variable of its own
+ * (not only in a block inside it), as `Lotus.Query.OptionalClause` drops
+ * it. A block without variables is always kept. `text` finds the
+ * variables in strings.
  */
-export function tokensFor(tokens, mode) {
+export function tokensFor(tokens, mode, text = "") {
   const out = [];
-  let depth = 0;
-  for (const token of tokens) {
-    if (token.type === "block_open") {
-      depth += 1;
-      continue;
+  let i = 0;
+
+  const walk = (until) => {
+    while (i < tokens.length) {
+      const token = tokens[i];
+      if (token.type === "block_close") {
+        i += 1;
+        if (until) return;
+        continue;
+      }
+      if (token.type === "block_open") {
+        const close = matchingClose(tokens, i);
+        if (mode === "dropped" && hasOwnVariable(tokens, i + 1, close, text)) {
+          i = close + 1;
+        } else {
+          i += 1;
+          walk(true);
+        }
+        continue;
+      }
+      out.push(token);
+      i += 1;
     }
-    if (token.type === "block_close") {
-      depth = Math.max(0, depth - 1);
-      continue;
-    }
-    if (mode === "dropped" && depth > 0) continue;
-    out.push(token);
-  }
+  };
+
+  walk(false);
   return out;
+}
+
+// The index of the block_close of the block_open at `open`.
+function matchingClose(tokens, open) {
+  let depth = 0;
+  for (let k = open; k < tokens.length; k++) {
+    if (tokens[k].type === "block_open") depth += 1;
+    else if (tokens[k].type === "block_close" && --depth === 0) return k;
+  }
+  return tokens.length;
+}
+
+// Whether tokens [from, to), blocks inside them aside, hold a variable.
+function hasOwnVariable(tokens, from, to, text) {
+  let depth = 0;
+  for (let k = from; k < to; k++) {
+    const t = tokens[k];
+    if (t.type === "block_open") depth += 1;
+    else if (t.type === "block_close") depth -= 1;
+    else if (depth === 0 && t.type === "variable") return true;
+    else if (depth === 0 && t.type === "string" && stringPlaceholders(text.slice(t.start, t.end)).length) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -74,16 +115,29 @@ export function parseTemplate(text, profile = JSON_PROFILE) {
   const tokens = significantTokens(text, profile);
   const hasBlocks = tokens.some((t) => t.type === "block_open");
 
-  const kept = parseTokens(text, tokensFor(tokens, "kept"));
+  const kept = parseTokens(text, tokensFor(tokens, "kept", text));
   const errors = [...kept.errors];
   const warnings = [...kept.warnings];
 
   if (hasBlocks) {
-    const dropped = parseTokens(text, tokensFor(tokens, "dropped"));
+    const dropped = parseTokens(text, tokensFor(tokens, "dropped", text));
     const seen = new Set(errors.map(errorKey));
     for (const error of dropped.errors) {
       if (seen.has(errorKey(error))) continue;
       errors.push({ ...error, message: `${error.message} (with the optional blocks left out)` });
+    }
+  }
+
+  // A request that does not parse, with a `[[` at the start of an array's
+  // items: say how Lotus reads it there.
+  if (errors.length) {
+    for (const at of kept.ambiguous) {
+      warnings.push({
+        from: at,
+        to: at + 2,
+        message:
+          "In an array, Lotus reads [[ as an optional block only after an item, as {…} [[, {…}]]; here it is two brackets",
+      });
     }
   }
 
@@ -119,7 +173,7 @@ export function parseTokens(text, tokens) {
   if (root && root.kind !== "object" && root.kind !== "invalid") {
     p.error(root.from, root.to, "The request must be a JSON object, in { }");
   }
-  return { root, errors: p.errors, warnings: p.warnings };
+  return { root, errors: p.errors, warnings: p.warnings, ambiguous: p.ambiguous };
 }
 
 class Parser {
@@ -129,6 +183,9 @@ class Parser {
     this.i = 0;
     this.errors = [];
     this.warnings = [];
+    // `[[` at the start of an array's items: an array in an array, or a
+    // block Lotus reads as brackets there.
+    this.ambiguous = [];
   }
 
   peek() {
@@ -400,6 +457,9 @@ class Parser {
         continue;
       }
 
+      const next = this.tokens[this.i + 1];
+      if (this.is(t, "[") && this.is(next, "[") && next.start === t.end) this.ambiguous.push(t.start);
+
       const item = this.value();
       if (item) node.items.push(item);
 
@@ -417,7 +477,7 @@ class Parser {
           this.error(
             after.start,
             after.end + 1,
-            "Lotus reads [[ ]] as an optional block only outside an array: make the clause an object member, as [[, \"must\": {…}]]",
+            "In an array, Lotus reads [[ as an optional block only after an item, as {…} [[, {…}]]",
           );
         } else {
           this.error(after.start, after.end, this.notSeparator(after, "Expected ',' or ']' after the item"));
@@ -509,7 +569,7 @@ export function stringPlaceholders(raw) {
 export function contextAt(text, pos, profile = JSON_PROFILE) {
   const all = significantTokens(text, profile);
   const token = all.find((t) => t.start < pos && pos <= t.end) || null;
-  const kept = parseTokens(text, tokensFor(all, "kept"));
+  const kept = parseTokens(text, tokensFor(all, "kept", text));
   const root = kept.root;
 
   const inString = !!token && token.type === "string" && !closedBefore(text, token, pos);

@@ -379,6 +379,208 @@
         ],
         [
           "identifier",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": [{"
+        ],
+        [
+          "identifier",
+          "\"a\""
+        ],
+        [
+          "code",
+          ": 1} [[, {"
+        ],
+        [
+          "identifier",
+          "\"b\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "variable",
+          "{{b}}"
+        ],
+        [
+          "code",
+          "}]] [[, {"
+        ],
+        [
+          "identifier",
+          "\"c\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "identifier",
+          "\"{{c}}\""
+        ],
+        [
+          "code",
+          "}]]]}"
+        ]
+      ],
+      "text": "{\"f\": [{\"a\": 1} [[, {\"b\": {{b}}}]] [[, {\"c\": \"{{c}}\"}]]]}"
+    },
+    {
+      "dialect": "postgres",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": ["
+        ],
+        [
+          "identifier",
+          "\"x\""
+        ],
+        [
+          "code",
+          " [[, "
+        ],
+        [
+          "identifier",
+          "\"{{y}}\""
+        ],
+        [
+          "code",
+          "]], 1 [[, "
+        ],
+        [
+          "variable",
+          "{{z}}"
+        ],
+        [
+          "code",
+          "]], true [[, null]]]}"
+        ]
+      ],
+      "text": "{\"f\": [\"x\" [[, \"{{y}}\"]], 1 [[, {{z}}]], true [[, null]]]}"
+    },
+    {
+      "dialect": "postgres",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": [ [[ {"
+        ],
+        [
+          "identifier",
+          "\"x\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "variable",
+          "{{x}}"
+        ],
+        [
+          "code",
+          "}, ]] {"
+        ],
+        [
+          "identifier",
+          "\"y\""
+        ],
+        [
+          "code",
+          ": 1}]}"
+        ]
+      ],
+      "text": "{\"f\": [ [[ {\"x\": {{x}}}, ]] {\"y\": 1}]}"
+    },
+    {
+      "dialect": "postgres",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
+          "\"g\""
+        ],
+        [
+          "code",
+          ": [[1, 2], "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          "3, 4"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          "], "
+        ],
+        [
+          "identifier",
+          "\"h\""
+        ],
+        [
+          "code",
+          ": [0, [[5]]]}"
+        ]
+      ],
+      "text": "{\"g\": [[1, 2], [[3, 4]]], \"h\": [0, [[5]]]}"
+    },
+    {
+      "dialect": "postgres",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": [1 [[, 2]]]}"
+        ]
+      ],
+      "text": "{\"f\": [1 [[, 2]]]}"
+    },
+    {
+      "dialect": "postgres",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
           "\"c\""
         ],
         [
@@ -7288,6 +7490,208 @@
         ]
       ],
       "text": "{\"query\": {\"bool\": {\"filter\": [{\"match_all\": {}} [[, {\"term\": {\"a\": \"{{a}}\"}}]]]}}}"
+    },
+    {
+      "dialect": "mysql",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "string",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": [{"
+        ],
+        [
+          "string",
+          "\"a\""
+        ],
+        [
+          "code",
+          ": 1} [[, {"
+        ],
+        [
+          "string",
+          "\"b\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "variable",
+          "{{b}}"
+        ],
+        [
+          "code",
+          "}]] [[, {"
+        ],
+        [
+          "string",
+          "\"c\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "string",
+          "\"{{c}}\""
+        ],
+        [
+          "code",
+          "}]]]}"
+        ]
+      ],
+      "text": "{\"f\": [{\"a\": 1} [[, {\"b\": {{b}}}]] [[, {\"c\": \"{{c}}\"}]]]}"
+    },
+    {
+      "dialect": "mysql",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "string",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": ["
+        ],
+        [
+          "string",
+          "\"x\""
+        ],
+        [
+          "code",
+          " [[, "
+        ],
+        [
+          "string",
+          "\"{{y}}\""
+        ],
+        [
+          "code",
+          "]], 1 [[, "
+        ],
+        [
+          "variable",
+          "{{z}}"
+        ],
+        [
+          "code",
+          "]], true [[, null]]]}"
+        ]
+      ],
+      "text": "{\"f\": [\"x\" [[, \"{{y}}\"]], 1 [[, {{z}}]], true [[, null]]]}"
+    },
+    {
+      "dialect": "mysql",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "string",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": [ [[ {"
+        ],
+        [
+          "string",
+          "\"x\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "variable",
+          "{{x}}"
+        ],
+        [
+          "code",
+          "}, ]] {"
+        ],
+        [
+          "string",
+          "\"y\""
+        ],
+        [
+          "code",
+          ": 1}]}"
+        ]
+      ],
+      "text": "{\"f\": [ [[ {\"x\": {{x}}}, ]] {\"y\": 1}]}"
+    },
+    {
+      "dialect": "mysql",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "string",
+          "\"g\""
+        ],
+        [
+          "code",
+          ": [[1, 2], "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          "3, 4"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          "], "
+        ],
+        [
+          "string",
+          "\"h\""
+        ],
+        [
+          "code",
+          ": [0, [[5]]]}"
+        ]
+      ],
+      "text": "{\"g\": [[1, 2], [[3, 4]]], \"h\": [0, [[5]]]}"
+    },
+    {
+      "dialect": "mysql",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "string",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": [1 [[, 2]]]}"
+        ]
+      ],
+      "text": "{\"f\": [1 [[, 2]]]}"
     },
     {
       "dialect": "mysql",
@@ -14223,6 +14627,248 @@
         ]
       ],
       "text": "{\"query\": {\"bool\": {\"filter\": [{\"match_all\": {}} [[, {\"term\": {\"a\": \"{{a}}\"}}]]]}}}"
+    },
+    {
+      "dialect": "sqlite",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "identifier",
+          "[{\"a\": 1} [[, {\"b\": {{b}}}]"
+        ],
+        [
+          "code",
+          "] "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          ", {"
+        ],
+        [
+          "identifier",
+          "\"c\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "identifier",
+          "\"{{c}}\""
+        ],
+        [
+          "code",
+          "}"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          "]}"
+        ]
+      ],
+      "text": "{\"f\": [{\"a\": 1} [[, {\"b\": {{b}}}]] [[, {\"c\": \"{{c}}\"}]]]}"
+    },
+    {
+      "dialect": "sqlite",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "identifier",
+          "[\"x\" [[, \"{{y}}\"]"
+        ],
+        [
+          "code",
+          "], 1 "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          ", "
+        ],
+        [
+          "variable",
+          "{{z}}"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          ", true "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          ", null"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          "]}"
+        ]
+      ],
+      "text": "{\"f\": [\"x\" [[, \"{{y}}\"]], 1 [[, {{z}}]], true [[, null]]]}"
+    },
+    {
+      "dialect": "sqlite",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "identifier",
+          "[ [[ {\"x\": {{x}}}, ]"
+        ],
+        [
+          "code",
+          "] {"
+        ],
+        [
+          "identifier",
+          "\"y\""
+        ],
+        [
+          "code",
+          ": 1}]}"
+        ]
+      ],
+      "text": "{\"f\": [ [[ {\"x\": {{x}}}, ]] {\"y\": 1}]}"
+    },
+    {
+      "dialect": "sqlite",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
+          "\"g\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          "1, 2], "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          "3, 4"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          "], "
+        ],
+        [
+          "identifier",
+          "\"h\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "identifier",
+          "[0, [[5]"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          "}"
+        ]
+      ],
+      "text": "{\"g\": [[1, 2], [[3, 4]]], \"h\": [0, [[5]]]}"
+    },
+    {
+      "dialect": "sqlite",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "identifier",
+          "[1 [[, 2]"
+        ],
+        [
+          "code",
+          "]]}"
+        ]
+      ],
+      "text": "{\"f\": [1 [[, 2]]]}"
     },
     {
       "dialect": "sqlite",
@@ -21392,6 +22038,208 @@
         ],
         [
           "identifier",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": [{"
+        ],
+        [
+          "identifier",
+          "\"a\""
+        ],
+        [
+          "code",
+          ": 1} [[, {"
+        ],
+        [
+          "identifier",
+          "\"b\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "variable",
+          "{{b}}"
+        ],
+        [
+          "code",
+          "}]] [[, {"
+        ],
+        [
+          "identifier",
+          "\"c\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "identifier",
+          "\"{{c}}\""
+        ],
+        [
+          "code",
+          "}]]]}"
+        ]
+      ],
+      "text": "{\"f\": [{\"a\": 1} [[, {\"b\": {{b}}}]] [[, {\"c\": \"{{c}}\"}]]]}"
+    },
+    {
+      "dialect": "ansi",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": ["
+        ],
+        [
+          "identifier",
+          "\"x\""
+        ],
+        [
+          "code",
+          " [[, "
+        ],
+        [
+          "identifier",
+          "\"{{y}}\""
+        ],
+        [
+          "code",
+          "]], 1 [[, "
+        ],
+        [
+          "variable",
+          "{{z}}"
+        ],
+        [
+          "code",
+          "]], true [[, null]]]}"
+        ]
+      ],
+      "text": "{\"f\": [\"x\" [[, \"{{y}}\"]], 1 [[, {{z}}]], true [[, null]]]}"
+    },
+    {
+      "dialect": "ansi",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": [ [[ {"
+        ],
+        [
+          "identifier",
+          "\"x\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "variable",
+          "{{x}}"
+        ],
+        [
+          "code",
+          "}, ]] {"
+        ],
+        [
+          "identifier",
+          "\"y\""
+        ],
+        [
+          "code",
+          ": 1}]}"
+        ]
+      ],
+      "text": "{\"f\": [ [[ {\"x\": {{x}}}, ]] {\"y\": 1}]}"
+    },
+    {
+      "dialect": "ansi",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
+          "\"g\""
+        ],
+        [
+          "code",
+          ": [[1, 2], "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          "3, 4"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          "], "
+        ],
+        [
+          "identifier",
+          "\"h\""
+        ],
+        [
+          "code",
+          ": [0, [[5]]]}"
+        ]
+      ],
+      "text": "{\"g\": [[1, 2], [[3, 4]]], \"h\": [0, [[5]]]}"
+    },
+    {
+      "dialect": "ansi",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": [1 [[, 2]]]}"
+        ]
+      ],
+      "text": "{\"f\": [1 [[, 2]]]}"
+    },
+    {
+      "dialect": "ansi",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "identifier",
           "\"c\""
         ],
         [
@@ -28181,7 +29029,15 @@
         ],
         [
           "code",
-          ": {}} [[, {"
+          ": {}} "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          ", {"
         ],
         [
           "string",
@@ -28205,10 +29061,292 @@
         ],
         [
           "code",
-          "}}]]]}}}"
+          "}}"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          "]}}}"
         ]
       ],
       "text": "{\"query\": {\"bool\": {\"filter\": [{\"match_all\": {}} [[, {\"term\": {\"a\": \"{{a}}\"}}]]]}}}"
+    },
+    {
+      "dialect": "json",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "string",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": [{"
+        ],
+        [
+          "string",
+          "\"a\""
+        ],
+        [
+          "code",
+          ": 1} "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          ", {"
+        ],
+        [
+          "string",
+          "\"b\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "variable",
+          "{{b}}"
+        ],
+        [
+          "code",
+          "}"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          " "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          ", {"
+        ],
+        [
+          "string",
+          "\"c\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "string",
+          "\"{{c}}\""
+        ],
+        [
+          "code",
+          "}"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          "]}"
+        ]
+      ],
+      "text": "{\"f\": [{\"a\": 1} [[, {\"b\": {{b}}}]] [[, {\"c\": \"{{c}}\"}]]]}"
+    },
+    {
+      "dialect": "json",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "string",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": ["
+        ],
+        [
+          "string",
+          "\"x\""
+        ],
+        [
+          "code",
+          " "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          ", "
+        ],
+        [
+          "string",
+          "\"{{y}}\""
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          ", 1 "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          ", "
+        ],
+        [
+          "variable",
+          "{{z}}"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          ", true "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          ", null"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          "]}"
+        ]
+      ],
+      "text": "{\"f\": [\"x\" [[, \"{{y}}\"]], 1 [[, {{z}}]], true [[, null]]]}"
+    },
+    {
+      "dialect": "json",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "string",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": [ [[ {"
+        ],
+        [
+          "string",
+          "\"x\""
+        ],
+        [
+          "code",
+          ": "
+        ],
+        [
+          "variable",
+          "{{x}}"
+        ],
+        [
+          "code",
+          "}, ]] {"
+        ],
+        [
+          "string",
+          "\"y\""
+        ],
+        [
+          "code",
+          ": 1}]}"
+        ]
+      ],
+      "text": "{\"f\": [ [[ {\"x\": {{x}}}, ]] {\"y\": 1}]}"
+    },
+    {
+      "dialect": "json",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "string",
+          "\"g\""
+        ],
+        [
+          "code",
+          ": [[1, 2], "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          "3, 4"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          "], "
+        ],
+        [
+          "string",
+          "\"h\""
+        ],
+        [
+          "code",
+          ": [0, [[5]]]}"
+        ]
+      ],
+      "text": "{\"g\": [[1, 2], [[3, 4]]], \"h\": [0, [[5]]]}"
+    },
+    {
+      "dialect": "json",
+      "regions": [
+        [
+          "code",
+          "{"
+        ],
+        [
+          "string",
+          "\"f\""
+        ],
+        [
+          "code",
+          ": [1 [[, 2]]]}"
+        ]
+      ],
+      "text": "{\"f\": [1 [[, 2]]]}"
     },
     {
       "dialect": "json",
@@ -29066,7 +30204,23 @@
       "regions": [
         [
           "code",
-          "SELECT ARRAY [[1]], arr[1][2], x[y[1]] FROM t"
+          "SELECT ARRAY "
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          "1"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          ", arr[1][2], x[y[1]] FROM t"
         ]
       ],
       "text": "SELECT ARRAY [[1]], arr[1][2], x[y[1]] FROM t"
@@ -29144,7 +30298,23 @@
       "regions": [
         [
           "code",
-          "SELECT active[[1]] FROM t"
+          "SELECT active"
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          "1"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          " FROM t"
         ]
       ],
       "text": "SELECT active[[1]] FROM t"
@@ -32802,7 +33972,23 @@
       "regions": [
         [
           "code",
-          "*/[ 0\r]]}}b 😀'*/ea[[`/*\n]]];{{"
+          "*/[ 0\r]]}}b 😀'*/ea"
+        ],
+        [
+          "block_open",
+          "[["
+        ],
+        [
+          "code",
+          "`/*\n"
+        ],
+        [
+          "block_close",
+          "]]"
+        ],
+        [
+          "code",
+          "];{{"
         ]
       ],
       "text": "*/[ 0\r]]}}b 😀'*/ea[[`/*\n]]];{{"
@@ -33945,12 +35131,50 @@
       ]
     },
     {
-      "dropped": false,
-      "kept": false,
+      "dropped": true,
+      "kept": true,
       "text": "{\"query\": {\"bool\": {\"filter\": [{\"match_all\": {}} [[, {\"term\": {\"a\": \"{{a}}\"}}]]]}}}",
       "variables": [
         "a"
       ]
+    },
+    {
+      "dropped": true,
+      "kept": true,
+      "text": "{\"f\": [{\"a\": 1} [[, {\"b\": {{b}}}]] [[, {\"c\": \"{{c}}\"}]]]}",
+      "variables": [
+        "b",
+        "c"
+      ]
+    },
+    {
+      "dropped": true,
+      "kept": true,
+      "text": "{\"f\": [\"x\" [[, \"{{y}}\"]], 1 [[, {{z}}]], true [[, null]]]}",
+      "variables": [
+        "y",
+        "z"
+      ]
+    },
+    {
+      "dropped": false,
+      "kept": false,
+      "text": "{\"f\": [ [[ {\"x\": {{x}}}, ]] {\"y\": 1}]}",
+      "variables": [
+        "x"
+      ]
+    },
+    {
+      "dropped": true,
+      "kept": true,
+      "text": "{\"g\": [[1, 2], [[3, 4]]], \"h\": [0, [[5]]]}",
+      "variables": []
+    },
+    {
+      "dropped": false,
+      "kept": false,
+      "text": "{\"f\": [1 [[, 2]]]}",
+      "variables": []
     },
     {
       "dropped": true,
@@ -35648,6 +36872,7 @@
       "identifier_quotes": [
         "\""
       ],
+      "json_blocks?": false,
       "line_comment_ends_at_cr?": false,
       "line_comments": [
         "--"
@@ -35666,6 +36891,7 @@
       "escape_string_prefix?": false,
       "executable_comments?": false,
       "identifier_quotes": [],
+      "json_blocks?": true,
       "line_comment_ends_at_cr?": false,
       "line_comments": [],
       "nested_block_comments?": false,
@@ -35684,6 +36910,7 @@
       "identifier_quotes": [
         "`"
       ],
+      "json_blocks?": false,
       "line_comment_ends_at_cr?": false,
       "line_comments": [
         "--",
@@ -35706,6 +36933,7 @@
       "identifier_quotes": [
         "\""
       ],
+      "json_blocks?": false,
       "line_comment_ends_at_cr?": true,
       "line_comments": [
         "--"
@@ -35727,6 +36955,7 @@
         "\"",
         "`"
       ],
+      "json_blocks?": false,
       "line_comment_ends_at_cr?": false,
       "line_comments": [
         "--"

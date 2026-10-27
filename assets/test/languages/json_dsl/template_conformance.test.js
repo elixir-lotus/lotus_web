@@ -14,7 +14,7 @@ import {
 import fixture from "../../fixtures/tokenizer_conformance.json";
 
 function valid(text, mode) {
-  const { root, errors } = parseTokens(text, tokensFor(significantTokens(text), mode));
+  const { root, errors } = parseTokens(text, tokensFor(significantTokens(text), mode, text));
   return !!root && root.kind === "object" && errors.length === 0;
 }
 
