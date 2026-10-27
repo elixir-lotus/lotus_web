@@ -328,6 +328,26 @@ Set an interval for automatic card refreshing:
 
 When enabled, all cards refresh automatically at the specified interval.
 
+### Live Cards
+
+A line, area or scatter chart can be **live**: every 10 seconds, it takes the rows that came since its last one, and moves, rather than drawing again whole. Live cards suit operational dashboards on a wall screen: orders as they come in, sign-ups per minute, a queue's depth.
+
+1. Write the card's query so that it can ask for the rows after a point of its x axis, with a `{{since}}` variable. Put the condition in an optional block, so that the card's first run, which has no `since`, reads the rows it starts with:
+
+   ```sql
+   SELECT created_at, amount
+   FROM orders
+   WHERE created_at > now() - interval '1 hour'
+   [[AND created_at > {{since}}]]
+   ORDER BY created_at
+   ```
+
+2. In the card's settings (edit mode), under **Live**, switch **Add new rows as they come** on, and choose how many points the chart keeps: the last 30, 60, 120 or 300. The oldest go as new ones come.
+
+On each tick, Lotus runs the query with `since` set to the last value of the x axis the chart has, and sends only the rows after it to the chart. A chart of the query's whole result, a bar chart or a total (one that sums or counts its rows), can't take rows this way: use **Auto-Refresh** for those. A live card has a small pulsing dot in its header.
+
+A live card still refreshes whole when a filter changes, when you click **Refresh**, and at the dashboard's **Auto-Refresh** interval. Ticks pause while the page is in a background tab. Live cards work on a dashboard's public link too.
+
 ### Public Sharing
 
 Share your dashboard via a secure, public link:

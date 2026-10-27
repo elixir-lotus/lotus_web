@@ -17,6 +17,7 @@ defmodule Lotus.Web.PublicDashboardPage do
   alias Lotus.Web.Dashboards.FilterBarComponent
   alias Lotus.Web.Dashboards.FilterOptions
   alias Lotus.Web.Dashboards.FilterValues
+  alias Lotus.Web.Dashboards.LiveCards
   alias Lotus.Web.Dashboards.Tabs
   alias Lotus.Web.Page
   alias Lotus.Web.Pro
@@ -96,6 +97,17 @@ defmodule Lotus.Web.PublicDashboardPage do
             <% end %>
           </div>
 
+          <%!-- Live cards take their new rows every few seconds --%>
+          <div
+            :if={LiveCards.any?(@dashboard.cards)}
+            id="live-cards-timer"
+            phx-hook="AutoRefresh"
+            phx-target={@myself}
+            data-seconds={LiveCards.tick_seconds()}
+            data-event="live_tick"
+            data-when-visible
+          />
+
           <%!-- Footer --%>
           <div class="px-6 py-3 text-center text-xs text-gray-500 dark:text-gray-400">
             <%= gettext("Powered by") %>
@@ -128,6 +140,8 @@ defmodule Lotus.Web.PublicDashboardPage do
       card_errors: %{},
       running_cards: MapSet.new(),
       card_runner: CardRunner.new(socket.assigns.card_concurrency, public: true),
+      live_cursors: %{},
+      live_running: MapSet.new(),
       refreshed_at: nil
     )
   end
@@ -186,6 +200,8 @@ defmodule Lotus.Web.PublicDashboardPage do
   end
 
   @impl Phoenix.LiveComponent
+  def handle_event("live_tick", _params, socket), do: {:noreply, LiveCards.forward_tick(socket)}
+
   def handle_event("select_tab", %{"tab" => tab}, socket),
     do: {:noreply, assign(socket, tab: tab)}
 
@@ -209,6 +225,10 @@ defmodule Lotus.Web.PublicDashboardPage do
   def handle_info({:card_result, card_id, result}, socket) do
     {:noreply, socket |> put_card_result(card_id, {:ok, {:ok, result}}) |> mark_refreshed()}
   end
+
+  # A live card's tick (`LiveCards`), in the LiveView.
+  def handle_info(:live_tick, socket),
+    do: {:noreply, LiveCards.tick(socket, socket.assigns.dashboard.cards, &card_run/3)}
 
   def handle_info(_msg, socket), do: {:noreply, socket}
 
@@ -382,6 +402,10 @@ defmodule Lotus.Web.PublicDashboardPage do
     end
   end
 
+  def handle_async({:live_card, card_id}, result, socket) do
+    {:noreply, LiveCards.receive(socket, find_card(socket, card_id), result)}
+  end
+
   @impl Phoenix.LiveComponent
   def update(assigns, socket) do
     {:ok, assign(socket, assigns)}
@@ -400,6 +424,8 @@ defmodule Lotus.Web.PublicDashboardPage do
   end
 
   defp put_card_result(socket, card_id, {:ok, {:ok, result}}) do
+    {socket, result} = LiveCards.put_result(socket, find_card(socket, card_id), result)
+
     assign(socket,
       card_results: Map.put(socket.assigns.card_results, card_id, result),
       card_errors: Map.delete(socket.assigns.card_errors, card_id)
@@ -415,7 +441,9 @@ defmodule Lotus.Web.PublicDashboardPage do
   end
 
   defp put_card_error(socket, card_id, message) do
-    assign(socket,
+    socket
+    |> LiveCards.drop(card_id)
+    |> assign(
       card_errors: Map.put(socket.assigns.card_errors, card_id, message),
       card_results: Map.delete(socket.assigns.card_results, card_id)
     )
@@ -452,18 +480,27 @@ defmodule Lotus.Web.PublicDashboardPage do
   end
 
   defp prepare_card(socket, card_id) do
-    card = Enum.find(socket.assigns.dashboard.cards, &(&1.id == card_id))
+    card = find_card(socket, card_id)
 
     if card && card.card_type == :query && card.query do
-      vars = build_card_variables(socket, card)
-      query = card.query
-      opts = run_opts(socket)
-      # A dashboard only reads, whatever its source allows.
-      {:run, fn -> Lotus.run_query(query, [vars: vars, read_only: true] ++ opts) end}
+      card_run(socket, card, %{})
     else
       {:skip, socket}
     end
   end
+
+  # The run of a card's query, with `extra_vars` over the dashboard's
+  # filters (a live card's `since`).
+  defp card_run(socket, card, extra_vars) do
+    vars = Map.merge(build_card_variables(socket, card), extra_vars)
+    query = card.query
+    opts = run_opts(socket)
+    # A dashboard only reads, whatever its source allows.
+    {:run, fn -> Lotus.run_query(query, [vars: vars, read_only: true] ++ opts) end}
+  end
+
+  defp find_card(socket, card_id),
+    do: Enum.find(socket.assigns.dashboard.cards, &(&1.id == card_id))
 
   # A public dashboard has no viewer: its cards and the filters' source
   # queries run as whoever Lotus Pro names for the link, or with no

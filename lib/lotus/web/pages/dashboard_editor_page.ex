@@ -23,6 +23,7 @@ defmodule Lotus.Web.DashboardEditorPage do
   alias Lotus.Web.Dashboards.FilterConnections
   alias Lotus.Web.Dashboards.FilterOptions
   alias Lotus.Web.Dashboards.FilterValues
+  alias Lotus.Web.Dashboards.LiveCards
   alias Lotus.Web.Dashboards.SettingsDrawer
   alias Lotus.Web.Dashboards.Tabs
   alias Lotus.Web.Dashboards.TextCard
@@ -249,9 +250,21 @@ defmodule Lotus.Web.DashboardEditorPage do
         <div
           id="auto-refresh-timer"
           phx-hook="AutoRefresh"
+          phx-target={@myself}
           data-seconds={@dashboard.auto_refresh_seconds}
         />
       <% end %>
+
+      <%!-- Live cards take their new rows every few seconds --%>
+      <div
+        :if={not @editing and LiveCards.any?(@dashboard.cards)}
+        id="live-cards-timer"
+        phx-hook="AutoRefresh"
+        phx-target={@myself}
+        data-seconds={LiveCards.tick_seconds()}
+        data-event="live_tick"
+        data-when-visible
+      />
     </div>
     """
   end
@@ -575,6 +588,8 @@ defmodule Lotus.Web.DashboardEditorPage do
       card_errors: %{},
       running_cards: MapSet.new(),
       card_runner: CardRunner.new(socket.assigns.card_concurrency),
+      live_cursors: %{},
+      live_running: MapSet.new(),
       settings_visible: false,
       card_settings_visible: false,
       selected_card: nil,
@@ -831,6 +846,11 @@ defmodule Lotus.Web.DashboardEditorPage do
     {:noreply, run_all_cards(socket)}
   end
 
+  @impl Phoenix.LiveComponent
+  def handle_event("live_tick", _params, socket) do
+    {:noreply, LiveCards.forward_tick(socket)}
+  end
+
   # A click on a chart's mark filters the dashboard by it.
   @impl Phoenix.LiveComponent
   def handle_event("chart_select", params, socket) do
@@ -1036,6 +1056,7 @@ defmodule Lotus.Web.DashboardEditorPage do
 
   @impl Page
   def handle_info({:card_result, card_id, result}, socket) do
+    {socket, result} = LiveCards.put_result(socket, find_card(socket, card_id), result)
     running_cards = MapSet.delete(socket.assigns.running_cards, card_id)
     card_results = Map.put(socket.assigns.card_results, card_id, result)
     card_errors = Map.delete(socket.assigns.card_errors, card_id)
@@ -1068,6 +1089,10 @@ defmodule Lotus.Web.DashboardEditorPage do
      )}
   end
 
+  # A live card's tick (`LiveCards`), in the LiveView.
+  def handle_info(:live_tick, socket),
+    do: {:noreply, LiveCards.tick(socket, socket.assigns.dashboard.cards, &card_run/3)}
+
   def handle_info(_msg, socket), do: {:noreply, socket}
 
   @impl Phoenix.LiveComponent
@@ -1076,6 +1101,10 @@ defmodule Lotus.Web.DashboardEditorPage do
       {:ok, socket} -> {:noreply, socket |> put_card_result(card_id, result) |> mark_refreshed()}
       :stale -> {:noreply, socket}
     end
+  end
+
+  def handle_async({:live_card, card_id}, result, socket) do
+    {:noreply, LiveCards.receive(socket, find_card(socket, card_id), result)}
   end
 
   # A view is counted once per connected page load, not on each patch.
@@ -1330,26 +1359,37 @@ defmodule Lotus.Web.DashboardEditorPage do
   end
 
   defp authorize_card_query(socket, card_id, card) do
+    case card_run(socket, card, %{}) do
+      {:run, fun} -> {:run, fun}
+      {:deny, reason} -> {:skip, put_card_error(socket, card_id, reason)}
+    end
+  end
+
+  # The run of a card's query, with `extra_vars` over the dashboard's
+  # filters (a live card's `since`), or why the viewer may not run it.
+  defp card_run(socket, card, extra_vars) do
     source = card.query.data_source || elem(Lotus.default_data_source(), 0)
 
     case Authorization.authorize(socket.assigns, :query, source) do
       :allow ->
         query = card.query
+        vars = Map.merge(build_card_variables(socket, card), extra_vars)
         # A dashboard only reads, whatever its source allows.
-        opts =
-          Actor.merge(
-            [vars: build_card_variables(socket, card), read_only: true],
-            socket.assigns
-          )
+        opts = Actor.merge([vars: vars, read_only: true], socket.assigns)
 
         {:run, fn -> Lotus.run_query(query, opts) end}
 
       {:deny, reason} ->
-        {:skip, put_card_error(socket, card_id, reason)}
+        {:deny, reason}
     end
   end
 
+  defp find_card(socket, card_id),
+    do: Enum.find(socket.assigns.dashboard.cards, &(&1.id == card_id))
+
   defp put_card_result(socket, card_id, {:ok, {:ok, result}}) do
+    {socket, result} = LiveCards.put_result(socket, find_card(socket, card_id), result)
+
     socket =
       if socket.assigns.selected_card && socket.assigns.selected_card.id == card_id do
         assign(socket, selected_card_columns: Map.get(result, :columns, []))
@@ -1376,7 +1416,9 @@ defmodule Lotus.Web.DashboardEditorPage do
   end
 
   defp put_card_error(socket, card_id, message) do
-    assign(socket,
+    socket
+    |> LiveCards.drop(card_id)
+    |> assign(
       card_errors: Map.put(socket.assigns.card_errors, card_id, message),
       card_results: Map.delete(socket.assigns.card_results, card_id)
     )

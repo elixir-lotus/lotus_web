@@ -9,6 +9,7 @@ defmodule Lotus.Web.Dashboards.CardComponent do
   alias Lotus.Web.Charts
   alias Lotus.Web.Dashboards.ChartFilters
   alias Lotus.Web.Dashboards.FilterConnections
+  alias Lotus.Web.Dashboards.LiveCards
   alias Lotus.Web.Dashboards.TextCard
   alias Lotus.Web.Queries.MasuResults
 
@@ -89,6 +90,14 @@ defmodule Lotus.Web.Dashboards.CardComponent do
         <h3 class={["min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-gray-100", not @folds? && "pl-2"]}>
           <%= @card.title || default_title(@card) %>
         </h3>
+        <span
+          :if={LiveCards.live?(@card)}
+          id={"#{@id}-live"}
+          class="lotus-live-dot shrink-0"
+          title={gettext("Live: new rows every %{seconds} seconds", seconds: LiveCards.tick_seconds())}
+          aria-label={gettext("Live")}
+          role="img"
+        ></span>
         <.pro_slot name={:card_header} slot_assigns={%{card: @card}} />
         <span
           :if={@can_manage and @folded}

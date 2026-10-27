@@ -374,6 +374,8 @@ The query editor's chart also has **SVG** and **PNG** buttons under it, which sa
 
 When a dashboard card refreshes, or a dashboard filter changes, its chart stays on screen, dimmed, and its marks move to the new values.
 
+A line, area or scatter chart on a dashboard can also be live, taking new rows every few seconds: see [Live Cards](dashboards.md#live-cards).
+
 ### Configuration Status
 
 A status indicator shows whether your chart is ready:

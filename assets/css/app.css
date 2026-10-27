@@ -1898,3 +1898,37 @@
     height: 100%;
 }
 
+
+/* A live dashboard card (Lotus.Web.Dashboards.LiveCards): a small dot that
+   pulses while its chart takes new rows. Still when the viewer asks for
+   reduced motion. */
+.lotus-live-dot {
+    position: relative;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background-color: rgb(var(--lotus-pink-500));
+}
+
+.lotus-live-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background-color: rgb(var(--lotus-pink-500));
+    animation: lotus-live-pulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes lotus-live-pulse {
+    75%,
+    100% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lotus-live-dot::after {
+        animation: none;
+    }
+}

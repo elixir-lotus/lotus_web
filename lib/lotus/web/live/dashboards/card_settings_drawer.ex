@@ -8,6 +8,7 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
 
   alias Lotus.Web.Charts
   alias Lotus.Web.Dashboards.FilterConnections
+  alias Lotus.Web.Dashboards.LiveCards
   alias Lotus.Web.Queries.ChartOptions
 
   @impl Phoenix.LiveComponent
@@ -366,9 +367,82 @@ defmodule Lotus.Web.Dashboards.CardSettingsDrawer do
             <% end %>
           <% end %>
           <ChartOptions.options :if={@chart_type} config={@config} columns={@columns} prefix="visualization" />
+          <.live_section :if={LiveCards.kind?(@card)} card={@card} config={@config} />
         </div>
       </form>
     </div>
+    """
+  end
+
+  # A line, area or scatter chart can be live: it takes its new rows every
+  # few seconds, when its query reads `{{since}}`.
+  attr(:card, :map, required: true)
+  attr(:config, :map, required: true)
+
+  defp live_section(assigns) do
+    assigns =
+      assign(assigns,
+        reads_since?: LiveCards.reads_since?(assigns.card),
+        on?: assigns.config["live"] in [true, "true"],
+        window: Integer.to_string(LiveCards.window(assigns.card)),
+        seconds: LiveCards.tick_seconds(),
+        variable: LiveCards.variable()
+      )
+
+    ~H"""
+    <section id="card-live-settings" class="pt-4 space-y-3 border-t border-gray-200 dark:border-gray-600">
+      <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <%= gettext("Live") %>
+      </h4>
+      <div class="flex items-center justify-between">
+        <label for="card-live-toggle" class="text-sm text-gray-700 dark:text-gray-300">
+          <%= gettext("Add new rows as they come") %>
+        </label>
+        <label class={["relative inline-flex items-center", if(@reads_since?, do: "cursor-pointer", else: "cursor-not-allowed opacity-50")]}>
+          <input type="hidden" name="visualization[live]" value="false" />
+          <input
+            type="checkbox"
+            id="card-live-toggle"
+            name="visualization[live]"
+            value="true"
+            checked={@on? and @reads_since?}
+            disabled={not @reads_since?}
+            class="sr-only peer"
+          />
+          <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-pink-300 dark:peer-focus:ring-pink-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-500 peer-checked:bg-pink-500">
+          </div>
+        </label>
+      </div>
+      <%= if @reads_since? do %>
+        <div :if={@on?}>
+          <label for="card-live-window" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+            <%= gettext("Points kept") %>
+          </label>
+          <select
+            id="card-live-window"
+            name="visualization[live_window]"
+            class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-pink-500 focus:border-pink-500"
+          >
+            <option :for={n <- LiveCards.windows()} value={n} selected={@window == Integer.to_string(n)}>
+              <%= gettext("Last %{count}", count: n) %>
+            </option>
+          </select>
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          <%= gettext("Every %{seconds} seconds, the query runs with {{%{variable}}} set to the last value of the x axis, and its new rows join the chart.",
+            seconds: @seconds,
+            variable: @variable
+          ) %>
+        </p>
+      <% else %>
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          <%= gettext("To make this chart live, filter its query on the x axis with a {{%{variable}}} variable, for example %{example}.",
+            variable: @variable,
+            example: "[[WHERE created_at > {{since}}]]"
+          ) %>
+        </p>
+      <% end %>
+    </section>
     """
   end
 
