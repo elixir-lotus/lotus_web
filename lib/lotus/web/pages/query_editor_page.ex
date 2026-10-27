@@ -553,7 +553,13 @@ defmodule Lotus.Web.QueryEditorPage do
   def handle_event("editor_content_changed", %{"statement" => statement}, socket) do
     base_params = socket.assigns.query_form.params || %{}
     params = Map.put(base_params, "statement", statement)
-    changeset = Query.update(socket.assigns.query, params)
+
+    # Cast reads an empty text as no change, which would keep the saved
+    # statement in the query; the editor's text is the statement, empty too.
+    changeset =
+      socket.assigns.query
+      |> Query.update(params)
+      |> Ecto.Changeset.force_change(:statement, statement)
 
     socket =
       update_query_state(socket, changeset, statement_empty: check_statement_empty(statement))

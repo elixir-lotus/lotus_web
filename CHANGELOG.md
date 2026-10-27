@@ -523,6 +523,11 @@
   swap a few times, the cursor jumping to the start. The editor now drops
   its own texts coming back.
 
+- **A cleared editor stays empty.** Clearing a saved query's editor put
+  its saved statement back a moment later: an empty text read as no change,
+  so the query kept the saved statement, and the next update of the page
+  (the editor reporting its variables) showed it again.
+
 - **`{{{a}}}` holds no variable**, as Lotus reads it; the editor found
   `{{a}}` in it.
 
