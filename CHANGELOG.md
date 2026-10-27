@@ -574,6 +574,11 @@
 
 ### Fixed
 
+- **The divider between the editor and its results threw on updates.**
+  It measured the parent it had when it mounted, which a LiveView patch can
+  replace, so every update after a variable appeared threw in the browser.
+  It now measures the parent it has.
+
 - **Options from a query after a change in the variable settings.**
   Choosing the dropdown widget reset the editor's source, so the options
   modal had no query mode and the editor lost its schema.

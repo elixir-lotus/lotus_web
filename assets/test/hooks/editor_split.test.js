@@ -52,6 +52,28 @@ describe("EditorSplit", () => {
     document.body.innerHTML = "";
   });
 
+  it("measures the parent the divider has now, after a patch moves it", () => {
+    const { hook, editor, split } = mount();
+    const area = document.getElementById("area");
+    const moved = area.cloneNode(false);
+    Object.defineProperty(moved, "clientHeight", { get: () => AREA });
+    moved.append(...area.children);
+    area.replaceWith(moved);
+
+    expect(() => hook.updated()).not.toThrow();
+    expect(split.parentElement).toBe(moved);
+    expect(editor.style.height).toBe(`${Math.round(SPACE * 0.35)}px`);
+  });
+
+  it("leaves the editor alone while the divider has no parent", () => {
+    const { hook, editor, split } = mount();
+    const height = editor.style.height;
+    split.remove();
+
+    expect(() => hook.updated()).not.toThrow();
+    expect(editor.style.height).toBe(height);
+  });
+
   it("gives the editor its default share", () => {
     const { editor } = mount();
 
