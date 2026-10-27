@@ -6,7 +6,7 @@ defmodule Lotus.Web.Schedules.Components do
   use Lotus.Web, :html
 
   alias Lotus.Schedules
-  alias Lotus.Schedules.Cron
+  alias Lotus.Schedules.{Cron, Targets}
   alias Lotus.Storage.Schedule
   alias Lotus.Web.Schedules.{Cadence, TimeZones}
 
@@ -18,30 +18,52 @@ defmodule Lotus.Web.Schedules.Components do
   The schedules with what the list shows of each: its cadence, what it runs,
   its zone and its latest runs.
   """
-  def entries(schedules, queries, dashboards) do
+  def entries(schedules, queries, dashboards, opts \\ []) do
     queries = Map.new(queries, &{&1.id, &1})
     dashboards = Map.new(dashboards, &{&1.id, &1})
     now = DateTime.utc_now()
 
-    Enum.map(schedules, fn schedule -> entry(schedule, queries, dashboards, now) end)
+    Enum.map(schedules, fn schedule -> entry(schedule, queries, dashboards, now, opts) end)
   end
 
-  defp entry(%Schedule{} = schedule, queries, dashboards, now) do
+  defp entry(%Schedule{} = schedule, queries, dashboards, now, opts) do
     cadence = Cadence.from_cron(schedule.cron)
 
     %{
       schedule: schedule,
       cadence: cadence,
       sentence: Cadence.sentence(cadence),
-      target: target(schedule, queries, dashboards),
+      target: target(schedule, queries, dashboards, opts),
       zone: TimeZones.entry(schedule.time_zone, now) || TimeZones.entry("Etc/UTC", now),
       runs: schedule |> Schedules.list_runs(limit: @recent_runs) |> Enum.reverse(),
       status: status(schedule)
     }
   end
 
-  @doc "What a schedule runs: its kind, id and name."
-  def target(%Schedule{query_id: id}, queries, _dashboards) when not is_nil(id) do
+  @doc """
+  What a schedule runs: its kind (`:query`, `:dashboard`, or `:target` for
+  a target an extension registers, with its `:label`), id and name. `opts`
+  has the viewer's `:context` and `:scope`, for a target's name.
+  """
+  def target(schedule, queries, dashboards, opts \\ [])
+
+  def target(%Schedule{target_type: type} = schedule, _queries, _dashboards, opts)
+      when is_binary(type) do
+    module = Targets.fetch(type)
+    entry = Targets.entry(schedule, opts)
+    label = (module && module.label()) || type
+
+    %{
+      kind: :target,
+      type: type,
+      label: label,
+      id: schedule.target_id,
+      name: (entry && entry.name) || label,
+      description: entry && entry.description
+    }
+  end
+
+  def target(%Schedule{query_id: id}, queries, _dashboards, _opts) when not is_nil(id) do
     query = Map.get(queries, id)
 
     %{
@@ -52,7 +74,7 @@ defmodule Lotus.Web.Schedules.Components do
     }
   end
 
-  def target(%Schedule{dashboard_id: id}, _queries, dashboards) do
+  def target(%Schedule{dashboard_id: id}, _queries, dashboards, _opts) do
     dashboard = Map.get(dashboards, id)
 
     %{
@@ -616,7 +638,8 @@ defmodule Lotus.Web.Schedules.Components do
   def target_icon(assigns) do
     ~H"""
     <Icons.terminal :if={@kind == :query} class={@class} />
-    <Icons.squares_2x2 :if={@kind != :query} class={@class} />
+    <Icons.squares_2x2 :if={@kind == :dashboard} class={@class} />
+    <Icons.layers :if={@kind not in [:query, :dashboard]} class={@class} />
     """
   end
 

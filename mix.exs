@@ -61,7 +61,7 @@ defmodule Lotus.Web.MixProject do
       # :list_content (elixir-lotus/lotus#376), until the next Lotus release. Hex refuses to publish a git dependency.
       # Overridden because Lotus's main is 2.0.0-dev, which the adapters'
       # `~> 1.3` doesn't match.
-      {:lotus, github: "elixir-lotus/lotus", branch: "main", override: true},
+      {:lotus, github: "elixir-lotus/lotus", branch: "feat/schedule-targets", override: true},
       {:sake, "~> 0.4", optional: true},
       # The AI assistant. Optional, as in Lotus: a host that uses AI adds it.
       {:req_llm, "~> 1.29", optional: true},

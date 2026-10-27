@@ -66,6 +66,38 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
     def deliver(_content, _attachments, _config), do: :ok
   end
 
+  # A target an extension registers, as Lotus Pro's workflows: "Board",
+  # whose boards anyone may schedule.
+  defmodule Elixir.Lotus.Web.Test.BoardTarget do
+    @moduledoc false
+    @behaviour Lotus.Schedules.Target
+
+    @boards [%{id: "7", name: "Churn board", description: "Who left"}]
+
+    @impl true
+    def label, do: "Board"
+    def plural_label, do: "Boards"
+
+    @impl true
+    def list(_opts), do: @boards
+
+    @impl true
+    def get(id, _opts), do: Enum.find(@boards, &(&1.id == id))
+
+    @impl true
+    def run(_schedule, _opts), do: {:ok, []}
+  end
+
+  defp put_targets do
+    Application.put_env(:lotus, :scheduler, targets: %{"board" => Lotus.Web.Test.BoardTarget})
+    Lotus.Config.reload!()
+
+    on_exit(fn ->
+      Application.delete_env(:lotus, :scheduler)
+      Lotus.Config.reload!()
+    end)
+  end
+
   defp put_channels(channels) do
     Application.put_env(:lotus, :delivery, channels: channels)
     Lotus.Config.reload!()
@@ -485,6 +517,41 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
 
       assert has_element?(live, ~s(#alert-condition option[value="change"]))
       assert has_element?(live, ~s(#alert-condition option[value="above"]))
+    end
+
+    test "offers a registered target (Lotus Pro's workflows), and saves it as an alert" do
+      put_targets()
+
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/new")
+      assert has_element?(live, "#target-picker", "Boards")
+      live |> element("#target-board-7") |> render_click()
+      assert has_element?(live, "#schedule-target", "Churn board")
+      assert has_element?(live, "#schedule-target", "Board")
+      assert has_element?(live, "#schedule-alert-toggle")
+
+      live |> form("#schedule-form", draft: %{alert: "true"}) |> render_change()
+      live |> form("#schedule-form", draft: %{condition: "any_rows"}) |> render_change()
+
+      assert {:error, {:live_redirect, %{to: "/scheduled/schedules"}}} =
+               live
+               |> form("#schedule-form", draft: %{cadence: %{time: "08:00:00"}})
+               |> render_submit()
+
+      assert [schedule] = Schedules.list_schedules()
+
+      assert %{
+               name: "Churn board",
+               target_type: "board",
+               target_id: "7",
+               query_id: nil,
+               rule: %{condition: "any_rows"}
+             } = schedule
+
+      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/new?target=board:7")
+      assert has_element?(live, "#schedule-target", "Churn board")
+
+      {:ok, live, _html} = live(build_conn(), "/scheduled?tab=schedules")
+      assert render(live) =~ "Churn board"
     end
 
     test "edits a schedule, shows its runs, and deletes it", %{query: query} do
