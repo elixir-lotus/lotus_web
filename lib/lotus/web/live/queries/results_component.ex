@@ -6,6 +6,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   alias Lotus.Result.Statistics
   alias Lotus.Web.Charts
   alias Lotus.Web.Queries.MasuResults
+  alias Lotus.Web.Queries.Pin
 
   attr(:query_id, :string, default: "default")
   attr(:result, :any, default: nil)
@@ -28,6 +29,11 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   attr(:references, :map, default: %{})
   # The run changed data (an UPDATE, INSERT or DELETE the person confirmed).
   attr(:changed, :boolean, default: false)
+  # A result kept to compare the next runs with (`Lotus.Web.Queries.Pin`),
+  # beside the result (`:split`) or above it (`:stacked`, open or not).
+  attr(:pinned, :any, default: nil)
+  attr(:pin_layout, :atom, default: :split)
+  attr(:pin_open, :boolean, default: false)
 
   def render_result(assigns) do
     ~H"""
@@ -88,10 +94,37 @@ defmodule Lotus.Web.Queries.ResultsComponent do
               >
               </div>
             </div>
+            <.pin_button pinned={@pinned} target={@target} />
           </div>
 
-          <%!-- Content area: Table or Chart --%>
-          <div class="flex-1 overflow-hidden">
+          <.compare_bar
+            :if={@pinned}
+            comparison={Pin.compare(@pinned, @result)}
+            layout={@pin_layout}
+            target={@target}
+          />
+
+          <.pinned_strip
+            :if={@pinned && @pin_layout == :stacked}
+            pinned={@pinned}
+            open={@pin_open}
+            comparison={Pin.compare(@pinned, @result)}
+            target={@target}
+          />
+
+          <%!-- Content area: Table or Chart, beside the pinned result --%>
+          <div class={[
+            "flex-1 overflow-hidden",
+            @pinned && @pin_layout == :split && "grid grid-cols-1 md:grid-cols-2 gap-3"
+          ]}>
+            <.pinned_panel
+              :if={@pinned && @pin_layout == :split}
+              pinned={@pinned}
+              comparison={Pin.compare(@pinned, @result)}
+              target={@target}
+              class="h-full"
+            />
+            <div class="h-full min-w-0 overflow-hidden">
             <.render_chart
               :if={@visualization_view_mode == :chart && has_valid_config?(@visualization_config)}
               result={@result}
@@ -113,6 +146,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
                 stats={Statistics.compute_all(@result)}
                 references={@references}
               />
+            </div>
             </div>
           </div>
 
@@ -143,6 +177,252 @@ defmodule Lotus.Web.Queries.ResultsComponent do
     </div>
     """
   end
+
+  attr(:pinned, :any, required: true)
+  attr(:target, :any, required: true)
+
+  defp pin_button(assigns) do
+    ~H"""
+    <button
+      id="pin-result-btn"
+      type="button"
+      phx-click="pin_result"
+      phx-target={@target}
+      title={
+        if @pinned,
+          do: gettext("Pin this result in place of the pinned one"),
+          else: gettext("Keep this result on screen to compare the next runs with it")
+      }
+      class="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+    >
+      <Icons.pin class="h-4 w-4" />
+      <%= if @pinned, do: gettext("Pin this instead"), else: gettext("Pin to compare") %>
+    </button>
+    """
+  end
+
+  attr(:comparison, :map, required: true)
+  attr(:layout, :atom, required: true)
+  attr(:target, :any, required: true)
+
+  defp compare_bar(assigns) do
+    ~H"""
+    <div
+      id="pin-compare-bar"
+      class="pb-2 flex flex-wrap items-center gap-2 flex-shrink-0 text-xs text-gray-700 dark:text-gray-300"
+    >
+      <span class="font-semibold text-gray-900 dark:text-gray-100"><%= gettext("Compared with the pinned result") %></span>
+      <span id="pin-compare-rows" class="inline-flex items-center gap-1.5 rounded-md bg-gray-100 dark:bg-gray-700/60 px-2 py-1">
+        <%= gettext("Rows") %>
+        <strong class="font-semibold"><%= @comparison.rows %> → <%= @comparison.now %></strong>
+        <span :if={@comparison.delta != 0} class={["font-semibold", delta_class(@comparison.delta)]}>
+          <%= delta_text(@comparison) %>
+        </span>
+      </span>
+      <span id="pin-compare-columns" class="inline-flex flex-wrap items-center gap-1.5 rounded-md bg-gray-100 dark:bg-gray-700/60 px-2 py-1">
+        <%= if @comparison.added == [] and @comparison.removed == [] do %>
+          <%= gettext("Columns unchanged") %>
+        <% else %>
+          <%= gettext("Columns") %>
+          <span :for={c <- @comparison.added} class="font-semibold text-blue-800 dark:text-blue-300">+<%= c %></span>
+          <span :for={c <- @comparison.removed} class="font-semibold text-orange-800 dark:text-orange-300">−<%= c %></span>
+        <% end %>
+      </span>
+      <span
+        :if={is_integer(@comparison.duration) and is_integer(@comparison.now_duration)}
+        class="rounded-md bg-gray-100 dark:bg-gray-700/60 px-2 py-1"
+      >
+        <%= gettext("%{before}ms → %{after}ms", before: @comparison.duration, after: @comparison.now_duration) %>
+      </span>
+      <div
+        role="group"
+        aria-label={gettext("Where the pinned result shows")}
+        class="ml-auto hidden md:inline-flex rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden"
+      >
+        <button
+          :for={{layout, label} <- [split: gettext("Side by side"), stacked: gettext("Stacked")]}
+          id={"pin-layout-#{layout}"}
+          type="button"
+          phx-click="set_pin_layout"
+          phx-value-layout={layout}
+          phx-target={@target}
+          aria-pressed={to_string(@layout == layout)}
+          class={[
+            "px-2.5 py-1 text-xs font-medium transition-colors [&+&]:border-l [&+&]:border-gray-200 dark:[&+&]:border-gray-600",
+            if(@layout == layout,
+              do: "bg-pink-50 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
+              else: "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+            )
+          ]}
+        >
+          <%= label %>
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  attr(:pinned, :any, required: true)
+  attr(:comparison, :map, required: true)
+  attr(:target, :any, required: true)
+  attr(:class, :string, default: nil)
+
+  # The pinned result beside the current one: its rows as they were, read only.
+  defp pinned_panel(assigns) do
+    ~H"""
+    <section
+      id="pinned-result"
+      aria-label={gettext("Pinned result")}
+      class={[
+        "flex flex-col min-w-0 rounded-md border border-indigo-200 bg-indigo-50/60 dark:border-indigo-800 dark:bg-indigo-950/30 overflow-hidden",
+        @class
+      ]}
+    >
+      <.pinned_header pinned={@pinned} target={@target} />
+      <div class="flex-1 overflow-auto">
+        <.pinned_table pinned={@pinned} removed={@comparison.removed} />
+      </div>
+    </section>
+    """
+  end
+
+  attr(:pinned, :any, required: true)
+  attr(:open, :boolean, required: true)
+  attr(:comparison, :map, required: true)
+  attr(:target, :any, required: true)
+
+  # The pinned result above the current one: a line, its rows when opened.
+  defp pinned_strip(assigns) do
+    ~H"""
+    <section
+      id="pinned-result"
+      aria-label={gettext("Pinned result")}
+      class="mb-2 flex-shrink-0 flex flex-col max-h-[45%] min-h-0 rounded-md border border-indigo-200 bg-indigo-50/60 dark:border-indigo-800 dark:bg-indigo-950/30 overflow-hidden"
+    >
+      <.pinned_header pinned={@pinned} target={@target} toggle={true} open={@open} />
+      <div :if={@open} id="pinned-result-rows" class="min-h-0 overflow-auto border-t border-indigo-200 dark:border-indigo-800">
+        <.pinned_table pinned={@pinned} removed={@comparison.removed} />
+      </div>
+    </section>
+    """
+  end
+
+  attr(:pinned, :any, required: true)
+  attr(:target, :any, required: true)
+  attr(:toggle, :boolean, default: false)
+  attr(:open, :boolean, default: false)
+
+  defp pinned_header(assigns) do
+    ~H"""
+    <div class="flex items-center gap-2 px-3 py-2 text-indigo-900 dark:text-indigo-200">
+      <button
+        :if={@toggle}
+        id="pinned-result-toggle"
+        type="button"
+        phx-click="toggle_pin_open"
+        phx-target={@target}
+        aria-expanded={to_string(@open)}
+        aria-controls="pinned-result-rows"
+        aria-label={if @open, do: gettext("Hide the pinned rows"), else: gettext("Show the pinned rows")}
+        class="p-1 -ml-1 rounded hover:bg-indigo-100 dark:hover:bg-indigo-900/40"
+      >
+        <Icons.chevron_right class={["h-4 w-4 transition-transform", @open && "rotate-90"]} />
+      </button>
+      <Icons.pin class="h-4 w-4 flex-shrink-0" />
+      <div class="flex flex-col min-w-0 flex-1">
+        <span class="text-sm font-semibold">
+          <%= ngettext(
+            "Pinned · %{count} row · %{time}",
+            "Pinned · %{count} rows · %{time}",
+            Pin.row_count(@pinned.result),
+            count: Pin.row_count(@pinned.result),
+            time: Calendar.strftime(@pinned.pinned_at, "%H:%M")
+          ) %>
+        </span>
+        <code
+          :if={@pinned.statement}
+          title={@pinned.statement}
+          class="text-xs text-indigo-800 dark:text-indigo-300 truncate"
+        ><%= one_line(@pinned.statement) %></code>
+      </div>
+      <button
+        :if={@pinned.text}
+        id="restore-pinned-sql-btn"
+        type="button"
+        phx-click="restore_pinned_sql"
+        phx-target={@target}
+        title={gettext("Put the pinned result's query back in the editor")}
+        class="px-2 py-1 text-xs font-medium rounded-md border border-indigo-300 dark:border-indigo-700 hover:bg-indigo-100 dark:hover:bg-indigo-900/40"
+      >
+        <%= gettext("Restore SQL") %>
+      </button>
+      <button
+        id="unpin-result-btn"
+        type="button"
+        phx-click="unpin_result"
+        phx-target={@target}
+        aria-label={gettext("Unpin")}
+        title={gettext("Unpin")}
+        class="p-1 rounded-md border border-indigo-300 dark:border-indigo-700 hover:bg-indigo-100 dark:hover:bg-indigo-900/40"
+      >
+        <Icons.x_mark class="h-4 w-4" />
+      </button>
+    </div>
+    """
+  end
+
+  attr(:pinned, :any, required: true)
+  attr(:removed, :list, default: [])
+
+  defp pinned_table(assigns) do
+    ~H"""
+    <table class="w-full border-collapse text-sm">
+      <thead class="sticky top-0 bg-indigo-50 dark:bg-indigo-950">
+        <tr>
+          <th
+            :for={column <- @pinned.result.columns || []}
+            class={[
+              "px-3 h-9 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 border-b border-indigo-200 dark:border-indigo-800 whitespace-nowrap",
+              column in @removed && "bg-orange-100 dark:bg-orange-900/30"
+            ]}
+          >
+            <%= column %>
+            <span
+              :if={column in @removed}
+              class="ml-1 rounded px-1 py-px text-[11px] font-semibold text-orange-800 bg-orange-200/70 dark:text-orange-200 dark:bg-orange-800/50"
+            >
+              <%= gettext("removed") %>
+            </span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          :for={row <- @pinned.result.rows || []}
+          class="odd:bg-transparent even:bg-indigo-100/40 dark:even:bg-indigo-900/20"
+        >
+          <td
+            :for={value <- row}
+            class="px-3 h-10 text-gray-900 dark:text-gray-100 whitespace-nowrap max-w-xs truncate"
+          >
+            <%= Lotus.Web.CellFormatter.format(value) %>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    """
+  end
+
+  defp delta_class(delta) when delta < 0, do: "text-orange-800 dark:text-orange-300"
+  defp delta_class(_delta), do: "text-blue-800 dark:text-blue-300"
+
+  defp delta_text(%{delta: delta, percent: percent}) do
+    sign = if delta > 0, do: "+", else: "−"
+    count = "#{sign}#{abs(delta)}"
+    if percent, do: "#{count} (#{sign}#{abs(percent)}%)", else: count
+  end
+
+  defp one_line(statement), do: statement |> String.split() |> Enum.join(" ")
 
   defp grid_id(query_id, results_run), do: "results-grid-#{query_id}-#{results_run}"
 

@@ -5637,3 +5637,90 @@ msgstr "Points conservés"
 #, elixir-autogen, elixir-format
 msgid "To make this chart live, filter its query on the x axis with a {{%{variable}}} variable, for example %{example}."
 msgstr "Pour mettre ce graphique en direct, filtrez sa requête sur l'axe x avec une variable {{%{variable}}}, par exemple %{example}."
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Pin this result in place of the pinned one"
+msgstr "Épingler ce résultat à la place de celui épinglé"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Keep this result on screen to compare the next runs with it"
+msgstr "Garder ce résultat à l’écran pour le comparer aux exécutions suivantes"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Pin this instead"
+msgstr "Épingler celui-ci à la place"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Pin to compare"
+msgstr "Épingler pour comparer"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Compared with the pinned result"
+msgstr "Comparé au résultat épinglé"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Rows"
+msgstr "Lignes"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Columns unchanged"
+msgstr "Colonnes inchangées"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "%{before}ms → %{after}ms"
+msgstr "%{before} ms → %{after} ms"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Where the pinned result shows"
+msgstr "Où le résultat épinglé s’affiche"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Pinned result"
+msgstr "Résultat épinglé"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Hide the pinned rows"
+msgstr "Masquer les lignes épinglées"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Show the pinned rows"
+msgstr "Afficher les lignes épinglées"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Restore SQL"
+msgstr "Restaurer le SQL"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Put the pinned result's query back in the editor"
+msgstr "Remettre la requête du résultat épinglé dans l’éditeur"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Unpin"
+msgstr "Désépingler"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "removed"
+msgstr "supprimée"
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Pinned · %{count} row · %{time}"
+msgid_plural "Pinned · %{count} rows · %{time}"
+msgstr[0] "Épinglé · %{count} ligne · %{time}"
+msgstr[1] "Épinglé · %{count} lignes · %{time}"

@@ -5637,3 +5637,90 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "To make this chart live, filter its query on the x axis with a {{%{variable}}} variable, for example %{example}."
 msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Pin this result in place of the pinned one"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Keep this result on screen to compare the next runs with it"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Pin this instead"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Pin to compare"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Compared with the pinned result"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Rows"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Columns unchanged"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "%{before}ms → %{after}ms"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Where the pinned result shows"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Pinned result"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Hide the pinned rows"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Show the pinned rows"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Restore SQL"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Put the pinned result's query back in the editor"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Unpin"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "removed"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Pinned · %{count} row · %{time}"
+msgid_plural "Pinned · %{count} rows · %{time}"
+msgstr[0] ""
+msgstr[1] ""
