@@ -200,6 +200,12 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
     test "creates a weekly schedule with a webhook", %{query: query} do
       {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/new")
 
+      assert has_element?(
+               live,
+               "#schedule-what",
+               "A query's results, or every card of a dashboard."
+             )
+
       live |> element("#target-query-#{query.id}") |> render_click()
       assert has_element?(live, "#schedule-target", "Revenue")
 
@@ -524,6 +530,13 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
 
       {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/new")
       assert has_element?(live, "#target-picker", "Boards")
+
+      assert has_element?(
+               live,
+               "#schedule-what",
+               "every card of a dashboard, or a board's output"
+             )
+
       live |> element("#target-board-7") |> render_click()
       assert has_element?(live, "#schedule-target", "Churn board")
       assert has_element?(live, "#schedule-target", "Board")

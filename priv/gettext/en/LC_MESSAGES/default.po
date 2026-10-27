@@ -5829,3 +5829,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Search what you can schedule…"
 msgstr ""
+
+#: lib/lotus/web/pages/schedules_page.ex
+#, elixir-autogen, elixir-format
+msgid " or "
+msgstr ""
+
+#: lib/lotus/web/pages/schedules_page.ex
+#, elixir-autogen, elixir-format
+msgid "A query's results, every card of a dashboard, or a %{kind}'s output."
+msgstr ""

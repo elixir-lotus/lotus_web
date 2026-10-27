@@ -5829,3 +5829,13 @@ msgstr "Rechercher ce que vous pouvez planifier"
 #, elixir-autogen, elixir-format
 msgid "Search what you can schedule…"
 msgstr "Rechercher ce que vous pouvez planifier…"
+
+#: lib/lotus/web/pages/schedules_page.ex
+#, elixir-autogen, elixir-format
+msgid " or "
+msgstr " ou "
+
+#: lib/lotus/web/pages/schedules_page.ex
+#, elixir-autogen, elixir-format
+msgid "A query's results, every card of a dashboard, or a %{kind}'s output."
+msgstr "Les résultats d'une requête, toutes les cartes d'un tableau de bord, ou la sortie d'un %{kind}."
