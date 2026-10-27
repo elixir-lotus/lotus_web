@@ -531,6 +531,15 @@
 - **`{{{a}}}` holds no variable**, as Lotus reads it; the editor found
   `{{a}}` in it.
 
+- **Follow a foreign key reads the statement with the tokenizer.** It
+  matched the statement with regular expressions, so a string or a quoted
+  name holding a keyword, `--`, `/*` or `;`
+  (`WHERE title = 'Q&A; part 2'`, `SELECT "group by"`) turned the foreign
+  key links off, and on MySQL a double-quoted string in the select list
+  (`SELECT "user_id" FROM posts`, a constant) passed for a column. It now
+  reads `Lotus.Query.Tokenizer` tokens under the source's lexical rules. A
+  statement with a comment still gets no links.
+
 - **The schema browser's default schemas for a source a resolver adds at
   runtime.** It looked the source up in `config :lotus, data_sources:` only,
   and fell back to `public` for any other source. It now asks

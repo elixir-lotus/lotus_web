@@ -1,9 +1,10 @@
 defmodule Lotus.Web.Queries.ReferencesTest do
   use Lotus.Web.Case
 
+  alias Lotus.Query.Tokenizer.Profile
   alias Lotus.Web.Queries.References
 
-  describe "single_table/1" do
+  describe "single_table/2" do
     test "a plain select of one table" do
       assert References.single_table("SELECT * FROM test_posts") == {:ok, {nil, "test_posts"}}
 
@@ -40,6 +41,36 @@ defmodule Lotus.Web.Queries.ReferencesTest do
           ] do
         assert References.single_table(statement) == :error, statement
       end
+    end
+
+    test "a keyword, comment marker or semicolon in a literal or a quoted name" do
+      assert References.single_table(
+               "SELECT * FROM test_posts WHERE title = 'a -- b /* c */; d JOIN e UNION f'"
+             ) == {:ok, {nil, "test_posts"}}
+
+      assert References.single_table(~s(SELECT "group by", "union" FROM test_posts)) ==
+               {:ok, {nil, "test_posts"}}
+
+      assert References.single_table(
+               "SELECT * FROM test_posts WHERE title = $$it's; -- here$$",
+               Profile.for_language("sql:postgres")
+             ) == {:ok, {nil, "test_posts"}}
+    end
+
+    test "the source's quotes" do
+      mysql = Profile.for_language("sql:mysql")
+
+      assert References.single_table(~s(SELECT * FROM `test posts` WHERE x = "a; b"), mysql) ==
+               {:ok, {nil, "test posts"}}
+
+      # In MySQL "user_id" is a string, so the column is a constant.
+      assert References.single_table(~s(SELECT "user_id" FROM test_posts), mysql) == :error
+
+      assert References.single_table("SELECT * FROM test_posts WHERE x = 1 # note", mysql) ==
+               :error
+
+      assert References.single_table("SELECT * FROM test_posts /*! UNION SELECT 1 */", mysql) ==
+               :error
     end
   end
 
