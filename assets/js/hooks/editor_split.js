@@ -5,11 +5,17 @@
 //
 // The editor (#editor) is phx-update="ignore", so the height set here stays
 // across LiveView updates. Off on narrow screens, where the page scrolls.
+//
+// Another page splits its own two panes with the divider's data: the pane
+// it sizes (`data-target`, the id of the first of the two, whose style the
+// page leaves to the hook, as with JS.ignore_attributes), where the height
+// is kept (`data-key`) and the pane's default share (`data-share`).
 import { load, store } from "../lib/settings";
 
 const KEY = "editor_height";
 // The default: this share of the space the editor and the results share.
 const DEFAULT_SHARE = 0.35;
+const TARGET = "editor";
 const MIN_EDITOR = 96;
 const MIN_RESULTS = 220;
 const STEP = 24;
@@ -17,7 +23,10 @@ const WIDE = "(min-width: 640px)";
 
 const EditorSplit = {
   mounted() {
-    this.editor = document.getElementById("editor");
+    const { target, key, share } = this.el.dataset;
+    this.editor = document.getElementById(target || TARGET);
+    this.storeKey = key || KEY;
+    this.share = Number.parseFloat(share) || DEFAULT_SHARE;
     this.area = this.el.parentElement;
     this.wide = window.matchMedia(WIDE);
 
@@ -49,7 +58,7 @@ const EditorSplit = {
 
   stored() {
     try {
-      const height = load(KEY);
+      const height = load(this.storeKey);
       return Number.isFinite(height) ? height : null;
     } catch (_error) {
       return null;
@@ -83,7 +92,7 @@ const EditorSplit = {
       return;
     }
 
-    const px = this.clamp(height ?? this.space() * DEFAULT_SHARE);
+    const px = this.clamp(height ?? this.space() * this.share);
     this.editor.style.minHeight = "0";
     this.editor.style.height = `${px}px`;
     this.editor.setAttribute("data-split", "");
@@ -95,7 +104,7 @@ const EditorSplit = {
     this.apply(this.height);
     if (save) {
       try {
-        store(KEY, this.height);
+        store(this.storeKey, this.height);
       } catch (_error) {
         // A browser that keeps nothing still drags.
       }
@@ -105,7 +114,7 @@ const EditorSplit = {
   reset() {
     this.height = null;
     try {
-      store(KEY, null);
+      store(this.storeKey, null);
     } catch (_error) {
       // Nothing kept to forget.
     }

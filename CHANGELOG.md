@@ -13,6 +13,8 @@
 
 ### Added
 
+- **A page splits its panes as the query editor does** — the divider between the query editor and its results (`EditorSplit`) sizes the pane its `data-target` names, keeps the height under its `data-key` and starts at its `data-share`, so a page (a Lotus Pro workflow's canvas and its results) has the same divider. ⌘↑ and ⌘↓ click the page's button marked `data-lotus-shortcut="minimize"` or `"expand"`, except in a field or the editor, which keep their keys.
+
 - **Lotus Pro's tabs on the home page.** After Queries, Dashboards and
   Reports & alerts, a tab of Pro's draws its own list (`?tab=<id>` opens
   it; `Lotus.Web.Pro.home_tabs/1`).
