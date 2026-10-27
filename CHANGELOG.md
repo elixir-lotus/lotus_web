@@ -37,6 +37,10 @@
   label, and warns of options with no value, values that come more than once
   and columns left out. The modal says which source and search path the SQL
   runs on.
+- **One searchable picker for saved queries.** Choosing the query of a
+  dashboard card, the source query of a dashboard filter and the saved query
+  of a dropdown's options is Erabi's select, searched by name, data source
+  and description, instead of a list of every query.
 - **A dropdown whose options fail says so.** When its options query fails,
   its saved query is gone or may not run, the toolbar dropdown is marked
   "Options failed", with the reason on a warning icon, instead of an empty

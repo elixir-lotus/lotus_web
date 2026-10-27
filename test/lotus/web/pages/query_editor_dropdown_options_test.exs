@@ -144,10 +144,9 @@ defmodule Lotus.Web.Pages.QueryEditorDropdownOptionsTest do
       live = open_options_modal()
       choose_source(live, "saved_query")
 
-      html =
-        live
-        |> element("#dropdown-options-saved-query")
-        |> render_change(%{"saved_query_id" => to_string(saved.id)})
+      assert "User names" in Erabi.Test.choices(live, "dropdown-options-saved-query-id")
+
+      html = Erabi.Test.choose(live, "dropdown-options-saved-query-id", saved.id)
 
       assert html =~ "Open this query"
 

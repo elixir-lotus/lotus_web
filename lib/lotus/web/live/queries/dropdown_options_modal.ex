@@ -21,6 +21,8 @@ defmodule Lotus.Web.Queries.DropdownOptionsModal do
   alias Lotus.Web.Formatters.VariableOptionsFormatter, as: OptionsFormatter
   alias Lotus.Web.QueryEditor.DropdownOptions
 
+  import Lotus.Web.Components.QueryPicker
+
   @select_class "w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-input-dark text-text-light dark:text-text-dark focus:ring-pink-500 focus:border-pink-500"
 
   @impl Phoenix.LiveComponent
@@ -268,7 +270,6 @@ defmodule Lotus.Web.Queries.DropdownOptionsModal do
                 <.saved_query_picker
                   saved_queries={@saved_queries}
                   saved_query_id={@saved_query_id}
-                  select_class={@select_class}
                   myself={@myself}
                 />
                 <.column_rules />
@@ -433,27 +434,22 @@ defmodule Lotus.Web.Queries.DropdownOptionsModal do
   defp saved_query_picker(assigns) do
     ~H"""
     <form id="dropdown-options-saved-query" phx-change="change_saved_query" phx-target={@myself} class="space-y-2">
-      <label for="dropdown-options-saved-query-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+      <div id="dropdown-options-saved-query-label" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
         <%= gettext("Saved query") %>
-      </label>
+      </div>
       <%= if @saved_queries == [] and is_nil(@saved_query_id) do %>
         <p class="text-sm text-gray-500 dark:text-gray-400">
           <%= gettext("There are no saved queries yet. Save a query that lists the options, then pick it here.") %>
         </p>
       <% else %>
-        <select id="dropdown-options-saved-query-id" name="saved_query_id" class={@select_class}>
-          <option value=""><%= gettext("Choose a saved query") %></option>
-          <option
-            :if={@saved_query_id && not Enum.any?(@saved_queries, &(&1.id == @saved_query_id))}
-            value={@saved_query_id}
-            selected
-          >
-            <%= gettext("Query #%{id} (not found)", id: @saved_query_id) %>
-          </option>
-          <option :for={query <- @saved_queries} value={query.id} selected={query.id == @saved_query_id}>
-            <%= query.name %><%= if query.data_source, do: " · #{query.data_source}" %>
-          </option>
-        </select>
+        <.query_picker
+          id="dropdown-options-saved-query-id"
+          name="saved_query_id"
+          value={@saved_query_id}
+          queries={@saved_queries}
+          missing={@saved_query_id && gettext("Query #%{id} (not found)", id: @saved_query_id)}
+          label_id="dropdown-options-saved-query-label"
+        />
         <.link
           :if={@saved_query_id}
           navigate={lotus_path(["queries", @saved_query_id])}
