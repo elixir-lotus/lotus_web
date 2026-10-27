@@ -16,6 +16,8 @@ defmodule Lotus.Web.Queries.References do
   # written into the statement, and the identifiers are the ones the source
   # described, quoted by its adapter.
 
+  alias Lotus.Query.Tokenizer
+  alias Lotus.Query.Tokenizer.Profile
   alias Lotus.Source.Adapter
   alias Lotus.Storage.Query
   alias Lotus.Storage.QueryVariable
@@ -38,13 +40,41 @@ defmodule Lotus.Web.Queries.References do
   defp column_regex,
     do: Regex.compile!("\\A(?:(?<qualifier>#{@ident})\\s*\\.\\s*)?(?<name>\\*|#{@ident})\\z", "s")
 
-  # Words that change which rows or columns a statement gives, comments, and
-  # a second statement.
-  defp unsafe?(statement) do
+  # Words that change which rows or columns a statement gives, a comment
+  # marker the engine reads as code (MySQL's `/*! ... */`), and a second
+  # statement. Matched against `masked/1`, where literals and quoted names
+  # can't hold them.
+  defp unsafe?(masked) do
     Regex.match?(
       ~r/\b(?:union|intersect|except|join|group\s+by|having|window)\b|--|\/\*|;.*\S/is,
-      statement
+      masked
     )
+  end
+
+  # The statement read through the tokenizer, so a keyword, `--` or `;` in
+  # a string literal or a quoted name is not taken for code. `code/1` keeps
+  # the quoted names for the patterns above and puts `''` for a literal;
+  # `masked/1` puts a plain name for each quoted name too.
+  defp code(tokens), do: tokens |> view(&Function.identity/1) |> IO.iodata_to_binary()
+  defp masked(tokens), do: tokens |> view(fn _name -> "x" end) |> IO.iodata_to_binary()
+
+  defp view(tokens, identifier) do
+    Enum.map(tokens, fn
+      {:code, raw} -> raw
+      {:identifier, raw} -> identifier.(raw)
+      {:string, _raw} -> "''"
+      {:variable, _name, raw} -> raw
+      {:block, inner} -> ["[[", view(inner, identifier), "]]"]
+    end)
+  end
+
+  # A comment may say anything; a statement with one is not read.
+  defp comment?(tokens) do
+    Enum.any?(tokens, fn
+      {:comment, _raw} -> true
+      {:block, inner} -> comment?(inner)
+      _token -> false
+    end)
   end
 
   @typedoc "A foreign key of a result column: the table and column it references."
@@ -53,12 +83,20 @@ defmodule Lotus.Web.Queries.References do
   @doc """
   The table a statement reads, as `{schema, table}`, when its result columns
   are that table's columns as they are; `:error` otherwise.
+
+  `profile` gives the source's string, identifier and comment syntax;
+  it defaults to ANSI SQL.
   """
-  @spec single_table(String.t()) :: {:ok, {String.t() | nil, String.t()}} | :error
-  def single_table(statement) when is_binary(statement) do
-    with %{"columns" => columns, "relation" => relation} = parts <-
-           Regex.named_captures(select_regex(), statement),
-         false <- unsafe?(statement),
+  @spec single_table(String.t(), Profile.t()) :: {:ok, {String.t() | nil, String.t()}} | :error
+  def single_table(statement, profile \\ Profile.for_language("sql"))
+
+  def single_table(statement, %Profile{} = profile) when is_binary(statement) do
+    tokens = Tokenizer.tokenize(statement, profile)
+
+    with false <- comment?(tokens),
+         false <- unsafe?(masked(tokens)),
+         %{"columns" => columns, "relation" => relation} = parts <-
+           Regex.named_captures(select_regex(), code(tokens)),
          false <- Regex.match?(~r/\A(?:where|order|limit|offset|fetch|join)\z/i, parts["alias"]),
          {schema, table} <- relation(relation),
          true <- plain_columns?(columns, [table, unquote_ident(parts["alias"])]) do
@@ -68,7 +106,7 @@ defmodule Lotus.Web.Queries.References do
     end
   end
 
-  def single_table(_statement), do: :error
+  def single_table(_statement, _profile), do: :error
 
   defp relation(relation) do
     case Regex.scan(Regex.compile!(@ident), relation) do
@@ -112,7 +150,7 @@ defmodule Lotus.Web.Queries.References do
   def for_result(source, statement, columns, opts \\ []) do
     with true <- sql_source?(source),
          true <- columns == Enum.uniq(columns),
-         {:ok, {schema, table}} <- single_table(statement),
+         {:ok, {schema, table}} <- single_table(statement, profile(source)),
          {:ok, described} <- describe(source, schema, table, opts) do
       for %{name: name, references: %{table: _} = ref} <- described,
           name in columns,
@@ -124,6 +162,8 @@ defmodule Lotus.Web.Queries.References do
   rescue
     _error -> %{}
   end
+
+  defp profile(source), do: Profile.for_language(Lotus.Source.query_language(source))
 
   defp sql_source?(source) do
     match?("sql:" <> _, Lotus.Source.query_language(source))
