@@ -67,6 +67,17 @@ defmodule Lotus.Web.Pro do
   end
 
   @doc """
+  A short line Lotus Pro adds about a saved query or dashboard where the
+  lists describe it ("Created by Ana"), or `nil` without it.
+  """
+  @spec byline(map()) :: String.t() | nil
+  def byline(record) do
+    if available?() and function_exported?(pro_web(), :byline, 1),
+      do: apply(pro_web(), :byline, [record]),
+      else: nil
+  end
+
+  @doc """
   Renders Pro slot content, or `nil` if Pro is not installed.
   """
   @spec render_slot(atom(), map()) :: term() | nil
