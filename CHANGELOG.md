@@ -578,6 +578,12 @@
 
 ### Fixed
 
+- **A value chosen right after saving a new query was lost.** The dashboard
+  holds the query editor's state as of the last navigation (saving one), and
+  rendered the editor with it again when the "Query saved" flash cleared, so
+  the toolbar's values went back to the saved defaults and the query ran
+  without them. The editor now takes only what the dashboard changed.
+
 - **Long tooltips ran out of their box.** A tooltip's text never wrapped,
   so one longer than the box spilled past it. A tooltip now takes the width
   of its text and wraps at its maximum width.
