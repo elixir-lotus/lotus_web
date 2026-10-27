@@ -434,6 +434,14 @@
 
 ### Changed
 
+- **The results grid's filters are in the Results header row.** Add
+  filter, and the chips of the filters set, sit at the end of the row that
+  says "Results", the status and the row count, instead of on a line of
+  their own above the grid: the rows get that line (44px) back. Chips that
+  do not fit wrap under the row's text. The bar is Masu's own, moved there
+  in the browser, so its clicks, keys and menus are as before; its menus
+  open right-aligned to their button, inside the results and the window.
+
 - **The editor opens with a source's tables, and describes their columns
   as statements use them.** It no longer describes every table when it
   opens, so a database with hundreds of tables opens at once: the
@@ -530,6 +538,15 @@
 
 - **`{{{a}}}` holds no variable**, as Lotus reads it; the editor found
   `{{a}}` in it.
+
+- **A `{{variable}}` in a comment or a quoted identifier is not a
+  variable.** The editor found variables with a regular expression, so
+  `-- {{note}}`, `"{{col}}"` or, on ClickHouse and MySQL, `# {{note}}`
+  added a variable input that Lotus never binds. It now reads the text
+  with the editor's tokenizer under the source's lexical rules, the same
+  ones the server uses. Variables in code and in string literals
+  (`'%{{q}}%'`) count, as on the server, and so does its name grammar:
+  `{{ q }}` and `{{1q}}` are not variables. The highlighting follows.
 
 - **The SQL editor for an external SQL adapter such as ClickHouse.** A
   source whose editor config names its language `"sql:<dialect>"` (as
