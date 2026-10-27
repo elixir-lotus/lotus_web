@@ -13,6 +13,10 @@
 
 ### Added
 
+- **Lotus Pro's tabs on the home page.** After Queries, Dashboards and
+  Reports & alerts, a tab of Pro's draws its own list (`?tab=<id>` opens
+  it; `Lotus.Web.Pro.home_tabs/1`).
+
 - **Lotus Pro in the command palette.** Pro's pages are under "Go to", as
   its header links them; what it lets the user create is under "Create";
   and what it searches (its workflows, say) is a group of results of its

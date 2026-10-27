@@ -31,6 +31,20 @@ defmodule Lotus.Web.Pro do
   end
 
   @doc """
+  Lotus Pro's tabs of the home page, after Queries and Dashboards, for the
+  request's `info` (`request_info/1`), or `[]` without it: each `%{id:,
+  label:, component:}` (and `:count`), `id` a string (`?tab=<id>` opens
+  it) and `component` a LiveComponent, given the request's `:info`,
+  `:context` and `:scope`, that draws the tab's content.
+  """
+  @spec home_tabs(map()) :: [map()]
+  def home_tabs(info) do
+    if available?() and function_exported?(pro_web(), :home_tabs, 1),
+      do: apply(pro_web(), :home_tabs, [info]),
+      else: []
+  end
+
+  @doc """
   What Lotus Pro adds to the command palette for the request's assigns, or
   `%{}` without it:
 

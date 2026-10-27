@@ -70,6 +70,20 @@ defmodule Lotus.Web.QueriesPage do
                   title={gettext("An alert is firing")}
                 ></span>
               </button>
+              <%!-- Lotus Pro's tabs (`Lotus.Web.Pro.home_tabs/1`) --%>
+              <button
+                :for={tab <- @pro_tabs}
+                id={"tab-" <> tab.id}
+                phx-click="switch_tab"
+                phx-value-tab={tab.id}
+                phx-target={@myself}
+                class={tab_class(@active_tab == tab.id)}
+              >
+                <%= tab.label %>
+                <span :if={tab[:count]} class="ml-2 px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded-full">
+                  <%= tab.count %>
+                </span>
+              </button>
             </div>
           </div>
 
@@ -85,6 +99,15 @@ defmodule Lotus.Web.QueriesPage do
                 counts={ScheduleComponents.counts(@schedule_entries)}
                 can_manage={Authorization.allowed?(assigns, :manage_schedule)}
                 target={@myself}
+              />
+            <% end %>
+            <%= for tab <- @pro_tabs, @active_tab == tab.id do %>
+              <.live_component
+                module={tab.component}
+                id={"home-tab-" <> tab.id}
+                info={Pro.request_info(assigns)}
+                context={assigns[:context]}
+                scope={assigns[:scope]}
               />
             <% end %>
             <%= if @active_tab == :queries do %>
@@ -672,6 +695,7 @@ defmodule Lotus.Web.QueriesPage do
       query_search: "",
       query_source: "",
       active_tab: :queries,
+      pro_tabs: [],
       dashboard_view: Map.get(views, :dashboards, :grid),
       dashboard_search: "",
       dashboard_sort: "updated",
@@ -714,6 +738,7 @@ defmodule Lotus.Web.QueriesPage do
       %{"tab" => "dashboards"} -> {:noreply, assign(socket, active_tab: :dashboards)}
       %{"tab" => "schedules"} -> {:noreply, assign(socket, active_tab: :schedules)}
       %{"page" => "schedules"} -> {:noreply, assign(socket, active_tab: :schedules)}
+      %{"tab" => tab} -> {:noreply, assign(socket, active_tab: pro_tab(socket, tab))}
       _params -> {:noreply, socket}
     end
   end
@@ -732,7 +757,8 @@ defmodule Lotus.Web.QueriesPage do
     |> assign(
       queries: queries,
       query_entries: QueryList.entries(queries),
-      dashboards: dashboards
+      dashboards: dashboards,
+      pro_tabs: Pro.home_tabs(info)
     )
     |> load_schedules()
   end
@@ -758,7 +784,7 @@ defmodule Lotus.Web.QueriesPage do
         "queries" -> :queries
         "dashboards" -> :dashboards
         "schedules" -> :schedules
-        _ -> :queries
+        tab -> pro_tab(socket, tab)
       end
 
     {:noreply, assign(socket, active_tab: active_tab)}
@@ -836,4 +862,9 @@ defmodule Lotus.Web.QueriesPage do
 
   @impl Page
   def handle_info(_msg, socket), do: {:noreply, socket}
+
+  # A tab of Lotus Pro's, by its id; else the queries.
+  defp pro_tab(socket, tab) do
+    if Enum.any?(socket.assigns[:pro_tabs] || [], &(&1.id == tab)), do: tab, else: :queries
+  end
 end
