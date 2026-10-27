@@ -770,7 +770,12 @@ defmodule Lotus.Web.QueriesPage do
 
       assign(socket,
         schedule_entries:
-          ScheduleComponents.entries(Lotus.Schedules.list_schedules(), queries, dashboards)
+          ScheduleComponents.entries(
+            Lotus.Schedules.list_schedules(),
+            queries,
+            dashboards,
+            Actor.opts(socket.assigns)
+          )
       )
     else
       socket

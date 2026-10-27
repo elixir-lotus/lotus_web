@@ -5819,3 +5819,13 @@ msgstr[1] ""
 #, elixir-autogen, elixir-format
 msgid "New rows"
 msgstr ""
+
+#: lib/lotus/web/pages/schedules_page.ex
+#, elixir-autogen, elixir-format
+msgid "Search what you can schedule"
+msgstr ""
+
+#: lib/lotus/web/pages/schedules_page.ex
+#, elixir-autogen, elixir-format
+msgid "Search what you can schedule…"
+msgstr ""

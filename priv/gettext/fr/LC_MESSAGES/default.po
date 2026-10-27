@@ -5819,3 +5819,13 @@ msgstr[1] "Et %{count} lignes de plus."
 #, elixir-autogen, elixir-format
 msgid "New rows"
 msgstr "Nouvelles lignes"
+
+#: lib/lotus/web/pages/schedules_page.ex
+#, elixir-autogen, elixir-format
+msgid "Search what you can schedule"
+msgstr "Rechercher ce que vous pouvez planifier"
+
+#: lib/lotus/web/pages/schedules_page.ex
+#, elixir-autogen, elixir-format
+msgid "Search what you can schedule…"
+msgstr "Rechercher ce que vous pouvez planifier…"

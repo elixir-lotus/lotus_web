@@ -16,7 +16,7 @@ defmodule Lotus.Web.SchedulesPage do
   use Lotus.Web, :live_component
 
   alias Lotus.Schedules
-  alias Lotus.Schedules.{Alert, Cron}
+  alias Lotus.Schedules.{Alert, Cron, Targets}
   alias Lotus.Storage.Schedule
   alias Lotus.Web.{Actor, Authorization, Page, Pro}
   alias Lotus.Web.Schedules.{Cadence, Deliveries, TimeZones}
@@ -36,7 +36,7 @@ defmodule Lotus.Web.SchedulesPage do
         cron_error: cron_error(cron),
         zone: TimeZones.entry(assigns.draft["time_zone"]) || TimeZones.entry("Etc/UTC"),
         next_runs: Cadence.next_runs(cron, assigns.draft["time_zone"], @next_runs),
-        target_entry: target_entry(assigns.draft["target"], assigns.queries, assigns.dashboards)
+        target_entry: target_entry(assigns.draft["target"], assigns)
       )
 
     ~H"""
@@ -75,6 +75,7 @@ defmodule Lotus.Web.SchedulesPage do
                   search={@target_search}
                   queries={@queries}
                   dashboards={@dashboards}
+                  targets={@targets}
                   target={@myself}
                 />
                 <.when_section
@@ -232,13 +233,21 @@ defmodule Lotus.Web.SchedulesPage do
   attr(:search, :string, required: true)
   attr(:queries, :list, required: true)
   attr(:dashboards, :list, required: true)
+  attr(:targets, :list, default: [])
   attr(:target, :any, required: true)
 
   defp what_section(assigns) do
+    found_targets =
+      for group <- assigns.targets,
+          items = found(group.items, assigns.search),
+          items != [],
+          do: %{group | items: items}
+
     assigns =
       assign(assigns,
         found_queries: found(assigns.queries, assigns.search),
-        found_dashboards: found(assigns.dashboards, assigns.search)
+        found_dashboards: found(assigns.dashboards, assigns.search),
+        found_targets: found_targets
       )
 
     ~H"""
@@ -256,7 +265,7 @@ defmodule Lotus.Web.SchedulesPage do
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-medium text-gray-900 dark:text-white"><%= @target_entry.name %></p>
           <p class="truncate text-xs text-gray-500 dark:text-gray-400">
-            <%= if @target_entry.kind == :query, do: gettext("Query"), else: gettext("Dashboard") %><span :if={@target_entry.description}> · <%= @target_entry.description %></span>
+            <%= kind_label(@target_entry) %><span :if={@target_entry.description}> · <%= @target_entry.description %></span>
           </p>
         </div>
         <button
@@ -278,8 +287,8 @@ defmodule Lotus.Web.SchedulesPage do
             id="target-search"
             name="target_search"
             value={@search}
-            placeholder={gettext("Search your queries and dashboards…")}
-            aria-label={gettext("Search your queries and dashboards")}
+            placeholder={if @targets == [], do: gettext("Search your queries and dashboards…"), else: gettext("Search what you can schedule…")}
+            aria-label={if @targets == [], do: gettext("Search your queries and dashboards"), else: gettext("Search what you can schedule")}
             autocomplete="off"
             phx-debounce="150"
             class="w-full border-0 bg-white py-2.5 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:ring-0 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
@@ -302,7 +311,16 @@ defmodule Lotus.Web.SchedulesPage do
             current={@draft["target"]}
             target={@target}
           />
-          <p :if={@found_queries == [] and @found_dashboards == []} class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+          <.target_group
+            :for={group <- @found_targets}
+            label={group.plural}
+            kind={group.type}
+            icon={:target}
+            items={group.items}
+            current={@draft["target"]}
+            target={@target}
+          />
+          <p :if={@found_queries == [] and @found_dashboards == [] and @found_targets == []} class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
             <%= gettext("Nothing has these words. Save a query or a dashboard first, then schedule it.") %>
           </p>
         </div>
@@ -312,7 +330,8 @@ defmodule Lotus.Web.SchedulesPage do
   end
 
   attr(:label, :string, required: true)
-  attr(:kind, :atom, required: true)
+  attr(:kind, :any, required: true)
+  attr(:icon, :atom, default: nil)
   attr(:items, :list, required: true)
   attr(:current, :string, required: true)
   attr(:target, :any, required: true)
@@ -332,7 +351,7 @@ defmodule Lotus.Web.SchedulesPage do
         @current == "#{@kind}:#{item.id}" && "bg-pink-50 dark:bg-pink-950/30"
       ]}
     >
-      <Parts.target_icon kind={@kind} class="h-4 w-4 shrink-0 text-gray-400" />
+      <Parts.target_icon kind={@icon || @kind} class="h-4 w-4 shrink-0 text-gray-400" />
       <span class="min-w-0 flex-1">
         <span class="block truncate text-sm text-gray-900 dark:text-white"><%= item.name %></span>
         <span :if={description(item)} class="block truncate text-xs text-gray-500 dark:text-gray-400"><%= description(item) %></span>
@@ -799,7 +818,7 @@ defmodule Lotus.Web.SchedulesPage do
   defp alert_section(assigns) do
     assigns =
       assign(assigns,
-        query?: match?(%{kind: :query}, assigns.target_entry),
+        query?: match?(%{kind: kind} when kind in [:query, :target], assigns.target_entry),
         on?: assigns.draft["alert"] == "true",
         compared?: assigns.draft["condition"] in ~w(above below equals)
       )
@@ -954,7 +973,7 @@ defmodule Lotus.Web.SchedulesPage do
             <% end %>
           </dd>
         </div>
-        <div :if={@draft["alert"] == "true" and match?(%{kind: :query}, @target_entry)} class="flex items-start gap-3">
+        <div :if={@draft["alert"] == "true" and match?(%{kind: kind} when kind in [:query, :target], @target_entry)} class="flex items-start gap-3">
           <dt class="sr-only"><%= gettext("Alert") %></dt>
           <Icons.exclamation_triangle class="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
           <dd class="min-w-0 text-gray-700 dark:text-gray-300"><%= alert_sentence(@draft) %></dd>
@@ -1052,18 +1071,46 @@ defmodule Lotus.Web.SchedulesPage do
     end
   end
 
-  defp target_entry("query:" <> id, queries, _dashboards), do: find_target(:query, id, queries)
+  defp target_entry("query:" <> id, assigns), do: find_target(:query, id, assigns.queries)
 
-  defp target_entry("dashboard:" <> id, _queries, dashboards),
-    do: find_target(:dashboard, id, dashboards)
+  defp target_entry("dashboard:" <> id, assigns),
+    do: find_target(:dashboard, id, assigns.dashboards)
 
-  defp target_entry(_target, _queries, _dashboards), do: nil
+  # A target an extension registers (`Lotus.Schedules.Target`): `type:id`.
+  defp target_entry(target, assigns) when is_binary(target) do
+    with [type, id] <- String.split(target, ":", parts: 2),
+         %{} = group <- Enum.find(assigns[:targets] || [], &(&1.type == type)),
+         %{} = entry <- find_target(:target, id, group.items) do
+      Map.merge(entry, %{type: type, label: group.label})
+    else
+      _none -> nil
+    end
+  end
+
+  defp target_entry(_target, _assigns), do: nil
 
   defp find_target(kind, id, items) do
     case Enum.find(items, &(to_string(&1.id) == id)) do
       nil -> nil
       item -> %{kind: kind, id: item.id, name: item.name, description: description(item)}
     end
+  end
+
+  defp kind_label(%{kind: :query}), do: gettext("Query")
+  defp kind_label(%{kind: :dashboard}), do: gettext("Dashboard")
+  defp kind_label(%{label: label}), do: label
+
+  # The targets extensions register, each with what the viewer may
+  # schedule of it.
+  defp target_groups(opts) do
+    for {type, module} <- Enum.sort(Targets.all()) do
+      label = module.label()
+      %{type: type, label: label, plural: plural(module, label), items: module.list(opts)}
+    end
+  end
+
+  defp plural(module, label) do
+    if function_exported?(module, :plural_label, 0), do: module.plural_label(), else: label
   end
 
   ## Mount and params
@@ -1090,6 +1137,7 @@ defmodule Lotus.Web.SchedulesPage do
       viewer_zone: viewer_zone,
       queries: Pro.list_queries(info),
       dashboards: Pro.list_dashboards(info),
+      targets: target_groups(Actor.opts(socket.assigns)),
       channel_specs: Deliveries.specs(),
       adding_delivery: false,
       delivery_tests: %{},
@@ -1353,7 +1401,7 @@ defmodule Lotus.Web.SchedulesPage do
   end
 
   defp suggested_name(target, assigns) do
-    case target_entry(target, assigns.queries, assigns.dashboards) do
+    case target_entry(target, assigns) do
       nil -> ""
       entry -> entry.name
     end
@@ -1377,6 +1425,7 @@ defmodule Lotus.Web.SchedulesPage do
       case params do
         %{"query_id" => id} -> "query:#{id}"
         %{"dashboard_id" => id} -> "dashboard:#{id}"
+        %{"target" => target} when is_binary(target) -> target
         _ -> ""
       end
 
@@ -1418,6 +1467,9 @@ defmodule Lotus.Web.SchedulesPage do
       draft_rule(schedule.rule)
     )
   end
+
+  defp draft_target(%Schedule{target_type: type, target_id: id}) when is_binary(type),
+    do: "#{type}:#{id}"
 
   defp draft_target(%Schedule{query_id: nil, dashboard_id: id}), do: "dashboard:#{id}"
   defp draft_target(%Schedule{query_id: id}), do: "query:#{id}"
@@ -1497,25 +1549,35 @@ defmodule Lotus.Web.SchedulesPage do
 
   defp attrs(draft, specs) do
     with {:ok, deliveries} <- deliveries(draft["deliveries"], specs) do
-      {query_id, dashboard_id} = target(draft["target"])
+      {query_id, dashboard_id, target_type, target_id} = target(draft["target"])
 
       {:ok,
        %{
          name: draft["name"],
          query_id: query_id,
          dashboard_id: dashboard_id,
+         target_type: target_type,
+         target_id: target_id,
          cron: Cadence.to_cron(draft["cadence"]),
          time_zone: blank(draft["time_zone"]) || "Etc/UTC",
          enabled: draft["enabled"] == "true",
          deliveries: deliveries,
-         rule: rule(draft, query_id)
+         rule: rule(draft, dashboard_id, draft["target"])
        }}
     end
   end
 
-  defp target("query:" <> id), do: {id, nil}
-  defp target("dashboard:" <> id), do: {nil, id}
-  defp target(_none), do: {nil, nil}
+  defp target("query:" <> id), do: {id, nil, nil, nil}
+  defp target("dashboard:" <> id), do: {nil, id, nil, nil}
+
+  defp target(target) when is_binary(target) do
+    case String.split(target, ":", parts: 2) do
+      [type, id] when type != "" and id != "" -> {nil, nil, type, id}
+      _none -> {nil, nil, nil, nil}
+    end
+  end
+
+  defp target(_none), do: {nil, nil, nil, nil}
 
   defp deliveries(deliveries, specs) do
     Enum.reduce_while(deliveries, {:ok, []}, fn delivery, {:ok, acc} ->
@@ -1526,7 +1588,8 @@ defmodule Lotus.Web.SchedulesPage do
     end)
   end
 
-  defp rule(%{"alert" => "true"} = draft, query_id) when not is_nil(query_id) do
+  # A query or a target may be an alert; a dashboard may not.
+  defp rule(%{"alert" => "true"} = draft, nil, target) when target not in [nil, ""] do
     %{
       condition: draft["condition"],
       column: blank(draft["column"]),
@@ -1535,7 +1598,7 @@ defmodule Lotus.Web.SchedulesPage do
     }
   end
 
-  defp rule(_draft, _query_id), do: nil
+  defp rule(_draft, _dashboard_id, _target), do: nil
 
   defp blank(value) when is_binary(value) do
     case String.trim(value) do
