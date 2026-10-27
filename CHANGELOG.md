@@ -13,6 +13,22 @@
 
 ### Added
 
+- **Dropdown options from a column, the SQL editor or a saved query.** The
+  "Dropdown values" modal of a variable has four sources: Custom list, Pick a
+  column (a table and its value and label columns, Lotus writes the SQL),
+  Write SQL (in the editor the query has, with its highlighting and
+  completion, Ctrl + Enter to test) and Saved query (its rows are the
+  options; the variable keeps its id, `options_query_id` from
+  elixir-lotus/lotus, so an edit to that query changes them). Test Query
+  previews up to 100 options, says which column is the value and which the
+  label, and warns of options with no value, values that come more than once
+  and columns left out. The modal says which source and search path the SQL
+  runs on.
+- **A dropdown whose options fail says so.** When its options query fails,
+  its saved query is gone or may not run, the toolbar dropdown is marked
+  "Options failed", with the reason on a warning icon, instead of an empty
+  list.
+
 - **Pinned results: every row compared, scrolled together**
   (elixir-lotus/lotus#117). Two follow-ups to pinning:
   - **Compare rows** in the comparison bar runs the pinned query and the
@@ -544,6 +560,10 @@
   failed on PostgreSQL.
 
 ### Fixed
+
+- **Options from a query after a change in the variable settings.**
+  Choosing the dropdown widget reset the editor's source, so the options
+  modal had no query mode and the editor lost its schema.
 
 - **A dashboard's auto-refresh crashed the page.** Its timer sent its tick
   to the page's LiveView, which had no handler for it, rather than to the

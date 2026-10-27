@@ -176,6 +176,7 @@ defmodule Lotus.Web.Queries.VariableSettingsComponent do
     ~H"""
     <input type="hidden" name={@vf[:static_options].name} value={format_static_options_for_form(@vf[:static_options].value)} />
     <input type="hidden" name={@vf[:options_query].name} value={@vf[:options_query].value || ""} />
+    <input type="hidden" name={@vf[:options_query_id].name} value={@vf[:options_query_id].value || ""} />
     """
   end
 
@@ -195,7 +196,7 @@ defmodule Lotus.Web.Queries.VariableSettingsComponent do
         _ -> true
       end
 
-    has_static or has_query
+    has_static or has_query or vf[:options_query_id].value not in [nil, ""]
   end
 
   defp format_static_options_for_form(static_options) do

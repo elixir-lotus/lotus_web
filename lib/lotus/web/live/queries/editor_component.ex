@@ -219,6 +219,7 @@ defmodule Lotus.Web.Queries.EditorComponent do
               var={v}
               value={Map.get(@variable_values, v.name, v.default)}
               resolved_options={get_variable_options(@resolved_variable_options, v.name)}
+              options_error={get_variable_options_error(@resolved_variable_options, v.name)}
               optional={MapSet.member?(@optional_variable_names, v.name)}
             />
           <% end %>
@@ -476,6 +477,16 @@ defmodule Lotus.Web.Queries.EditorComponent do
   defp run_label(_all), do: gettext("Run query")
 
   defp get_variable_options(options, variable_name) do
-    Map.get(options, variable_name)
+    case Map.get(options, variable_name) do
+      {:error, _message} -> []
+      options -> options
+    end
+  end
+
+  defp get_variable_options_error(options, variable_name) do
+    case Map.get(options, variable_name) do
+      {:error, message} -> message
+      _options -> nil
+    end
   end
 end

@@ -15,6 +15,7 @@ defmodule Lotus.Web.QueryEditorPage do
   alias Lotus.Web.ExportController
   alias Lotus.Web.Formatters.VariableOptionsFormatter, as: OptionsFormatter
   alias Lotus.Web.Page
+  alias Lotus.Web.Pro
   alias Lotus.Web.Queries.AiAssistantComponent
   alias Lotus.Web.Queries.AiPreview
   alias Lotus.Web.Queries.AiSteps
@@ -26,6 +27,7 @@ defmodule Lotus.Web.QueryEditorPage do
   alias Lotus.Web.Queries.SchemaExplorerComponent
   alias Lotus.Web.Queries.VariableSettingsComponent
   alias Lotus.Web.Queries.VisualizationSettingsComponent
+  alias Lotus.Web.QueryEditor.DropdownOptions
   alias Lotus.Web.QueryEditor.Variables
   alias Lotus.Web.SchemaBuilder
   alias Lotus.Web.SourcesMap
@@ -239,6 +241,10 @@ defmodule Lotus.Web.QueryEditorPage do
           variable_name={@dropdown_options_variable_name}
           variable_data={Variables.get_data(@query_form, @dropdown_options_variable_name)}
           dynamic_options={@dynamic_options}
+          data_source={@query.data_source}
+          search_path={@query.search_path}
+          tables={@editor_schema |> Kernel.||(%{}) |> Map.keys() |> Enum.sort()}
+          saved_queries={@dropdown_saved_queries}
           parent={@myself}
         />
       <% end %>
@@ -891,7 +897,8 @@ defmodule Lotus.Web.QueryEditorPage do
     {:noreply,
      assign(socket,
        modal: :dropdown_options,
-       dropdown_options_variable_name: variable_name
+       dropdown_options_variable_name: variable_name,
+       dropdown_saved_queries: dropdown_saved_queries(socket)
      )}
   end
 
@@ -1588,31 +1595,31 @@ defmodule Lotus.Web.QueryEditorPage do
     {:ok, socket}
   end
 
-  def update(%{action: :test_dropdown_query} = assigns, socket) do
-    repo = query_source(socket)
-    search_path = socket.assigns.query.search_path
-
-    dropdown_opts = [limit: 3, cache: false] ++ Actor.opts(socket.assigns)
+  # A test run of the options source the modal has: its preview, or why it
+  # failed. It asks for one row past the preview, to know there are more.
+  def update(%{action: :test_dropdown_query, options_source: options_source}, socket) do
+    opts =
+      [limit: DropdownOptions.preview_limit() + 1, cache: false] ++ Actor.opts(socket.assigns)
 
     result =
-      case Authorization.authorize(socket.assigns, :query, repo) do
-        :allow -> fetch_dropdown_options(assigns.sql_query, repo, search_path, dropdown_opts)
-        {:deny, reason} -> {:error, reason}
+      with {:ok, result} <-
+             run_options_source(socket.assigns, socket.assigns.query, options_source, opts) do
+        {:ok, DropdownOptions.preview(result)}
       end
 
-    case result do
-      {:ok, results} ->
-        send_update(DropdownOptionsModal,
-          id: "dropdown_options_modal",
-          query_test_result: {:ok, results}
-        )
+    send_update(DropdownOptionsModal, id: "dropdown_options_modal", query_test_result: result)
 
-      {:error, error} ->
-        send_update(DropdownOptionsModal,
-          id: "dropdown_options_modal",
-          query_test_result: {:error, error}
-        )
-    end
+    {:ok, socket}
+  end
+
+  # The columns of a table the column picker chose.
+  def update(%{action: :describe_option_table, table: table}, socket) do
+    {columns, socket} = describe_columns(socket, [table])
+
+    send_update(DropdownOptionsModal,
+      id: "dropdown_options_modal",
+      table_columns: {table, Map.get(columns, table) || []}
+    )
 
     {:ok, socket}
   end
@@ -1702,6 +1709,8 @@ defmodule Lotus.Web.QueryEditorPage do
       modal: nil,
       variable_settings_active_tab: nil,
       dropdown_options_variable_name: nil,
+      # The saved queries the dropdown options modal offers.
+      dropdown_saved_queries: [],
       editor_schema: nil,
       editor_dialect: nil,
       editor_language: nil,
@@ -2639,7 +2648,8 @@ defmodule Lotus.Web.QueryEditorPage do
           %{
             var
             | static_options: options_data.static_options,
-              options_query: options_data.options_query
+              options_query: options_data.options_query,
+              options_query_id: options_data.options_query_id
           }
         else
           var
@@ -2657,93 +2667,134 @@ defmodule Lotus.Web.QueryEditorPage do
     |> assign(:resolved_variable_options, resolved_options)
   end
 
-  defp fetch_dropdown_options(sql_query, repo, search_path, opts) do
+  # The saved queries a variable's options can come from: those the person
+  # sees, but the query itself.
+  defp dropdown_saved_queries(socket) do
+    current_id = socket.assigns.query.id
+
+    socket.assigns
+    |> Pro.request_info()
+    |> Pro.list_queries()
+    |> Enum.reject(&(&1.id == current_id))
+    |> Enum.sort_by(&String.downcase(&1.name || ""))
+  end
+
+  # The rows of an options source: `{:sql, sql}` runs on the query's own
+  # source, `{:saved_query, id}` runs that query, read only, on its source.
+  # `:limit` keeps the first rows only.
+  defp run_options_source(assigns, query, {:sql, sql}, opts) do
+    repo = source_or_default(query.data_source, assigns)
+
+    case Authorization.authorize(assigns, :query, repo) do
+      :allow -> run_options_statement(sql, repo, query.search_path, opts)
+      {:deny, reason} -> {:error, reason}
+    end
+  end
+
+  defp run_options_source(assigns, _query, {:saved_query, id}, opts) do
+    case id && Lotus.get_query(id, Actor.opts(assigns)) do
+      nil ->
+        {:error, gettext("The saved query of these options no longer exists")}
+
+      query ->
+        source = query.data_source || elem(Lotus.default_data_source(), 0)
+
+        case Authorization.authorize(assigns, :query, source) do
+          :allow -> run_saved_options_query(query, opts)
+          {:deny, reason} -> {:error, reason}
+        end
+    end
+  end
+
+  defp run_options_statement(sql_query, repo, search_path, opts) do
     limit = Keyword.get(opts, :limit)
-    use_cache = Keyword.get(opts, :cache, true)
+
+    limited_query =
+      if limit do
+        repo
+        |> Lotus.Source.limit_query(Statement.new(sql_query), limit)
+        |> Map.fetch!(:body)
+      else
+        sql_query
+      end
+
+    run_opts =
+      opts
+      |> options_run_opts()
+      |> Keyword.put(:repo, repo)
+
+    run_opts =
+      if search_path && String.trim(search_path) != "",
+        do: Keyword.put(run_opts, :search_path, search_path),
+        else: run_opts
+
+    limited_query |> Lotus.run_statement([], run_opts) |> options_result()
+  rescue
+    error ->
+      {:error, gettext("Query execution failed: %{reason}", reason: Exception.message(error))}
+  end
+
+  defp run_saved_options_query(query, opts) do
+    run_opts = options_run_opts(opts) ++ [read_only: true]
+
+    run_opts =
+      case Keyword.get(opts, :limit) do
+        nil -> run_opts
+        limit -> Keyword.put(run_opts, :window, limit: limit, offset: 0, count: :none)
+      end
+
+    query |> Lotus.run_query(run_opts) |> options_result()
+  rescue
+    error ->
+      {:error, gettext("Query execution failed: %{reason}", reason: Exception.message(error))}
+  end
+
+  defp options_run_opts(opts) do
     actor = Keyword.take(opts, [:context, :scope])
 
-    try do
-      limited_query =
-        if limit do
-          repo
-          |> Lotus.Source.limit_query(Statement.new(sql_query), limit)
-          |> Map.fetch!(:body)
-        else
-          sql_query
-        end
+    if Keyword.get(opts, :cache, true),
+      do: Keyword.put(actor, :cache, profile: :options),
+      else: actor
+  end
 
-      run_opts = Keyword.merge(actor, repo: repo)
+  defp options_result({:ok, result}), do: {:ok, result}
+  defp options_result({:error, error}) when is_binary(error), do: {:error, error}
 
-      run_opts =
-        if search_path && String.trim(search_path) != "" do
-          Keyword.put(run_opts, :search_path, search_path)
-        else
-          run_opts
-        end
+  defp options_result({:error, error}) when is_exception(error),
+    do: {:error, Exception.message(error)}
 
-      run_opts =
-        if use_cache do
-          Keyword.put(run_opts, :cache, profile: :options)
-        else
-          run_opts
-        end
+  defp options_result({:error, error}), do: {:error, inspect(error)}
 
-      case Lotus.run_statement(limited_query, [], run_opts) do
-        {:ok, result} ->
-          formatted_results = OptionsFormatter.from_lotus_result(result)
-          {:ok, formatted_results}
+  # The options of the variables whose options come from a query, by name:
+  # the options, or `{:error, message}` for the widget to show. SQL runs on
+  # the query's source (the default one when it has none), so it needs :query
+  # there too; a saved query needs
+  # :query on its own source.
+  defp resolve_variable_options(%{variables: variables} = query, assigns) do
+    opts = Actor.opts(assigns)
 
-        {:error, error} ->
-          {:error, to_string(error)}
-      end
-    rescue
-      error ->
-        {:error, gettext("Query execution failed: %{reason}", reason: Exception.message(error))}
+    for var <- variables, source = options_source(var), into: %{} do
+      {var.name, variable_options(assigns, query, source, opts)}
     end
   end
 
-  defp resolve_variable_options(%{data_source: nil}, _assigns), do: %{}
-  defp resolve_variable_options(%{data_source: ""}, _assigns), do: %{}
+  defp variable_options(assigns, query, source, opts) do
+    case run_options_source(assigns, query, source, opts) do
+      {:ok, result} ->
+        result |> OptionsFormatter.from_lotus_result() |> OptionsFormatter.to_select_options()
 
-  # An options query runs on the query's source, so it needs :query there too.
-  defp resolve_variable_options(
-         %{
-           data_source: repo,
-           search_path: search_path,
-           variables: variables
-         },
-         assigns
-       ) do
-    if Authorization.allowed?(assigns, :query, repo) do
-      opts = Actor.opts(assigns)
-
-      Enum.reduce(variables, %{}, fn var, acc ->
-        process_variable_options(var, acc, repo, search_path, opts)
-      end)
-    else
-      %{}
+      {:error, message} ->
+        {:error, message}
     end
   end
 
-  defp process_variable_options(var, acc, repo, search_path, opts) do
-    case var.options_query do
-      nil ->
-        acc
+  defp options_source(%{options_query_id: id}) when not is_nil(id), do: {:saved_query, id}
 
-      "" ->
-        acc
-
-      sql_query when is_binary(sql_query) ->
-        case fetch_dropdown_options(sql_query, repo, search_path, opts) do
-          {:ok, results} ->
-            options = OptionsFormatter.to_select_options(results)
-            Map.put(acc, var.name, options)
-
-          {:error, _error} ->
-            Map.put(acc, var.name, [])
-        end
-    end
+  defp options_source(%{options_query: sql}) when is_binary(sql) do
+    if String.trim(sql) == "", do: nil, else: {:sql, sql}
   end
+
+  defp options_source(_var), do: nil
 
   defp generate_export_url(socket) do
     query = query_to_run(socket.assigns)

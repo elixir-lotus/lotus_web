@@ -718,7 +718,7 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
         |> element(~s([phx-click="open_dropdown_options_modal"]))
         |> render_click()
 
-      assert html =~ "From query"
+      assert html =~ "Write SQL"
     end
   end
 
