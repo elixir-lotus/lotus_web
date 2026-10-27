@@ -402,7 +402,8 @@
   says "Results", the status and the row count, instead of on a line of
   their own above the grid: the rows get that line (44px) back. Chips that
   do not fit wrap under the row's text. The bar is Masu's own, moved there
-  in the browser, so its clicks, keys and menus are as before.
+  in the browser, so its clicks, keys and menus are as before; its menus
+  open right-aligned to their button, inside the results and the window.
 
 - **The editor opens with a source's tables, and describes their columns
   as statements use them.** It no longer describes every table when it
