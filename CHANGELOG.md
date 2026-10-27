@@ -13,7 +13,7 @@
 
 ### Added
 
-- **Schedules of what an extension registers** — the schedule editor offers, beside queries and dashboards, the targets an extension registers (`Lotus.Schedules.Target`, such as Lotus Pro's workflows): a group of them in the picker, with what the viewer may schedule; `?target=<type>:<id>` opens a new schedule on one; a target may be an alert, as a query may. The Reports & alerts list names them.
+- **Schedules of what an extension registers** — the schedule editor offers, beside queries and dashboards, the targets an extension registers (`Lotus.Schedules.Target`, such as Lotus Pro's workflows): a group of them in the picker, with what the viewer may schedule; `?target=<type>:<id>` opens a new schedule on one; a target may be an alert, as a query may. The Reports & alerts list names them, and step 1 of the editor says what they send ("or a workflow's output").
 
 - **A page splits its panes as the query editor does** — the divider between the query editor and its results (`EditorSplit`) sizes the pane its `data-target` names, keeps the height under its `data-key` and starts at its `data-share`, so a page (a Lotus Pro workflow's canvas and its results) has the same divider. ⌘↑ and ⌘↓ click the page's button marked `data-lotus-shortcut="minimize"` or `"expand"`, except in a field or the editor, which keep their keys.
 
