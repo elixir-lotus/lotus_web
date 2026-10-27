@@ -94,6 +94,9 @@ defmodule Lotus.Web.Layouts do
     <Icons.moon :if={@name == "moon"} class="h-4 w-4" />
     <Icons.monitor :if={@name == "monitor"} class="h-4 w-4" />
     <Icons.layers :if={@name == "layers"} class="h-4 w-4" />
+    <Icons.key :if={@name == "key"} class="h-4 w-4" />
+    <Icons.wrench :if={@name == "wrench"} class="h-4 w-4" />
+    <Icons.clock :if={@name == "clock"} class="h-4 w-4" />
     """
   end
 

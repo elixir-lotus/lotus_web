@@ -4,8 +4,10 @@ defmodule Lotus.Web.Commands do
 
   The palette offers the pages of the dashboard, what the user may create,
   the appearance and the theme, and it searches the saved queries and the
-  dashboards. `page_actions/2` adds the actions of the page in view: the
-  query editor's toolbar, or the dashboard's.
+  dashboards. Lotus Pro adds its pages (as its header links them), what it
+  lets the user create, and what it searches (its `palette/1`).
+  `page_actions/2` adds the actions of the page in view: the query
+  editor's toolbar, or the dashboard's.
 
   Actions that drive the page click its own buttons in the browser (the
   `lotus:click` event, handled in `app.js`), so the palette does what the
@@ -40,6 +42,7 @@ defmodule Lotus.Web.Commands do
         navigate: lotus_path("", %{tab: "dashboards"})
       )
     ] ++
+      pro_pages(assigns) ++
       create_actions(assigns) ++
       [appearance_action()] ++
       theme_actions(assigns)
@@ -52,8 +55,57 @@ defmodule Lotus.Web.Commands do
     [
       queries: [label: gettext("Queries"), search: &search_queries(assigns, &1)],
       dashboards: [label: gettext("Dashboards"), search: &search_dashboards(assigns, &1)]
-    ]
+    ] ++ pro_sources(assigns)
   end
+
+  # Lotus Pro's pages, as its header links them, under "Go to".
+  defp pro_pages(assigns) do
+    for %{label: label, path: path} = item <- Pro.nav_items(assigns) do
+      action("pro-page-" <> Enum.join(path, "-"), label,
+        section: gettext("Go to"),
+        icon: icon(item[:icon]),
+        navigate: lotus_path(path)
+      )
+    end
+  end
+
+  # What Lotus Pro lets the user create, with Lotus's own.
+  defp pro_creates(assigns) do
+    for item <- Pro.palette(assigns)[:create] || [] do
+      action("pro-new-" <> item.id, item.label,
+        section: gettext("Create"),
+        icon: "plus",
+        navigate: lotus_path(item.path, item[:params] || %{})
+      )
+    end
+  end
+
+  # What Lotus Pro searches, each a group of results.
+  defp pro_sources(assigns) do
+    for source <- Pro.palette(assigns)[:sources] || [] do
+      {source.id,
+       [
+         label: source.label,
+         search: fn query ->
+           query
+           |> source.search.()
+           |> Enum.map(fn result ->
+             action("pro-#{source.id}-#{result.id}", result.label,
+               subtitle: result[:subtitle],
+               icon: icon(source[:icon]),
+               navigate: lotus_path(result.path, result[:params] || %{})
+             )
+           end)
+           |> best(query)
+         end
+       ]}
+    end
+  end
+
+  # An icon the palette draws, else none.
+  defp icon(name) when is_atom(name) and not is_nil(name), do: icon(Atom.to_string(name))
+  defp icon(name) when is_binary(name), do: if(name in icons(), do: name)
+  defp icon(_name), do: nil
 
   @doc """
   The actions of the page in view, for `Jumon.Live.put_actions/2`.
@@ -124,6 +176,7 @@ defmodule Lotus.Web.Commands do
         )
     ]
     |> Enum.filter(& &1)
+    |> Kernel.++(pro_creates(assigns))
   end
 
   # A question for the assistant, asked from the palette: the panel opens on
@@ -262,5 +315,5 @@ defmodule Lotus.Web.Commands do
   @spec icons() :: [String.t()]
   def icons,
     do: ~w(terminal blocks plus play database variable chart_bar clipboard_copy sparkles
-           sun moon monitor layers)
+           sun moon monitor layers key wrench clock)
 end
