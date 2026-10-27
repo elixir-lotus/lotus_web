@@ -1648,8 +1648,20 @@ defmodule Lotus.Web.QueryEditorPage do
     {:ok, follow_reference(socket, column, value)}
   end
 
+  # The dashboard renders the page with all of its assigns, and runs the
+  # page's handle_params on its own socket, so it holds the page's state as of
+  # the last navigation. A render of the dashboard for anything else (a flash
+  # that clears) would put that state back over what the page has changed
+  # since, such as the values chosen in the toolbar. Only the assigns the
+  # dashboard changed since its last render go in.
   def update(assigns, socket) do
-    {:ok, assign(socket, assigns)}
+    changed =
+      case socket.assigns[:dashboard_assigns] do
+        nil -> assigns
+        seen -> Map.reject(assigns, fn {key, value} -> Map.fetch(seen, key) == {:ok, value} end)
+      end
+
+    {:ok, socket |> assign(changed) |> assign(:dashboard_assigns, assigns)}
   end
 
   # The editor offers, browses and autocompletes only the sources the user may
