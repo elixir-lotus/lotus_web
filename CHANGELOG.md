@@ -13,6 +13,43 @@
 
 ### Added
 
+- **An Elasticsearch editor on a par with the SQL one.** The editor reads
+  a JSON source's request as Lotus does (`Lotus.Query.Tokenizer` with the
+  JSON profile: `{{variables}}` bare or in strings, `[[ ]]` blocks where no
+  single `[` is open), so nothing breaks at a bare `{{min_total}}`:
+  - **Autocomplete at every level**, from the adapter's grammar
+    (`context_schema.grammar`): the request's keys, a query's clauses, a
+    `bool`'s, an aggregation's types under its name and nested
+    aggregations, each parameter's keys, `terms` in a query and in an
+    aggregation told apart. Fields, with their mapping type and index,
+    wherever a field goes (`term`, `range`, `sort`, `_source`,
+    `multi_match.fields`…), those of the types a parameter takes first (a
+    `date_histogram`'s date fields, an `avg`'s numbers, a `nested` path);
+    index names for `_index` and `indices_boost`; enum values, `true` and
+    `false`; the request's variables after `{{`. A key goes in with its
+    value's opening (`"bool": { "must": [ | ] }`), a clause where a query
+    goes as `{ "term": { "field": "value" } }`, and the list opens again
+    where the cursor lands. An empty editor offers requests to start from.
+  - **Error markers where Lotus would refuse the request**, with every
+    block kept and with them dropped: a trailing or missing comma, a
+    comment, single quotes, an unquoted key, `{{ x }}`, a request that is
+    not an object, a block inside an array (which Lotus reads as
+    brackets). Warnings for a duplicate key, a key the grammar does not
+    know there, and a second clause in a query.
+  - **Highlighting, folding, indentation and bracket matching** from the
+    same reading, keys and values told apart.
+  - **Format keeps variables and blocks**, and strings and numbers as
+    written; it formatted only what `JSON.parse` takes.
+  - The variables and blocks it finds are those Lotus finds, for the
+    variable inputs too, and `{{variables}}` and `[[ ]]` blocks are
+    highlighted, in SQL as well.
+
+  An adapter that sends no grammar gets the flat `context_schema` read the
+  same way. The editor's JSON reading is held to Lotus's by the tokenizer
+  fixture, which now has a JSON corpus and, for each template, the
+  variables Lotus finds and whether Lotus takes it with its blocks kept or
+  dropped.
+
 - **A divider between the query editor and its results.** Drag it, or
   focus it and use the arrow keys, Home and End, to give the editor more
   or less of the page; double-click it to reset. The height is kept in
@@ -469,6 +506,25 @@
   failed on PostgreSQL.
 
 ### Fixed
+
+- **Columns of a source without schemas.** Autocomplete asked such a source
+  (Elasticsearch's indices) for its columns under the stand-in schema the
+  sidebar lists its tables in, which no table is in, and got none.
+  `editor_columns` also replies with each column's type.
+
+- **Choosing a new query's source switches the editor.** The editor took
+  the source's language and tables only once its text changed, so a new
+  query on an Elasticsearch source kept SQL's highlighting and completion
+  until something was typed.
+
+- **A completion taken as the server catches up stays.** When the server
+  sent back a text the editor had already moved past (a completion taken
+  right after typing), the editor went back to it, and the two texts could
+  swap a few times, the cursor jumping to the start. The editor now drops
+  its own texts coming back.
+
+- **`{{{a}}}` holds no variable**, as Lotus reads it; the editor found
+  `{{a}}` in it.
 
 - **The schema browser's default schemas for a source a resolver adds at
   runtime.** It looked the source up in `config :lotus, data_sources:` only,

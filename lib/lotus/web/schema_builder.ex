@@ -55,6 +55,16 @@ defmodule Lotus.Web.SchemaBuilder do
   @spec columns(SourcesMap.t(), String.t() | nil, String.t() | nil, [String.t()], keyword()) ::
           {:ok, %{String.t() => [String.t()]}} | {:error, :database_not_found}
   def columns(%SourcesMap{} = sources_map, data_repo, search_path, keys, opts \\ []) do
+    with {:ok, described} <- describe(sources_map, data_repo, search_path, keys, opts) do
+      {:ok, Map.new(described, fn {key, columns} -> {key, Enum.map(columns, & &1.name)} end)}
+    end
+  end
+
+  @doc """
+  Like `columns/5`, each column a map with its `:name` and its `:type` as
+  the source names it (`"keyword"`, `"integer"`…), or `nil`.
+  """
+  def describe(%SourcesMap{} = sources_map, data_repo, search_path, keys, opts \\ []) do
     with {:ok, tables} <- tables(sources_map, data_repo, search_path) do
       index = Map.new(tables, fn {key, schema, table} -> {key, {schema, table}} end)
 
@@ -86,7 +96,9 @@ defmodule Lotus.Web.SchemaBuilder do
           for schema <- database.schemas,
               schema.name in selected,
               table <- schema.tables,
-              do: {qualify_table_name(table, schema, selected, database), schema.name, table}
+              do:
+                {qualify_table_name(table, schema, selected, database),
+                 schema_of(database, schema), table}
 
         {:ok, tables}
     end
@@ -118,10 +130,25 @@ defmodule Lotus.Web.SchemaBuilder do
     end
   end
 
+  # A source without schemas (Elasticsearch's indices) lists its tables
+  # under a stand-in schema (SourcesMap's "default"), which no table is in.
+  defp schema_of(%{supports_schemas: true}, schema), do: schema.name
+  defp schema_of(_database, _schema), do: nil
+
   defp fetch_table_columns(data_repo, table_name, schema, opts) do
-    case Lotus.describe_table(data_repo, table_name, [search_path: schema] ++ opts) do
-      {:ok, columns} -> Enum.map(columns, & &1.name)
+    case Lotus.describe_table(data_repo, table_name, search_opts(schema) ++ opts) do
+      {:ok, columns} -> Enum.map(columns, &%{name: &1.name, type: column_type(&1)})
       {:error, _} -> []
     end
   end
+
+  defp search_opts(nil), do: []
+  defp search_opts(schema), do: [search_path: schema]
+
+  defp column_type(%{type: type}) when is_binary(type), do: type
+
+  defp column_type(%{type: type}) when is_atom(type) and not is_nil(type),
+    do: Atom.to_string(type)
+
+  defp column_type(_column), do: nil
 end

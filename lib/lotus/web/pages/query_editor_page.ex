@@ -888,14 +888,16 @@ defmodule Lotus.Web.QueryEditorPage do
   end
 
   # The columns of the tables a statement uses, which the editor's
-  # autocomplete asks for as the person writes (SchemaBuilder.columns/5).
+  # autocomplete asks for as the person writes (SchemaBuilder.describe/5),
+  # and each column's type, which a JSON source's completion shows.
   @impl Phoenix.LiveComponent
   def handle_event("editor_columns", %{"tables" => tables}, socket) when is_list(tables) do
     {columns, socket} = describe_columns(socket, tables)
-    {:reply, %{columns: columns}, socket}
+    {:reply, %{columns: columns, types: column_types(socket, Map.keys(columns))}, socket}
   end
 
-  def handle_event("editor_columns", _params, socket), do: {:reply, %{columns: %{}}, socket}
+  def handle_event("editor_columns", _params, socket),
+    do: {:reply, %{columns: %{}, types: %{}}, socket}
 
   @impl Phoenix.LiveComponent
   def handle_event("fetch_dialect_config", %{"dialect" => dialect_name}, socket) do
@@ -1595,6 +1597,7 @@ defmodule Lotus.Web.QueryEditorPage do
       # by {source, search path} (`editor_columns`).
       editor_schemas: [],
       column_cache: %{},
+      column_type_cache: %{},
       dynamic_options: false,
       # What the run buttons run (`:all`, `:statement`, `:selection`), and
       # the part of the text the last run ran, when it was not all of it.
@@ -1767,27 +1770,47 @@ defmodule Lotus.Web.QueryEditorPage do
     with [_ | _] <- wanted,
          true <- is_binary(data_source),
          true <- Authorization.discoverable?(socket.assigns, data_source),
-         {:ok, columns} <-
-           SchemaBuilder.columns(
+         {:ok, described} <-
+           SchemaBuilder.describe(
              socket.assigns.sources_map,
              data_source,
              search_path,
              wanted,
              Actor.opts(socket.assigns)
            ) do
+      columns = Map.new(described, fn {key, cols} -> {key, Enum.map(cols, & &1.name)} end)
+      types = Map.new(described, fn {key, cols} -> {key, Map.new(cols, &{&1.name, &1.type})} end)
       schema = Map.merge(schema, columns)
+      cache_key = {data_source, search_path}
 
       socket =
         socket
         |> assign(editor_schema: schema)
         |> update(:column_cache, fn cache ->
-          Map.update(cache || %{}, {data_source, search_path}, columns, &Map.merge(&1, columns))
+          Map.update(cache || %{}, cache_key, columns, &Map.merge(&1, columns))
+        end)
+        |> update(:column_type_cache, fn cache ->
+          Map.update(cache || %{}, cache_key, types, &Map.merge(&1, types))
         end)
 
       {described(schema, keys), socket}
     else
       _ -> {described(schema, keys), socket}
     end
+  end
+
+  # The types of the columns of `keys` described so far, by name.
+  defp column_types(socket, keys) do
+    query = socket.assigns.query
+
+    cache =
+      Map.get(
+        socket.assigns[:column_type_cache] || %{},
+        {query.data_source, query.search_path},
+        %{}
+      )
+
+    Map.take(cache, keys)
   end
 
   defp described(schema, keys) do

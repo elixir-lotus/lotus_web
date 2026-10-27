@@ -10,12 +10,15 @@ import {
   transactsql,
   plsql,
 } from "sql-formatter";
+import { parseTemplate, significantTokens } from "./languages/json_dsl/parser.js";
 
 /**
  * Language-aware formatting for the query editor.
  *
- * JSON-shaped languages get a structural pretty-print: the same
- * transformation Chrome's "Pretty print" applies to a raw response.
+ * JSON-shaped languages get a structural pretty-print, two spaces an
+ * indent, as `JSON.stringify(…, null, 2)` lays out a request, on the
+ * template as Lotus reads it: `{{variables}}` (bare or in strings) and
+ * `[[ ]]` blocks stay as written, and so do strings and numbers.
  *
  * SQL gets a formatter (sql-formatter), in the dialect of the source. SQL is
  * whitespace-agnostic, so a formatter has to invent line breaks and
@@ -76,15 +79,66 @@ export function format(content, dialectName) {
 }
 
 function formatJson(content) {
-  const trimmed = content.trim();
-  if (trimmed === "") return { ok: true, content: "" };
+  if (content.trim() === "") return { ok: true, content: "" };
 
-  try {
-    const parsed = JSON.parse(trimmed);
-    return { ok: true, content: JSON.stringify(parsed, null, 2) };
-  } catch (err) {
-    return { ok: false, error: err.message };
+  const { errors } = parseTemplate(content);
+  if (errors.length) return { ok: false, error: errors[0].message };
+
+  return { ok: true, content: layoutJson(content) };
+}
+
+/**
+ * Lay out a JSON template that parses: a line for each property and item,
+ * `{}` and `[]` kept on one line, a block's `[[` on a line of its own
+ * (`[[, "from": {{offset}}]]`).
+ */
+export function layoutJson(content) {
+  const tokens = significantTokens(content);
+  const raw = (t) => content.slice(t.start, t.end);
+  let out = "";
+  let depth = 0;
+  const newline = () => {
+    out = out.replace(/[ \t]+$/, "");
+    out += "\n" + "  ".repeat(depth);
+  };
+
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    const text = raw(t);
+    const next = tokens[i + 1];
+    const prev = tokens[i - 1];
+
+    if (t.type === "block_open") {
+      if (out.trim() !== "" && !/\n *$/.test(out)) newline();
+      out += "[[";
+    } else if (t.type === "block_close") {
+      out += "]]";
+    } else if (t.type === "operator" && (text === "{" || text === "[")) {
+      const close = text === "{" ? "}" : "]";
+      if (next && next.type === "operator" && raw(next) === close) {
+        out += text + close;
+        i += 1;
+      } else {
+        out += text;
+        depth += 1;
+        newline();
+      }
+    } else if (t.type === "operator" && (text === "}" || text === "]")) {
+      depth = Math.max(0, depth - 1);
+      newline();
+      out += text;
+    } else if (t.type === "comma") {
+      out += ",";
+      if (prev && prev.type === "block_open") out += " ";
+      else if (!(next && next.type === "block_close")) newline();
+    } else if (t.type === "operator" && text === ":") {
+      out += ": ";
+    } else {
+      out += text;
+    }
   }
+
+  return out.replace(/[ \t]+$/gm, "");
 }
 
 /**

@@ -12,7 +12,12 @@ export default {
     const textarea = this.el;
     const editorContainer = document.getElementById("editor");
 
+    // The texts sent to the server that it has not echoed back yet.
+    this.sentContents = [];
+
     const onContentChange = (content) => {
+      this.sentContents.push(content);
+      if (this.sentContents.length > 100) this.sentContents.shift();
       this.pushEventTo(
         this.el.closest("[data-phx-component]"),
         "editor_content_changed",
@@ -77,6 +82,7 @@ export default {
       onVars: onVariableChange,
       completionOptions: {
         fetchColumns: (tables) => this.fetchColumns(tables),
+        fetchFields: (indices) => this.fetchFields(indices),
         source: () => this.getSourceFromDOM(),
         schemas: () => this.getSchemasFromDOM(),
       },
@@ -290,9 +296,22 @@ export default {
       this.fetchAndApplyDialect(newDialect);
     }
 
-    if (this.editor && this.el.value !== this.editor.getContent()) {
-      this.editor.setContent(this.el.value);
+    if (this.editor) this.syncContent(this.el.value);
+  },
+
+  // The statement as the server renders it. An echo of a text the editor
+  // sent is behind the editor, which has moved on (a completion taken, more
+  // typed): it is dropped, as are the sends before it. Any other text is a
+  // change from the server (a generated query, a query loaded) and replaces
+  // the editor's.
+  syncContent(value) {
+    const sent = this.sentContents || [];
+    const echoed = sent.lastIndexOf(value);
+    if (echoed !== -1) {
+      sent.splice(0, echoed + 1);
+      return;
     }
+    if (value !== this.editor.getContent()) this.editor.setContent(value);
   },
 
   // The server offers formatting for SQL and JSON sources only.
@@ -347,6 +366,19 @@ export default {
         "editor_columns",
         { tables },
         (reply) => resolve((reply && reply.columns) || {}),
+      );
+    });
+  },
+
+  // The fields of a JSON source's indices, with their mapping types:
+  // `{columns: {index: [name]}, types: {index: {name: type}}}`.
+  fetchFields(indices) {
+    return new Promise((resolve) => {
+      this.pushEventTo(
+        this.el.closest("[data-phx-component]"),
+        "editor_columns",
+        { tables: indices },
+        (reply) => resolve(reply || {}),
       );
     });
   },

@@ -55,6 +55,22 @@ defmodule Lotus.Web.Pages.QueryEditorColumnsTest do
     assert ask(live, ["test_users"]) == columns
   end
 
+  test "says each column's type, for the columns it describes and keeps", %{live: live} do
+    live
+    |> with_target("#query-editor-page")
+    |> render_hook("editor_columns", %{"tables" => ["test_users"]})
+
+    assert_reply(live, %{columns: %{"test_users" => names}, types: %{"test_users" => types}})
+    assert Map.keys(types) |> Enum.sort() == Enum.sort(names)
+    assert is_binary(types["email"])
+
+    live
+    |> with_target("#query-editor-page")
+    |> render_hook("editor_columns", %{"tables" => ["test_users"]})
+
+    assert_reply(live, %{types: %{"test_users" => ^types}})
+  end
+
   test "keeps the columns when the editor's source comes back", %{live: live} do
     ask(live, ["test_users"])
 
@@ -77,6 +93,6 @@ defmodule Lotus.Web.Pages.QueryEditorColumnsTest do
     |> with_target("#query-editor-page")
     |> render_hook("editor_columns", %{"tables" => "test_users"})
 
-    assert_reply(live, %{columns: %{}})
+    assert_reply(live, %{columns: %{}, types: %{}})
   end
 end
