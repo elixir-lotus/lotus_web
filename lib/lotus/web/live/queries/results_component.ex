@@ -34,6 +34,11 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   attr(:pinned, :any, default: nil)
   attr(:pin_layout, :atom, default: :split)
   attr(:pin_open, :boolean, default: false)
+  # Side by side, the tables scroll together; and every row of both queries
+  # compared (`Lotus.diff/3`): `%{status: :running | :ok | :error, …}`.
+  attr(:pin_sync, :boolean, default: true)
+  attr(:pin_diff, :map, default: nil)
+  attr(:pin_diff_tab, :atom, default: :removed)
 
   def render_result(assigns) do
     ~H"""
@@ -100,15 +105,21 @@ defmodule Lotus.Web.Queries.ResultsComponent do
           <.compare_bar
             :if={@pinned}
             comparison={Pin.compare(@pinned, @result)}
+            keys={Pin.key_columns(@pinned, @result)}
+            diff={@pin_diff}
             layout={@pin_layout}
+            sync={@pin_sync}
             target={@target}
           />
+
+          <.diff_panel :if={@pinned && @pin_diff} diff={@pin_diff} tab={@pin_diff_tab} target={@target} />
 
           <.pinned_strip
             :if={@pinned && @pin_layout == :stacked}
             pinned={@pinned}
             open={@pin_open}
             comparison={Pin.compare(@pinned, @result)}
+            removed_keys={removed_keys(@pin_diff)}
             target={@target}
           />
 
@@ -121,6 +132,9 @@ defmodule Lotus.Web.Queries.ResultsComponent do
               :if={@pinned && @pin_layout == :split}
               pinned={@pinned}
               comparison={Pin.compare(@pinned, @result)}
+              removed_keys={removed_keys(@pin_diff)}
+              grid={grid_id(@query_id, @results_run)}
+              sync={@pin_sync}
               target={@target}
               class="h-full"
             />
@@ -170,6 +184,13 @@ defmodule Lotus.Web.Queries.ResultsComponent do
             </span>
           </div>
           <.render_error error={@error} />
+          <.pinned_panel
+            :if={@pinned}
+            pinned={@pinned}
+            comparison={%{removed: []}}
+            target={@target}
+            class="mb-4 max-h-[60%]"
+          />
 
         <% true -> %>
           <.empty_state os={@os} />
@@ -202,7 +223,10 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   end
 
   attr(:comparison, :map, required: true)
+  attr(:keys, :list, default: [])
+  attr(:diff, :map, default: nil)
   attr(:layout, :atom, required: true)
+  attr(:sync, :boolean, default: true)
   attr(:target, :any, required: true)
 
   defp compare_bar(assigns) do
@@ -234,10 +258,55 @@ defmodule Lotus.Web.Queries.ResultsComponent do
       >
         <%= gettext("%{before}ms → %{after}ms", before: @comparison.duration, after: @comparison.now_duration) %>
       </span>
+      <form
+        :if={@keys != []}
+        id="pin-diff-form"
+        phx-submit="diff_rows"
+        phx-target={@target}
+        class="inline-flex items-center gap-1.5"
+      >
+        <label for="pin-diff-key" class="text-gray-600 dark:text-gray-400"><%= gettext("Match rows on") %></label>
+        <select
+          id="pin-diff-key"
+          name="key"
+          class="h-7 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 py-0 pl-2 pr-7 text-xs"
+        >
+          <option :for={key <- @keys} value={key} selected={@diff && @diff[:key] == key}><%= key %></option>
+        </select>
+        <button
+          id="pin-diff-btn"
+          type="submit"
+          disabled={@diff && @diff.status == :running}
+          title={gettext("Run both queries and compare every row, matched on this column")}
+          class="px-2 py-1 font-medium rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+        >
+          <%= gettext("Compare rows") %>
+        </button>
+      </form>
+      <button
+        :if={@layout == :split}
+        id="pin-sync-btn"
+        type="button"
+        phx-click="toggle_pin_sync"
+        phx-target={@target}
+        aria-pressed={to_string(@sync)}
+        class={[
+          "ml-auto hidden md:inline-flex px-2 py-1 font-medium rounded-md border transition-colors",
+          if(@sync,
+            do: "border-pink-200 bg-pink-50 text-pink-700 dark:border-pink-800 dark:bg-pink-900/30 dark:text-pink-300",
+            else: "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
+          )
+        ]}
+      >
+        <%= gettext("Scroll together") %>
+      </button>
       <div
         role="group"
         aria-label={gettext("Where the pinned result shows")}
-        class="ml-auto hidden md:inline-flex rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden"
+        class={[
+          "hidden md:inline-flex rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden",
+          @layout != :split && "ml-auto"
+        ]}
       >
         <button
           :for={{layout, label} <- [split: gettext("Side by side"), stacked: gettext("Stacked")]}
@@ -264,6 +333,9 @@ defmodule Lotus.Web.Queries.ResultsComponent do
 
   attr(:pinned, :any, required: true)
   attr(:comparison, :map, required: true)
+  attr(:removed_keys, :any, default: nil)
+  attr(:grid, :string, default: nil)
+  attr(:sync, :boolean, default: true)
   attr(:target, :any, required: true)
   attr(:class, :string, default: nil)
 
@@ -279,8 +351,14 @@ defmodule Lotus.Web.Queries.ResultsComponent do
       ]}
     >
       <.pinned_header pinned={@pinned} target={@target} />
-      <div class="flex-1 overflow-auto">
-        <.pinned_table pinned={@pinned} removed={@comparison.removed} />
+      <div
+        id="pinned-result-scroll"
+        class="flex-1 overflow-auto"
+        phx-hook="PinScroll"
+        data-grid={@grid}
+        data-sync={to_string(@sync)}
+      >
+        <.pinned_table pinned={@pinned} removed={@comparison.removed} removed_keys={@removed_keys} />
       </div>
     </section>
     """
@@ -289,6 +367,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
   attr(:pinned, :any, required: true)
   attr(:open, :boolean, required: true)
   attr(:comparison, :map, required: true)
+  attr(:removed_keys, :any, default: nil)
   attr(:target, :any, required: true)
 
   # The pinned result above the current one: a line, its rows when opened.
@@ -301,7 +380,7 @@ defmodule Lotus.Web.Queries.ResultsComponent do
     >
       <.pinned_header pinned={@pinned} target={@target} toggle={true} open={@open} />
       <div :if={@open} id="pinned-result-rows" class="min-h-0 overflow-auto border-t border-indigo-200 dark:border-indigo-800">
-        <.pinned_table pinned={@pinned} removed={@comparison.removed} />
+        <.pinned_table pinned={@pinned} removed={@comparison.removed} removed_keys={@removed_keys} />
       </div>
     </section>
     """
@@ -373,8 +452,13 @@ defmodule Lotus.Web.Queries.ResultsComponent do
 
   attr(:pinned, :any, required: true)
   attr(:removed, :list, default: [])
+  # `{key column, the values of the rows the last run does not have}`,
+  # once the rows were compared.
+  attr(:removed_keys, :any, default: nil)
 
   defp pinned_table(assigns) do
+    assigns = assign(assigns, :key_index, key_index(assigns.pinned, assigns.removed_keys))
+
     ~H"""
     <table class="w-full border-collapse text-sm">
       <thead class="sticky top-0 bg-indigo-50 dark:bg-indigo-950">
@@ -399,7 +483,11 @@ defmodule Lotus.Web.Queries.ResultsComponent do
       <tbody>
         <tr
           :for={row <- @pinned.result.rows || []}
-          class="odd:bg-transparent even:bg-indigo-100/40 dark:even:bg-indigo-900/20"
+          class={
+            if gone?(row, @key_index, @removed_keys),
+              do: "lotus-pin-gone bg-orange-100/80 dark:bg-orange-900/30",
+              else: "odd:bg-transparent even:bg-indigo-100/40 dark:even:bg-indigo-900/20"
+          }
         >
           <td
             :for={value <- row}
@@ -412,6 +500,157 @@ defmodule Lotus.Web.Queries.ResultsComponent do
     </table>
     """
   end
+
+  attr(:diff, :map, required: true)
+  attr(:tab, :atom, required: true)
+  attr(:target, :any, required: true)
+
+  # Every row of both queries compared, on the pin's key: the rows gone,
+  # new and changed, a tab each.
+  defp diff_panel(assigns) do
+    ~H"""
+    <section
+      id="pin-diff"
+      aria-label={gettext("Rows compared")}
+      class="mb-2 flex-shrink-0 flex flex-col max-h-[40%] min-h-0 rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden text-xs"
+    >
+      <div class="flex flex-wrap items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800/60">
+        <%= case @diff.status do %>
+          <% :running -> %>
+            <span class="inline-flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+              <.spinner class="w-3 h-3" />
+              <%= gettext("Comparing every row on %{key}…", key: @diff.key) %>
+            </span>
+          <% :error -> %>
+            <span id="pin-diff-error" class="text-red-700 dark:text-red-400"><%= @diff.message %></span>
+          <% :ok -> %>
+            <span class="font-semibold text-gray-900 dark:text-gray-100">
+              <%= gettext("Every row, on %{key}", key: @diff.key) %>
+            </span>
+            <div role="tablist" class="inline-flex flex-wrap gap-1">
+              <button
+                :for={{tab, label, count, class} <- diff_tabs(@diff.diff)}
+                id={"pin-diff-tab-#{tab}"}
+                type="button"
+                role="tab"
+                aria-selected={to_string(@tab == tab)}
+                phx-click="set_pin_diff_tab"
+                phx-value-tab={tab}
+                phx-target={@target}
+                class={[
+                  "px-2 py-0.5 rounded-md border font-medium",
+                  if(@tab == tab,
+                    do: "border-gray-400 bg-white dark:bg-gray-700 dark:border-gray-500",
+                    else: "border-transparent hover:bg-white dark:hover:bg-gray-700"
+                  ),
+                  class
+                ]}
+              >
+                <%= label %> <span class="tabular-nums"><%= count %></span>
+              </button>
+            </div>
+            <span class="text-gray-600 dark:text-gray-400">
+              <%= ngettext("%{count} row the same", "%{count} rows the same", @diff.diff.unchanged, count: @diff.diff.unchanged) %>
+            </span>
+        <% end %>
+        <button
+          type="button"
+          phx-click="clear_pin_diff"
+          phx-target={@target}
+          aria-label={gettext("Close the comparison")}
+          class="ml-auto p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+        >
+          <Icons.x_mark class="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div :if={@diff.status == :ok} id="pin-diff-rows" class="min-h-0 overflow-auto">
+        <.diff_rows diff={@diff.diff} tab={@tab} />
+      </div>
+    </section>
+    """
+  end
+
+  attr(:diff, :map, required: true)
+  attr(:tab, :atom, required: true)
+
+  @diff_rows_shown 200
+
+  defp diff_rows(assigns) do
+    rows = Map.fetch!(assigns.diff, assigns.tab)
+
+    assigns =
+      assign(assigns,
+        rows: Enum.take(rows, @diff_rows_shown),
+        more: max(length(rows) - @diff_rows_shown, 0)
+      )
+
+    ~H"""
+    <p :if={@rows == []} class="px-3 py-3 text-gray-600 dark:text-gray-400">
+      <%= gettext("None.") %>
+    </p>
+    <table :if={@rows != []} class="w-full border-collapse">
+      <thead class="sticky top-0 bg-white dark:bg-gray-800">
+        <tr>
+          <th
+            :for={column <- @diff.columns}
+            class="px-3 h-8 text-left font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 whitespace-nowrap"
+          >
+            <%= column %>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr :for={row <- @rows} class="border-b border-gray-100 dark:border-gray-700/60">
+          <td
+            :for={column <- @diff.columns}
+            class={[
+              "px-3 h-8 whitespace-nowrap max-w-xs truncate text-gray-900 dark:text-gray-100",
+              @tab == :changed && column in row.columns && "bg-blue-50 dark:bg-blue-900/30"
+            ]}
+          >
+            <%= if @tab == :changed and column in row.columns do %>
+              <span class="text-orange-800 dark:text-orange-300 line-through"><%= cell(row.before[column]) %></span>
+              → <span class="font-semibold text-blue-800 dark:text-blue-300"><%= cell(row.after[column]) %></span>
+            <% else %>
+              <%= cell(if(@tab == :changed, do: row.after[column], else: row[column])) %>
+            <% end %>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p :if={@more > 0} class="px-3 py-2 text-gray-600 dark:text-gray-400">
+      <%= ngettext("And %{count} more row.", "And %{count} more rows.", @more, count: @more) %>
+    </p>
+    """
+  end
+
+  defp diff_tabs(diff) do
+    [
+      {:removed, gettext("Rows gone"), length(diff.removed),
+       "text-orange-800 dark:text-orange-300"},
+      {:added, gettext("New rows"), length(diff.added), "text-blue-800 dark:text-blue-300"},
+      {:changed, gettext("Changed rows"), length(diff.changed),
+       "text-gray-800 dark:text-gray-200"}
+    ]
+  end
+
+  defp cell(nil), do: ""
+  defp cell(value), do: Lotus.Web.CellFormatter.format(value)
+
+  # The key and the values (as shown) of the pinned rows the last run does
+  # not have, once every row was compared.
+  defp removed_keys(%{status: :ok, key: key, diff: diff}),
+    do: {key, MapSet.new(diff.removed, &cell(&1[key]))}
+
+  defp removed_keys(_diff), do: nil
+
+  defp key_index(_pinned, nil), do: nil
+
+  defp key_index(pinned, {key, _values}),
+    do: Enum.find_index(pinned.result.columns || [], &(&1 == key))
+
+  defp gone?(_row, nil, _removed), do: false
+  defp gone?(row, index, {_key, values}), do: MapSet.member?(values, cell(Enum.at(row, index)))
 
   defp delta_class(delta) when delta < 0, do: "text-orange-800 dark:text-orange-300"
   defp delta_class(_delta), do: "text-blue-800 dark:text-blue-300"

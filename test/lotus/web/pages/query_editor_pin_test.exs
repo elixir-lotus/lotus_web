@@ -66,3 +66,70 @@ defmodule Lotus.Web.Pages.QueryEditorPinTest do
     refute has_element?(live, "#pin-compare-bar")
   end
 end
+
+defmodule Lotus.Web.Pages.QueryEditorPinDiffTest do
+  # Every row of the pinned query and the last run, compared on a key.
+  use Lotus.Web.Case
+
+  import Phoenix.LiveViewTest
+
+  setup do
+    create_test_users()
+    :ok
+  end
+
+  defp open do
+    {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
+
+    render_async(live)
+    live
+  end
+
+  defp run(live, statement) do
+    live
+    |> element(~s(form[phx-submit="run_query"]))
+    |> render_submit(%{"query" => %{"statement" => statement}})
+
+    render_async(live)
+  end
+
+  test "compare every row on a key: gone, new and changed", %{} do
+    live = open()
+    run(live, "SELECT name, email FROM test_users ORDER BY name")
+    live |> element("#pin-result-btn") |> render_click()
+
+    run(
+      live,
+      "SELECT name, upper(email) AS email FROM test_users WHERE name <> 'Alice' " <>
+        "UNION ALL SELECT 'Dora', 'dora@test.com' ORDER BY name"
+    )
+
+    assert has_element?(live, "#pin-diff-key option[value=name]")
+    live |> form("#pin-diff-form", %{"key" => "name"}) |> render_submit()
+    render_async(live)
+
+    assert has_element?(live, "#pin-diff-tab-removed", "1")
+    assert has_element?(live, "#pin-diff-tab-added", "1")
+    assert has_element?(live, "#pin-diff-tab-changed", "2")
+    assert has_element?(live, "#pin-diff-rows", "Alice")
+    # The pinned row the last run does not have.
+    assert has_element?(live, "#pinned-result tr.lotus-pin-gone", "Alice")
+
+    live |> element("#pin-diff-tab-added") |> render_click()
+    assert has_element?(live, "#pin-diff-rows", "Dora")
+
+    live |> element("#pin-diff-tab-changed") |> render_click()
+    assert has_element?(live, "#pin-diff-rows", "BOB@TEST.COM")
+  end
+
+  test "a key that is not unique says so", %{} do
+    live = open()
+    run(live, "SELECT 1 AS one, name FROM test_users")
+    live |> element("#pin-result-btn") |> render_click()
+    run(live, "SELECT 1 AS one, name FROM test_users")
+
+    live |> form("#pin-diff-form", %{"key" => "one"}) |> render_submit()
+    render_async(live)
+    assert has_element?(live, "#pin-diff-error", "pick a column whose values are unique")
+  end
+end

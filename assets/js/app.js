@@ -34,6 +34,7 @@ import MultiSelectSearch from "./hooks/multi_select_search";
 import PlatformScout from "./hooks/platform_scout";
 import ResultsVisibility from "./hooks/results_visibility";
 import ResultsFilters from "./hooks/results_filters";
+import PinScroll from "./hooks/pin_scroll";
 import EditorSplit from "./hooks/editor_split";
 import TagInput from "./hooks/tag_input";
 import TagRemove from "./hooks/tag_remove";
@@ -144,6 +145,7 @@ const hooks = {
   RelativeTime,
   ResultsVisibility,
   ResultsFilters,
+  PinScroll,
   EditorSplit,
   TagInput,
   TagRemove,

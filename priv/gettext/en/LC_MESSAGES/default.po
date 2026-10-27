@@ -5724,3 +5724,98 @@ msgid "Pinned · %{count} row · %{time}"
 msgid_plural "Pinned · %{count} rows · %{time}"
 msgstr[0] ""
 msgstr[1] ""
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "Each query may return up to %{limit} rows to compare: narrow them down."
+msgstr ""
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "Some rows share a value of that column: pick a column whose values are unique."
+msgstr ""
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "%{columns} is not a column of both results."
+msgstr ""
+
+#: lib/lotus/web/pages/query_editor_page.ex
+#, elixir-autogen, elixir-format
+msgid "The comparison stopped"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Match rows on"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Run both queries and compare every row, matched on this column"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Compare rows"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Scroll together"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Rows compared"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Comparing every row on %{key}…"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Every row, on %{key}"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Close the comparison"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "None."
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Rows gone"
+msgstr ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "Changed rows"
+msgstr ""
+
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} row the same"
+msgid_plural "%{count} rows the same"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "And %{count} more row."
+msgid_plural "And %{count} more rows."
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/lotus/web/live/queries/results_component.ex
+#, elixir-autogen, elixir-format
+msgid "New rows"
+msgstr ""

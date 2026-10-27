@@ -13,6 +13,17 @@
 
 ### Added
 
+- **Pinned results: every row compared, scrolled together**
+  (elixir-lotus/lotus#117). Two follow-ups to pinning:
+  - **Compare rows** in the comparison bar runs the pinned query and the
+    last run again, read only, and matches their rows on a column ("Match
+    rows on", `id` first): the rows gone, new and changed (each changed
+    cell before → after), in tabs, and the pinned rows the last run no
+    longer has turn orange (`Lotus.diff/3`; each query may return up to
+    10,000 rows).
+  - **Scroll together**: side by side, the pinned table and the results
+    grid scroll as one, down and across (a toggle in the comparison bar).
+
 - **Pin a result to compare** (elixir-lotus/lotus#117). "Pin to compare"
   in the Results header keeps the result on screen; edit the query and run
   it again, and the new result shows beside the pinned one (or under it,
