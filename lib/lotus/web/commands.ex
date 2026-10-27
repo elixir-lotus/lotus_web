@@ -5,8 +5,9 @@ defmodule Lotus.Web.Commands do
   The palette offers the pages of the dashboard, what the user may create,
   the appearance and the theme, and it searches the saved queries and the
   dashboards. Lotus Pro adds its pages (as its header links them), what it
-  lets the user create, and what it searches (`Lotus.Web.Pro.palette/1`). `page_actions/2` adds the actions of the page in view: the
-  query editor's toolbar, or the dashboard's.
+  lets the user create, and what it searches (its `palette/1`).
+  `page_actions/2` adds the actions of the page in view: the query
+  editor's toolbar, or the dashboard's.
 
   Actions that drive the page click its own buttons in the browser (the
   `lotus:click` event, handled in `app.js`), so the palette does what the
