@@ -531,6 +531,15 @@
 - **`{{{a}}}` holds no variable**, as Lotus reads it; the editor found
   `{{a}}` in it.
 
+- **The SQL editor for an external SQL adapter such as ClickHouse.** A
+  source whose editor config names its language `"sql:<dialect>"` (as
+  `lotus_clickhouse` does) skipped the merge with the SQL defaults, so
+  keywords, including `SELECT` and `FROM`, were not highlighted. Its
+  `context_boundaries` never reached autocomplete either, so `PREWHERE`
+  offered tables instead of columns. Such a config is now merged like a
+  plain `"sql"` one, and a synthesized CodeMirror dialect gets its
+  keywords and types in lowercase, the case CodeMirror looks words up in.
+
 - **Follow a foreign key reads the statement with the tokenizer.** It
   matched the statement with regular expressions, so a string or a quoted
   name holding a keyword, `--`, `/*` or `;`
