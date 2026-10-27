@@ -227,6 +227,15 @@ defmodule Lotus.Web.SchedulesPage do
 
   ## 1. What to send
 
+  # What a schedule may send, with what an extension registers: "or a
+  # workflow's output".
+  defp what_subtitle([]), do: gettext("A query's results, or every card of a dashboard.")
+
+  defp what_subtitle(targets) do
+    kinds = Enum.map_join(targets, gettext(" or "), &String.downcase(&1.label))
+    gettext("A query's results, every card of a dashboard, or a %{kind}'s output.", kind: kinds)
+  end
+
   attr(:draft, :map, required: true)
   attr(:target_entry, :any, required: true)
   attr(:picking, :boolean, required: true)
@@ -251,7 +260,7 @@ defmodule Lotus.Web.SchedulesPage do
       )
 
     ~H"""
-    <.section id="schedule-what" step={1} title={gettext("What to send")} subtitle={gettext("A query's results, or every card of a dashboard.")}>
+    <.section id="schedule-what" step={1} title={gettext("What to send")} subtitle={what_subtitle(@targets)}>
       <input type="hidden" name="draft[target]" value={@draft["target"]} />
 
       <div
