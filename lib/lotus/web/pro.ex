@@ -31,6 +31,27 @@ defmodule Lotus.Web.Pro do
   end
 
   @doc """
+  What Lotus Pro adds to the command palette for the request's assigns, or
+  `%{}` without it:
+
+    * `:create`: what the user may create, each `%{id:, label:, path:}`
+      (and `:params`), under "Create";
+    * `:sources`: what the palette searches, each `%{id:, label:, icon:,
+      search:}` (`id` an atom of its own, not `:queries` or `:dashboards`),
+      `search` a function of the typed text returning results,
+      each `%{id:, label:, path:}` (and `:subtitle`, `:params`).
+
+  Its pages are in the palette already, as its header links them
+  (`nav_items/1`), under "Go to".
+  """
+  @spec palette(map()) :: %{optional(:create) => [map()], optional(:sources) => [map()]}
+  def palette(assigns) do
+    if available?() and function_exported?(pro_web(), :palette, 1),
+      do: apply(pro_web(), :palette, [assigns]),
+      else: %{}
+  end
+
+  @doc """
   Renders Pro slot content, or `nil` if Pro is not installed.
   """
   @spec render_slot(atom(), map()) :: term() | nil

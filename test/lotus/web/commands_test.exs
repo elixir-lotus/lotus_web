@@ -21,6 +21,51 @@ defmodule Lotus.Web.CommandsTest do
     end
   end
 
+  describe "Lotus Pro" do
+    defmodule ProWeb do
+      @moduledoc false
+      def pages, do: []
+      def nav_items(_assigns), do: [%{label: "Workflows", path: ["workflows"], icon: :layers}]
+      def render_slot(_name, _assigns), do: nil
+      def list_options(_kind, _info), do: []
+
+      def palette(_assigns) do
+        %{
+          create: [%{id: "workflow", label: "New workflow", path: "workflows", params: %{new: 1}}],
+          sources: [
+            %{
+              id: :workflows,
+              label: "Workflows",
+              icon: :layers,
+              search: fn _query ->
+                [%{id: 7, label: "Monthly churn", path: "workflows", params: %{id: 7}}]
+              end
+            }
+          ]
+        }
+      end
+    end
+
+    setup do
+      Application.put_env(:lotus_web, :__pro_web__, ProWeb)
+      on_exit(fn -> Application.delete_env(:lotus_web, :__pro_web__) end)
+    end
+
+    test "its pages, what it creates and what it searches are in the palette" do
+      {:ok, view, _html} = live(build_conn(), "/lotus")
+      actions = actions(view)
+
+      assert %{"perform" => %{"to" => to}} = Enum.find(actions, &(&1["name"] == "Workflows"))
+      assert to =~ "/lotus/workflows"
+      assert %{"perform" => %{"to" => new}} = Enum.find(actions, &(&1["name"] == "New workflow"))
+      assert new =~ "/lotus/workflows?new=1"
+
+      [result] = Enum.filter(search(view, "churn"), &(&1["source"] == "workflows"))
+      assert result["name"] == "Monthly churn"
+      assert result["perform"]["to"] =~ "/lotus/workflows?id=7"
+    end
+  end
+
   describe "actions" do
     test "offer the pages, and what the user may create" do
       {:ok, view, _html} = live(build_conn(), "/lotus")
