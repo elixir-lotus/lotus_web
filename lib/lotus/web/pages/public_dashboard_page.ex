@@ -195,8 +195,10 @@ defmodule Lotus.Web.PublicDashboardPage do
   end
 
   def handle_event("refresh_card", %{"card-id" => card_id}, socket) do
-    card_id = parse_id(card_id)
-    {:noreply, run_card(socket, card_id)}
+    case parse_id(card_id) do
+      nil -> {:noreply, socket}
+      card_id -> {:noreply, run_card(socket, card_id)}
+    end
   end
 
   @impl Phoenix.LiveComponent
@@ -551,5 +553,13 @@ defmodule Lotus.Web.PublicDashboardPage do
   end
 
   defp parse_id(id) when is_integer(id), do: id
-  defp parse_id(id) when is_binary(id), do: String.to_integer(id)
+  # An id from the anonymous viewer: one that is not a number is none.
+  defp parse_id(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {id, ""} -> id
+      _other -> nil
+    end
+  end
+
+  defp parse_id(_id), do: nil
 end

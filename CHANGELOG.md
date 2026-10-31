@@ -101,6 +101,9 @@
   dashboard then ran it and showed its name. Adding one is now refused,
   and a card whose query the viewer's scope hides does not run.
 
+- **A public dashboard ignores a card id that is not a number.** A
+  crafted `refresh_card` event crashed the viewer's page.
+
 - **No script from a CDN.** The root layout loaded
   `@tailwindplus/elements@1` from jsDelivr, with the page's CSP nonce
   and no integrity check, though no page used it. It is gone, and the
