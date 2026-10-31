@@ -20,6 +20,7 @@ defmodule Lotus.Web.QueryEditorPage do
   alias Lotus.Web.Queries.AiPreview
   alias Lotus.Web.Queries.AiSteps
   alias Lotus.Web.Queries.DropdownOptionsModal
+  alias Lotus.Web.Queries.EditorComponent
   alias Lotus.Web.Queries.MasuResults
   alias Lotus.Web.Queries.Pin
   alias Lotus.Web.Queries.References
@@ -1072,8 +1073,10 @@ defmodule Lotus.Web.QueryEditorPage do
       %{query: query, source: repo} ->
         socket = assign(socket, pending_write: nil)
 
-        case Authorization.authorize(socket.assigns, :query, repo) do
-          :allow -> {:noreply, start_query(socket, query, repo, :write)}
+        with :allow <- Authorization.authorize(socket.assigns, :query, repo),
+             :allow <- Authorization.authorize(socket.assigns, :write, repo) do
+          {:noreply, start_query(socket, query, repo, :write)}
+        else
           {:deny, reason} -> {:noreply, assign(socket, error: reason, result: nil)}
         end
 
@@ -2088,10 +2091,15 @@ defmodule Lotus.Web.QueryEditorPage do
   defp diff_error(reason) when is_binary(reason), do: reason
   defp diff_error(reason), do: inspect(reason)
 
+  # A timeout is one the selector offers, and only with :timeout_options:
+  # without it, a run has the default.
   defp maybe_update_timeout(socket, %{"query_timeout" => timeout_str})
        when is_binary(timeout_str) do
-    case Integer.parse(timeout_str) do
-      {timeout, ""} -> assign(socket, query_timeout: timeout)
+    with true <- :timeout_options in (socket.assigns[:features] || []),
+         {timeout, ""} <- Integer.parse(timeout_str),
+         true <- timeout in EditorComponent.timeouts() do
+      assign(socket, query_timeout: timeout)
+    else
       _ -> socket
     end
   end
@@ -2106,14 +2114,15 @@ defmodule Lotus.Web.QueryEditorPage do
   defp execute_query(socket, query) do
     repo = source_or_default(query.data_source, socket.assigns)
 
-    case Authorization.authorize(socket.assigns, :query, repo) do
-      :allow ->
-        if writes?(query, repo),
-          do: assign(socket, pending_write: %{query: query, source: repo}, running: false),
-          else: start_query(socket, query, repo)
-
-      {:deny, reason} ->
-        assign(socket, running: false, result: nil, error: reason)
+    with :allow <- Authorization.authorize(socket.assigns, :query, repo),
+         writes? = writes?(query, repo),
+         :allow <-
+           if(writes?, do: Authorization.authorize(socket.assigns, :write, repo), else: :allow) do
+      if writes?,
+        do: assign(socket, pending_write: %{query: query, source: repo}, running: false),
+        else: start_query(socket, query, repo)
+    else
+      {:deny, reason} -> assign(socket, running: false, result: nil, error: reason)
     end
   end
 
@@ -2730,10 +2739,13 @@ defmodule Lotus.Web.QueryEditorPage do
         sql_query
       end
 
+    # Options only read, as a saved query's do (`run_saved_options_query/2`),
+    # whatever the source takes.
     run_opts =
       opts
       |> options_run_opts()
       |> Keyword.put(:repo, repo)
+      |> Keyword.put(:read_only, true)
 
     run_opts =
       if search_path && String.trim(search_path) != "",

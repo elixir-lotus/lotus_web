@@ -112,6 +112,15 @@ defmodule Lotus.Web.Test.PerDashboardResolver do
   def authorize(_user, _action, _resource), do: :allow
 end
 
+# Forbidden by its access, though authorize/3 allows everything.
+defmodule Lotus.Web.Test.ForbiddenResolver do
+  @behaviour Lotus.Web.Resolver
+
+  def resolve_user(_conn), do: %{id: 11}
+  def resolve_access(_user), do: :forbidden
+  def authorize(_user, _action, _resource), do: :allow
+end
+
 defmodule Lotus.Web.Test.ReadOnlyResolver do
   @behaviour Lotus.Web.Resolver
 
@@ -162,6 +171,11 @@ defmodule Lotus.Web.Test.Router do
     lotus_dashboard("/per_dashboard",
       as: :per_dashboard_dashboard,
       resolver: Lotus.Web.Test.PerDashboardResolver
+    )
+
+    lotus_dashboard("/forbidden",
+      as: :forbidden_dashboard,
+      resolver: Lotus.Web.Test.ForbiddenResolver
     )
 
     lotus_dashboard("/serial", as: :serial_dashboard, card_concurrency: 1)

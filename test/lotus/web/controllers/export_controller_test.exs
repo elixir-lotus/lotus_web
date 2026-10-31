@@ -308,4 +308,14 @@ defmodule Lotus.Web.Controllers.ExportControllerTest do
       assert conn.resp_body =~ "Alice"
     end
   end
+
+  test "a user the resolver forbids gets no export, whatever authorize/3 says" do
+    query = query_fixture(%{statement: "SELECT 1 AS x"})
+    params = %{"query_id" => query.id, "repo" => "public", "vars" => %{}, "filename" => "t.csv"}
+    token = ExportController.generate_token(Lotus.Web.Endpoint, params)
+
+    conn = get(build_conn(), "/forbidden/export/csv?token=#{token}")
+
+    assert conn.status == 403
+  end
 end

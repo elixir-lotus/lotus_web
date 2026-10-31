@@ -17,6 +17,7 @@ defmodule Lotus.Web.Resolver do
   """
   @type action ::
           :query
+          | :write
           | :export
           | :discover
           | :create_query
@@ -101,7 +102,7 @@ defmodule Lotus.Web.Resolver do
   `:query`.
 
   `resource` is `nil` for an action that takes no resource, a data source
-  name for `:query`, `:export`, `:discover` and `:ai_generate`, and a query or dashboard
+  name for `:query`, `:write`, `:export`, `:discover` and `:ai_generate`, and a query or dashboard
   struct for the content actions. `Lotus.Web.Authorization` lists each one.
 
   Without this callback the decision derives from `c:resolve_access/1`, see

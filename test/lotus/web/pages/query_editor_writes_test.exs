@@ -185,4 +185,39 @@ defmodule Lotus.Web.Pages.QueryEditorWritesTest do
       true -> Process.sleep(20) && eventually(fun, tries - 1)
     end
   end
+
+  test "a read-only user does not change data, asked or not" do
+    {:ok, live, _html} = live(build_conn(), "/read_only/queries/new")
+
+    html = run(live, @update)
+
+    refute html =~ "Change data in public?"
+    assert html =~ "You don&#39;t have permission to change data"
+
+    live |> with_target("#query-editor-page") |> render_click("confirm_write", %{})
+    render_async(live)
+
+    assert age("Alice") == 30
+  end
+
+  test "a dropdown's options SQL only reads" do
+    query =
+      query_fixture(%{
+        statement: "SELECT name FROM test_users WHERE name = {{name}}",
+        variables: [
+          %{
+            name: "name",
+            type: :text,
+            widget: :select,
+            options_query:
+              "UPDATE test_users SET age = age + 1 WHERE name = 'Alice' RETURNING name AS value, name AS label"
+          }
+        ]
+      })
+
+    {:ok, live, _html} = live(build_conn(), "/lotus/queries/#{query.id}")
+    render_async(live)
+
+    assert age("Alice") == 30
+  end
 end

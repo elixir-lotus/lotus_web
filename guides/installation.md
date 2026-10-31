@@ -252,6 +252,7 @@ end
 | Action | Resource |
 |---|---|
 | `:query` | the data source name |
+| `:write` | the data source name: a statement that changes data, on a source that takes writes (asked with `:query`) |
 | `:export` | the data source name |
 | `:ai_generate` | the data source name |
 | `:discover` | the data source name |
@@ -264,14 +265,19 @@ end
 | `:manage_dashboard` | `nil` for a new dashboard, else the `%Lotus.Storage.Dashboard{}` |
 | `:manage_source` | `nil` |
 | `:manage_cache` | `nil` |
+| `:manage_schedule` | `nil` |
 
 Without `authorize/3`, the decision derives from `resolve_access/1`:
 
 | `resolve_access/1` | Decision |
 |---|---|
 | `:all` | allow every action |
-| `:read_only` | allow `:query`, `:export`, `:discover` and `:view_dashboard`; deny the rest |
+| `:read_only` | allow `:query`, `:export`, `:discover` and `:view_dashboard`; deny the rest, `:write` too |
 | `:forbidden` | deny every action (the dashboard redirects before it asks) |
+
+A user `resolve_access/1` forbids may do nothing, whatever `authorize/3` says:
+the CSV export and Lotus Pro's downloads, which are outside the dashboard's
+LiveView, refuse them too.
 
 To keep that default for some actions, call
 `Lotus.Web.Authorization.default_decision(resolve_access(user), action)` from

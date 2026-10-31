@@ -692,6 +692,32 @@ defmodule Lotus.Web.Pages.QueryEditorPageTest do
       # Timeout should still be 2m
       assert html =~ ~s(value="120000" selected)
     end
+
+    test "a timeout the selector does not offer is not taken" do
+      {:ok, live, _html} = live(build_conn(), "/lotus/queries/new")
+
+      html = run_with_timeout(live, "100", "SELECT pg_sleep(0.3), 1 AS done")
+
+      assert html =~ ~s(value="5000" selected)
+      refute html =~ "statement timeout"
+      assert html =~ "Showing"
+    end
+
+    test "without :timeout_options, a run keeps the default timeout" do
+      {:ok, live, _html} = live(build_conn(), "/read_only/queries/new")
+
+      html = run_with_timeout(live, "100", "SELECT pg_sleep(0.3), 1 AS done")
+
+      refute html =~ "statement timeout"
+      assert html =~ "Showing"
+    end
+  end
+
+  defp run_with_timeout(live, timeout, statement) do
+    form = element(live, ~s(form[phx-submit="run_query"]))
+    render_change(form, %{"query_timeout" => timeout, "query" => %{"statement" => statement}})
+    render_submit(form, %{"query" => %{"statement" => statement}})
+    render_async(live, 2_000)
   end
 
   describe "dropdown options" do

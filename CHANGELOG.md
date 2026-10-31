@@ -16,6 +16,14 @@
   `Sake.Tasks.Store.Ecto` with an existing `sake_tasks` table adds the
   new columns with `Sake.Tasks.Migration.add_execution/1`.
 
+- **A new action, `:write`, for a statement that changes data.** The
+  query editor asks `authorize(user, :write, source)`, after `:query`,
+  before it runs a statement that changes data on a source that takes
+  writes. Without `authorize/3`, `:read_only` access is denied it, as its
+  documentation says ("no modifications"). A resolver that lists the
+  actions it allows adds `:write` for people who change data. See the v2
+  upgrade guide.
+
 ### Security
 
 - **Column stats show a result's values as text.** The panel of a
@@ -50,6 +58,28 @@
   says that a value is saved; it keeps it unless one is typed. The JSON
   settings of a channel that does not describe them are shown only to
   those who may manage schedules.
+
+- **`:read_only` access changes no data.** On a source that takes
+  writes, a `:read_only` user could run an `UPDATE` or a `DELETE` in the
+  query editor, once they confirmed it: the editor asked only `:query`.
+  It now also asks `:write` (see Breaking Changes).
+
+- **A dropdown's options SQL only reads.** The SQL of a variable's
+  options ran with the source's read-only setting, so on a source that
+  takes writes, a statement that changed data ran each time the query
+  opened, without the prompt a write gets. It now runs read only, as a
+  saved query's options do.
+
+- **A run takes only a timeout the editor offers.** The editor took any
+  `query_timeout` an event sent, with or without `:timeout_options`, so
+  a crafted event could hold a connection for days. It now takes one of
+  the selector's values, and only with `:timeout_options`.
+
+- **A user `resolve_access/1` forbids gets no export.** The CSV export
+  asked only `authorize/3` when the resolver had it, so a forbidden user
+  with an export link still got the file. `Lotus.Web.Authorization.decide/5`
+  now denies a forbidden user first, and Lotus Pro's downloads refuse
+  them too.
 
 - **No script from a CDN.** The root layout loaded
   `@tailwindplus/elements@1` from jsDelivr, with the page's CSP nonce
