@@ -770,7 +770,12 @@ defmodule Lotus.Web.QueriesPage do
     info = socket.assigns |> Pro.request_info() |> Map.put(:list, :home)
     queries = Pro.list_queries(info)
 
-    dashboards = Pro.list_dashboards(info, preload: [:cards])
+    # The dashboards the user may view: the resolver can deny one that the
+    # scope still lists.
+    dashboards =
+      info
+      |> Pro.list_dashboards(preload: [:cards])
+      |> Enum.filter(&Authorization.allowed?(socket.assigns, :view_dashboard, &1))
 
     socket
     |> assign(
@@ -874,12 +879,18 @@ defmodule Lotus.Web.QueriesPage do
     end
   end
 
+  # A copy is a new dashboard of what the user may view.
   def handle_event("duplicate_dashboard", %{"id" => id}, socket) do
-    with true <- Authorization.allowed?(socket.assigns, :manage_dashboard),
+    opts = Actor.opts(socket.assigns)
+
+    with :allow <- Authorization.authorize(socket.assigns, :manage_dashboard, nil),
          {id, ""} <- Integer.parse(id),
-         {:ok, copy} <- Duplicate.copy(id, Actor.opts(socket.assigns)) do
+         %{} = dashboard <- Lotus.get_dashboard(id, opts),
+         :allow <- Authorization.authorize(socket.assigns, :view_dashboard, dashboard),
+         {:ok, copy} <- Duplicate.copy(dashboard.id, opts) do
       {:noreply, push_navigate(socket, to: lotus_path(["dashboards", copy.id]))}
     else
+      {:deny, reason} -> {:noreply, put_flash(socket, :error, reason)}
       _ -> {:noreply, put_flash(socket, :error, gettext("The dashboard could not be copied."))}
     end
   end

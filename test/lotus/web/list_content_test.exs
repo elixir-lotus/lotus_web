@@ -90,4 +90,39 @@ defmodule Lotus.Web.ListContentTest do
     assert [%{name: "Shown"}] = Pro.list_dashboards(viewer, preload: [:cards])
     assert length(Pro.list_queries(%{context: nil})) == 2
   end
+
+  describe "a dashboard card" do
+    setup %{hidden_query: hidden} do
+      %{dashboard: dashboard_fixture(%{name: "Board"}), hidden: hidden}
+    end
+
+    test "cannot take a query the viewer may not read", %{dashboard: dashboard, hidden: hidden} do
+      {:ok, live, _html} = live(build_conn(), "/scoped/dashboards/#{dashboard.id}")
+      editor = with_target(live, "#dashboard-editor")
+      render_click(editor, "edit", %{})
+
+      render_click(editor, "confirm_add_card", %{"type" => "query", "query-id" => "#{hidden.id}"})
+      html = render(live)
+
+      assert html =~ "Query not found"
+      render_submit(editor, "save_dashboard", %{"dashboard" => %{"name" => "Board"}})
+      assert Lotus.list_dashboard_cards(dashboard.id) == []
+    end
+
+    test "whose query the viewer may not read does not run it", %{
+      dashboard: dashboard,
+      hidden: hidden
+    } do
+      {:ok, _card} =
+        Lotus.create_dashboard_card(dashboard.id, %{
+          card_type: :query,
+          query_id: hidden.id,
+          position: 0
+        })
+
+      {:ok, live, _html} = live(build_conn(), "/scoped/dashboards/#{dashboard.id}")
+
+      refute render_async(live) =~ "Hidden"
+    end
+  end
 end

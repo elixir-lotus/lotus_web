@@ -89,6 +89,18 @@
   `get/2`), and asks `:query` and `:export` on a query's source and
   `:view_dashboard` on a dashboard.
 
+- **A dashboard the resolver hides is not listed, nor copied.** The home
+  page listed every dashboard the scope returned, and its Duplicate
+  copied any dashboard an event named, without asking `:view_dashboard`.
+  It now leaves out a dashboard the user may not view and refuses to copy
+  one. A copy also asks `:manage_dashboard` with no dashboard, as a new
+  one does.
+
+- **A dashboard card runs only a query its viewer may read.** A card could
+  be added on a query that `:list_content` hides from the user, and the
+  dashboard then ran it and showed its name. Adding one is now refused,
+  and a card whose query the viewer's scope hides does not run.
+
 - **No script from a CDN.** The root layout loaded
   `@tailwindplus/elements@1` from jsDelivr, with the page's CSP nonce
   and no integrity check, though no page used it. It is gone, and the

@@ -69,4 +69,27 @@ defmodule Lotus.Web.PageIdentityTest do
     assert [%Dashboard{id: id}] = Lotus.list_dashboards()
     assert_patch(live, "/lotus/dashboards/#{id}")
   end
+
+  describe "a dashboard the user may not view" do
+    setup do
+      %{hidden: dashboard_fixture(%{name: "Hidden"}), shown: dashboard_fixture(%{name: "Shown"})}
+    end
+
+    test "is not listed on the home page" do
+      {:ok, _live, html} = live(build_conn(), "/per_dashboard?tab=dashboards")
+
+      assert html =~ "Shown"
+      refute html =~ "Hidden"
+    end
+
+    test "is not copied", %{hidden: hidden} do
+      {:ok, live, _html} = live(build_conn(), "/per_dashboard?tab=dashboards")
+
+      live
+      |> with_target("#queries-page")
+      |> render_click("duplicate_dashboard", %{"id" => to_string(hidden.id)})
+
+      assert length(Lotus.list_dashboards()) == 2
+    end
+  end
 end
