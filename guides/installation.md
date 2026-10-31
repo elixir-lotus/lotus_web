@@ -368,7 +368,7 @@ defmodule MyAppWeb.CSPPlug do
     |> put_resp_header(
       "content-security-policy",
       "default-src 'self'; " <>
-        "script-src 'nonce-#{nonce}' https://cdn.jsdelivr.net; " <>
+        "script-src 'nonce-#{nonce}'; " <>
         "style-src 'nonce-#{nonce}'; " <>
         "font-src 'self' data:; " <>
         "img-src 'self' data:; " <>
@@ -413,7 +413,7 @@ LotusWeb uses the following resources that your CSP policy must allow:
 
 | Directive | Required value | Reason |
 |-----------|---------------|--------|
-| `script-src` | `'nonce-<value>'` (or `'self'`) and `https://cdn.jsdelivr.net` | App JS bundle served from `<prefix>/js-<hash>`, and the TailwindPlus CDN module |
+| `script-src` | `'nonce-<value>'` (or `'self'`) | App JS bundle served from `<prefix>/js-<hash>` |
 | `style-src` | `'nonce-<value>'` (or `'self'`) | App stylesheet served from `<prefix>/css-<hash>`. `'unsafe-inline'` alone does not allow an external stylesheet |
 | `font-src` | `data:` | Embedded Inter font (base64-encoded) |
 | `img-src` | `data:` | Data URI images |

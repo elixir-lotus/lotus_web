@@ -21,7 +21,12 @@ let theme = "light";
 let lastResult = null;
 const pending = new Map();
 
-const send = (message) => window.parent.postMessage({ jsonrpc: "2.0", ...message }, "*");
+// The host is the only peer. Until its first message gives its origin,
+// the app sends only ui/initialize and its height, which hold no data.
+let hostOrigin = "*";
+
+const send = (message) =>
+  window.parent.postMessage({ jsonrpc: "2.0", ...message }, hostOrigin);
 
 const request = (method, params) =>
   new Promise((resolve, reject) => {
@@ -74,8 +79,16 @@ function applyHostContext(context) {
 }
 
 window.addEventListener("message", (event) => {
+  // Another frame of the host's page could post here too; only the host
+  // hands the app its result.
+  if (event.source !== window.parent) return;
+
   const message = event.data;
   if (!message || message.jsonrpc !== "2.0") return;
+
+  if (hostOrigin === "*" && event.origin && event.origin !== "null") {
+    hostOrigin = event.origin;
+  }
 
   if (message.method === undefined) {
     const waiting = pending.get(message.id);

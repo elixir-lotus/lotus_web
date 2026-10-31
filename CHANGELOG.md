@@ -16,6 +16,24 @@
   `Sake.Tasks.Store.Ecto` with an existing `sake_tasks` table adds the
   new columns with `Sake.Tasks.Migration.add_execution/1`.
 
+### Security
+
+- **Column stats show a result's values as text.** The panel of a
+  column's stats put its top values, its date buckets and its earliest
+  and latest values into its markup as they were, so a value such as
+  `<img src=x onerror=...>` in a result was HTML in the panel. They are
+  now escaped.
+
+- **The MCP chart app takes messages only from its host.** It drew the
+  chart of a tool result that any frame of the host's page posted to it.
+  It now reads only the messages of the window that holds it, and sends
+  to the host's origin once the host's first message gives it.
+
+- **No script from a CDN.** The root layout loaded
+  `@tailwindplus/elements@1` from jsDelivr, with the page's CSP nonce
+  and no integrity check, though no page used it. It is gone, and the
+  CSP in the installation guide no longer allows `https://cdn.jsdelivr.net`.
+
 ### Added
 
 - **A byline from Lotus Pro in the lists** — each query and dashboard in the home page's lists (tiles and rows) shows the short line Lotus Pro gives about it, such as who made it (`Lotus.Web.Pro.byline/1`). Without Pro, nothing changes
