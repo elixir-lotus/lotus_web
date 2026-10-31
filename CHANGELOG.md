@@ -29,6 +29,20 @@
   It now reads only the messages of the window that holds it, and sends
   to the host's origin once the host's first message gives it.
 
+- **A page acts as its live_session's user, on the resource its URL
+  names.**
+  - A `token` in the URL of the signed-in dashboard (`/lotus?token=x`)
+    opened the public dashboard page, as nobody, and a patch from there
+    to a dashboard opened it with the public view's rights, not the
+    resolver's. Only the public route (`/public/:token`) opens a public
+    dashboard now.
+  - The dashboard editor kept the dashboard it was opened on after a
+    patch to another one, so a crafted patch and event could authorize
+    sharing or deleting one dashboard and do it to the other. A patch to
+    another page, or to another resource of the same page, now mounts the
+    page again. A new query or dashboard still takes the URL of what it
+    saved in place.
+
 - **No script from a CDN.** The root layout loaded
   `@tailwindplus/elements@1` from jsDelivr, with the page's CSP nonce
   and no integrity check, though no page used it. It is gone, and the

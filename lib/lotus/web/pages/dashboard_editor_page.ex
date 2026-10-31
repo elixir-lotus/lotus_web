@@ -1242,7 +1242,7 @@ defmodule Lotus.Web.DashboardEditorPage do
          |> put_flash(:info, gettext("Dashboard saved successfully!"))
          |> assign(save_modal_open: false, editing: false, saved_dashboard: nil)
          |> close_editors()
-         |> push_patch(to: lotus_path(["dashboards", saved_dashboard.id]), replace: true)}
+         |> patch_to_saved(lotus_path(["dashboards", saved_dashboard.id]))}
 
       {:error, %Ecto.Changeset{data: %Lotus.Storage.Dashboard{}} = changeset} ->
         form = to_form(changeset, as: "dashboard")

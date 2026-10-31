@@ -607,7 +607,7 @@ defmodule Lotus.Web.QueryEditorPage do
         {:noreply,
          socket
          |> put_flash(:info, gettext("Query saved successfully!"))
-         |> push_patch(to: lotus_path(["queries", query.id]), replace: true)
+         |> patch_to_saved(lotus_path(["queries", query.id]))
          |> assign(query: query)
          |> assign_query_changeset(query)}
 

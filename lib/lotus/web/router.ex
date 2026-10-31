@@ -264,6 +264,7 @@ defmodule Lotus.Web.Router do
     csp_keys = expand_csp_nonce_keys(csp_key)
 
     %{
+      "public" => true,
       "prefix" => prefix,
       "live_path" => live_path,
       "live_transport" => live_transport,

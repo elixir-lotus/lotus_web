@@ -14,6 +14,15 @@ defmodule Lotus.Web.Helpers do
     Process.put(@pdict_key, {socket, prefix})
   end
 
+  @doc false
+  # A new page, once it saves its query or dashboard, moves to the path of
+  # what it saved. The dashboard does the patch, so that it knows the move is
+  # the page's own (`Lotus.Web.DashboardLive`).
+  def patch_to_saved(socket, path) do
+    send(self(), {:patch_to_saved, path})
+    socket
+  end
+
   @doc """
   Construct a path to a dashboard page with optional params.
 

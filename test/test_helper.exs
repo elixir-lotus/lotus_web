@@ -93,6 +93,25 @@ defmodule Lotus.Web.Test.AuthorResolver do
   def authorize(_user, _action, _resource), do: :allow
 end
 
+# Decides per dashboard: "Hidden" may not be seen, "Victim" may be seen
+# but not changed or shared.
+defmodule Lotus.Web.Test.PerDashboardResolver do
+  @behaviour Lotus.Web.Resolver
+
+  alias Lotus.Storage.Dashboard
+
+  def resolve_user(_conn), do: %{id: 12}
+  def resolve_access(_user), do: :all
+
+  def authorize(_user, :view_dashboard, %Dashboard{name: "Hidden"}), do: {:deny, "Hidden"}
+
+  def authorize(_user, action, %Dashboard{name: "Victim"})
+      when action in [:manage_dashboard, :share_dashboard],
+      do: {:deny, "Victim: #{action}"}
+
+  def authorize(_user, _action, _resource), do: :allow
+end
+
 defmodule Lotus.Web.Test.ReadOnlyResolver do
   @behaviour Lotus.Web.Resolver
 
@@ -138,6 +157,11 @@ defmodule Lotus.Web.Test.Router do
     lotus_dashboard("/author",
       as: :author_dashboard,
       resolver: Lotus.Web.Test.AuthorResolver
+    )
+
+    lotus_dashboard("/per_dashboard",
+      as: :per_dashboard_dashboard,
+      resolver: Lotus.Web.Test.PerDashboardResolver
     )
 
     lotus_dashboard("/serial", as: :serial_dashboard, card_concurrency: 1)
