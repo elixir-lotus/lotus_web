@@ -11,6 +11,11 @@
   which dependency to add, instead of failing on first use. Every AI
   control follows `Lotus.AI.enabled?/0`, asked on each render.
 
+- **`Lotus.Web.MCP` needs Sake 0.5**, as Lotus does. A host that serves
+  it changes its requirement to `{:sake, "~> 0.5"}`. A host on
+  `Sake.Tasks.Store.Ecto` with an existing `sake_tasks` table adds the
+  new columns with `Sake.Tasks.Migration.add_execution/1`.
+
 ### Added
 
 - **A byline from Lotus Pro in the lists** — each query and dashboard in the home page's lists (tiles and rows) shows the short line Lotus Pro gives about it, such as who made it (`Lotus.Web.Pro.byline/1`). Without Pro, nothing changes

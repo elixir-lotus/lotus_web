@@ -62,7 +62,7 @@ defmodule Lotus.Web.MixProject do
       # Overridden because Lotus's main is 2.0.0-dev, which the adapters'
       # `~> 1.3` doesn't match.
       {:lotus, github: "elixir-lotus/lotus", branch: "main", override: true},
-      {:sake, "~> 0.4", optional: true},
+      {:sake, "~> 0.5", optional: true},
       # The AI assistant. Optional, as in Lotus: a host that uses AI adds it.
       {:req_llm, "~> 1.29", optional: true},
       # Over HTTPS: the v2 branch's workflow fetches the dev deps with no SSH key.
