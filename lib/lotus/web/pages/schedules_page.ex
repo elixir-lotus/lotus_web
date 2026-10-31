@@ -87,7 +87,7 @@ defmodule Lotus.Web.SchedulesPage do
                   viewer_zone={@viewer_zone}
                   target={@myself}
                 />
-                <.deliver_section deliveries={@draft["deliveries"]} specs={@channel_specs} adding={@adding_delivery} tests={@delivery_tests} target={@myself} />
+                <.deliver_section deliveries={@draft["deliveries"]} specs={@channel_specs} adding={@adding_delivery} tests={@delivery_tests} can_manage={@can_manage} target={@myself} />
                 <.alert_section draft={@draft} conditions={@conditions} target_entry={@target_entry} />
               </fieldset>
 
@@ -784,6 +784,7 @@ defmodule Lotus.Web.SchedulesPage do
   attr(:specs, :list, required: true)
   attr(:adding, :boolean, required: true)
   attr(:tests, :map, required: true)
+  attr(:can_manage, :boolean, required: true)
   attr(:target, :any, required: true)
 
   defp deliver_section(assigns) do
@@ -797,6 +798,7 @@ defmodule Lotus.Web.SchedulesPage do
           delivery={delivery}
           spec={Deliveries.spec(@specs, delivery["channel"])}
           test={@tests[index]}
+          can_manage={@can_manage}
           target={@target}
         />
 

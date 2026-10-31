@@ -43,6 +43,14 @@
     page again. A new query or dashboard still takes the URL of what it
     saved in place.
 
+- **A destination's secrets stay on the server.** The schedule editor
+  put a destination's saved Slack webhook URL and webhook authorization
+  in its fields' values, so anyone who could open the editor, a read-only
+  user too, could read them in the page. Such a field is now empty and
+  says that a value is saved; it keeps it unless one is typed. The JSON
+  settings of a channel that does not describe them are shown only to
+  those who may manage schedules.
+
 - **No script from a CDN.** The root layout loaded
   `@tailwindplus/elements@1` from jsDelivr, with the page's CSP nonce
   and no integrity check, though no page used it. It is gone, and the

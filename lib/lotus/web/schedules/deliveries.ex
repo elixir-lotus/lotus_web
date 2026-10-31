@@ -12,7 +12,11 @@ defmodule Lotus.Web.Schedules.Deliveries do
   #   * `"pending"`: the address still being typed in an email list;
   #   * `"json"`: the settings of a channel that does not describe them;
   #   * `"extra"`: what the saved settings hold that the form does not show
-  #     (a webhook's other headers), kept as it was.
+  #     (a webhook's other headers), kept as it was;
+  #   * `"saved"`: the saved values of its `:secret` fields (a Slack webhook
+  #     URL, a webhook's authorization). They stay on the server: the field
+  #     is empty, says that a value is saved, and keeps it unless one is
+  #     typed.
 
   use Lotus.Web, :html
 
@@ -141,7 +145,8 @@ defmodule Lotus.Web.Schedules.Deliveries do
       "values" => values,
       "pending" => %{},
       "json" => "",
-      "extra" => %{}
+      "extra" => %{},
+      "saved" => %{}
     }
   end
 
@@ -167,6 +172,7 @@ defmodule Lotus.Web.Schedules.Deliveries do
       end
 
     {values, extra} = authorization_from_headers(delivery.channel, values, extra)
+    {values, saved} = keep_secrets(spec.settings, values)
 
     %{
       "channel" => delivery.channel,
@@ -175,9 +181,20 @@ defmodule Lotus.Web.Schedules.Deliveries do
       "pending" => %{},
       "json" =>
         if(spec.settings == nil and config != %{}, do: Lotus.JSON.encode!(config), else: ""),
-      "extra" => extra
+      "extra" => extra,
+      "saved" => saved
     }
   end
+
+  defp keep_secrets(nil, values), do: {values, %{}}
+
+  defp keep_secrets(settings, values) do
+    keys = for %{type: :secret, key: key} <- settings, values[key] not in [nil, ""], do: key
+    {Map.merge(values, Map.new(keys, &{&1, ""})), Map.take(values, keys)}
+  end
+
+  @doc "Whether a destination has a saved value for a `:secret` field."
+  def saved?(delivery, key), do: Map.has_key?(delivery["saved"] || %{}, key)
 
   defp value(%{type: :email_list}, list) when is_list(list), do: Enum.map(list, &to_string/1)
   defp value(%{type: :email_list}, _value), do: []
@@ -291,8 +308,9 @@ defmodule Lotus.Web.Schedules.Deliveries do
     end
   end
 
-  defp setting_value(%{key: key}, delivery) do
+  defp setting_value(%{key: key} = setting, delivery) do
     case String.trim(delivery["values"][key] || "") do
+      "" when setting.type == :secret -> get_in(delivery, ["saved", key])
       "" -> nil
       value -> value
     end
@@ -337,6 +355,11 @@ defmodule Lotus.Web.Schedules.Deliveries do
   )
 
   attr(:target, :any, required: true)
+
+  attr(:can_manage, :boolean,
+    default: true,
+    doc: "whether the viewer may change it: a channel's JSON settings are shown only then"
+  )
 
   @doc "A destination's card: its channel, format and fields, and its test."
   def destination(assigns) do
@@ -411,12 +434,16 @@ defmodule Lotus.Web.Schedules.Deliveries do
             name={"draft[deliveries][#{@index}][values][#{setting.key}]"}
             pending_name={"draft[deliveries][#{@index}][pending][#{setting.key}]"}
             pending={get_in(@delivery, ["pending", setting.key]) || ""}
+            saved={saved?(@delivery, setting.key)}
             id={"#{@id}-#{setting.key}"}
             index={@index}
             target={@target}
           />
         <% else %>
-          <label class="block">
+          <p :if={not @can_manage and @delivery["json"] != ""} class="text-xs text-gray-500 dark:text-gray-400">
+            <%= gettext("Its settings are shown to those who may change them.") %>
+          </p>
+          <label :if={@can_manage} class="block">
             <span class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300"><%= gettext("Settings, as JSON") %></span>
             <textarea
               name={"draft[deliveries][#{@index}][json]"}
@@ -464,6 +491,7 @@ defmodule Lotus.Web.Schedules.Deliveries do
   attr(:name, :string, required: true)
   attr(:pending_name, :string, required: true)
   attr(:pending, :string, required: true)
+  attr(:saved, :boolean, default: false)
   attr(:id, :string, required: true)
   attr(:index, :integer, required: true)
   attr(:target, :any, required: true)
@@ -555,7 +583,7 @@ defmodule Lotus.Web.Schedules.Deliveries do
         id={@id}
         name={@name}
         value={@value}
-        placeholder={@setting[:placeholder]}
+        placeholder={if @saved, do: gettext("Saved. Type a new one to replace it."), else: @setting[:placeholder]}
         autocomplete={if @setting.type == :secret, do: "new-password", else: "off"}
         spellcheck="false"
         class={[input_class(), @setting.type in [:secret, :url] && "font-mono"]}
