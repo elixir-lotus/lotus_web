@@ -81,6 +81,14 @@
   now denies a forbidden user first, and Lotus Pro's downloads refuse
   them too.
 
+- **A schedule runs only what its author may read.** The schedule editor
+  saved any query, dashboard or extension target an event named, though
+  its pickers list only what the user may see, and the scheduler then
+  sent its results where the author chose. A save now gets the target as
+  Lotus gives it to the author (`:list_content`, `Lotus.Schedules.Target`'s
+  `get/2`), and asks `:query` and `:export` on a query's source and
+  `:view_dashboard` on a dashboard.
+
 - **No script from a CDN.** The root layout loaded
   `@tailwindplus/elements@1` from jsDelivr, with the page's CSP nonce
   and no integrity check, though no page used it. It is gone, and the

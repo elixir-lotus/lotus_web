@@ -184,6 +184,12 @@ defmodule Lotus.Web.Test.Router do
 
     lotus_dashboard("/scheduled", as: :scheduled_dashboard, features: [:schedules])
 
+    lotus_dashboard("/scheduled_editor",
+      as: :scheduled_editor_dashboard,
+      features: [:schedules],
+      resolver: Lotus.Web.Test.EditorResolver
+    )
+
     lotus_dashboard("/scheduled_read_only",
       as: :scheduled_read_only_dashboard,
       features: [:schedules],

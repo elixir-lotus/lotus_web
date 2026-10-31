@@ -649,6 +649,38 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
     end
   end
 
+  describe "a schedule's target" do
+    defp save_with_target(path, target) do
+      {:ok, live, _html} = live(build_conn(), path)
+
+      live
+      |> form("#schedule-form")
+      |> render_submit(%{"draft" => %{"name" => "Leak", "target" => target}})
+    end
+
+    test "is one the author may run and export" do
+      query = query_fixture(%{data_source: "reporting", statement: "SELECT 1"})
+
+      html = save_with_target("/scheduled_editor/schedules/new", "query:#{query.id}")
+
+      assert html =~ "Editor: query"
+      assert Schedules.list_schedules() == []
+    end
+
+    test "exists" do
+      html = save_with_target("/scheduled/schedules/new", "query:999999")
+      assert html =~ "You can&#39;t schedule this."
+
+      html = save_with_target("/scheduled/schedules/new", "dashboard:999999")
+      assert html =~ "You can&#39;t schedule this."
+
+      html = save_with_target("/scheduled/schedules/new", "workflow:1")
+      assert html =~ "You can&#39;t schedule this."
+
+      assert Schedules.list_schedules() == []
+    end
+  end
+
   describe "a read-only user" do
     test "does not get a destination's secrets" do
       query = query_fixture(%{statement: "SELECT 1"})
