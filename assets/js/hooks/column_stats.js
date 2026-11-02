@@ -1,3 +1,14 @@
+// Every value here comes from the query's results, so it is escaped
+// before it goes into the panel's markup.
+function escape(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function formatNumber(n) {
   if (n == null) return "—";
   return Number(n).toLocaleString(undefined, { maximumFractionDigits: 4 });
@@ -22,11 +33,11 @@ function buildHistogramHTML(histogram) {
           : `${formatNumber(bin.bin_start)}–${formatNumber(bin.bin_end)}`;
       return `
       <div class="lotus-stats-hist-row">
-        <span class="lotus-stats-hist-label" title="${label}">${label}</span>
+        <span class="lotus-stats-hist-label" title="${escape(label)}">${escape(label)}</span>
         <div class="lotus-stats-hist-bar-bg">
           <div class="lotus-stats-hist-bar" style="width:${pct}%"></div>
         </div>
-        <span class="lotus-stats-hist-count">${bin.count}</span>
+        <span class="lotus-stats-hist-count">${escape(bin.count)}</span>
       </div>`;
     })
     .join("");
@@ -44,15 +55,15 @@ function buildTopValuesHTML(topValues) {
     .slice(0, 8)
     .map((v) => {
       const pct = maxCount > 0 ? (v.count / maxCount) * 100 : 0;
-      const val =
-        v.value.length > 24 ? v.value.substring(0, 24) + "…" : v.value;
+      const value = String(v.value ?? "");
+      const val = value.length > 24 ? value.substring(0, 24) + "…" : value;
       return `
       <div class="lotus-stats-hist-row">
-        <span class="lotus-stats-hist-label" title="${v.value}">${val}</span>
+        <span class="lotus-stats-hist-label" title="${escape(value)}">${escape(val)}</span>
         <div class="lotus-stats-hist-bar-bg">
           <div class="lotus-stats-hist-bar lotus-stats-hist-bar--string" style="width:${pct}%"></div>
         </div>
-        <span class="lotus-stats-hist-count">${v.count}</span>
+        <span class="lotus-stats-hist-count">${escape(v.count)}</span>
       </div>`;
     })
     .join("");
@@ -72,11 +83,11 @@ function buildDistributionHTML(distribution) {
       const pct = maxCount > 0 ? (d.count / maxCount) * 100 : 0;
       return `
       <div class="lotus-stats-hist-row">
-        <span class="lotus-stats-hist-label">${d.bucket}</span>
+        <span class="lotus-stats-hist-label">${escape(d.bucket)}</span>
         <div class="lotus-stats-hist-bar-bg">
           <div class="lotus-stats-hist-bar lotus-stats-hist-bar--temporal" style="width:${pct}%"></div>
         </div>
-        <span class="lotus-stats-hist-count">${d.count}</span>
+        <span class="lotus-stats-hist-count">${escape(d.count)}</span>
       </div>`;
     })
     .join("");
@@ -87,12 +98,12 @@ function buildDistributionHTML(distribution) {
 }
 
 function statRow(label, value) {
-  return `<div class="lotus-stats-row"><span class="lotus-stats-label">${label}</span><span class="lotus-stats-value">${value}</span></div>`;
+  return `<div class="lotus-stats-row"><span class="lotus-stats-label">${escape(label)}</span><span class="lotus-stats-value">${escape(value)}</span></div>`;
 }
 
 function buildContent(stats) {
   const type = stats.type;
-  const typeBadge = `<span class="lotus-stats-type-badge lotus-stats-type-badge--${type}">${type}</span>`;
+  const typeBadge = `<span class="lotus-stats-type-badge lotus-stats-type-badge--${escape(type)}">${escape(type)}</span>`;
 
   let html = `<div class="lotus-stats-popover">`;
   html += `<div class="lotus-stats-header">${typeBadge}</div>`;

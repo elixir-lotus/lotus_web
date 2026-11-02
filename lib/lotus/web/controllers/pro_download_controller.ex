@@ -36,6 +36,16 @@ defmodule Lotus.Web.ProDownloadController do
   defp send_file_of(conn, name, params) do
     resolver = conn.private[:lotus_resolver]
     user = Resolver.call_with_fallback(resolver, :resolve_user, [conn])
+
+    # A user the resolver forbids gets nothing, as the dashboard and the
+    # export give them nothing.
+    case Resolver.call_with_fallback(resolver, :resolve_access, [user]) do
+      access when access in [:all, :read_only] -> send_file_of(conn, name, params, resolver, user)
+      _forbidden -> refuse(conn, :forbidden, "You don't have permission to download this.")
+    end
+  end
+
+  defp send_file_of(conn, name, params, resolver, user) do
     {context, scope} = Actor.resolve(resolver, user)
     info = %{user: user, context: context, scope: scope, params: params}
 

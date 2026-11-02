@@ -436,6 +436,15 @@ defmodule Lotus.Web.Pages.PublicDashboardPageTest do
     end
   end
 
+  test "a card id that is not one is ignored" do
+    dashboard = public_dashboard_fixture(%{name: "Shared"})
+    {:ok, live, _html} = live(build_conn(), "/lotus/public/#{dashboard.public_token}")
+
+    live |> with_target("#public-dashboard") |> render_click("refresh_card", %{"card-id" => "x"})
+
+    assert render(live) =~ "Shared"
+  end
+
   defp preset_keys(live, picker_id) do
     live
     |> render()

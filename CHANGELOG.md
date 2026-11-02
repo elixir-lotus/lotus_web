@@ -11,6 +11,104 @@
   which dependency to add, instead of failing on first use. Every AI
   control follows `Lotus.AI.enabled?/0`, asked on each render.
 
+- **`Lotus.Web.MCP` needs Sake 0.5**, as Lotus does. A host that serves
+  it changes its requirement to `{:sake, "~> 0.5"}`. A host on
+  `Sake.Tasks.Store.Ecto` with an existing `sake_tasks` table adds the
+  new columns with `Sake.Tasks.Migration.add_execution/1`.
+
+- **A new action, `:write`, for a statement that changes data.** The
+  query editor asks `authorize(user, :write, source)`, after `:query`,
+  before it runs a statement that changes data on a source that takes
+  writes. Without `authorize/3`, `:read_only` access is denied it, as its
+  documentation says ("no modifications"). A resolver that lists the
+  actions it allows adds `:write` for people who change data. See the v2
+  upgrade guide.
+
+### Security
+
+- **Column stats show a result's values as text.** The panel of a
+  column's stats put its top values, its date buckets and its earliest
+  and latest values into its markup as they were, so a value such as
+  `<img src=x onerror=...>` in a result was HTML in the panel. They are
+  now escaped.
+
+- **The MCP chart app takes messages only from its host.** It drew the
+  chart of a tool result that any frame of the host's page posted to it.
+  It now reads only the messages of the window that holds it, and sends
+  to the host's origin once the host's first message gives it.
+
+- **A page acts as its live_session's user, on the resource its URL
+  names.**
+  - A `token` in the URL of the signed-in dashboard (`/lotus?token=x`)
+    opened the public dashboard page, as nobody, and a patch from there
+    to a dashboard opened it with the public view's rights, not the
+    resolver's. Only the public route (`/public/:token`) opens a public
+    dashboard now.
+  - The dashboard editor kept the dashboard it was opened on after a
+    patch to another one, so a crafted patch and event could authorize
+    sharing or deleting one dashboard and do it to the other. A patch to
+    another page, or to another resource of the same page, now mounts the
+    page again. A new query or dashboard still takes the URL of what it
+    saved in place.
+
+- **A destination's secrets stay on the server.** The schedule editor
+  put a destination's saved Slack webhook URL and webhook authorization
+  in its fields' values, so anyone who could open the editor, a read-only
+  user too, could read them in the page. Such a field is now empty and
+  says that a value is saved; it keeps it unless one is typed. The JSON
+  settings of a channel that does not describe them are shown only to
+  those who may manage schedules.
+
+- **`:read_only` access changes no data.** On a source that takes
+  writes, a `:read_only` user could run an `UPDATE` or a `DELETE` in the
+  query editor, once they confirmed it: the editor asked only `:query`.
+  It now also asks `:write` (see Breaking Changes).
+
+- **A dropdown's options SQL only reads.** The SQL of a variable's
+  options ran with the source's read-only setting, so on a source that
+  takes writes, a statement that changed data ran each time the query
+  opened, without the prompt a write gets. It now runs read only, as a
+  saved query's options do.
+
+- **A run takes only a timeout the editor offers.** The editor took any
+  `query_timeout` an event sent, with or without `:timeout_options`, so
+  a crafted event could hold a connection for days. It now takes one of
+  the selector's values, and only with `:timeout_options`.
+
+- **A user `resolve_access/1` forbids gets no export.** The CSV export
+  asked only `authorize/3` when the resolver had it, so a forbidden user
+  with an export link still got the file. `Lotus.Web.Authorization.decide/5`
+  now denies a forbidden user first, and Lotus Pro's downloads refuse
+  them too.
+
+- **A schedule runs only what its author may read.** The schedule editor
+  saved any query, dashboard or extension target an event named, though
+  its pickers list only what the user may see, and the scheduler then
+  sent its results where the author chose. A save now gets the target as
+  Lotus gives it to the author (`:list_content`, `Lotus.Schedules.Target`'s
+  `get/2`), and asks `:query` and `:export` on a query's source and
+  `:view_dashboard` on a dashboard.
+
+- **A dashboard the resolver hides is not listed, nor copied.** The home
+  page listed every dashboard the scope returned, and its Duplicate
+  copied any dashboard an event named, without asking `:view_dashboard`.
+  It now leaves out a dashboard the user may not view and refuses to copy
+  one. A copy also asks `:manage_dashboard` with no dashboard, as a new
+  one does.
+
+- **A dashboard card runs only a query its viewer may read.** A card could
+  be added on a query that `:list_content` hides from the user, and the
+  dashboard then ran it and showed its name. Adding one is now refused,
+  and a card whose query the viewer's scope hides does not run.
+
+- **A public dashboard ignores a card id that is not a number.** A
+  crafted `refresh_card` event crashed the viewer's page.
+
+- **No script from a CDN.** The root layout loaded
+  `@tailwindplus/elements@1` from jsDelivr, with the page's CSP nonce
+  and no integrity check, though no page used it. It is gone, and the
+  CSP in the installation guide no longer allows `https://cdn.jsdelivr.net`.
+
 ### Added
 
 - **A byline from Lotus Pro in the lists** — each query and dashboard in the home page's lists (tiles and rows) shows the short line Lotus Pro gives about it, such as who made it (`Lotus.Web.Pro.byline/1`). Without Pro, nothing changes

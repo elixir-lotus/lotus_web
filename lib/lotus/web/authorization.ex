@@ -16,6 +16,7 @@ defmodule Lotus.Web.Authorization do
   | Action | Resource |
   |---|---|
   | `:query` | the data source name |
+  | `:write` | the data source name: a statement that changes data, on a source that takes writes (asked with `:query`) |
   | `:export` | the data source name |
   | `:ai_generate` | the data source name |
   | `:discover` | the data source name |
@@ -47,6 +48,7 @@ defmodule Lotus.Web.Authorization do
 
   @actions [
     :query,
+    :write,
     :export,
     :discover,
     :create_query,
@@ -138,14 +140,26 @@ defmodule Lotus.Web.Authorization do
         ) ::
           decision()
   def decide(resolver, user, access, action, resource) when action in @actions do
-    if resolver && Resolver.implements?(resolver, :authorize, 3) do
-      resolver
-      |> apply(:authorize, [user, action, resource])
-      |> check_decision(resolver, action)
-    else
-      default_decision(access, action)
+    cond do
+      # A user `resolve_access/1` forbids may do nothing, whatever
+      # authorize/3 says: the dashboard sends them away before it asks, and a
+      # controller (the export) asks here.
+      forbidden?(access) ->
+        default_decision(access, action)
+
+      resolver && Resolver.implements?(resolver, :authorize, 3) ->
+        resolver
+        |> apply(:authorize, [user, action, resource])
+        |> check_decision(resolver, action)
+
+      true ->
+        default_decision(access, action)
     end
   end
+
+  defp forbidden?(:forbidden), do: true
+  defp forbidden?({:forbidden, _path}), do: true
+  defp forbidden?(_access), do: false
 
   @doc """
   The decision for an access level when the resolver does not implement
@@ -192,6 +206,7 @@ defmodule Lotus.Web.Authorization do
   """
   @spec reason(Resolver.action()) :: String.t()
   def reason(:query), do: gettext("You don't have permission to run queries")
+  def reason(:write), do: gettext("You don't have permission to change data")
   def reason(:export), do: gettext("You don't have permission to export query results")
   def reason(:discover), do: gettext("You don't have permission to browse this data source")
   def reason(:create_query), do: gettext("You don't have permission to save queries")

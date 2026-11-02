@@ -130,15 +130,22 @@ Keep the block if it names callbacks of your own.
 
 ---
 
-## 6. Resolvers: a new action, `:manage_schedule`
+## 6. Resolvers: new actions, `:manage_schedule` and `:write`
 
-The dashboard asks `authorize(user, :manage_schedule, nil)` before it
-creates, edits, pauses or deletes a report or an alert. A resolver whose
-`authorize/3` falls through to `:allow` for the actions it does not name
-allows it too. A resolver that lists the actions it allows must add this one
-for people to manage schedules.
+A resolver whose `authorize/3` falls through to `:allow` for the actions it
+does not name allows these too. A resolver that lists the actions it allows
+must add them for people to use them.
 
-Nothing asks for it unless the `:schedules` feature is on (section 7).
+- `authorize(user, :manage_schedule, nil)`: before the dashboard creates,
+  edits, pauses or deletes a report or an alert. Nothing asks for it unless
+  the `:schedules` feature is on (section 7).
+- `authorize(user, :write, source)`: before the query editor runs a
+  statement that changes data, on a source that takes writes. It is asked
+  with `:query`, which now only reads. Without `authorize/3`, `:read_only`
+  access no longer changes data: `:all` does.
+
+A user `resolve_access/1` forbids is now refused whatever `authorize/3`
+says, at the CSV export and at Lotus Pro's downloads too.
 
 ---
 
@@ -262,6 +269,6 @@ newer.
 5. Delete `config :lotus, :mcp` if it only names Lotus Web's callbacks
    (section 5).
 6. If your resolver lists the actions it allows, decide about
-   `:manage_schedule` (section 6).
+   `:manage_schedule` and `:write` (section 6).
 7. Turn on `:schedules` and the scheduler if you want reports and alerts
    (section 7).

@@ -87,7 +87,7 @@ defmodule Lotus.Web.SchedulesPage do
                   viewer_zone={@viewer_zone}
                   target={@myself}
                 />
-                <.deliver_section deliveries={@draft["deliveries"]} specs={@channel_specs} adding={@adding_delivery} tests={@delivery_tests} target={@myself} />
+                <.deliver_section deliveries={@draft["deliveries"]} specs={@channel_specs} adding={@adding_delivery} tests={@delivery_tests} can_manage={@can_manage} target={@myself} />
                 <.alert_section draft={@draft} conditions={@conditions} target_entry={@target_entry} />
               </fieldset>
 
@@ -784,6 +784,7 @@ defmodule Lotus.Web.SchedulesPage do
   attr(:specs, :list, required: true)
   attr(:adding, :boolean, required: true)
   attr(:tests, :map, required: true)
+  attr(:can_manage, :boolean, required: true)
   attr(:target, :any, required: true)
 
   defp deliver_section(assigns) do
@@ -797,6 +798,7 @@ defmodule Lotus.Web.SchedulesPage do
           delivery={delivery}
           spec={Deliveries.spec(@specs, delivery["channel"])}
           test={@tests[index]}
+          can_manage={@can_manage}
           target={@target}
         />
 
@@ -1541,7 +1543,8 @@ defmodule Lotus.Web.SchedulesPage do
   end
 
   defp save(draft, assigns) do
-    with {:ok, attrs} <- attrs(draft, assigns.channel_specs) do
+    with :ok <- check_target(draft["target"], assigns),
+         {:ok, attrs} <- attrs(draft, assigns.channel_specs) do
       result =
         case assigns.schedule do
           nil -> Schedules.create_schedule(attrs, Actor.opts(assigns))
@@ -1574,6 +1577,64 @@ defmodule Lotus.Web.SchedulesPage do
          rule: rule(draft, dashboard_id, draft["target"])
        }}
     end
+  end
+
+  # A schedule sends what it runs to a destination its author chooses, so
+  # its author must be able to read it: the query, dashboard or target as
+  # Lotus gives it to them, and a query's results as an export would. The
+  # pickers list only these; a crafted event is refused here.
+  defp check_target(target, assigns) do
+    opts = Actor.opts(assigns)
+
+    case target_of(target, opts) do
+      :none -> :ok
+      {:ok, resources} -> authorize_target(resources, assigns)
+      :not_found -> {:error, [gettext("You can't schedule this.")]}
+    end
+  end
+
+  defp target_of("query:" <> id, opts),
+    do: readable(get_by_id(&Lotus.get_query/2, id, opts), :query)
+
+  defp target_of("dashboard:" <> id, opts),
+    do: readable(get_by_id(&Lotus.get_dashboard/2, id, opts), :dashboard)
+
+  defp target_of(target, opts) when is_binary(target) do
+    with {nil, nil, type, id} when is_binary(type) <- target(target),
+         module when not is_nil(module) <- Targets.fetch(type),
+         %{} <- module.get(id, opts) do
+      {:ok, []}
+    else
+      {nil, nil, nil, nil} -> :none
+      _none -> :not_found
+    end
+  end
+
+  defp target_of(_target, _opts), do: :none
+
+  defp get_by_id(get, id, opts) do
+    case Integer.parse(id) do
+      {id, ""} -> get.(id, opts)
+      _other -> nil
+    end
+  end
+
+  defp readable(nil, _kind), do: :not_found
+
+  defp readable(query, :query) do
+    source = query.data_source || elem(Lotus.default_data_source(), 0)
+    {:ok, [{:query, source}, {:export, source}]}
+  end
+
+  defp readable(dashboard, :dashboard), do: {:ok, [{:view_dashboard, dashboard}]}
+
+  defp authorize_target(resources, assigns) do
+    Enum.reduce_while(resources, :ok, fn {action, resource}, :ok ->
+      case Authorization.authorize(assigns, action, resource) do
+        :allow -> {:cont, :ok}
+        {:deny, reason} -> {:halt, {:error, [reason]}}
+      end
+    end)
   end
 
   defp target("query:" <> id), do: {id, nil, nil, nil}

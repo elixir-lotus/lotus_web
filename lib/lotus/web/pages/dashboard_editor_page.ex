@@ -718,10 +718,8 @@ defmodule Lotus.Web.DashboardEditorPage do
     resource = dashboard_resource(socket.assigns.page, socket.assigns.dashboard)
 
     with :allow <- Authorization.authorize(socket.assigns, :manage_dashboard, resource),
-         card_type when not is_nil(card_type) <- parse_card_type(type) do
-      query_id = Map.get(params, "query-id")
-      query_id = if query_id && query_id != "", do: String.to_integer(query_id), else: nil
-
+         card_type when not is_nil(card_type) <- parse_card_type(type),
+         {:ok, query_id} <- card_query_id(card_type, params["query-id"], socket.assigns) do
       socket =
         case card_type do
           {:pro, kind} -> add_pro_card(socket, kind)
@@ -735,6 +733,10 @@ defmodule Lotus.Web.DashboardEditorPage do
 
       nil ->
         {:noreply, assign(socket, add_card_modal_open: false)}
+
+      :not_found ->
+        {:noreply,
+         socket |> deny(gettext("Query not found")) |> assign(add_card_modal_open: false)}
     end
   end
 
@@ -911,13 +913,16 @@ defmodule Lotus.Web.DashboardEditorPage do
   @impl Phoenix.LiveComponent
   def handle_event("duplicate", _params, socket) do
     authorize_manage(socket, fn ->
+      # A copy is a new dashboard, as one made from nothing.
       with %{mode: :edit, id: id} <- socket.assigns.page,
+           :allow <- Authorization.authorize(socket.assigns, :manage_dashboard, nil),
            {:ok, copy} <- Duplicate.copy(id, Actor.opts(socket.assigns)) do
         {:noreply,
          socket
          |> put_flash(:info, gettext("A copy of the dashboard, to change on its own."))
          |> push_navigate(to: lotus_path(["dashboards", copy.id]))}
       else
+        {:deny, reason} -> {:noreply, put_flash(socket, :error, reason)}
         _ -> {:noreply, put_flash(socket, :error, gettext("The dashboard could not be copied."))}
       end
     end)
@@ -1242,7 +1247,7 @@ defmodule Lotus.Web.DashboardEditorPage do
          |> put_flash(:info, gettext("Dashboard saved successfully!"))
          |> assign(save_modal_open: false, editing: false, saved_dashboard: nil)
          |> close_editors()
-         |> push_patch(to: lotus_path(["dashboards", saved_dashboard.id]), replace: true)}
+         |> patch_to_saved(lotus_path(["dashboards", saved_dashboard.id]))}
 
       {:error, %Ecto.Changeset{data: %Lotus.Storage.Dashboard{}} = changeset} ->
         form = to_form(changeset, as: "dashboard")
@@ -1888,10 +1893,30 @@ defmodule Lotus.Web.DashboardEditorPage do
         nil
 
       dashboard ->
-        cards = Lotus.list_dashboard_cards(dashboard.id, preload: [:query, :filter_mappings])
+        cards =
+          dashboard.id
+          |> Lotus.list_dashboard_cards(preload: [:query, :filter_mappings])
+          |> hide_unreadable_queries(opts)
+
         filters = Lotus.list_dashboard_filters(dashboard.id)
         %{dashboard | cards: cards, filters: filters}
     end
+  end
+
+  # A card's query preloads whoever may read it; a card whose query the
+  # user's scope hides neither runs nor shows its name.
+  defp hide_unreadable_queries(cards, opts) do
+    readable =
+      for id <- cards |> Enum.map(& &1.query_id) |> Enum.reject(&is_nil/1) |> Enum.uniq(),
+          Lotus.get_query(id, opts),
+          into: MapSet.new(),
+          do: id
+
+    Enum.map(cards, fn card ->
+      if card.query_id && not MapSet.member?(readable, card.query_id),
+        do: %{card | query: nil},
+        else: card
+    end)
   end
 
   defp assign_dashboard(socket, dashboard) do
@@ -1922,6 +1947,20 @@ defmodule Lotus.Web.DashboardEditorPage do
       do: add_card(socket, :pro, nil, %{"kind" => kind}),
       else: socket
   end
+
+  # A query card's query is one the user may read: the scoped lookup, as the
+  # query editor opens one.
+  defp card_query_id(:query, id, assigns) do
+    with id when is_binary(id) <- id,
+         {id, ""} <- Integer.parse(id),
+         %Lotus.Storage.Query{} <- Lotus.get_query(id, Actor.opts(assigns)) do
+      {:ok, id}
+    else
+      _none -> :not_found
+    end
+  end
+
+  defp card_query_id(_card_type, _id, _assigns), do: {:ok, nil}
 
   defp add_card(socket, card_type, query_id, content \\ nil) do
     dashboard = socket.assigns.dashboard

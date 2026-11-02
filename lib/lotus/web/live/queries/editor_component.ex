@@ -246,18 +246,18 @@ defmodule Lotus.Web.Queries.EditorComponent do
     """
   end
 
+  @timeouts [5_000, 15_000, 30_000, 60_000, 120_000, 300_000, 0]
+
+  @doc false
+  # The timeouts the selector offers, in milliseconds: the only ones a run
+  # takes.
+  def timeouts, do: @timeouts
+
   attr(:query_timeout, :integer, default: 5_000)
 
   defp timeout_selector(assigns) do
-    timeout_options = [
-      {"5s", "5000"},
-      {"15s", "15000"},
-      {"30s", "30000"},
-      {"60s", "60000"},
-      {"2m", "120000"},
-      {"5m", "300000"},
-      {gettext("None"), "0"}
-    ]
+    labels = ["5s", "15s", "30s", "60s", "2m", "5m", gettext("None")]
+    timeout_options = Enum.zip(labels, Enum.map(@timeouts, &Integer.to_string/1))
 
     assigns = assign(assigns, :timeout_options, timeout_options)
 

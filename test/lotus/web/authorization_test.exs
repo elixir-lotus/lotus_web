@@ -47,7 +47,7 @@ defmodule Lotus.Web.AuthorizationTest do
       end
     end
 
-    test ":read_only allows querying, exporting, browsing and viewing dashboards only" do
+    test ":read_only allows querying, exporting, browsing and viewing dashboards only, and no writes" do
       allowed = [:query, :export, :discover, :view_dashboard]
 
       for action <- Authorization.actions() do
@@ -227,6 +227,15 @@ defmodule Lotus.Web.AuthorizationTest do
                Authorization.decide(RecordingResolver, @user, :all, :export, "reporting")
 
       assert Authorization.decide(nil, nil, :read_only, :export, "reporting") == :allow
+    end
+
+    test "denies a forbidden user, without asking authorize/3" do
+      for access <- [:forbidden, {:forbidden, "/login"}] do
+        assert {:deny, _} =
+                 Authorization.decide(RecordingResolver, @user, access, :query, "reporting")
+      end
+
+      refute_received {:authorize, _user, _action, _resource}
     end
   end
 end

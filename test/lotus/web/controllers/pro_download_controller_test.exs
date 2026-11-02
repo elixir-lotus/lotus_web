@@ -60,4 +60,11 @@ defmodule Lotus.Web.ProDownloadControllerTest do
     assert get(build_conn(), "/lotus/pro/download?token=nope").status == 401
     assert get(build_conn(), "/lotus/pro/download").status == 400
   end
+
+  test "a user the resolver forbids gets no file" do
+    path = String.replace_prefix(path("report", %{"kind" => "all"}), "/lotus/", "/forbidden/")
+
+    assert get(build_conn(), path).status == 403
+    refute_received {:download, _params, _info}
+  end
 end

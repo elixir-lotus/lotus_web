@@ -11,7 +11,7 @@ defmodule Lotus.Web.DashboardLive do
     %{"live_path" => live_path, "live_transport" => live_transport} = session
     %{"csp_nonces" => csp_nonces, "card_concurrency" => card_concurrency} = session
 
-    page = resolve_page(params, session["features"])
+    page = resolve_page(params, session)
     {resolver, user, access, features, page_title} = mount_defaults(page, session)
     {context, scope} = actor = Actor.resolve(resolver, user)
 
@@ -118,6 +118,9 @@ defmodule Lotus.Web.DashboardLive do
     assign(socket, :permissions, Authorization.permissions(socket.assigns))
   end
 
+  # Only the public live_session (`__public_session__/6`) opens a public
+  # dashboard, as nobody: a `token` in the URL of the signed-in dashboard is
+  # not one.
   defp mount_defaults(%{name: :public_dashboard}, _session),
     do: {nil, nil, :read_only, [], "Public Dashboard"}
 
@@ -146,14 +149,39 @@ defmodule Lotus.Web.DashboardLive do
   end
 
   def handle_params(params, uri, socket) do
-    page = resolve_page(params, socket.assigns.features)
-    socket = assign(socket, page: page)
+    page =
+      resolve_page(params, %{
+        "public" => socket.assigns.public_view,
+        "features" => socket.assigns.features
+      })
 
-    case socket.assigns.page.comp.handle_params(params, uri, socket) do
-      {:noreply, socket} -> {:noreply, put_page_actions(socket)}
-      other -> other
+    if in_place?(socket.assigns.page, page, uri, socket.assigns[:saved_path]) do
+      socket = assign(socket, page: page)
+
+      case socket.assigns.page.comp.handle_params(params, uri, socket) do
+        {:noreply, socket} -> {:noreply, put_page_actions(socket)}
+        other -> other
+      end
+    else
+      %URI{path: path, query: query} = URI.parse(uri)
+      {:noreply, push_navigate(socket, to: if(query, do: path <> "?" <> query, else: path))}
     end
   end
+
+  # A patch stays in the mounted page only when it shows the same page: the
+  # same resource, or the one a new page has just saved (`:patch_to_saved`).
+  # Any other patch, which a client can send, mounts the page again, so that
+  # its handle_mount/1 runs and its state (the dashboard it authorized, say)
+  # is the one the URL names.
+  defp in_place?(%{comp: comp} = mounted, %{comp: comp} = page, uri, saved_path) do
+    case {Map.get(mounted, :id), Map.get(page, :id)} do
+      {id, id} -> true
+      {nil, _id} -> saved_path != nil and URI.parse(uri).path == saved_path
+      _other -> false
+    end
+  end
+
+  defp in_place?(_mounted, _page, _uri, _saved_path), do: false
 
   @impl Phoenix.LiveView
   def handle_event("platform_info", %{"os" => os, "ua" => ua}, socket) do
@@ -173,6 +201,12 @@ defmodule Lotus.Web.DashboardLive do
     {:noreply, put_flash(socket, type, message)}
   end
 
+  # A new query or dashboard, once saved, takes the URL of what it saved,
+  # in place.
+  def handle_info({:patch_to_saved, path}, socket) do
+    {:noreply, socket |> assign(:saved_path, path) |> push_patch(to: path, replace: true)}
+  end
+
   def handle_info(message, socket) do
     socket.assigns.page.comp.handle_info(message, socket)
   end
@@ -183,9 +217,6 @@ defmodule Lotus.Web.DashboardLive do
   end
 
   ## Render Helpers
-
-  defp resolve_page(%{"token" => token}),
-    do: %{name: :public_dashboard, comp: PublicDashboardPage, token: token}
 
   defp resolve_page(%{"page" => "queries", "id" => "new"}),
     do: %{name: :query_new, comp: QueryEditorPage, mode: :new}
@@ -210,10 +241,13 @@ defmodule Lotus.Web.DashboardLive do
 
   defp resolve_page(_params), do: %{name: :home, comp: QueriesPage}
 
+  defp resolve_page(params, %{"public" => true}),
+    do: %{name: :public_dashboard, comp: PublicDashboardPage, token: params["token"]}
+
   # The schedules are shown with `features: [:schedules]`: their list on the
   # home page's Schedules tab, and the editor of one. Without the feature,
   # the home page.
-  defp resolve_page(%{"page" => "schedules"} = params, features) do
+  defp resolve_page(%{"page" => "schedules"} = params, %{"features" => features}) do
     cond do
       :schedules not in (features || []) -> resolve_page(Map.drop(params, ["page", "id"]))
       params["id"] == "new" -> %{name: :schedule_new, comp: SchedulesPage, mode: :new}
@@ -222,5 +256,5 @@ defmodule Lotus.Web.DashboardLive do
     end
   end
 
-  defp resolve_page(params, _features), do: resolve_page(params)
+  defp resolve_page(params, _session), do: resolve_page(params)
 end

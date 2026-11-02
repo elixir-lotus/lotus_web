@@ -402,7 +402,7 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
       assert [%{deliveries: [%{config: %{"room" => "ops"}}]}] = Schedules.list_schedules()
     end
 
-    test "a webhook saved with an authorization header shows it in its field", %{query: query} do
+    test "a webhook saved with an authorization header keeps it out of the page", %{query: query} do
       schedule =
         schedule_fixture(query, %{
           deliveries: [
@@ -417,11 +417,13 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
           ]
         })
 
-      {:ok, live, _html} = live(build_conn(), "/scheduled/schedules/#{schedule.id}")
+      {:ok, live, html} = live(build_conn(), "/scheduled/schedules/#{schedule.id}")
+
+      refute html =~ "Bearer old"
 
       assert has_element?(
                live,
-               ~s(#delivery-0 input[name="draft[deliveries][0][values][authorization]"][value="Bearer old"])
+               ~s(#delivery-0 input[name="draft[deliveries][0][values][authorization]"][value=""][placeholder^="Saved"])
              )
 
       live |> form("#schedule-form") |> render_submit()
@@ -433,6 +435,39 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
                "authorization" => "Bearer old",
                "headers" => %{"x-team" => "data"}
              }
+    end
+
+    test "a secret typed again replaces the saved one", %{query: query} do
+      schedule =
+        schedule_fixture(query, %{
+          deliveries: [
+            %{
+              channel: "slack",
+              format: "csv",
+              config: %{"webhook_url" => "https://hooks.slack.com/services/T/B/OLD"}
+            }
+          ]
+        })
+
+      {:ok, live, html} = live(build_conn(), "/scheduled/schedules/#{schedule.id}")
+      refute html =~ "services/T/B/OLD"
+
+      live
+      |> form("#schedule-form",
+        draft: %{
+          deliveries: %{
+            "0" => %{values: %{webhook_url: "https://hooks.slack.com/services/T/B/NEW"}}
+          }
+        }
+      )
+      |> render_submit()
+
+      assert %{
+               deliveries: [
+                 %{config: %{"webhook_url" => "https://hooks.slack.com/services/T/B/NEW"}}
+               ]
+             } =
+               Schedules.get_schedule!(schedule.id)
     end
 
     test "each frequency writes its cron", %{query: query} do
@@ -614,7 +649,83 @@ defmodule Lotus.Web.Pages.SchedulesPageTest do
     end
   end
 
+  describe "a schedule's target" do
+    defp save_with_target(path, target) do
+      {:ok, live, _html} = live(build_conn(), path)
+
+      live
+      |> form("#schedule-form")
+      |> render_submit(%{"draft" => %{"name" => "Leak", "target" => target}})
+    end
+
+    test "is one the author may run and export" do
+      query = query_fixture(%{data_source: "reporting", statement: "SELECT 1"})
+
+      html = save_with_target("/scheduled_editor/schedules/new", "query:#{query.id}")
+
+      assert html =~ "Editor: query"
+      assert Schedules.list_schedules() == []
+    end
+
+    test "exists" do
+      html = save_with_target("/scheduled/schedules/new", "query:999999")
+      assert html =~ "You can&#39;t schedule this."
+
+      html = save_with_target("/scheduled/schedules/new", "dashboard:999999")
+      assert html =~ "You can&#39;t schedule this."
+
+      html = save_with_target("/scheduled/schedules/new", "workflow:1")
+      assert html =~ "You can&#39;t schedule this."
+
+      assert Schedules.list_schedules() == []
+    end
+  end
+
   describe "a read-only user" do
+    test "does not get a destination's secrets" do
+      query = query_fixture(%{statement: "SELECT 1"})
+
+      schedule =
+        schedule_fixture(query, %{
+          deliveries: [
+            %{
+              channel: "webhook",
+              format: "json",
+              config: %{
+                "url" => "https://hooks.example.com/x",
+                "authorization" => "Bearer s3cret"
+              }
+            },
+            %{
+              channel: "slack",
+              format: "csv",
+              config: %{"webhook_url" => "https://hooks.slack.com/services/T/B/XYZ"}
+            }
+          ]
+        })
+
+      {:ok, live, html} = live(build_conn(), "/scheduled_read_only/schedules/#{schedule.id}")
+
+      refute html =~ "s3cret"
+      refute html =~ "services/T/B/XYZ"
+      refute render(live) =~ "s3cret"
+      assert html =~ "hooks.example.com"
+    end
+
+    test "does not get the JSON settings of a channel that does not describe them" do
+      put_channels(%{"plain" => Lotus.Web.Test.PlainChannel})
+      query = query_fixture(%{statement: "SELECT 1"})
+
+      schedule =
+        schedule_fixture(query, %{
+          deliveries: [%{channel: "plain", format: "csv", config: %{"token" => "t0ken"}}]
+        })
+
+      {:ok, _live, html} = live(build_conn(), "/scheduled_read_only/schedules/#{schedule.id}")
+
+      refute html =~ "t0ken"
+    end
+
     test "sees the schedules but cannot change them" do
       query = query_fixture(%{statement: "SELECT 1"})
       schedule = schedule_fixture(query)
